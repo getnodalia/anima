@@ -21,15 +21,10 @@ concurrency:
 jobs:
   wasm:
     name: Web build (wasm32)
-    # Tracks @main so suite-wide CI fixes reach every app without a PR in each repository.
-    uses: storytold/craft-common-actions/.github/workflows/gate.yml@main
+    uses: getnodalia/foundation/.github/workflows/rust-gate.yml@976581262c95c0d95c0184149c0e1ba55485ccb3 # foundation main
     with:
       timeout-minutes: 60
-      # As before: no craft-fonts, apt packages or nextest; the gate adds the wasm32 target.
-      craft-fonts-ref: ""
       tools: ""
-      # Its own cache, apart from ci.yml's gate.
-      cache-version: v1-web
       command: |
         # Every crate builds for wasm32.
         cargo build --workspace --target wasm32-unknown-unknown --locked

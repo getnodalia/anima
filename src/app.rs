@@ -1876,7 +1876,7 @@ impl App {
                     ("Score: 0", "dynamic", "score_txt", 40.0, 40.0, 30.0, 360.0, 44.0, "single"),
                     ("", "input", "name_txt", 40.0, 130.0, 22.0, 360.0, 34.0, "single"),
                     (
-                        "Notes wrap at the width of the field, and viewers can type more.",
+                        "Notes wrap at the width of the field, and viewers can type more.", // i18n-exempt: document content
                         "input",
                         "notes_txt",
                         40.0,

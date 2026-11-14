@@ -83,7 +83,7 @@ async fn run() -> Result<(), String> {
     let canvas = element(CANVAS_ID)
         .ok_or("the page has no canvas for Ánima")?
         .dyn_into::<web_sys::HtmlCanvasElement>()
-        .map_err(|_| "the Ánima element is not a canvas")?;
+        .map_err(|_| "the Ánima element is not a canvas")?; // i18n-exempt: a console message
     // Text needs a face to lay out with, and a page can't see the computer's fonts.
     anima_engine::text::Fonts::register(fonts());
     let session = anima_engine::Session::new(anima_engine::doc::sample::demo());

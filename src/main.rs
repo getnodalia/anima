@@ -252,7 +252,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<Args, String> {
                 other => {
                     let offered: Vec<&str> = i18n::offered().into_iter().map(|(c, _)| c).collect();
                     return Err(format!(
-                        "--lang takes auto, pseudo or a language this build has ({}), not {}",
+                        "--lang takes auto, pseudo or a language this build has ({}), not {}", // i18n-exempt: a console message
                         offered.join(", "),
                         other.as_deref().unwrap_or("nothing")
                     )); // i18n-exempt: a console message
@@ -284,13 +284,6 @@ const HELP: &str = "anima [file.anima|file.fla|file.xfl] [--version] [--screensh
 
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result {
-    if let Some(result) = updates::finish_helper() {
-        let failed = result.is_err();
-        if let Err(error) = result {
-            eprintln!("Update failed: {error}");
-        }
-        std::process::exit(i32::from(failed));
-    }
     let args = match parse_args(std::env::args().skip(1)) {
         Ok(a) => a,
         Err(e) => {

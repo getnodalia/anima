@@ -1,19 +1,21 @@
-//! Native release checks and verified installation through craft-update's platform helpers.
-use craft_update::pins::{Choice, Pins};
-use craft_update::{App, Http, Paths, Platform, Release, Stop, self_update};
+//! Release checks and verified in-place updates through Nodalia's shared updater, `nodalia-update`:
+//! it finds Ánima's own releases, checks each package's SHA-256, and replaces the AppImage or
+//! `Anima.app`, or installs the MSI on Windows. Other installs are pointed at the release page.
+use nodalia_update::{App, Check, Failure, Release};
 use std::sync::mpsc::{Receiver, TryRecvError, channel};
 
 // i18n-exempt: stable release identity, not interface text.
-pub const APP: App = App::new("anima", "Ánima", "Animation", "getnodalia/anima");
+pub const APP: App = App { name: "Anima", repo: "getnodalia/anima", bundle: "Anima.app", version: VERSION, edition: None };
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// A pinned, nightly, or unknown launcher choice must never be replaced by a stable update.
-fn stable_choice() -> Result<(), String> {
-    if Pins::load_default().choice(APP.id) == Choice::Stable {
-        Ok(())
-    } else {
-        Err(tr!("Nodalia Launcher manages this app's version. Change its version there.").into())
-    }
+/// Where every release is listed.
+fn releases_url() -> String {
+    format!("https://github.com/{}/releases", APP.repo)
+}
+
+/// Whether the update can be installed from inside the app (an AppImage, `Anima.app` or the MSI).
+fn installs_in_place(release: &Release) -> bool {
+    release.asset.is_some() && nodalia_update::install_kind(&APP).can_apply_in_place()
 }
 
 /// Whether an update may close the editor without losing pending document work.
@@ -36,7 +38,7 @@ pub(crate) fn safe_to_install(app: &crate::app::App) -> bool {
 
 enum Reply {
     Checked(Result<Option<Release>, String>, bool),
-    Installed(Result<self_update::Restart, String>),
+    Installed(Result<(), String>),
 }
 #[derive(Default)]
 pub struct Updates {
@@ -48,7 +50,8 @@ pub struct Updates {
     installable: bool,
     worker: Option<Receiver<Reply>>,
     installing: bool,
-    restart: Option<self_update::Restart>,
+    /// The new version is starting: this process closes and exits.
+    restart: bool,
 }
 impl Updates {
     /// Read the previous update result when the first desktop frame can show it.
@@ -64,14 +67,11 @@ impl Updates {
     /// Start a manual check off the UI thread; repeated requests share the running check.
     pub fn check(&mut self, ctx: &egui::Context) {
         self.check_using(ctx, || {
-            let result = stable_choice()
-                .and_then(|()| Http::new(concat!("Ánima/", env!("CARGO_PKG_VERSION"))))
-                .and_then(|http| craft_update::check_for_update(&APP, &http, VERSION));
-            let installable = result
-                .as_ref()
-                .ok()
-                .and_then(|release| release.as_ref())
-                .is_some_and(|release| self_update::is_self_updating(&APP) && self_update::release_installs(&APP, release));
+            let result = nodalia_update::check(&APP).map_err(|e| e.to_string()).map(|check| match check {
+                Check::Available(release) => Some(release),
+                Check::UpToDate => None,
+            });
+            let installable = result.as_ref().ok().and_then(Option::as_ref).is_some_and(installs_in_place);
             (result, installable)
         });
     }
@@ -99,27 +99,12 @@ impl Updates {
     }
     fn install(&mut self, ctx: &egui::Context, release: Release) {
         self.install_using(ctx, move || {
-            let install = self_update::current(&APP)
-                .ok_or(tr!("This installation is managed externally. Update it with its package manager or open Releases."))?;
-            let platform = Platform::current().ok_or(tr!("No installer is available for this platform."))?;
-            let http = Http::new(concat!("Ánima/", env!("CARGO_PKG_VERSION")))?;
-            let paths = Paths::for_app(&APP)?;
-            self_update::prepare_update(
-                &APP,
-                &install,
-                &release,
-                platform,
-                &http,
-                &paths,
-                &Stop::default(),
-                &mut |_| {},
-                &stable_choice,
-                Some(VERSION),
-            )
+            let package = nodalia_update::download(&APP, &release, |_, _| {}).map_err(|e| e.to_string())?;
+            nodalia_update::apply(&APP, &package, || Ok(())).map_err(|e| e.to_string())
         });
     }
 
-    fn install_using(&mut self, ctx: &egui::Context, install: impl FnOnce() -> Result<self_update::Restart, String> + Send + 'static) {
+    fn install_using(&mut self, ctx: &egui::Context, install: impl FnOnce() -> Result<(), String> + Send + 'static) {
         self.installing = true;
         self.message = tr!("Downloading and verifying the update…").into();
         let (tx, rx) = channel();
@@ -141,10 +126,8 @@ impl Updates {
         if std::mem::take(&mut self.requested) {
             self.check(ctx);
         }
-        if std::mem::take(&mut self.read_outcome_requested)
-            && let Ok(paths) = Paths::for_app(&APP)
-        {
-            self.apply_outcome(self_update::take_outcome(&paths, VERSION));
+        if std::mem::take(&mut self.read_outcome_requested) {
+            self.apply_outcome(nodalia_update::take_last_failure(&APP));
         }
         let reply = self.worker.as_ref().map(Receiver::try_recv);
         match reply {
@@ -156,8 +139,8 @@ impl Updates {
             Some(Ok(Reply::Installed(result))) => {
                 self.worker = None;
                 match result {
-                    Ok(restart) => {
-                        self.restart = Some(restart);
+                    Ok(()) => {
+                        self.restart = true;
                         self.message = tr!("Update ready. Restarting…").into();
                     }
                     Err(error) => {
@@ -173,7 +156,7 @@ impl Updates {
             }
             _ => {}
         }
-        if self.restart.is_some() {
+        if self.restart {
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
         } else if self.installing && ctx.input(|i| i.viewport().close_requested()) {
             // The platform helper may be replacing files. Keep this process alive until it finishes.
@@ -204,15 +187,15 @@ impl Updates {
                     }
                     ui.horizontal(|ui| {
                         if let Some(release) = &self.release {
-                            ui.hyperlink_to(tr!("Releases"), &release.html_url);
+                            ui.hyperlink_to(tr!("Releases"), &release.page);
                             install = ui
                                 .add_enabled(
-                                    safe_to_install && self.installable && self.worker.is_none() && self.restart.is_none(),
+                                    safe_to_install && self.installable && self.worker.is_none() && !self.restart,
                                     egui::Button::new(tr!("Update and restart")),
                                 )
                                 .clicked();
                         } else {
-                            ui.hyperlink_to(tr!("Releases"), APP.releases_url());
+                            ui.hyperlink_to(tr!("Releases"), releases_url());
                         }
                         again = ui.add_enabled(self.worker.is_none() && !self.installing, egui::Button::new(tr!("Check again"))).clicked();
                     });
@@ -227,24 +210,24 @@ impl Updates {
         }
         self.installing
     }
-    fn apply_outcome(&mut self, outcome: Option<self_update::Outcome>) {
-        match outcome {
-            Some(self_update::Outcome::Installed(version)) => {
-                self.open = true;
-                self.message = tr!("Updated to {version}.", version = version);
+    /// What the last in-place update left behind: nothing after a good one, or why it failed.
+    fn apply_outcome(&mut self, failure: Option<Failure>) {
+        let Some(failure) = failure else { return };
+        self.open = true;
+        self.message = match failure {
+            Failure::StillRunning => tr!("The update was not installed: Ánima did not close in time.").into(),
+            Failure::Cancelled => tr!("The update was cancelled. Nothing was changed.").into(),
+            Failure::Replace => {
+                tr!("macOS did not allow replacing Ánima. Allow it in System Settings › Privacy & Security › App Management, then try again.").into()
             }
-            Some(self_update::Outcome::Failed(error)) => {
-                self.open = true;
-                self.message = tr!("The update failed: {error}", error = error);
-            }
-            None => {}
-        }
+            _ => tr!("The update was not installed. The installed version still works; download the new one from Releases.").into(),
+        };
     }
 
     fn checked(&mut self, result: Result<Option<Release>, String>) {
         match result {
             Ok(Some(release)) => {
-                self.message = tr!("{version} is available.", version = release.version_label());
+                self.message = tr!("{version} is available.", version = release.version);
                 self.release = Some(release);
             }
             Ok(None) => {
@@ -257,19 +240,16 @@ impl Updates {
             }
         }
     }
-    /// Start the prepared helper only after the app's normal exit path has accepted closing.
+    /// The app's exit path accepted closing. When a new version is starting, make sure this one
+    /// is gone soon even if something keeps the window open.
     pub fn finish(&mut self) {
-        if let Some(restart) = self.restart.take()
-            && let Err(error) = restart.start()
-        {
-            eprintln!("Couldn't restart after updating: {error}");
+        if self.restart {
+            std::thread::spawn(|| {
+                std::thread::sleep(std::time::Duration::from_secs(5));
+                std::process::exit(0);
+            });
         }
     }
-}
-
-/// Runs the Windows installation helper before opening a normal application window.
-pub fn finish_helper() -> Option<Result<(), String>> {
-    self_update::finish(&APP, &std::env::args_os().skip(1).collect::<Vec<_>>())
 }
 
 #[cfg(test)]
@@ -290,68 +270,46 @@ mod tests {
         output
     }
 
-    #[test]
-    fn a_launcher_pin_stops_the_real_check_before_network_access() {
-        const CHILD: &str = "CRAFT_UPDATE_PIN_TEST_CHILD";
-        if std::env::var_os(CHILD).is_some() {
-            assert!(stable_choice().is_err());
-            let mut updates = Updates::default();
-            updates.check(&egui::Context::default());
-            let reply = updates
-                .worker
-                .as_ref()
-                .expect("check worker")
-                .recv_timeout(std::time::Duration::from_secs(5))
-                .expect("pin check finishes without network");
-            let (tx, rx) = channel();
-            tx.send(reply).expect("receiver");
-            updates.worker = Some(rx);
-            draw(&mut updates, true, false);
-            assert!(updates.message.contains("Nodalia Launcher"));
-            assert!(updates.release.is_none());
-            assert!(!updates.installable);
-            assert!(finish_helper().is_none());
-            #[cfg(target_os = "linux")]
-            {
-                // This child has an isolated XDG data folder; never consume a user's update record.
-                let paths = Paths::for_app(&APP).expect("isolated app folders");
-                std::fs::create_dir_all(paths.logs()).expect("test logs");
-                let failure = paths.logs().join("self-update-error.txt");
-                std::fs::write(&failure, "test installer failure").expect("test failure record");
-                let mut restarted = Updates::default();
-                restarted.startup();
-                draw(&mut restarted, true, false);
-                assert!(restarted.open);
-                assert!(restarted.message.contains("test installer failure"));
-                assert!(!failure.exists(), "the helper result is consumed exactly once");
-                restarted.open = false;
-                restarted.startup();
-                draw(&mut restarted, true, false);
-                assert!(!restarted.open, "the old failure must not reappear on the next start");
-            }
-
-            return;
-        }
-        // Keep the process environment and the user's actual version choices untouched.
-        let dir = std::env::temp_dir().join(format!("{}-updater-pin-test-{}", APP.id, std::process::id()));
-        std::fs::create_dir_all(&dir).expect("test folder");
-        let path = dir.join("versions.json");
-        std::fs::write(&path, format!(r#"{{"apps":{{"{}":{{"Pinned":"0.1.0"}}}}}}"#, APP.id)).expect("test pin");
-        let status = std::process::Command::new(std::env::current_exe().expect("test binary"))
-            .args(["--exact", "updates::tests::a_launcher_pin_stops_the_real_check_before_network_access"])
-            .env(CHILD, "1")
-            .env(craft_update::pins::PATH_ENV, &path)
-            .env("XDG_DATA_HOME", dir.join("data"))
-            .status()
-            .expect("isolated pin test");
-        std::fs::remove_dir_all(dir).expect("remove test folder");
-        assert!(status.success());
+    fn release(version: &str) -> Release {
+        Release { tag: format!("v{version}"), version: version.into(), notes: String::new(), page: releases_url(), asset: None }
     }
+
+    #[test]
+    fn the_releases_are_animas_own() {
+        assert_eq!(APP.repo, "getnodalia/anima");
+        assert_eq!(APP.bundle, "Anima.app");
+        assert_eq!(APP.version, env!("CARGO_PKG_VERSION"));
+        assert!(!installs_in_place(&release("99.0.0")), "a release without a package for this system installs nothing");
+    }
+
+    /// The names the packaging scripts give the packages, and the systems whose updater must find
+    /// each one. A rename in `packaging/` that the updater does not know about would leave those
+    /// users on the old version without a word, so it fails here instead.
+    #[test]
+    fn every_published_package_is_found_by_the_updater_it_is_for() {
+        let read = |path: &str| std::fs::read_to_string(format!("{}/packaging/{path}", env!("CARGO_MANIFEST_DIR"))).expect("packaging script");
+        let macos = read("macos/package.sh");
+        assert!(macos.contains(r#"APP="$WORK/Anima.app""#), "the bundle the updater swaps");
+        let wxs = read("windows/anima.wxs");
+        assert!(wxs.contains("InstallDir"), "the updater finds the MSI install through its InstallDir value");
+        for (package, systems) in [
+            ("anima-1.0.0-macos-universal.dmg", &[("macos", "aarch64"), ("macos", "x86_64")][..]),
+            ("anima-1.0.0-linux-x86_64.AppImage", &[("linux", "x86_64")]),
+            ("anima-1.0.0-linux-aarch64.AppImage", &[("linux", "aarch64")]),
+            ("anima-1.0.0-windows-x64.msi", &[("windows", "x86_64")]),
+            ("anima-1.0.0-windows-arm64.msi", &[("windows", "aarch64")]),
+        ] {
+            let found = nodalia_update::systems_for_package(package);
+            for system in systems {
+                assert!(found.contains(system), "{package} is not offered to {system:?}");
+            }
+        }
+    }
+
     #[test]
     fn available_release_is_shown_but_never_installed_without_confirmation() {
-        let release = Release { tag: "v99.0.0".into(), html_url: APP.releases_url(), ..Release::default() };
         let (tx, rx) = channel();
-        tx.send(Reply::Checked(Ok(Some(release)), false)).expect("receiver is alive");
+        tx.send(Reply::Checked(Ok(Some(release("99.0.0"))), false)).expect("receiver is alive");
         let mut updates = Updates { open: true, worker: Some(rx), ..Updates::default() };
         let output = draw(&mut updates, false, false);
         assert!(updates.message.contains("99.0.0"));
@@ -393,7 +351,7 @@ mod tests {
         let mut updates = Updates { open: true, ..Updates::default() };
         updates.install_using(&ctx, move || {
             wait.recv().expect("release test worker");
-            Err("signature verification failed".into())
+            Err("The downloaded update failed its SHA-256 check.".into())
         });
         assert!(updates.installing);
         let output = draw(&mut updates, false, true);
@@ -406,11 +364,23 @@ mod tests {
         draw(&mut updates, false, false);
         assert!(!updates.installing);
         assert!(updates.worker.is_none());
-        assert!(updates.restart.is_none(), "failed verification must never schedule a restart");
-        assert!(updates.message.contains("signature verification failed"));
+        assert!(!updates.restart, "failed verification must never restart");
+        assert!(updates.message.contains("SHA-256"));
         updates.finish();
         updates.apply_outcome(None);
+        assert!(!updates.open || updates.message.contains("SHA-256"), "no outcome leaves the window as it was");
     }
+
+    #[test]
+    fn a_finished_install_closes_the_window_to_restart() {
+        let (tx, rx) = channel();
+        tx.send(Reply::Installed(Ok(()))).expect("receiver is alive");
+        let mut updates = Updates { open: true, installing: true, worker: Some(rx), ..Updates::default() };
+        let output = draw(&mut updates, true, false);
+        assert!(updates.restart);
+        assert!(output.viewport_output.values().any(|v| v.commands.contains(&egui::ViewportCommand::Close)));
+    }
+
     #[test]
     fn uncommitted_stage_text_and_pen_paths_prevent_installation() {
         let ctx = egui::Context::default();
@@ -438,22 +408,16 @@ mod tests {
     }
 
     #[test]
-    fn a_failed_helper_is_reported_when_the_old_app_restarts() {
+    fn a_failed_update_is_reported_when_the_old_app_starts_again() {
         let mut updates = Updates::default();
-        updates.apply_outcome(Some(self_update::Outcome::Failed("installer refused the update".into())));
+        updates.apply_outcome(Some(Failure::Cancelled));
         assert!(updates.open);
-        assert!(updates.message.contains("installer refused the update"));
+        assert!(updates.message.contains("cancelled"));
         assert!(updates.worker.is_none());
         assert!(!updates.installing);
-    }
-
-    #[test]
-    fn a_successful_restart_reports_the_installed_version() {
-        let mut updates = Updates::default();
-        let version = craft_update::version::parse("1.2.3").expect("valid test version");
-        updates.apply_outcome(Some(self_update::Outcome::Installed(version)));
-        assert!(updates.open);
-        assert!(updates.message.contains("1.2.3"));
+        let mut other = Updates::default();
+        other.apply_outcome(Some(Failure::Mount));
+        assert!(other.message.contains("Releases"), "an unknown failure points at the release page");
     }
 
     #[test]
@@ -465,6 +429,7 @@ mod tests {
         assert!(updates.message.contains("network unavailable"));
         assert!(updates.release.is_none());
     }
+
     #[test]
     fn a_dropped_worker_reports_failure_and_unblocks_the_app() {
         let (tx, rx) = channel();

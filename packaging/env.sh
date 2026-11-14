@@ -1,7 +1,6 @@
 # shellcheck shell=bash
 # Shared setup for the packaging scripts. Source it: `. "$(dirname "$0")/../env.sh"`.
-# The family's shared release workflow (storytold/craft-common-actions) sources it too: it reads
-# VERSION and finds the ANIMA_ prefix in the VERSION line below.
+# The release workflows (.github/workflows/release-*.yml) run the scripts that source it.
 #
 # Exports:
 #   ROOT                   workspace root

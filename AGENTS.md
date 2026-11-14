@@ -1,5 +1,13 @@
 # AGENTS.md: guide for AI agents and contributors
 
+Engineering rules for every Nodalia repository: [getnodalia/foundation](https://github.com/getnodalia/foundation)
+([engineering](https://github.com/getnodalia/foundation/blob/main/standards/engineering.md),
+[CI](https://github.com/getnodalia/foundation/blob/main/standards/ci.md),
+[security](https://github.com/getnodalia/foundation/blob/main/standards/security.md),
+[dependencies and licences](https://github.com/getnodalia/foundation/blob/main/standards/dependencies.md),
+[release](https://github.com/getnodalia/foundation/blob/main/standards/release.md),
+[NDL](https://github.com/getnodalia/foundation/blob/main/standards/ndl.md)).
+
 Ánima is an open-source, native, clean-room 2D animation studio (Adobe Animate class), written
 in **Rust only**. There is no Tauri, Electron or webview. The UI is egui/eframe. The product name
 is written **Ánima**; machine names are lowercase (`anima-*`). Read `docs/` first.
@@ -76,7 +84,9 @@ a new crate needs a row here and in its `LAYERS` table.
 
 ## Licensing and legal compliance (read `docs/legal/compliance.md`)
 
-* Ánima is **MIT OR Apache-2.0**, like PhotoCraft (`LICENSE-MIT`, `LICENSE-APACHE`, `NOTICE`).
+* Ánima is **MIT OR Apache-2.0** (`LICENSE-MIT`, `LICENSE-APACHE`, `NOTICE`). `NOTICE` keeps the
+  upstream copyright line and says where the code base began; credit the origin there and in
+  About only, never in the README, the website or the interface.
 * **Dependencies**: permissive only, from crates.io only. `deny.toml` is the policy, and
   `cargo deny check licenses bans sources` must pass. Adding a crate with a new licence needs
   a deliberate `deny.toml` change and a note in `compliance.md`. No copyleft, "non-commercial"
@@ -123,6 +133,29 @@ a new crate needs a row here and in its `LAYERS` table.
   `feat(render): …`, `fix(engine): …`, `docs: …`, `perf: …`, `test: …`. Record measured
   numbers in `perf:` commit bodies.
 * Never commit `target/`, screenshots (`shots/`), exports or `.anima` user files.
+
+## Nodalia
+
+* **Names.** Every name is Ánima's, internal ones included: `anima` in machine names, **Ánima**
+  in prose and the interface, app id `dev.danielmiguelt.Anima`. Documents save as `.anima`;
+  `.anicraft` files keep opening, and the `"format"` signature inside a document and the plug-in <!-- rebrand: keep -->
+  host module keep their old value, because existing files and plug-ins depend on them (each such
+  line says `rebrand: keep`). `python3 scripts/rebrand.py check` fails when an old name comes back.
+* **Upstream sync.** `.github/workflows/upstream-sync.yml` brings upstream's changes in weekly,
+  renamed by `scripts/rebrand.py` with `.github/rebrand.toml` (`docs/upstream.md`). Files this
+  project owns are listed in `.github/upstream-keep`; add any new one there.
+* **Dependencies** come from crates.io or from getnodalia (`getnodalia/foundation`'s `vendor/*`
+  branches, `danielmigueltejedor/nodalia-design`), pinned by revision. Nothing depends on
+  storytold or ArtCraft repositories or services. <!-- rebrand: keep -->
+* **NDL.** Ánima belongs to the Creator suite of the Nodalia Design Language. What is done and
+  what is left is in `NODALIA_MIGRATION.md`; colours come from the theme tokens, NDL window
+  controls on Linux only, native ones on macOS and Windows. No GTK or libadwaita.
+* **CI** runs on standard GitHub-hosted runners only, actions pinned to a commit SHA, least
+  permissions. Keep CI changes in their own pull request unless a change cannot work without them.
+* **Releases are automatic.** A pull request that sets `[workspace.package] version` to a release
+  version and adds `docs/release-notes/vX.Y.Z.md` (format in that folder's README) releases it
+  when it merges: `release-auto.yml` tags it through Foundation's `release-tag`, builds the
+  Linux, macOS (unsigned DMG) and Windows packages and publishes the release. Nobody pushes a tag.
 
 ## Build hygiene (disk first, then time; `docs/development.md` › Build footprint)
 

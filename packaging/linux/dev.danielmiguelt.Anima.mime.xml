@@ -9,6 +9,8 @@
     <sub-class-of type="application/json"/>
     <icon name="dev.danielmiguelt.Anima"/>
     <glob pattern="*.anima" weight="60"/>
+    <!-- Documents saved before Ánima had its own name: the same format. -->
+    <glob pattern="*.anicraft" weight="60"/><!-- rebrand: keep -->
   </mime-type>
   <mime-type type="application/x-fla">
     <comment>FLA document</comment>

@@ -64,7 +64,7 @@ pub fn kind_of(path: &Path) -> DropKind {
     }
     let ext = path.extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase);
     match ext.as_deref() {
-        Some("anima") => DropKind::Document,
+        Some(e) if crate::format::is_native_extension(e) => DropKind::Document,
         Some("svg") => DropKind::Drawing,
         Some("png" | "jpg" | "jpeg") => DropKind::Image,
         _ if crate::cmds_sound::is_sound(path) => DropKind::Sound,

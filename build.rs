@@ -142,6 +142,8 @@ fn main() {
 
 /// Ánima's own catalog in a craft-i18n locale: `locales/<locale>/anima.tsv`.
 const APP_CATALOG: &str = "anima.tsv";
+/// The name the same catalog had before the rename; read while a checkout has no `anima.tsv`.
+const LEGACY_APP_CATALOG: &str = "anicraft.tsv"; // rebrand: keep
 
 /// `CRAFT_I18N` (ADR 0040), as craft-i18n's `docs/integration.md` describes: one
 /// `(locale, common.tsv, anima.tsv)` entry per locale with Ánima's own catalog, and the
@@ -188,10 +190,11 @@ fn i18n_locales(dir: &Path) -> Result<Vec<I18nEntry>, String> {
     let list = std::fs::read_dir(dir).map_err(|e| format!("{} is not a craft-i18n checkout ({e})", dir.display()))?;
     println!("cargo:rerun-if-changed={}", dir.display());
     let file = |locale: &str, name: &str| Some(dir.join(locale).join(name)).filter(|p| p.is_file());
+    let app_file = |locale: &str| file(locale, APP_CATALOG).or_else(|| file(locale, LEGACY_APP_CATALOG));
     let mut wanted: Vec<String> = Vec::new();
     for path in list.flatten().map(|e| e.path()) {
         let Some(locale) = path.file_name().and_then(|n| n.to_str()).map(str::to_ascii_lowercase) else { continue };
-        if !path.join(APP_CATALOG).is_file() {
+        if !path.join(APP_CATALOG).is_file() && !path.join(LEGACY_APP_CATALOG).is_file() {
             continue;
         }
         // A regional locale (last subtag two letters or three digits) falls back to its base.
@@ -211,7 +214,7 @@ fn i18n_locales(dir: &Path) -> Result<Vec<I18nEntry>, String> {
     }
     let mut out = Vec::new();
     for locale in wanted {
-        let (common, app) = (file(&locale, "common.tsv"), file(&locale, APP_CATALOG));
+        let (common, app) = (file(&locale, "common.tsv"), app_file(&locale));
         for p in common.iter().chain(app.iter()) {
             println!("cargo:rerun-if-changed={}", p.display());
         }

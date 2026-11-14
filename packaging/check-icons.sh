@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Check that every icon file the packaging uses exists and has the size it claims, without
-# building anything. packaging-lint runs it (storytold/craft-common-actions).
+# building anything. packaging-lint runs it (getnodalia/foundation's packaging-lint workflow).
 #
 #   bash packaging/check-icons.sh
 set -euo pipefail

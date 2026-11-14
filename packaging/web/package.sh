@@ -4,9 +4,8 @@
 #   $DIST/anima-web-<version>.zip
 #
 # a static site (index.html, the loader, the module, the icon and the user guide) to unzip onto
-# any web server. This is the app's side of the family release workflow's web job
-# (storytold/craft-common-actions, `has-web`), which runs this script and uploads
-# dist/release/*; the Web CI job runs it too, so it never breaks unnoticed.
+# any web server. Releases don't carry the web build yet; the Web CI job (web.yml) runs this
+# script, so it never breaks unnoticed.
 #
 # Builds with scripts/build-web.sh; installs the wasm-bindgen CLI at the version Cargo.lock pins
 # when it is missing (the release runner has only Rust and the wasm32 target).

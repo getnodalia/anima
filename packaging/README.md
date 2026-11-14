@@ -1,7 +1,8 @@
 # Packaging
 
-How Ánima is built into installers (ADR 0026). The family's shared release workflow
-(`storytold/craft-common-actions`) runs these scripts; `docs/release.md` describes a release.
+How Ánima is built into installers (ADR 0026). The release workflows
+(`.github/workflows/release-linux.yml`, `release-macos.yml`, `release-windows.yml`, started by
+`release-auto.yml`) run these scripts; `docs/release-notes/README.md` describes a release.
 
 | Path | What |
 |---|---|

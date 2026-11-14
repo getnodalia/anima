@@ -91,10 +91,19 @@ const NOT_UI: &[&str] = &[
 ];
 
 /// Whether a prose literal outside the macros is allowed: not interface text by its context,
-/// or marked `i18n-exempt` (with the reason) on its line or the line above.
+/// or marked `i18n-exempt` (with the reason) near it. rustfmt wraps long lines and moves a
+/// trailing comment to the line after, so the mark may sit up to two lines above or one below,
+/// and the call a literal belongs to may end the line before it.
 fn exempt(l: &Literal, lines: &[&str]) -> bool {
-    let marked = |n: usize| n.checked_sub(1).and_then(|k| lines.get(k)).is_some_and(|t| t.contains("i18n-exempt"));
-    if marked(l.line) || marked(l.line.saturating_sub(1)) {
+    let text = |n: usize| n.checked_sub(1).and_then(|k| lines.get(k)).copied().unwrap_or_default();
+    if (l.line.saturating_sub(2)..=l.line + 1).any(|n| text(n).contains("i18n-exempt")) {
+        return true;
+    }
+    let opened = |n: usize| {
+        let t = text(n).trim_end();
+        n > 0 && n < l.line && (t.ends_with('(') || t.ends_with('[')) && NOT_UI.iter().any(|m| t.contains(m))
+    };
+    if opened(l.line.saturating_sub(1)) || opened(l.line.saturating_sub(2)) {
         return true;
     }
     let after = l.after.trim_start();
@@ -102,7 +111,7 @@ fn exempt(l: &Literal, lines: &[&str]) -> bool {
     if after.starts_with("=>") || after.starts_with('|') || after.starts_with("if ") {
         return true;
     }
-    NOT_UI.iter().any(|m| l.line_before.contains(m)) || l.value == "Ánima"
+    NOT_UI.iter().any(|m| l.line_before.contains(m)) || l.value == "Ánima" || l.value == "Anima"
 }
 
 #[test]

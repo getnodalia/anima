@@ -176,8 +176,8 @@ pub fn sample_entries(app: &mut App) {
     let folder = std::env::temp_dir().join("Ánima samples"); // i18n-exempt: a folder name
     let _ = anima_engine::vfs::create_dir_all(&folder);
     let docs = [
-        ("Bouncing ball.anima", Some(anima_engine::doc::sample::demo()), true),
-        ("Title card.anima", Some(anima_engine::doc::sample::interactive()), false),
+        ("Bouncing ball.anima", Some(anima_engine::doc::sample::demo()), true), // i18n-exempt: sample file name
+        ("Title card.anima", Some(anima_engine::doc::sample::interactive()), false), // i18n-exempt: sample file name
         ("Old walk cycle.anima", None, false),
     ]; // i18n-exempt: sample file names
     let mut list = anima_engine::cmds_recent::RecentFiles::default();

@@ -115,7 +115,7 @@ pub fn user_templates(folder: &Path) -> Vec<UserTemplate> {
             if out.len() >= MAX_TEMPLATES {
                 break;
             }
-            let is_template = f.extension().is_some_and(|e| e.eq_ignore_ascii_case("anima")) && crate::vfs::is_file(&f);
+            let is_template = f.extension().and_then(|e| e.to_str()).is_some_and(crate::format::is_native_extension) && crate::vfs::is_file(&f);
             let Some(name) = f.file_stem().map(|n| n.to_string_lossy().into_owned()).filter(|_| is_template) else { continue };
             let thumb = thumbnail_path(&f);
             out.push(UserTemplate { name, category: category.clone(), thumbnail: crate::vfs::is_file(&thumb).then_some(thumb), path: f });
@@ -141,7 +141,7 @@ fn new_from_template(s: &mut Session, p: &Value) -> Result<Value> {
         }
         (None, Some(path)) => {
             let path = PathBuf::from(path);
-            if !path.extension().is_some_and(|e| e.eq_ignore_ascii_case("anima")) {
+            if !path.extension().and_then(|e| e.to_str()).is_some_and(crate::format::is_native_extension) {
                 return Err(EngineError::Param("a template is an .anima document".into()));
             }
             let name = path.file_stem().map_or_else(String::new, |n| n.to_string_lossy().into_owned());

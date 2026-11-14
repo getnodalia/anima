@@ -6,7 +6,7 @@ default-members = [".", "crates/*"]
 [workspace.package]
 # 0.1.0 is the early alpha (release stage in src/app.rs, RELEASE_STAGE); see CHANGELOG.md
 # and docs/release.md.
-version = "0.2.1"
+version = "0.3.0-dev"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 # An application, not a library: not published to crates.io.
@@ -113,7 +113,9 @@ sys-locale = "0.3"
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # The user guide, bundled for Help › User Guide (ADR 0069). The web build serves it as pages instead.
 anima-guide.workspace = true
-craft-update = { git = "https://github.com/getnodalia/foundation", rev = "6ac2a6a34ae83fc0f0bfb25a569ba6388b72266a" }
+# Release checks and in-place updates, shared by the Nodalia apps (MIT). Without its egui windows:
+# Ánima draws its own with the egui it already uses.
+nodalia-update = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "6d94e9c17c1767260bcb020f00c71eddd105561f" }
 
 eframe = { workspace = true, features = ["links"] }
 rfd.workspace = true
@@ -128,8 +130,7 @@ cpal = { version = "0.18", optional = true }
 [target.'cfg(target_os = "macos")'.dependencies]
 fmv-macos-events = "=0.1.0"
 
-# The system's high-contrast setting (ADR 0064): one registry value. MIT, already in the tree
-# through craft-update.
+# The system's high-contrast setting (ADR 0064): one registry value. MIT.
 [target.'cfg(windows)'.dependencies]
 winreg = "0.55"
 

@@ -48,13 +48,18 @@ fn one_app_id_everywhere() {
 fn every_openable_document_type_is_registered() {
     let (_, extensions) = filters("file.open");
     assert!(extensions.contains(&"anima"));
+    assert!(extensions.contains(&"anicraft"), "documents saved before the rename keep opening"); // rebrand: keep
     let wxs = read("packaging/windows/anima.wxs");
     let plist = read("packaging/macos/Info.plist.in");
     let mime = read(&format!("packaging/linux/{APP_ID}.mime.xml"));
     let desktop_types = desktop_value(&read(&format!("packaging/linux/{APP_ID}.desktop")), "MimeType").unwrap_or_default();
     for ext in extensions {
         assert!(wxs.contains(&format!("SupportedTypes\" Name=\".{ext}\"")), "Windows: .{ext} is not in Open with");
-        assert!(plist.contains(&format!("<array><string>{ext}</string></array>")), "macOS: .{ext} has no type declaration");
+        let declared = plist.split("<key>public.filename-extension</key>").skip(1).any(|rest| {
+            let array = &rest[..rest.find("</array>").unwrap_or(0)];
+            array.contains(&format!("<string>{ext}</string>"))
+        });
+        assert!(declared, "macOS: .{ext} has no type declaration");
         let glob = format!("<glob pattern=\"*.{ext}\"");
         let at = mime.find(&glob).unwrap_or_else(|| panic!("Linux: no MIME type has *.{ext}"));
         let open = mime[..at].rfind("<mime-type type=\"").map(|i| i + "<mime-type type=\"".len()).unwrap_or(0);

@@ -864,7 +864,7 @@ pub fn filters(cmd: &str) -> (&'static str, &'static [&'static str]) {
         "file.export_sprite_sheet" => (tr_noop!("PNG sprite sheet"), &["png"]),
         "file.export_video" => (tr_noop!("Video (WebM or MP4)"), &["webm", "mp4"]),
         // Opening also imports .fla archives and .xfl packages.
-        "file.open" => (tr_noop!("Documents"), &["anima", "fla", "xfl"]),
+        "file.open" => (tr_noop!("Documents"), &["anima", "anicraft", "fla", "xfl"]), // rebrand: keep (older documents)
         "plugin.install" => (tr_noop!("WebAssembly plug-in"), &["wasm"]),
         "brush.preset_export" | "brush.preset_import" => (tr_noop!("Brush set"), &["json"]),
         "filter.preset_export" | "filter.preset_import" => (tr_noop!("Filter preset file"), &["json"]),
@@ -1133,7 +1133,7 @@ mod tests {
             "HOME" => Some(PathBuf::from("/home/ana")),
             _ => None,
         };
-        assert_eq!(config_dir_for(Os::Windows, None, &env), Some(PathBuf::from("C:/Users/ana/AppData/Roaming/Ánima")));
+        assert_eq!(config_dir_for(Os::Windows, None, &env), Some(PathBuf::from("C:/Users/ana/AppData/Roaming/Anima")));
         assert_eq!(config_dir_for(Os::Mac, None, &env), Some(PathBuf::from("/home/ana/Library/Application Support/Ánima")));
         assert_eq!(config_dir_for(Os::Linux, None, &env), Some(PathBuf::from("/home/ana/.config/anima")));
         assert_eq!(config_dir_for(Os::Web, None, &env), None);

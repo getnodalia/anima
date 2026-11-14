@@ -1,6 +1,6 @@
 //! The wasmi host: loading, instantiating and running a plug-in under resource limits.
 //!
-//! Host calls use wasmi's *resumable* calls: `anima.call` copies the request out of the
+//! Host calls use wasmi's *resumable* calls: `anicraft.call` copies the request out of the
 //! module's memory and traps with a [`HostCall`] marker; the run loop answers it through the
 //! [`Host`] (which borrows the session mutably, so it can't live in the `'static` store) and
 //! resumes the module with the response length. Running out of fuel resumes the same way,
@@ -59,7 +59,7 @@ pub struct Limits {
     /// Wall-clock budget for one run, host calls included, in milliseconds. Native builds
     /// only: the web build has no clock in `std`, so the fuel budget alone bounds it there.
     pub wall_time_ms: u64,
-    /// Most `anima.call` requests in one run.
+    /// Most `anicraft.call` requests in one run.
     pub max_calls: u32,
     /// Largest request a plug-in may send, and largest response it is given.
     pub max_request_bytes: usize,
@@ -168,9 +168,9 @@ impl wasmi::errors::HostError for HostCall {}
 struct Ctx {
     limits: StoreLimits,
     max_request: usize,
-    /// The request `anima.call` copied out, for the run loop to answer.
+    /// The request `anicraft.call` copied out, for the run loop to answer.
     pending: Option<Vec<u8>>,
-    /// The last response, for `anima.response`.
+    /// The last response, for `anicraft.response`.
     response: Vec<u8>,
 }
 
@@ -236,7 +236,7 @@ fn caller_memory(caller: &Caller<'_, Ctx>) -> std::result::Result<Memory, wasmi:
     caller.get_export("memory").and_then(Extern::into_memory).ok_or_else(|| wasmi::Error::new("the module must export its memory as `memory`"))
 }
 
-/// `anima.call(ptr, len) -> i32`: copies the request out and hands it to the run loop.
+/// `anicraft.call(ptr, len) -> i32`: copies the request out and hands it to the run loop.
 fn host_call(caller: Caller<'_, Ctx>, ptr: i32, len: i32) -> std::result::Result<i32, wasmi::Error> {
     let mut caller = caller;
     let (p, l) = (ptr as u32 as usize, len as u32 as usize);
@@ -244,20 +244,23 @@ fn host_call(caller: Caller<'_, Ctx>, ptr: i32, len: i32) -> std::result::Result
         return Err(wasmi::Error::new(format!("request of {l} bytes is over the {} byte limit", caller.data().max_request)));
     }
     let memory = caller_memory(&caller)?;
-    let bytes =
-        memory.data(&caller).get(p..p.saturating_add(l)).ok_or_else(|| wasmi::Error::new("anima.call: the request points outside memory"))?.to_vec();
+    let bytes = memory
+        .data(&caller)
+        .get(p..p.saturating_add(l))
+        .ok_or_else(|| wasmi::Error::new("anicraft.call: the request points outside memory"))?
+        .to_vec();
     caller.data_mut().pending = Some(bytes);
     Err(wasmi::Error::host(HostCall))
 }
 
-/// `anima.response(ptr, cap) -> i32`: copies up to `cap` bytes of the last response.
+/// `anicraft.response(ptr, cap) -> i32`: copies up to `cap` bytes of the last response.
 fn host_response(caller: Caller<'_, Ctx>, ptr: i32, cap: i32) -> std::result::Result<i32, wasmi::Error> {
     let mut caller = caller;
     let memory = caller_memory(&caller)?;
     let (data, ctx) = memory.data_and_store_mut(&mut caller);
     let n = ctx.response.len().min(cap.max(0) as usize);
     let p = ptr as u32 as usize;
-    let dst = data.get_mut(p..p.saturating_add(n)).ok_or_else(|| wasmi::Error::new("anima.response: the buffer points outside memory"))?;
+    let dst = data.get_mut(p..p.saturating_add(n)).ok_or_else(|| wasmi::Error::new("anicraft.response: the buffer points outside memory"))?;
     dst.copy_from_slice(ctx.response.get(..n).unwrap_or_default());
     Ok(n as i32)
 }
@@ -280,7 +283,7 @@ impl Plugin {
             let known = IMPORTS.iter().find(|(n, _, _)| imp.module() == IMPORT_MODULE && imp.name() == *n);
             let Some((_, np, nr)) = known else {
                 return Err(Error::Abi(format!(
-                    "the module imports `{}.{}`; plug-ins may import only anima.call and anima.response (no WASI, files, clock or network)",
+                    "the module imports `{}.{}`; plug-ins may import only {IMPORT_MODULE}.call and {IMPORT_MODULE}.response (no WASI, files, clock or network)",
                     imp.module(),
                     imp.name()
                 )));

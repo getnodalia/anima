@@ -76,6 +76,10 @@
           <Extension Id="anima" ContentType="application/x-anima">
             <Verb Id="open" Command="Open" TargetFile="AnimaExe" Argument="&quot;%1&quot;" />
           </Extension>
+          <!-- Documents saved before Ánima had its own name: the same format. rebrand: keep -->
+          <Extension Id="anicraft" ContentType="application/x-anima"><!-- rebrand: keep -->
+            <Verb Id="open" Command="Open" TargetFile="AnimaExe" Argument="&quot;%1&quot;" />
+          </Extension>
         </ProgId>
         <!-- FLA and XFL documents: offered under "Open with", never made the default. They open as
              an untitled import (ADR 0009), so Save never overwrites the original. -->
@@ -88,10 +92,11 @@
         <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe" Name="FriendlyAppName" Value="Ánima" Type="string" />
         <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\shell\open\command" Value="&quot;[#AnimaExe]&quot; &quot;%1&quot;" Type="string" />
         <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\SupportedTypes" Name=".anima" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\SupportedTypes" Name=".anicraft" Value="" Type="string" /><!-- rebrand: keep -->
         <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\SupportedTypes" Name=".fla" Value="" Type="string" />
         <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\SupportedTypes" Name=".xfl" Value="" Type="string" />
         <RegistryValue Root="HKMU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\anima.exe" Value="[#AnimaExe]" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Ánima" Name="InstallDir" Value="[INSTALLFOLDER]" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Anima" Name="InstallDir" Value="[INSTALLFOLDER]" Type="string" />
       </Component>
 
       <!-- The headless CLI and MCP server, next to the app. -->

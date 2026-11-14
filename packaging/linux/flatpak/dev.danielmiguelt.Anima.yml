@@ -19,8 +19,6 @@ sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable
 command: anima
 finish-args:
-  # Honor the launcher's pinned and nightly version choices before offering updates.
-  - --filesystem=xdg-data/Nodalia/versions:ro
   # Release checks and downloads use HTTPS.
   - --share=network
   # Verified update helpers run through flatpak-spawn --host.

@@ -5,6 +5,17 @@ use anima_doc::{Document, path_table};
 use anima_geom::Path;
 use craft_anicraft_format::PayloadDecoder;
 pub use craft_anicraft_format::{FORMAT_NAME, FORMAT_VERSION, MAX_FILE_BYTES};
+
+/// The extension Ánima saves its documents with.
+pub const EXTENSION: &str = "anima";
+/// The extension documents saved before Ánima had its own name carry. They are the same format
+/// and keep opening, from the file dialog, a drop or a template folder.
+pub const LEGACY_EXTENSION: &str = "anicraft";
+
+/// Whether `ext` names a native document, `.anima` or the older one, in any case.
+pub fn is_native_extension(ext: &str) -> bool {
+    ext.eq_ignore_ascii_case(EXTENSION) || ext.eq_ignore_ascii_case(LEGACY_EXTENSION)
+}
 use serde::Deserialize;
 use std::sync::Arc;
 
@@ -65,6 +76,23 @@ pub fn save(doc: &Document, path: &std::path::Path) -> Result<(), EngineError> {
 mod tests {
     use super::*;
     use anima_doc::sample;
+
+    #[test]
+    fn documents_saved_before_the_rename_are_native_documents() {
+        let older = ["anicraft", "AniCraft"]; // rebrand: keep
+        for ext in ["anima", "ANIMA"].into_iter().chain(older) {
+            assert!(is_native_extension(ext), "{ext}");
+        }
+        for ext in ["fla", "xfl", "json", "", "anim"] {
+            assert!(!is_native_extension(ext), "{ext}");
+        }
+        let old = std::path::Path::new("walk cycle.anicraft"); // rebrand: keep
+        assert_eq!(crate::cmds_drop::kind_of(old), crate::cmds_drop::DropKind::Document);
+        // The file carries the same signature under either extension.
+        let doc = sample::demo();
+        assert!(from_json(&to_json(&doc).expect("save")).is_ok());
+        assert_eq!(FORMAT_NAME, "anicraft", "renaming the signature would make every saved document unreadable"); // rebrand: keep
+    }
 
     #[test]
     fn round_trip_is_lossless() {

@@ -57,6 +57,12 @@
     [
       "-1",
       "Software\\Classes\\Applications\\anima.exe\\SupportedTypes",
+      ".anicraft",
+      ""
+    ],
+    [
+      "-1",
+      "Software\\Classes\\Applications\\anima.exe\\SupportedTypes",
       ".fla",
       ""
     ],
@@ -74,7 +80,7 @@
     ],
     [
       "-1",
-      "Software\\Ánima",
+      "Software\\Anima",
       "InstallDir",
       "[INSTALLFOLDER]"
     ]

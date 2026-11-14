@@ -53,7 +53,7 @@ module, which would abort the process). Limits (`anima_plugins::Limits`, default
 
 | Limit | Default | On violation |
 |---|---|---|
-| Host imports | only `anima.call` and `anima.response` (no WASI, files, clock, randomness or network) | module rejected at install |
+| Host imports | only `anicraft.call` and `anicraft.response` (no WASI, files, clock, randomness or network) | module rejected at install |
 | Module size | 16 MiB | rejected |
 | Linear memory | 256 MiB per instance | `memory.grow` returns −1; an oversized initial memory fails to load |
 | Instructions (fuel) | 1,000,000,000 per run (a tenth for loading) | the run stops: "exceeded its instruction budget" |
