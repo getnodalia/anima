@@ -3,8 +3,8 @@
 
 use crate::app::App;
 use crate::plugin_fixture_tests::{EASES, EXPORTER, eases, exporter, install, temp};
-use anicraft_engine::Session;
-use anicraft_engine::doc::{Easing, sample};
+use anima_engine::Session;
+use anima_engine::doc::{Easing, sample};
 use eframe::App as _;
 use serde_json::json;
 
@@ -40,7 +40,7 @@ fn the_ease_menu_lists_plugin_eases_and_names_the_tweens() {
     let mut app = app(&ctx);
     let dir = temp("ease-menu");
     install(&mut app, &dir, "steps.wasm", &eases());
-    let e = anicraft_engine::params::plugin_ease(&app.s, EASES, "steps4").expect("the ease");
+    let e = anima_engine::params::plugin_ease(&app.s, EASES, "steps4").expect("the ease");
     assert_eq!(crate::ease_editor::label(&app.s.doc, &e), "Stepped 4");
     // The menu opens and draws the plug-in's eases under its name (nothing picked yet).
     assert_eq!(ease_menu(&ctx, &mut app, &e, vec![]), None);

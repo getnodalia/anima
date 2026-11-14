@@ -14,10 +14,10 @@ use crate::cmds_raw::{check_extent, edit_edge, follow_edge, remerge_in_place};
 use crate::merge::{mergeable, reach};
 use crate::params::*;
 use crate::{CommandSpec, EngineError, Result, Session};
-use anicraft_doc::{Element, ElementId, ElementKind};
-use anicraft_geom::planar::SNAP;
-use anicraft_geom::raw::{self as rawgeom, Cubic};
-use anicraft_geom::{Path, PathCmd, Rect, Vec2};
+use anima_doc::{Element, ElementId, ElementKind};
+use anima_geom::planar::SNAP;
+use anima_geom::raw::{self as rawgeom, Cubic};
+use anima_geom::{Path, PathCmd, Rect, Vec2};
 use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -43,7 +43,15 @@ pub fn specs() -> Vec<CommandSpec> {
             false,
             subselect_rect,
         ),
-        c("raw.points", "Raw Points", "", None, "{ids?: [..]} the anchors of raw shapes (default: the selection), once per position, and the handles of their curved segments", false, points_cmd),
+        c(
+            "raw.points",
+            "Raw Points",
+            "",
+            None,
+            "{ids?: [..]} the anchors of raw shapes (default: the selection), once per position, and the handles of their curved segments",
+            false,
+            points_cmd,
+        ),
         c(
             "raw.move_handle",
             "Move Handle",
@@ -93,7 +101,7 @@ fn geo(e: &Element) -> Option<Geo> {
 
 /// Whether a point of `a` lies on `b`, within [`TOUCH`].
 fn lands_on(a: &Geo, b: &Geo) -> bool {
-    a.anchors.iter().filter(|p| b.bounds.contains(**p)).any(|p| b.lines.iter().any(|(u, v)| anicraft_geom::segment_distance(*p, *u, *v) <= TOUCH))
+    a.anchors.iter().filter(|p| b.bounds.contains(**p)).any(|p| b.lines.iter().any(|(u, v)| anima_geom::segment_distance(*p, *u, *v) <= TOUCH))
 }
 
 fn touch(a: &Geo, b: &Geo) -> bool {
@@ -434,13 +442,16 @@ fn move_handle(s: &mut Session, p: &Value) -> Result<Value> {
     let d = Vec2::new(f32_req(p, "dx")?, f32_req(p, "dy")?);
     let merge_after = opt_bool(p, "merge")?.unwrap_or(true);
     let els = s.visible_elements();
-    let el = els.iter().find(|e| e.id == id).ok_or_else(|| EngineError::State(format!("element {} is not on the active layer at this frame", id.0)))?;
+    let el =
+        els.iter().find(|e| e.id == id).ok_or_else(|| EngineError::State(format!("element {} is not on the active layer at this frame", id.0)))?;
     let ElementKind::Shape(sh) = &el.kind else { return Err(EngineError::State("only shapes have handles".into())) };
     let path = explicit(&sh.path);
     if !matches!(path.cmds.get(cmd), Some(PathCmd::CubicTo(..) | PathCmd::QuadTo(..))) {
         return Err(EngineError::Param(format!("segment {cmd} of this shape is not a curve (it has no handles)")));
     }
-    let old: Cubic = rawgeom::segment_cubic(&path, cmd).map(|c| rawgeom::transform(&c, &el.transform)).ok_or_else(|| EngineError::Param(format!("no segment {cmd} on this shape")))?;
+    let old: Cubic = rawgeom::segment_cubic(&path, cmd)
+        .map(|c| rawgeom::transform(&c, &el.transform))
+        .ok_or_else(|| EngineError::Param(format!("no segment {cmd} on this shape")))?;
     let mut new = old;
     if let Some(h) = new.get_mut(slot) {
         *h = *h + d;

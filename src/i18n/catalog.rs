@@ -1,5 +1,5 @@
 //! Interface catalogs in the craft-i18n format (`docs/catalog-format.md` in
-//! storytold/craft-i18n): one row per string, `context<TAB>English<TAB>translation`, keyed by the
+//! getnodalia/foundation (vendor/craft-i18n)): one row per string, `context<TAB>English<TAB>translation`, keyed by the
 //! English source text. Read here by our own small parser, so the app depends on no outside
 //! crate for it, and a row it can't use is skipped (that string shows in English), never an
 //! error.
@@ -98,7 +98,8 @@ fn check(context: &str, source: &str, translation: &str) -> Result<(), String> {
         c if c.starts_with('@') => return Err(format!("unknown context {c}")),
         _ => {}
     }
-    let (a, b) = (placeholders(source).ok_or("unpaired braces in the source")?, placeholders(translation).ok_or("unpaired braces in the translation")?);
+    let (a, b) =
+        (placeholders(source).ok_or("unpaired braces in the source")?, placeholders(translation).ok_or("unpaired braces in the translation")?);
     if a != b {
         return Err(format!("placeholders differ: {a:?} and {b:?}"));
     }
@@ -272,7 +273,21 @@ mod tests {
 
     #[test]
     fn hostile_input_never_panics() {
-        for text in ["", "\t", "\t\t", "\t\t\t", "{\t{\t{", "}\t}\t}", "@plural\t|\t|", "@plural\t{n}|{n}\t", "\\", "\t\\\tx", "\u{feff}", "\r\n\r\n", "\t{é}\t{é}"] {
+        for text in [
+            "",
+            "\t",
+            "\t\t",
+            "\t\t\t",
+            "{\t{\t{",
+            "}\t}\t}",
+            "@plural\t|\t|",
+            "@plural\t{n}|{n}\t",
+            "\\",
+            "\t\\\tx",
+            "\u{feff}",
+            "\r\n\r\n",
+            "\t{é}\t{é}",
+        ] {
             let _ = parse(text);
         }
         let long = format!("\t{}\tx", "a".repeat(MAX_LINE + 1));

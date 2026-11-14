@@ -17,7 +17,7 @@ wobble is smoothed. Paint modes decide what the paint covers on the layer:
 * Paint Selection paints only inside the selected fill.
 * Paint Inside paints only inside the fill where the stroke started.
 
-Artists coming from Animate block in characters and backgrounds this way, and AniCraft had no
+Artists coming from Animate block in characters and backgrounds this way, and Ánima had no
 brush. We learned the behaviour from Adobe's public help pages and by watching the program.
 Nothing was copied.
 
@@ -30,7 +30,7 @@ Nothing was copied.
    drawing object.
 
 2. **The outline is the exact sweep, traced from a distance field**
-   (`anicraft_geom::brush`, pure geometry).
+   (`anima_geom::brush`, pure geometry).
    * **Centre line.** The samples are smoothed by the existing curve fitter (`fit_curve`, at a
      tolerance from the Smoothing option) and flattened. Each point takes the pressure found at
      the same fraction of the stroke's length.

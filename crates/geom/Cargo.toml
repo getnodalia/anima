@@ -1,6 +1,6 @@
 [package]
-name = "anicraft-geom"
-description = "AniCraft L0: points, affine transforms, Bezier paths, flattening and hit testing"
+name = "anima-geom"
+description = "Ánima L0: points, affine transforms, Bezier paths, flattening and hit testing"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

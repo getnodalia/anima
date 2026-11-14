@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AniCraft XFL corpus: shapes. Self-authored from the public description of the format.
+<!-- Ánima XFL corpus: shapes. Self-authored from the public description of the format.
      Edges in twips: `!` move, `|` and `/` lines, `[` and `]` quadratic curves, `S` selection
      marks, `#` hex fixed point. A fill style on both sides of an edge, a hole, alpha, strokes
      with every cap and join, a stroke continuing across edges and one with a gap, a dashed

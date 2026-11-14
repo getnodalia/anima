@@ -23,12 +23,12 @@ from PIL import Image, ImageCms, ImageDraw
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # Keep in sync with package.sh (volume name) and README.md (layout).
-VOLUME = "AniCraft"
+VOLUME = "Anima"
 WIDTH, HEIGHT = 660, 400  # window content, pt; the background's 1x size
 TITLE_BAR = 32
 ICON_SIZE = 128
 PALETTE = 16  # colours in background.tiff
-ICONS = {"AniCraft.app": (190, 196), "Applications": (470, 196)}
+ICONS = {"Anima.app": (190, 196), "Applications": (470, 196)}
 # The icon's three colours.
 INK = (0x0B, 0x0B, 0x0C)
 PAPER = (0xF2, 0xF1, 0xEE)
@@ -40,7 +40,7 @@ SUPERSAMPLE = 4  # drawn this much larger, then reduced: smooth edges without Pi
 
 
 def draw(scale):
-    """The background at `scale` (1 or 2): the AniCraft field, a Paper card behind both icons and
+    """The background at `scale` (1 or 2): the Ánima field, a Paper card behind both icons and
     their labels (Finder draws the labels in black), and an Ink arrow from the app to Applications.
     Nothing is drawn within 10 pt of an icon box or its label strip."""
     k = scale * SUPERSAMPLE
@@ -56,7 +56,7 @@ def draw(scale):
     for y in (36, 364):
         d.rectangle(box(60, y - 1, 600, y + 1), fill=INK)
     # The arrow: shaft and head, between the icon boxes (app box ends at 254, Applications starts at 406).
-    cy = ICONS["AniCraft.app"][1]
+    cy = ICONS["Anima.app"][1]
     d.rounded_rectangle(box(274, cy - 4, 368, cy + 4), radius=4 * k, fill=INK)
     d.polygon([(362 * k, (cy - 18) * k), (392 * k, cy * k), (362 * k, (cy + 18) * k)], fill=INK)
     return im.resize((WIDTH * scale, HEIGHT * scale), Image.Resampling.LANCZOS)

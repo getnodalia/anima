@@ -1,5 +1,5 @@
 # cargo-deny policy: every dependency must be permissively licensed, come from crates.io and
-# carry no copyleft obligation on AniCraft. Run:  cargo deny check licenses bans sources
+# carry no copyleft obligation on Ánima. Run:  cargo deny check licenses bans sources
 # (and `cargo deny check advisories` when online). See docs/legal/compliance.md.
 
 [graph]
@@ -49,7 +49,7 @@ allow-wildcard-paths = true
 unknown-registry = "deny"
 unknown-git = "deny"
 # Shared updater implementation, pinned to a reviewed commit in Cargo.toml.
-allow-git = ["https://github.com/storytold/craft-libs"]
+allow-git = ["https://github.com/getnodalia/foundation/tree/vendor/craft-libs/main"]
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 
 [advisories]

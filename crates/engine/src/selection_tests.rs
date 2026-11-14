@@ -2,8 +2,8 @@
 //! on two layers; the marquee across layers with raw parts; locked and hidden layers.
 
 use crate::Session;
-use anicraft_doc::{Element, ElementId, ElementKind, LayerId};
-use anicraft_geom::Rect;
+use anima_doc::{Element, ElementId, ElementKind, LayerId};
+use anima_geom::Rect;
 use serde_json::{Value, json};
 use std::sync::Arc;
 
@@ -206,11 +206,11 @@ fn properties_edits_apply_to_each_layer() {
     run(&mut s, "element.set_transform", json!({"rotation": 45}));
     for (l, id) in [(top, a), (bottom, b)] {
         let e = element(&s, l, id).unwrap();
-        assert_eq!(e.color, anicraft_doc::ColorEffect::Alpha(0.5));
+        assert_eq!(e.color, anima_doc::ColorEffect::Alpha(0.5));
         assert_eq!(e.name, "both");
         assert!((e.transform.decompose().rotation.to_degrees() - 45.0).abs() < 1e-3);
         let ElementKind::Shape(sh) = &e.kind else { panic!() };
-        assert_eq!(sh.fill.as_ref().map(anicraft_doc::Paint::primary_color), Some(anicraft_doc::Rgba::hex(0xff0000)));
+        assert_eq!(sh.fill.as_ref().map(anima_doc::Paint::primary_color), Some(anima_doc::Rgba::hex(0xff0000)));
         assert_eq!(sh.stroke.as_ref().map(|st| st.width), Some(7.0));
     }
 }
@@ -331,7 +331,7 @@ fn copy_and_paste_keep_each_layer() {
 fn convert_to_symbol_keeps_the_layers_inside_and_lands_on_the_topmost() {
     let (mut s, top, bottom, a, b) = two_layers();
     let center = s.selection_bounds().center();
-    let px = |s: &Session| anicraft_render::render_frame(&s.doc, 0, 1.0).unwrap();
+    let px = |s: &Session| anima_render::render_frame(&s.doc, 0, 1.0).unwrap();
     let was = px(&s);
     let steps = s.history_len();
     let v = run(&mut s, "modify.convert_to_symbol", json!({"name": "Both"}));
@@ -387,10 +387,13 @@ fn break_apart_turns_a_drawing_object_into_raw_shapes() {
     let obj = el_id(&run(&mut s, "draw.rect", json!({"x": 50, "y": 50, "w": 100, "h": 100, "fill": "#ff0000", "stroke": null, "object": true})));
     let squiggle = el_id(&run(&mut s, "draw.freehand", json!({"points": [[300, 0], [320, 30], [340, 0], [360, 30]], "object": true})));
     let shapes = |s: &Session| -> Vec<(ElementId, bool)> {
-        s.visible_elements().iter().filter_map(|e| match &e.kind {
-            ElementKind::Shape(sh) => Some((e.id, sh.merge)),
-            _ => None,
-        }).collect()
+        s.visible_elements()
+            .iter()
+            .filter_map(|e| match &e.kind {
+                ElementKind::Shape(sh) => Some((e.id, sh.merge)),
+                _ => None,
+            })
+            .collect()
     };
     assert!(shapes(&s).iter().filter(|(id, _)| [obj, squiggle].contains(id)).all(|(_, m)| !m), "drawn as objects");
     let before = s.doc.clone();
@@ -506,7 +509,10 @@ fn every_command_survives_a_selection_on_two_layers() {
     let mut cmds = crate::commands();
     cmds.retain(|c| !c.id.starts_with("file."));
     for spec in cmds {
-        for p in [json!({}), json!({"dx": 3, "dy": 4, "x": 50, "y": 50, "name": "x", "alpha": 0.5, "filters": [], "mode": "multiply", "loop": "loop", "kind": "movie_clip", "color": "#123456", "profile": "bulge", "text": "t"})] {
+        for p in [
+            json!({}),
+            json!({"dx": 3, "dy": 4, "x": 50, "y": 50, "name": "x", "alpha": 0.5, "filters": [], "mode": "multiply", "loop": "loop", "kind": "movie_clip", "color": "#123456", "profile": "bulge", "text": "t"}),
+        ] {
             let (mut s, ..) = two_layers();
             let _ = s.execute(spec.id, &p);
             // Undo and redo always work, and the selection stays on visible, unlocked layers.
@@ -515,13 +521,13 @@ fn every_command_survives_a_selection_on_two_layers() {
             for (l, _) in s.selection.iter() {
                 assert!(s.selectable(l), "{}: selection on an unselectable layer", spec.id);
             }
-            let _ = anicraft_render::render_frame(&s.doc, 0, 0.25);
+            let _ = anima_render::render_frame(&s.doc, 0, 0.25);
         }
     }
 }
 
 /// Timings across layers (ADR 0044's table; run with
-/// `cargo test -p anicraft-engine selection_timings -- --ignored --nocapture`).
+/// `cargo test -p anima-engine selection_timings -- --ignored --nocapture`).
 #[test]
 #[ignore]
 fn selection_timings() {

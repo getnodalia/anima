@@ -3,8 +3,8 @@
 //! plug-in policy.
 
 use super::*;
-use anicraft_doc::{BoneId, ColorEffect, Document, ElementKind, Paint, Rgba, Shape, Stage};
-use anicraft_geom::{Affine, Path};
+use anima_doc::{BoneId, ColorEffect, Document, ElementKind, Paint, Rgba, Shape, Stage};
+use anima_geom::{Affine, Path};
 use serde_json::json;
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -34,7 +34,13 @@ fn outline() -> Path {
 fn rigged() -> (Session, u64, u64) {
     let mut d = Document { stage: Stage { width: 400, height: 300, ..Stage::default() }, ..Document::default() };
     let shape = Shape { merge: true, ..Shape::filled(outline(), Paint::Solid(Rgba::BLACK)) };
-    let el = Arc::new(Element { id: ElementId(TAIL), name: String::new(), transform: Affine::translate(100.0, 150.0), color: ColorEffect::default(), kind: ElementKind::Shape(shape) });
+    let el = Arc::new(Element {
+        id: ElementId(TAIL),
+        name: String::new(),
+        transform: Affine::translate(100.0, 150.0),
+        color: ColorEffect::default(),
+        kind: ElementKind::Shape(shape),
+    });
     let l = Arc::make_mut(&mut d.timeline_mut(0).layers[0]);
     l.keyframes = vec![Arc::new({
         let mut k = Keyframe::new(0, 20);
@@ -48,7 +54,7 @@ fn rigged() -> (Session, u64, u64) {
     (s, b1, b2)
 }
 
-fn skin(s: &Session) -> anicraft_doc::skin::Skin {
+fn skin(s: &Session) -> anima_doc::skin::Skin {
     s.timeline().layers.iter().find_map(|l| l.armature.as_ref().and_then(|a| a.skin.clone())).unwrap()
 }
 
@@ -88,7 +94,7 @@ fn a_brush_stroke_paints_locally_and_undoes_in_one_step() {
     assert!(weight(&s, 1, b2) > 0.5, "{}", weight(&s, 1, b2));
     assert!(normalised(&s));
     // Only points within the radius of a dab changed.
-    let rest = anicraft_doc::skin::anchors(&skin(&s).rest);
+    let rest = anima_doc::skin::anchors(&skin(&s).rest);
     for (i, p) in rest.iter().enumerate() {
         let at = *p + Vec2::new(100.0, 150.0);
         if [120.0, 125.0, 130.0].iter().all(|x| at.distance(Vec2::new(*x, 140.0)) >= 12.0) {
@@ -110,8 +116,8 @@ fn painted_weights_bend_the_shape_and_stay_normalised() {
     // Point 1 painted onto B2 entirely now turns with B2.
     run(&mut s, "bone.set_weight", json!({"bone": b2, "points": [1], "weight": 100}));
     run(&mut s, "bone.pose", json!({"bone": b2, "angle": 90, "frame": 10}));
-    let bent = anicraft_doc::skin::anchors(&shown_path(&s, 10));
-    let rest = anicraft_doc::skin::anchors(&skin(&s).rest);
+    let bent = anima_doc::skin::anchors(&shown_path(&s, 10));
+    let rest = anima_doc::skin::anchors(&skin(&s).rest);
     assert!(bent[1].distance(rest[1]) > 10.0, "{:?} vs {:?}", bent[1], rest[1]);
 }
 
@@ -149,7 +155,7 @@ fn reshaping_at_rest_keeps_the_binding_and_is_exact() {
     assert_eq!(s.layer, lid);
     let cmd = v["cmd"].as_u64().unwrap() as usize;
     let k = skin(&s);
-    let n = anicraft_doc::skin::anchors(&k.rest).len();
+    let n = anima_doc::skin::anchors(&k.rest).len();
     assert_eq!(k.points.len(), n);
     assert!(n > k0.points.len());
     // The new anchor blends its neighbours by where it sits between them.
@@ -182,9 +188,9 @@ fn a_posed_frame_bends_the_reshaped_outline_and_refuses_reshaping() {
     let (mut s, _, b2) = rigged();
     run(&mut s, "bone.pose", json!({"bone": b2, "angle": 45, "frame": 10}));
     run(&mut s, "path.add_point", json!({"id": TAIL, "x": 281.25, "y": 140.0}));
-    let n = anicraft_doc::skin::anchors(&skin(&s).rest).len();
+    let n = anima_doc::skin::anchors(&skin(&s).rest).len();
     // Every keyframe holds the new outline, bent by its pose.
-    assert_eq!(anicraft_doc::skin::anchors(&shown_path(&s, 10)).len(), n);
+    assert_eq!(anima_doc::skin::anchors(&shown_path(&s, 10)).len(), n);
     assert_ne!(*shown_path(&s, 10), *skin(&s).rest);
     s.set_frame(10);
     let e = s.execute("path.move_points", &json!({"id": TAIL, "points": [[2, 0]], "dx": 0, "dy": -6})).unwrap_err();

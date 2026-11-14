@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The web editor as a release download (#210, ADR 0036, docs/web.md):
 #
-#   $DIST/anicraft-web-<version>.zip
+#   $DIST/anima-web-<version>.zip
 #
 # a static site (index.html, the loader, the module, the icon and the user guide) to unzip onto
 # any web server. This is the app's side of the family release workflow's web job
@@ -22,11 +22,11 @@ if ! command -v wasm-bindgen >/dev/null || [[ "$(wasm-bindgen --version | awk '{
 fi
 
 scripts/build-web.sh
-for f in index.html anicraft.js anicraft_bg.wasm anicraft.png guide/index.html; do
+for f in index.html anima.js anima_bg.wasm anima.png guide/index.html; do
   [[ -s "web/$f" ]] || { echo "error: web/$f is missing or empty" >&2; exit 1; }
 done
 
-ZIP="$DIST/anicraft-web-$VERSION.zip"
+ZIP="$DIST/anima-web-$VERSION.zip"
 rm -f "$ZIP"
 (cd web && zip -q -r -X "$ZIP" .)
 echo "$ZIP: $(( $(wc -c <"$ZIP" | tr -d ' ') / 1024 )) KB"

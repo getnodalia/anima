@@ -5,14 +5,14 @@
 //! `movie` (stage, frame rate, the range being exported, the scenes) and `frame` (one movie
 //! frame evaluated into the same flattened display list the built-in exporters draw: paths in
 //! local space with their stage transform, paints, strokes, colour effects, clips and groups).
-//! The plug-in returns the file's bytes; AniCraft writes them. Progress is the frames it has
+//! The plug-in returns the file's bytes; Ánima writes them. Progress is the frames it has
 //! read, and Cancel (a publish [`Control`]) stops it at the next request or slice of fuel.
 
 use crate::params::*;
 use crate::publish::Control;
 use crate::{CommandSpec, EngineError, Result, Session};
-use anicraft_doc::{DisplayItem, DisplayList, Document, Paint, Rgba, Stroke};
-use anicraft_plugins::{Host, Kind, Limits, Plugin};
+use anima_doc::{DisplayItem, DisplayList, Document, Paint, Rgba, Stroke};
+use anima_plugins::{Host, Kind, Limits, Plugin};
 use serde_json::{Map, Value, json};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -57,7 +57,10 @@ pub const BUILT_IN: &[(&str, &str, &str, &[&str], &str)] = &[
 
 /// Every export format, built-in first, then the installed exporter plug-ins by id.
 pub fn formats(s: &Session) -> Vec<Value> {
-    let mut out: Vec<Value> = BUILT_IN.iter().map(|(id, cmd, name, ext, target)| json!({"id": id, "name": name, "extensions": ext, "command": cmd, "target": target, "plugin": false})).collect();
+    let mut out: Vec<Value> = BUILT_IN
+        .iter()
+        .map(|(id, cmd, name, ext, target)| json!({"id": id, "name": name, "extensions": ext, "command": cmd, "target": target, "plugin": false}))
+        .collect();
     for p in exporters(s) {
         let m = p.manifest();
         let ext = m.format.as_ref().map_or("", |f| f.extension.as_str());
@@ -95,7 +98,11 @@ pub fn plan(s: &Session, p: &Value) -> Result<(Arc<Plugin>, Job)> {
     let id = str_req(p, "format")?;
     let plugin = s.plugins.get(id).ok_or_else(|| {
         let ids: Vec<String> = exporters(s).iter().map(|p| p.id().to_string()).collect();
-        EngineError::State(if ids.is_empty() { format!("no exporter plug-in “{id}” is installed (see file.export_formats)") } else { format!("no exporter plug-in “{id}” is installed (installed: {})", ids.join(", ")) })
+        EngineError::State(if ids.is_empty() {
+            format!("no exporter plug-in “{id}” is installed (see file.export_formats)")
+        } else {
+            format!("no exporter plug-in “{id}” is installed (installed: {})", ids.join(", "))
+        })
     })?;
     if plugin.manifest().kind != Kind::Exporter {
         return Err(EngineError::State(format!("{} is not an exporter plug-in", plugin.manifest().name)));
@@ -130,7 +137,7 @@ pub fn run(plugin: &Plugin, doc: &Document, job: &Job, control: Option<&Control>
     let name: String = job.path.file_stem().map_or_else(|| "Untitled".into(), |n| n.to_string_lossy().chars().take(128).collect());
     let mut host = FrameHost { doc, from: job.from, to: job.to, name, control, read: vec![false; frames as usize], served: 0 };
     let (bytes, report) = plugin.export(&mut host, &job.options, &Limits::exporter()).map_err(|e| match e {
-        anicraft_plugins::Error::Cancelled => EngineError::Cancelled,
+        anima_plugins::Error::Cancelled => EngineError::Cancelled,
         e => EngineError::State(e.to_string()),
     })?;
     crate::vfs::write(&job.path, &bytes)?;
@@ -181,7 +188,9 @@ impl Host for FrameHost<'_> {
                 }
                 Ok(frame_json(self.doc, self.from + i as u32, i))
             }
-            "command" | "document" | "elements" => Err("an exporter reads the movie's frames (movie, frame); it can't read or change the document".into()),
+            "command" | "document" | "elements" => {
+                Err("an exporter reads the movie's frames (movie, frame); it can't read or change the document".into())
+            }
             _ => Err(format!("unknown op '{op}' (an exporter has movie, frame and log)")),
         }
     }
@@ -195,9 +204,14 @@ impl FrameHost<'_> {
     fn movie(&self) -> Value {
         let d = self.doc;
         let st = &d.stage;
-        let scenes: Vec<Value> = d.scenes.iter().enumerate().map(|(i, sc)| json!({"name": sc.name, "start": d.scene_start(i), "frames": d.timeline(i).frame_count()})).collect();
+        let scenes: Vec<Value> = d
+            .scenes
+            .iter()
+            .enumerate()
+            .map(|(i, sc)| json!({"name": sc.name, "start": d.scene_start(i), "frames": d.timeline(i).frame_count()}))
+            .collect();
         json!({
-            "abi": anicraft_plugins::ABI_VERSION,
+            "abi": anima_plugins::ABI_VERSION,
             "name": self.name,
             "width": st.width,
             "height": st.height,
@@ -217,15 +231,19 @@ fn rgba_hex(c: Rgba) -> String {
     format!("{}{:02x}", c.to_hex(), (if c.a.is_finite() { c.a.clamp(0.0, 1.0) } else { 1.0 } * 255.0).round() as u8)
 }
 
-fn stops_json(stops: &[anicraft_doc::GradientStop]) -> Value {
+fn stops_json(stops: &[anima_doc::GradientStop]) -> Value {
     Value::Array(stops.iter().map(|s| json!([s.offset, rgba_hex(s.color)])).collect())
 }
 
 fn paint_json(p: &Paint) -> Value {
     match p {
         Paint::Solid(c) => json!({"type": "solid", "color": rgba_hex(*c)}),
-        Paint::Linear { start, end, stops, spread, linear_rgb } => json!({"type": "linear", "start": [start.x, start.y], "end": [end.x, end.y], "stops": stops_json(stops), "spread": format!("{spread:?}").to_lowercase(), "linear_rgb": linear_rgb}),
-        Paint::Radial { center, radius, stops, spread, linear_rgb, focal, matrix } => json!({"type": "radial", "center": [center.x, center.y], "radius": radius, "focal": focal, "matrix": matrix.m, "stops": stops_json(stops), "spread": format!("{spread:?}").to_lowercase(), "linear_rgb": linear_rgb}),
+        Paint::Linear { start, end, stops, spread, linear_rgb } => {
+            json!({"type": "linear", "start": [start.x, start.y], "end": [end.x, end.y], "stops": stops_json(stops), "spread": format!("{spread:?}").to_lowercase(), "linear_rgb": linear_rgb})
+        }
+        Paint::Radial { center, radius, stops, spread, linear_rgb, focal, matrix } => {
+            json!({"type": "radial", "center": [center.x, center.y], "radius": radius, "focal": focal, "matrix": matrix.m, "stops": stops_json(stops), "spread": format!("{spread:?}").to_lowercase(), "linear_rgb": linear_rgb})
+        }
         Paint::Bitmap { bitmap, repeat, matrix } => json!({"type": "bitmap", "bitmap": bitmap.0, "repeat": repeat, "matrix": matrix.m}),
     }
 }
@@ -252,7 +270,7 @@ fn item_json(it: &DisplayItem) -> Value {
         "fill_rule": format!("{:?}", it.fill_rule).to_lowercase(),
         "alpha": it.color.mul[3],
     });
-    if it.color != anicraft_doc::ColorTransform::IDENTITY {
+    if it.color != anima_doc::ColorTransform::IDENTITY {
         v["color"] = json!({"mul": it.color.mul, "add": it.color.add});
     }
     for (k, x) in [("clip", it.clip), ("masks", it.masks), ("group", it.group)] {
@@ -265,7 +283,7 @@ fn item_json(it: &DisplayItem) -> Value {
 
 /// Movie frame `frame` as an exporter sees it (`index` is its place in the export).
 pub fn frame_json(doc: &Document, frame: u32, index: u64) -> Value {
-    let dl: DisplayList = anicraft_doc::evaluate(doc, frame);
+    let dl: DisplayList = anima_doc::evaluate(doc, frame);
     let (scene, local) = doc.locate(frame);
     let items: Vec<Value> = dl.items.iter().filter(|i| !i.guide).map(item_json).collect();
     let groups: Vec<Value> = dl.groups.iter().map(|g| json!({"parent": g.parent, "alpha": g.alpha, "blend": format!("{:?}", g.blend).to_lowercase(), "clip": g.clip, "filters": g.filters.len()})).collect();

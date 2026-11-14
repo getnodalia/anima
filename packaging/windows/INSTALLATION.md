@@ -1,6 +1,6 @@
 # Windows installation policy checks
 
-New installations default to the current account under `Programs\ArtCraft\<App>`.
+New installations default to the current account under `Programs\Nodalia\<App>`.
 The first setup page offers installation for everyone. Scope is selected before duplicate
 checks and directory costing. An update uses the existing context's remembered exact folder;
 `INSTALLFOLDER` supplied explicitly is never replaced. It is a secure MSI property so the
@@ -9,7 +9,7 @@ A cross-context copy is refused; changing context means uninstalling the old cop
 
 App registration follows the selected context. Existing optional shortcuts and file-handler
 choices stay app-owned. Uninstalling removes the program files and registrations only:
-preferences, plug-ins and crash-recovery copies in `%APPDATA%\AniCraft` belong to the user and
+preferences, plug-ins and crash-recovery copies in `%APPDATA%\Ánima` belong to the user and
 stay.
 
 ## Repeatable metadata tests

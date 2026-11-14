@@ -8,10 +8,10 @@
 /examples/plugins/dist/
 /examples/plugins/target/
 
-# generated screenshots and exports (regenerate with --screenshot / anicraft-cli)
+# generated screenshots and exports (regenerate with --screenshot / anima-cli)
 /shots/
 /frames/
-*.anicraft.tmp
+*.anima.tmp
 
 # editors and OS
 .idea/

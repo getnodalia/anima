@@ -6,7 +6,7 @@
 
 ## Context
 
-AniCraft can export a PNG frame or sequence, an animated GIF, an SVG frame, a sprite sheet and
+Ánima can export a PNG frame or sequence, an animated GIF, an SVG frame, a sprite sheet and
 its JSON map, video through the user's ffmpeg, Lottie, an HTML canvas page and the soundtrack,
 each as its own command with its own prompt. Animate collects these in **File › Publish
 Settings** (Ctrl+Shift+F12): you tick formats, set each one's options and output name, and
@@ -20,7 +20,7 @@ code, SDK or asset was used.
 
 ## Decision
 
-1. **The profile is part of the document** (`anicraft_doc::publish::PublishProfile`, the
+1. **The profile is part of the document** (`anima_doc::publish::PublishProfile`, the
    document's `publish` field). Every format is always there, in a fixed order (HTML canvas,
    GIF, video, Lottie, sprite sheet, PNG sequence, PNG, SVG, audio), and each one is on or off.
    Each has an output template and a **typed** settings struct holding the same options its
@@ -36,7 +36,7 @@ code, SDK or asset was used.
    * Changing the settings changes the document: it is undoable and marks the file unsaved,
      as in Animate. Drags and typing are grouped into one undo step.
    * The ffmpeg path is not in the profile. It belongs to the computer (the `ffmpeg` param,
-     `ANICRAFT_FFMPEG`, or the PATH), not to the document.
+     `ANIMA_FFMPEG`, or the PATH), not to the document.
 2. **Outputs are relative to the document's folder.** `{name}` is the document's file name
    without its extension, and is the only placeholder. An output can go into subfolders
    (`web/{name}.html`), which are created as needed. It **can't be absolute, contain `..`, or
@@ -86,7 +86,7 @@ code, SDK or asset was used.
    first Publish over existing files in a session asks once, and the next ones don't. The
    desktop export commands keep their own confirmations, but Publish's confirmation covers
    them (its steps carry `confirm`).
-8. **The desktop runs a publish on a worker thread**, `anicraft-publish`. The UI only reads a
+8. **The desktop runs a publish on a worker thread**, `anima-publish`. The UI only reads a
    channel and the atomic counters each frame, so the editor never waits. The **Publish**
    window shows each format as waiting, running (a frame progress bar, or a spinner for
    formats without a frame count) or done, with a **Cancel** button. Closing the window also

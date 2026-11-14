@@ -1,5 +1,5 @@
-//! AniCraft XFL import (between `doc` and `engine`): opens Animate documents, as an XFL folder
-//! or a `.fla` archive, into the AniCraft document model.
+//! Ánima XFL import (between `doc` and `engine`): opens Animate documents, as an XFL folder
+//! or a `.fla` archive, into the Ánima document model.
 //!
 //! Clean room: written from the publicly documented structure of XFL (an XML package:
 //! `DOMDocument.xml`, `LIBRARY/*.xml`) and the published ZIP format. No Animate code, and no
@@ -10,8 +10,8 @@ pub mod edges;
 pub mod import;
 pub mod text;
 pub mod video;
-/// The shared XML reader (`anicraft-xml`), under its old path.
-pub use anicraft_xml as xml;
+/// The shared XML reader (`anima-xml`), under its old path.
+pub use anima_xml as xml;
 /// XFL/FLA ZIP package reader, shared with other consumers through `craft-xfl`.
 pub mod zip {
     pub use craft_xfl::{Archive, MAX_DEPTH, MAX_ENTRIES, MAX_ENTRY, MAX_RATIO, MAX_TOTAL, ZipError, crc32};

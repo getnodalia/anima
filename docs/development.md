@@ -11,7 +11,7 @@ cargo run -- --theme high-contrast --scale 200 --screenshot x.png  # a palette a
 cargo test                                    # every crate
 cargo clippy --all-targets -- -D warnings
 cargo deny check licenses bans sources
-cargo run --release -p anicraft-cli -- bench  # performance probe
+cargo run --release -p anima-cli -- bench  # performance probe
 ```
 
 Fonts: builds embed Inter and JetBrains Mono when `CRAFT_FONTS_DIR` points at a craft-fonts
@@ -26,14 +26,14 @@ silent; import, waveforms and audio export still work). Tests never open an audi
 ### The user guide
 
 The user guide is Markdown in `docs/guide/` (ADR 0069); `crates/guide` bundles it as HTML for
-Help › User Guide, and `cargo run -p anicraft-cli -- guide --out <folder>` writes the pages.
+Help › User Guide, and `cargo run -p anima-cli -- guide --out <folder>` writes the pages.
 `cargo test` checks every link, anchor and picture and that every chapter is reachable from
 `index.md`; a new chapter needs its line in `PAGES` (`crates/guide/src/lib.rs`) and a link
 from the contents. The command and shortcut references in `docs/guide/reference/` are
 generated: when a command or a default key changes, a test fails until you run
 
 ```sh
-ANICRAFT_BLESS_GUIDE=1 cargo test -p anicraft guide_reference
+ANIMA_BLESS_GUIDE=1 cargo test -p anima guide_reference
 ```
 
 and commit the result. The pictures come from `scripts/guide-shots.sh` (or `.ps1`), which runs
@@ -44,10 +44,10 @@ and commit the result. The pictures come from `scripts/guide-shots.sh` (or `.ps1
 The stage draws on the graphics card by default (ADR 0032; the shell's `gpu-stage` feature is
 on by default, and the CPU draws when there is no usable card). For a CPU-only shell:
 `cargo run --no-default-features --features sound-output`; to compare at run time,
-`ANICRAFT_STAGE_RENDERER=cpu|gpu`. The `anicraft-gpu` crate builds and tests in every build:
+`ANIMA_STAGE_RENDERER=cpu|gpu`. The `anima-gpu` crate builds and tests in every build:
 its parity tests run on the graphics card, else on a software adapter (lavapipe; WARP fails the self-test, ADR 0032), and
-skip without either; `ANICRAFT_TEST_GPU=software` forces the software adapter and
-`WGPU_BACKEND=dx12|vulkan|metal` picks the backend. `cargo run --release -p anicraft-gpu
+skip without either; `ANIMA_TEST_GPU=software` forces the software adapter and
+`WGPU_BACKEND=dx12|vulkan|metal` picks the backend. `cargo run --release -p anima-gpu
 --example gpu_bench` prints timings and parity.
 
 ## CI
@@ -89,7 +89,7 @@ Measured on Windows, 32 threads, offline, from an empty target directory:
 | Fresh build time | ~60 s | **44 s** (tests then add 3 s) |
 | Rebuild after editing a UI file | ~2 s (incremental) | **3.8 s** |
 | Rebuild after editing an engine file | ~3 s | **6.0 s** |
-| Debug `anicraft.exe` | 21 MB + 200 MB PDB | 21 MB + small line-table PDB |
+| Debug `anima.exe` | 21 MB + 200 MB PDB | 21 MB + small line-table PDB |
 
 What does it (in `Cargo.toml`):
 

@@ -1,8 +1,8 @@
 # AGENTS.md: guide for AI agents and contributors
 
-AniCraft is an open-source, native, clean-room 2D animation studio (Adobe Animate class), written
+Ánima is an open-source, native, clean-room 2D animation studio (Adobe Animate class), written
 in **Rust only**. There is no Tauri, Electron or webview. The UI is egui/eframe. The product name
-is written **AniCraft**; machine names are lowercase (`anicraft-*`). Read `docs/` first.
+is written **Ánima**; machine names are lowercase (`anima-*`). Read `docs/` first.
 
 ## Workspace map
 
@@ -18,9 +18,9 @@ crates/text     L1  Fonts on this computer, shaping and line layout into outline
 crates/render   L2  CPU oracle renderer (coverage accumulation, paints, strokes, PNG)
 crates/xfl      L2  XFL/FLA import: own XML + zip readers, edges → paths (ADR 0009)
 crates/svg      L2  SVG import: shapes, groups, use, styles, gradients, clips/masks → mask layers, text
-crates/engine   L3  Session, undo (with gesture coalescing), command registry, .anicraft format
+crates/engine   L3  Session, undo (with gesture coalescing), command registry, .anima format
 crates/gpu      L3  wgpu stage renderer (the default stage): tile binning, compute coverage, bitmaps, filters (ADR 0019, 0029, 0032)
-crates/cli      L4  anicraft-cli: info/render/render-seq/commands/exec/run/new/guide/serve/mcp
+crates/cli      L4  anima-cli: info/render/render-seq/commands/exec/run/new/guide/serve/mcp
 src/            L5  egui shell (app, menus, stage, timeline, panels, theme)
 ```
 
@@ -76,7 +76,7 @@ a new crate needs a row here and in its `LAYERS` table.
 
 ## Licensing and legal compliance (read `docs/legal/compliance.md`)
 
-* AniCraft is **MIT OR Apache-2.0**, like PhotoCraft (`LICENSE-MIT`, `LICENSE-APACHE`, `NOTICE`).
+* Ánima is **MIT OR Apache-2.0**, like PhotoCraft (`LICENSE-MIT`, `LICENSE-APACHE`, `NOTICE`).
 * **Dependencies**: permissive only, from crates.io only. `deny.toml` is the policy, and
   `cargo deny check licenses bans sources` must pass. Adding a crate with a new licence needs
   a deliberate `deny.toml` change and a note in `compliance.md`. No copyleft, "non-commercial"
@@ -92,7 +92,7 @@ a new crate needs a row here and in its `LAYERS` table.
 
 ## Version control
 
-* Git. Remote `origin` = `https://github.com/storytold/AniCraft` (public). `main` is the
+* Git. Remote `origin` = `https://github.com/getnodalia/anima` (public). `main` is the
   development branch; it begins with "Initial commit v0.1.0 early alpha", and contributors are
   credited in `AUTHORS.md`.
 * **Every change reaches `main` through a pull request** from a topic branch (`feat/…`, `fix/…`,
@@ -100,7 +100,7 @@ a new crate needs a row here and in its `LAYERS` table.
   Never commit or push to `main` directly. `core.hooksPath` points at `scripts/git-hooks`:
   `pre-commit` refuses commits on `main`, and `pre-push` refuses pushes to the remote `main`.
   Run `git config core.hooksPath scripts/git-hooks` once per clone.
-* Branches marked hidden in your local git config (`git config --add anicraft.hidden <branch>`)
+* Branches marked hidden in your local git config (`git config --add anima.hidden <branch>`)
   never leave the machine: `pre-push` refuses them and anything built on them.
 * **Milestone tracks.** Milestones that don't depend on unfinished work run in parallel, one
   agent per track (`docs/roadmap.md` › Parallel tracks). Each track works in its own git
@@ -122,7 +122,7 @@ a new crate needs a row here and in its `LAYERS` table.
 * Commit in small, green steps (build + tests pass), with conventional messages:
   `feat(render): …`, `fix(engine): …`, `docs: …`, `perf: …`, `test: …`. Record measured
   numbers in `perf:` commit bodies.
-* Never commit `target/`, screenshots (`shots/`), exports or `.anicraft` user files.
+* Never commit `target/`, screenshots (`shots/`), exports or `.anima` user files.
 
 ## Build hygiene (disk first, then time; `docs/development.md` › Build footprint)
 

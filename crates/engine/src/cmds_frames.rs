@@ -15,7 +15,7 @@
 use crate::cmds_modify::{collect_symbols, import_symbols};
 use crate::cmds_timeline::{count_param, insert_keyframe_at, remove_frame, shift_after, target, target_layers};
 use crate::{CommandSpec, EngineError, MAX_FRAME, Result, Session};
-use anicraft_doc::{Element, ElementId, Keyframe, Layer, LayerId, Symbol};
+use anima_doc::{Element, ElementId, Keyframe, Layer, LayerId, Symbol};
 use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -23,9 +23,25 @@ use std::sync::Arc;
 pub fn specs() -> Vec<CommandSpec> {
     let c = |id, label, menu, shortcut, params, mutates, run| CommandSpec { id, label, menu, shortcut, params, mutates, run };
     vec![
-        c("timeline.cut_frames", "Cut Frames", "Edit/Timeline", Some("Ctrl+Alt+X"), "{layer? | layers?: [..], frame?, count?}", true, cut_frames as crate::RunFn),
+        c(
+            "timeline.cut_frames",
+            "Cut Frames",
+            "Edit/Timeline",
+            Some("Ctrl+Alt+X"),
+            "{layer? | layers?: [..], frame?, count?}",
+            true,
+            cut_frames as crate::RunFn,
+        ),
         c("timeline.copy_frames", "Copy Frames", "Edit/Timeline", Some("Ctrl+Alt+C"), "{layer? | layers?: [..], frame?, count?}", false, copy_frames),
-        c("timeline.paste_frames", "Paste Frames", "Edit/Timeline", Some("Ctrl+Alt+V"), "{layer?, frame?} (top layer and first frame; default: active layer, playhead)", true, paste_frames),
+        c(
+            "timeline.paste_frames",
+            "Paste Frames",
+            "Edit/Timeline",
+            Some("Ctrl+Alt+V"),
+            "{layer?, frame?} (top layer and first frame; default: active layer, playhead)",
+            true,
+            paste_frames,
+        ),
     ]
 }
 
@@ -43,7 +59,7 @@ pub struct FrameClipboard {
     pub count: u32,
     pub symbols: Vec<Arc<Symbol>>,
     /// Sounds the copied keyframes play, so they paste into other documents too.
-    pub sounds: Vec<Arc<anicraft_doc::Sound>>,
+    pub sounds: Vec<Arc<anima_doc::Sound>>,
 }
 
 impl FrameClipboard {
@@ -97,9 +113,11 @@ fn copy_frames(s: &mut Session, p: &Value) -> Result<Value> {
     let elements: Vec<Element> = clip.layers.iter().flat_map(|l| l.keys.iter().flat_map(|k| k.elements.iter().map(|e| (**e).clone()))).collect();
     let symbols = collect_symbols(s, &elements);
     let n = clip.layers.len();
-    let mut sounds: Vec<Arc<anicraft_doc::Sound>> = Vec::new();
+    let mut sounds: Vec<Arc<anima_doc::Sound>> = Vec::new();
     for id in clip.layers.iter().flat_map(|l| l.keys.iter().filter_map(|k| k.sound.as_ref().map(|f| f.sound))) {
-        if let Some(x) = s.doc.sounds.iter().find(|x| x.id == id) && !sounds.iter().any(|y| y.id == id) {
+        if let Some(x) = s.doc.sounds.iter().find(|x| x.id == id)
+            && !sounds.iter().any(|y| y.id == id)
+        {
             sounds.push(x.clone());
         }
     }
@@ -161,7 +179,10 @@ fn paste_frames(s: &mut Session, p: &Value) -> Result<Value> {
             }
             keys.push(Arc::new(k));
         }
-        let Some(layer) = crate::editing::edited_mut(&mut s.doc, s.scene, &s.editing).ok().and_then(|tl| tl.layers.get_mut(row).map(Arc::make_mut)) else { continue };
+        let Some(layer) = crate::editing::edited_mut(&mut s.doc, s.scene, &s.editing).ok().and_then(|tl| tl.layers.get_mut(row).map(Arc::make_mut))
+        else {
+            continue;
+        };
         crate::cmds_camera::keys_fit(layer.kind, keys.iter().map(|k| &**k))?;
         if layer.keyframe_index_at(frame).is_some() {
             insert_keyframe_at(layer, frame, true)?;

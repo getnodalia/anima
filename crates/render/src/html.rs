@@ -2,12 +2,12 @@
 //! modern browser with `<canvas>` 2D, buttons and frame actions included.
 //!
 //! The page holds three things: the movie's data as JSON, the player (`html/player.js`, a port
-//! of the Rust player in `anicraft-doc`) and the page code (`html/canvas.js`: drawing, timing,
+//! of the Rust player in `anima-doc`) and the page code (`html/canvas.js`: drawing, timing,
 //! pointer, sound). Both scripts are our own source files, embedded at build time.
 //!
 //! The data is baked, not re-keyed: every timeline (each scene's and each symbol's that the
 //! movie uses) is evaluated frame by frame, so classic, shape and motion tweens, easing, motion
-//! guides and shape hints come out exactly as AniCraft computes them, and the browser never
+//! guides and shape hints come out exactly as Ánima computes them, and the browser never
 //! interpolates. A frame is its layers (bottom first) and their items: shapes (a path, a paint,
 //! a stroke, a colour effect) and symbol instances (which the player resolves at run time: movie
 //! clips have their own playheads, buttons their pointer states). Identical paths, paints and
@@ -27,11 +27,14 @@
 //! readers are the browser's own).
 
 use crate::stroke::stroke_outline;
-use anicraft_doc::actions::as3::Decls;
-use anicraft_doc::actions::{Action, FrameRef, Seg, Target};
-use anicraft_doc::player::TimelineRef;
-use anicraft_doc::{ColorTransform, Document, Element, ElementKind, FIELD_GUTTER, FrameScript, Join, Layer, LayerKind, MAX_FIELD_CHARS, MaskMode, Paint, Rgba, SoundFormat, SoundSync, SymbolId, SymbolKind, TextAlign, Timeline, base64_encode, evaluate_shown, guide_walk, instance_start};
-use anicraft_geom::{Affine, FillRule, Path, PathCmd};
+use anima_doc::actions::as3::Decls;
+use anima_doc::actions::{Action, FrameRef, Seg, Target};
+use anima_doc::player::TimelineRef;
+use anima_doc::{
+    ColorTransform, Document, Element, ElementKind, FIELD_GUTTER, FrameScript, Join, Layer, LayerKind, MAX_FIELD_CHARS, MaskMode, Paint, Rgba,
+    SoundFormat, SoundSync, SymbolId, SymbolKind, TextAlign, Timeline, base64_encode, evaluate_shown, guide_walk, instance_start,
+};
+use anima_geom::{Affine, FillRule, Path, PathCmd};
 use serde_json::{Map, Value, json};
 use std::collections::{BTreeMap, BTreeSet, HashMap, VecDeque};
 use std::sync::Arc;
@@ -60,7 +63,7 @@ pub struct HtmlOptions {
 
 impl Default for HtmlOptions {
     fn default() -> Self {
-        HtmlOptions { title: "AniCraft movie".into(), sound: true, fit: true }
+        HtmlOptions { title: "Ánima movie".into(), sound: true, fit: true }
     }
 }
 
@@ -104,7 +107,8 @@ const KEPT_SCRIPTS: &str = "kept frame scripts outside the ActionScript subset (
 const NINE_SLICE: &str = "9-slice scaling (scaled as a whole)";
 const OUTSIDE_CALLS: &str = "script calls that reach outside the movie (ignored)";
 const WARPED_BITMAPS: &str = "warped bitmaps (the image shows unbent inside its bent outline; warped shapes come across)";
-const FIELD_FONTS: &str = "text fields (their authored text keeps its outlines; text a script or the viewer changes is drawn with the browser's fonts)";
+const FIELD_FONTS: &str =
+    "text fields (their authored text keeps its outlines; text a script or the viewer changes is drawn with the browser's fonts)";
 
 /// A number rounded to `1/scale`, written as an integer when it is one.
 fn num(v: f32, scale: f64) -> Value {
@@ -121,7 +125,7 @@ fn num(v: f32, scale: f64) -> Value {
 /// A stroke's style for the page (ADR 0046): `c` cap, `j` join, `ml` miter limit, and for a
 /// broken line `d` its on/off lengths and `o` the offset into them (local units, scaled by
 /// the page like the width; dots are zero-length round-capped dashes).
-fn line_style(st: &anicraft_doc::Stroke) -> Value {
+fn line_style(st: &anima_doc::Stroke) -> Value {
     let style = &st.style;
     let mut k = json!({"c": style.effective_cap().key(), "j": style.join.key(), "ml": num(style.miter_limit, 1e3)});
     if let Some(d) = &style.dash {
@@ -159,8 +163,8 @@ fn exact_color(c: Rgba) -> Value {
 /// `[r, g, b, a]`, ramps as `[offset, r, g, b, a]` stops, Adjust Color as its 4 × 5 matrix.
 /// The angle comes as the renderer's own `[cos, sin]` (`u`), so the page multiplies the same
 /// numbers and its whole-pixel offsets round as the renderer's do, at halves too.
-fn filter_json(f: &anicraft_doc::Filter) -> Value {
-    use anicraft_doc::{Filter, FilterSide, GradientStop};
+fn filter_json(f: &anima_doc::Filter) -> Value {
+    use anima_doc::{Filter, FilterSide, GradientStop};
     let unit = |angle: f32| {
         let a = angle.to_radians();
         json!([exact(a.cos()), exact(a.sin())])
@@ -170,7 +174,9 @@ fn filter_json(f: &anicraft_doc::Filter) -> Value {
         FilterSide::Outer => "outer",
         FilterSide::Full => "full",
     };
-    let ramp = |stops: &[GradientStop]| Value::Array(stops.iter().map(|s| json!([exact(s.offset), exact(s.color.r), exact(s.color.g), exact(s.color.b), exact(s.color.a)])).collect());
+    let ramp = |stops: &[GradientStop]| {
+        Value::Array(stops.iter().map(|s| json!([exact(s.offset), exact(s.color.r), exact(s.color.g), exact(s.color.b), exact(s.color.a)])).collect())
+    };
     match f.sanitized() {
         Filter::Blur { blur_x, blur_y, quality } => json!({"k": "blur", "x": exact(blur_x), "y": exact(blur_y), "q": quality}),
         Filter::DropShadow { blur_x, blur_y, strength, quality, angle, distance, color, inner, knockout, hide_object } => json!({
@@ -209,8 +215,8 @@ fn color(c: Rgba) -> Vec<Value> {
 /// copies of the ramp lie each side of it, and the stops of them all laid end to end (the
 /// ramp is `2·copies + 1` times as long; `outward`, for a radial ramp, which has no inside of
 /// its centre: the ramp first, then all the copies). Linear-light mixing is sampled into stops.
-fn spread_stops(s: &[anicraft_doc::GradientStop], spread: anicraft_doc::Spread, linear_rgb: bool, outward: bool) -> (usize, Vec<anicraft_doc::GradientStop>) {
-    use anicraft_doc::{GradientStop, Spread};
+fn spread_stops(s: &[anima_doc::GradientStop], spread: anima_doc::Spread, linear_rgb: bool, outward: bool) -> (usize, Vec<anima_doc::GradientStop>) {
+    use anima_doc::{GradientStop, Spread};
     let mut base: Vec<GradientStop> = s.iter().filter(|g| g.offset.is_finite()).copied().collect();
     base.sort_by(|a, b| a.offset.total_cmp(&b.offset));
     if linear_rgb && base.len() >= 2 {
@@ -224,7 +230,10 @@ fn spread_stops(s: &[anicraft_doc::GradientStop], spread: anicraft_doc::Spread, 
                 for k in 0..16 {
                     let t = k as f32 / 16.0;
                     let m = |x: f32, y: f32| enc(lin(x) + (lin(y) - lin(x)) * t);
-                    out.push(GradientStop { offset: a.offset + (b.offset - a.offset) * t, color: Rgba::new(m(ca.r, cb.r), m(ca.g, cb.g), m(ca.b, cb.b), ca.a + (cb.a - ca.a) * t) });
+                    out.push(GradientStop {
+                        offset: a.offset + (b.offset - a.offset) * t,
+                        color: Rgba::new(m(ca.r, cb.r), m(ca.g, cb.g), m(ca.b, cb.b), ca.a + (cb.a - ca.a) * t),
+                    });
                 }
             }
         }
@@ -246,7 +255,8 @@ fn spread_stops(s: &[anicraft_doc::GradientStop], spread: anicraft_doc::Spread, 
         // itself: copy 0 outward, else the middle one).
         let from_ramp = if outward { k } else { k + copies };
         let backwards = spread == Spread::Reflect && from_ramp % 2 == 1;
-        let ramp: Vec<GradientStop> = if backwards { base.iter().rev().map(|g| GradientStop { offset: 1.0 - g.offset, color: g.color }).collect() } else { base.clone() };
+        let ramp: Vec<GradientStop> =
+            if backwards { base.iter().rev().map(|g| GradientStop { offset: 1.0 - g.offset, color: g.color }).collect() } else { base.clone() };
         for g in ramp {
             out.push(GradientStop { offset: (k as f32 + g.offset.clamp(0.0, 1.0)) / n as f32, color: g.color });
         }
@@ -354,10 +364,13 @@ fn action(a: &Action) -> Value {
             o.insert("msg".into(), json!(message));
         }
         Action::GotoAndPlay { frame, scene, .. } | Action::GotoAndStop { frame, scene, .. } => {
-            o.insert("f".into(), match frame {
-                FrameRef::Number(n) => json!(n),
-                FrameRef::Label(l) => json!(l),
-            });
+            o.insert(
+                "f".into(),
+                match frame {
+                    FrameRef::Number(n) => json!(n),
+                    FrameRef::Label(l) => json!(l),
+                },
+            );
             if let Some(s) = scene {
                 o.insert("s".into(), json!(s));
             }
@@ -378,7 +391,6 @@ fn action(a: &Action) -> Value {
 fn actions(list: &[Action]) -> Value {
     Value::Array(list.iter().map(action).collect())
 }
-
 
 /// Whether timeline layer `index` takes part in playback (what the player walks and draws):
 /// shown, not a folder or guide, not in a hidden folder.
@@ -430,7 +442,7 @@ impl<'a> Bake<'a> {
     }
 
     fn paint(&mut self, p: &Paint) -> usize {
-        let stops = |s: &[anicraft_doc::GradientStop]| -> Vec<Value> {
+        let stops = |s: &[anima_doc::GradientStop]| -> Vec<Value> {
             s.iter()
                 .map(|g| {
                     let o = if g.offset.is_finite() { g.offset.clamp(0.0, 1.0) } else { 0.0 };
@@ -456,9 +468,9 @@ impl<'a> Bake<'a> {
                 let (copies, s) = spread_stops(s, *spread, *linear_rgb, true);
                 let c = own.apply(*center);
                 let r = radius.max(0.0) * own.mean_scale();
-                let axis = own.apply_vector(anicraft_geom::Vec2::new(1.0, 0.0));
-                let axis = if axis.length() > 1e-9 { axis * (1.0 / axis.length()) } else { anicraft_geom::Vec2::new(1.0, 0.0) };
-                let f = c + axis * (focal.clamp(-anicraft_doc::MAX_FOCAL, anicraft_doc::MAX_FOCAL) * r);
+                let axis = own.apply_vector(anima_geom::Vec2::new(1.0, 0.0));
+                let axis = if axis.length() > 1e-9 { axis * (1.0 / axis.length()) } else { anima_geom::Vec2::new(1.0, 0.0) };
+                let f = c + axis * (focal.clamp(-anima_doc::MAX_FOCAL, anima_doc::MAX_FOCAL) * r);
                 let big = r * (1 + 2 * copies) as f32;
                 let mut o = json!({"r": [coord(c.x), coord(c.y), coord(big)], "st": stops(&s)});
                 if *focal != 0.0 && focal.is_finite() {
@@ -498,7 +510,15 @@ impl<'a> Bake<'a> {
     /// A shape item: `p` path, `f` paint, `s` stroke `[r, g, b, a, width]`, `k` its style when
     /// not round and solid (`c` cap, `j` join, `ml` miter limit, `d` dash lengths and `o` their
     /// offset, in local units like the width), `eo` even-odd, `m` transform, `c` colour effect.
-    fn shape(&mut self, path: &Arc<Path>, m: &Affine, fx: &ColorTransform, fill: Option<&Paint>, stroke: Option<&anicraft_doc::Stroke>, rule: FillRule) -> Value {
+    fn shape(
+        &mut self,
+        path: &Arc<Path>,
+        m: &Affine,
+        fx: &ColorTransform,
+        fill: Option<&Paint>,
+        stroke: Option<&anima_doc::Stroke>,
+        rule: FillRule,
+    ) -> Value {
         let mut o = Map::new();
         o.insert("p".into(), json!(self.path(path)));
         if let Some(p) = fill {
@@ -533,7 +553,7 @@ impl<'a> Bake<'a> {
     /// its style (when on), the paths `r` (the box) and `cr` (the caret, as the player draws it
     /// before a layout), and `font` what the page draws changed text with: `family`, `size`,
     /// `bold`, `italic`, `align`, `ls` letter and `lsp` line spacing.
-    fn field(&mut self, el: &Element, t: &anicraft_doc::TextBlock, f: &anicraft_doc::TextField) -> Value {
+    fn field(&mut self, el: &Element, t: &anima_doc::TextBlock, f: &anima_doc::TextField) -> Value {
         // The browser lays out text a script or the viewer changed with its own fonts.
         self.notes.entry(FIELD_FONTS).or_default().insert(el.id.0);
         // As the evaluator draws a field (eval.rs `field_items`).
@@ -567,7 +587,7 @@ impl<'a> Bake<'a> {
             o["bg"] = json!(self.paint(&Paint::Solid(f.background_color)));
         }
         if f.border {
-            let mut s = anicraft_doc::Stroke::new(f.border_color, 1.0);
+            let mut s = anima_doc::Stroke::new(f.border_color, 1.0);
             s.style.join = Join::Miter;
             let mut bd = color(s.color);
             bd.push(num(s.width, 1e3));
@@ -622,7 +642,7 @@ impl<'a> Bake<'a> {
             // A group's members, placed and coloured by it, as if they stood on its layer (ADR
             // 0073). (A translucent group's members fade one by one here.)
             ElementKind::Group { .. } => {
-                for m in anicraft_doc::expand_groups(std::slice::from_ref(&Arc::new(el.clone()))).iter() {
+                for m in anima_doc::expand_groups(std::slice::from_ref(&Arc::new(el.clone()))).iter() {
                     self.element(m, layer, f, start, out);
                 }
             }
@@ -640,7 +660,7 @@ impl<'a> Bake<'a> {
                 let (Some(&y), Some(sym)) = (self.symbols.get(symbol), self.doc.symbol(*symbol)) else { return };
                 let len = sym.timeline.frame_count();
                 // The page's player places symbols itself and doesn't slice them yet (ADR 0055).
-                if anicraft_doc::nine_slice::slices(self.doc, sym, &el.transform) {
+                if anima_doc::nine_slice::slices(self.doc, sym, &el.transform) {
                     self.notes.entry(NINE_SLICE).or_default().insert(el.id.0);
                 }
                 let mut o = Map::new();
@@ -677,10 +697,10 @@ impl<'a> Bake<'a> {
                 // Filters run in the page as the renderer runs them (ADR 0072): `fx` the list,
                 // `fm` how far they reach together (stage pixels).
                 // Filters switched off are left out, as the renderer leaves them (ADR 0091).
-                let on = anicraft_doc::active_filters(filters);
+                let on = anima_doc::active_filters(filters);
                 if !on.is_empty() {
                     o.insert("fx".into(), Value::Array(on.iter().map(filter_json).collect()));
-                    o.insert("fm".into(), exact(on.iter().map(anicraft_doc::Filter::margin).sum::<f32>()));
+                    o.insert("fm".into(), exact(on.iter().map(anima_doc::Filter::margin).sum::<f32>()));
                 }
                 if !events.is_empty() {
                     o.insert("ev".into(), Value::Array(events.iter().map(|h| json!([h.event.key(), actions(&h.actions)])).collect()));
@@ -690,7 +710,7 @@ impl<'a> Bake<'a> {
         }
     }
 
-    fn sound(&mut self, id: anicraft_doc::SoundId) -> Option<usize> {
+    fn sound(&mut self, id: anima_doc::SoundId) -> Option<usize> {
         if !self.sound {
             return None;
         }
@@ -717,7 +737,8 @@ impl<'a> Bake<'a> {
     fn timeline(&mut self, tl: &Timeline, scene: bool, decls: Option<&Decls>) -> Value {
         let n = tl.frame_count();
         // One clip slot per visible mask layer, top first (as the evaluator numbers them).
-        let slots: HashMap<u64, usize> = tl.layers.iter().filter(|l| l.kind == LayerKind::Mask && l.visible).enumerate().map(|(i, l)| (l.id.0, i)).collect();
+        let slots: HashMap<u64, usize> =
+            tl.layers.iter().filter(|l| l.kind == LayerKind::Mask && l.visible).enumerate().map(|(i, l)| (l.id.0, i)).collect();
         let playing: Vec<usize> = (0..tl.layers.len()).filter(|&i| plays(tl, i)).collect();
         let stage = self.doc.stage;
         let mut runs: Vec<(usize, u32)> = Vec::new();
@@ -834,7 +855,11 @@ impl<'a> Bake<'a> {
                     let env: Vec<Value> = match self.doc.sound(fs.sound) {
                         Some(s) if !fs.effect.is_none() => {
                             let heard = fs.heard_seconds(s, k.duration, n.saturating_sub(k.start), stage.fps);
-                            fs.effect.points(heard).iter().map(|p| json!([num(p.at as f32, 10_000.0), num(p.left, 10_000.0), num(p.right, 10_000.0)])).collect()
+                            fs.effect
+                                .points(heard)
+                                .iter()
+                                .map(|p| json!([num(p.at as f32, 10_000.0), num(p.left, 10_000.0), num(p.right, 10_000.0)]))
+                                .collect()
                         }
                         _ => Vec::new(),
                     };
@@ -892,7 +917,7 @@ fn used_symbols(doc: &Document) -> Vec<SymbolId> {
     let mut order = Vec::new();
     let mut queue: VecDeque<&Timeline> = doc.scenes.iter().map(|s| &s.timeline).collect();
     while let Some(tl) = queue.pop_front() {
-        for el in tl.layers.iter().flat_map(|l| l.keyframes.iter()).flat_map(|k| anicraft_doc::expand_groups(&k.elements).into_owned()) {
+        for el in tl.layers.iter().flat_map(|l| l.keyframes.iter()).flat_map(|k| anima_doc::expand_groups(&k.elements).into_owned()) {
             if let ElementKind::Symbol { symbol, .. } = &el.kind
                 && let Some(sym) = doc.symbol(*symbol)
                 && seen.insert(*symbol)
@@ -932,7 +957,7 @@ pub fn movie(doc: &Document, opts: &HtmlOptions) -> Movie {
     let mut timelines = Vec::with_capacity(scenes + used.len());
     let mut frames = 0usize;
     // The main timeline's scripts share one set of declarations over every scene.
-    let root = anicraft_doc::player::decls(doc, TimelineRef::Root);
+    let root = anima_doc::player::decls(doc, TimelineRef::Root);
     for s in &doc.scenes {
         frames += s.timeline.frame_count() as usize;
         timelines.push(b.timeline(&s.timeline, true, Some(&root)));
@@ -941,7 +966,7 @@ pub fn movie(doc: &Document, opts: &HtmlOptions) -> Movie {
     for (i, id) in used.iter().enumerate() {
         let Some(sym) = doc.symbol(*id) else { continue };
         frames += sym.timeline.frame_count() as usize;
-        let decls = (sym.kind == SymbolKind::MovieClip).then(|| anicraft_doc::player::decls(doc, TimelineRef::Symbol(*id)));
+        let decls = (sym.kind == SymbolKind::MovieClip).then(|| anima_doc::player::decls(doc, TimelineRef::Symbol(*id)));
         timelines.push(b.timeline(&sym.timeline, false, decls.as_ref()));
         let kind = match sym.kind {
             SymbolKind::Graphic => "graphic",
@@ -954,7 +979,7 @@ pub fn movie(doc: &Document, opts: &HtmlOptions) -> Movie {
     let fps = if stage.fps.is_finite() && stage.fps > 0.0 { stage.fps } else { 24.0 };
     let json = json!({
         "v": FORMAT_VERSION,
-        "generator": format!("AniCraft {}", env!("CARGO_PKG_VERSION")),
+        "generator": format!("Ánima {}", env!("CARGO_PKG_VERSION")),
         "stage": {"w": stage.width.max(1), "h": stage.height.max(1), "fps": num(fps, 1000.0), "bg": stage.background.to_hex()},
         "fit": opts.fit,
         "scenes": doc.scenes.iter().enumerate().map(|(i, s)| json!({"name": s.name, "tl": i})).collect::<Vec<_>>(),
@@ -1009,10 +1034,10 @@ pub fn to_html(doc: &Document, opts: &HtmlOptions) -> Result<HtmlExport, String>
     let (w, h) = (doc.stage.width.max(1), doc.stage.height.max(1));
     let mut html = String::with_capacity(data.len() + PLAYER_JS.len() + FILTERS_JS.len() + CANVAS_JS.len() + 1024);
     html.push_str("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
-    html.push_str(&format!("<meta name=\"generator\" content=\"AniCraft {}\">\n<title>{title}</title>\n", env!("CARGO_PKG_VERSION")));
+    html.push_str(&format!("<meta name=\"generator\" content=\"Ánima {}\">\n<title>{title}</title>\n", env!("CARGO_PKG_VERSION")));
     html.push_str(&format!("<style>html,body{{margin:0;height:100%;background:{bg}}}body{{display:flex;align-items:center;justify-content:center;overflow:hidden}}canvas{{display:block;touch-action:none;user-select:none}}</style>\n</head>\n<body>\n"));
-    html.push_str(&format!("<canvas id=\"anicraft-stage\" width=\"{w}\" height=\"{h}\" role=\"img\" aria-label=\"{title}\"></canvas>\n"));
-    html.push_str("<script type=\"application/json\" id=\"anicraft-movie\">");
+    html.push_str(&format!("<canvas id=\"anima-stage\" width=\"{w}\" height=\"{h}\" role=\"img\" aria-label=\"{title}\"></canvas>\n"));
+    html.push_str("<script type=\"application/json\" id=\"anima-movie\">");
     html.push_str(&data);
     html.push_str("</script>\n<script>\n");
     html.push_str(PLAYER_JS);

@@ -28,7 +28,7 @@ Imported Animate files use masks often.
    render band computes a clip at most once, on first use. Clipped draws are bounded by their
    clip, so masks also cull. An empty mask hides everything under it.
 4. **The mask always applies (what you see is what you export).** Animate shows the mask effect
-   only while both layers are locked, which makes the stage disagree with the output. AniCraft
+   only while both layers are locked, which makes the stage disagree with the output. Ánima
    always applies it, on the stage and in every export. To keep the mask editable, an unlocked
    mask layer shows its shapes' edges in the layer colour, and they can be picked and reshaped.
    Locking the mask hides the edge. Masked-away parts of shapes cannot be picked.

@@ -1,6 +1,6 @@
-//! Compatibility facade for AniCraft's historical XML tree API.
+//! Compatibility facade for Ánima's historical XML tree API.
 //!
-//! Parsing is owned by the shared `craft-xml` crate. This layer preserves AniCraft's public
+//! Parsing is owned by the shared `craft-xml` crate. This layer preserves Ánima's public
 //! element shape and mixed-content representation for its XFL and SVG document adapters.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 

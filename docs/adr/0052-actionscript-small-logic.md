@@ -18,7 +18,7 @@ enter-frame and keyboard events, functions on other frames, `e.target` and `Math
 * **A script IR, run by an evaluator, instead of a flat action list.** Small logic can't be
   lowered to actions ahead of time (a loop's count, a condition, a computed frame depend on
   the movie), so a compiled script is now a small typed tree of statements and expressions
-  (`anicraft_actions::as3::ir`: `Stmt`, `Expr`, `LValue`, `Place`, `Function`) and
+  (`anima_actions::as3::ir`: `Stmt`, `Expr`, `LValue`, `Place`, `Function`) and
   `as3::run` evaluates it against a `World` trait that the player implements. It is data, not
   code: no dynamic evaluation, no `eval`, no reflection. Timeline control still ends in the
   same `Action`s (an `Act` statement builds one with the frame and scene computed), so hand-made

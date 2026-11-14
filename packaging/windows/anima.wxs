@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Ánima's Windows installer (WiX v5). Built by package.ps1; the scope, folder and upgrade rules
+  are the Craft family's (install-policy.wxi, checked by check-install-policy.ps1 against
+  install-policy.json). Never change the UpgradeCode or the AnimaApp component GUID: Windows
+  uses them to find the installed copy on upgrade.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Name="Ánima" Manufacturer="Nodalia" Version="$(var.Version)" UpgradeCode="507CD152-9AD3-4F22-92A7-F8C44F1F84D0" Scope="perUserOrMachine" Compressed="yes" Language="1033">
+    <SummaryInformation Description="Ánima 2D animation studio" Manufacturer="Nodalia" />
+    <?include $(sys.SOURCEFILEDIR)install-policy.wxi?>
+    <!-- Same-version upgrades let successive pre-releases of one X.Y.Z replace each other
+         (MSI versions are numeric, so 0.2.0-rc.1 and 0.2.0-rc.2 are both 0.2.0). -->
+    <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of Ánima is already installed." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <!-- MSI caches this icon using its Id as the file name. Advertised shortcuts to an .exe need
+         an .exe icon identifier (ICE50), even when the source is an ICO. -->
+    <Icon Id="AnimaIcon.exe" SourceFile="$(var.IconPath)" />
+    <Property Id="ARPPRODUCTICON" Value="AnimaIcon.exe" />
+    <Property Id="ARPURLINFOABOUT" Value="https://getnodalia.com/anima" />
+    <Property Id="ARPURLUPDATEINFO" Value="https://getnodalia.com/anima" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/getnodalia/anima/issues" />
+
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="CraftSuiteFolder" Name="Nodalia">
+        <Directory Id="INSTALLFOLDER" Name="Anima" />
+      </Directory>
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+
+    <Feature Id="Main" Title="Ánima" Level="1">
+      <ComponentGroupRef Id="AnimaNotices" />
+      <ComponentGroupRef Id="AnimaFiles" />
+    </Feature>
+
+    <!-- The setup wizard: WixUI_InstallDir without its licence page (the code is MIT OR
+         Apache-2.0; there is nothing to accept). A later NewDialog on the same button wins. -->
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <UI>
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="2" Condition="NOT Installed" />
+      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="2" />
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchAnima" Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
+    </UI>
+    <!-- Our own art, drawn by package.ps1 from the app icon (not WiX's stock bitmaps). -->
+    <WixVariable Id="WixUIBannerBmp" Value="$(var.BannerBmp)" />
+    <WixVariable Id="WixUIDialogBmp" Value="$(var.DialogBmp)" />
+
+    <!-- The full version (Version is numeric, so it drops a pre-release tag), shown on the
+         wizard's pages through anima.en-us.wxl. -->
+    <Property Id="AnimaVersion" Value="$(var.DisplayVersion)" />
+
+    <!-- Finish page: say where to find the app, and offer to start it (ticked by default). -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Ánima $(var.DisplayVersion) is installed. You can start it any time from the Start menu, or by opening an .anima file." />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Ánima" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <Property Id="WixShellExecTarget" Value="[#AnimaExe]" />
+    <!-- Runs in the wizard's own (unelevated) process, so the app starts as the user, not as admin. -->
+    <CustomAction Id="LaunchAnima" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixShellExec" Impersonate="yes" Return="ignore" />
+  </Package>
+
+  <Fragment>
+    <!-- Licences and notices: ours, the dependencies' (NOTICE, ATTRIBUTION.md) and the OFL
+         licences of the embedded craft-fonts typefaces. package.ps1 stages them in DocsDir. -->
+    <ComponentGroup Id="AnimaNotices" Directory="INSTALLFOLDER">
+      <Files Include="$(var.DocsDir)\**" />
+    </ComponentGroup>
+    <ComponentGroup Id="AnimaFiles" Directory="INSTALLFOLDER">
+      <Component Id="AnimaApp" Guid="E57D8E08-FCF8-43C8-9D1B-C7E2904F08F1">
+        <File Id="AnimaExe" Source="$(var.BinDir)\anima.exe" KeyPath="yes">
+          <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="Ánima" Description="Ánima 2D animation studio" WorkingDirectory="INSTALLFOLDER" Advertise="yes" Icon="AnimaIcon.exe" IconIndex="0" />
+        </File>
+
+        <!-- .anima: Ánima's own format; Ánima is its default app. -->
+        <ProgId Id="Anima.Document" Description="Ánima Document" Icon="AnimaExe" IconIndex="0">
+          <Extension Id="anima" ContentType="application/x-anima">
+            <Verb Id="open" Command="Open" TargetFile="AnimaExe" Argument="&quot;%1&quot;" />
+          </Extension>
+        </ProgId>
+        <!-- FLA and XFL documents: offered under "Open with", never made the default. They open as
+             an untitled import (ADR 0009), so Save never overwrites the original. -->
+        <ProgId Id="Anima.Import" Description="Animation document" Icon="AnimaExe" IconIndex="0" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Anima.Import\shell\open\command" Value="&quot;[#AnimaExe]&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.fla\OpenWithProgids" Name="Anima.Import" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.xfl\OpenWithProgids" Name="Anima.Import" Value="" Type="string" />
+
+        <!-- The "Open with" app list and the Run dialog (Win+R "anima"). -->
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe" Name="FriendlyAppName" Value="Ánima" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\shell\open\command" Value="&quot;[#AnimaExe]&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\SupportedTypes" Name=".anima" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\SupportedTypes" Name=".fla" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\SupportedTypes" Name=".xfl" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\anima.exe" Value="[#AnimaExe]" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Ánima" Name="InstallDir" Value="[INSTALLFOLDER]" Type="string" />
+      </Component>
+
+      <!-- The headless CLI and MCP server, next to the app. -->
+      <Component Id="AnimaCli">
+        <File Id="AnimaCliExe" Source="$(var.BinDir)\anima-cli.exe" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

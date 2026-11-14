@@ -47,8 +47,8 @@ for p in paths:
             err(f"{p}: missing '{key}'")
     if m.get("id") != app_id:
         err(f"{p}: id is {m.get('id')!r}, not {app_id}")
-    if m.get("command") != "anicraft":
-        err(f"{p}: command is {m.get('command')!r}, not anicraft")
+    if m.get("command") != "anima":
+        err(f"{p}: command is {m.get('command')!r}, not anima")
     for arg in m.get("finish-args") or []:
         if arg in ("--filesystem=home", "--filesystem=host", "--filesystem=host-os", "--device=all"):
             err(f"{p}: {arg} is broader than Flathub accepts for this app")
@@ -69,7 +69,7 @@ echo "==> AppStream metainfo"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 META="$WORK/$APP_ID.metainfo.xml"
-sed -e "s/@VERSION@/$VERSION/g" -e "s/@DATE@/$ANICRAFT_BUILD_DATE/g" "$LINUX/$APP_ID.metainfo.xml.in" >"$META"
+sed -e "s/@VERSION@/$VERSION/g" -e "s/@DATE@/$ANIMA_BUILD_DATE/g" "$LINUX/$APP_ID.metainfo.xml.in" >"$META"
 if grep -q '@[A-Z_]*@' "$META"; then
   fail "the metainfo still has a placeholder after filling in VERSION and DATE"
 fi

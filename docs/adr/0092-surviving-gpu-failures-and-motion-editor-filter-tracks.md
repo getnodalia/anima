@@ -14,7 +14,7 @@ Two parts, one PR: both finish things earlier ADRs left as "later".
 
 Start-up already falls back between graphics interfaces (`startup::plan`, #207). A running
 session did not. Under heavy GPU load the lead saw `Surface::configure` fail with "Failed to wait
-for GPU to come idle before reconfiguring the Surface" (#255), and AniCraft closed.
+for GPU to come idle before reconfiguring the Surface" (#255), and Ánima closed.
 
 The cause is in wgpu, not the driver: every error nobody catches goes to the device's
 uncaptured-error handler, and **wgpu's default handler panics**. `Surface::configure` reports its
@@ -45,7 +45,7 @@ window's device).
    skipped.
 3. **The app acts on the news each frame:**
    * **An error the window survived** autosaves unsaved work at once (not waiting for the
-     interval), and the status bar says AniCraft carried on, at most once a minute.
+     interval), and the status bar says Ánima carried on, at most once a minute.
    * **The device lost, or the surface failing for 8 s on end**, can't be repaired: eframe 0.36
      can't make a new device for a running window. So the app:
      * writes the work to the recovery folder one last time;
@@ -78,7 +78,7 @@ window's device).
 
 ### Tests
 
-* `anicraft-gpu`: a device destroyed mid-session (as a driver reset takes it) makes every call
+* `anima-gpu`: a device destroyed mid-session (as a driver reset takes it) makes every call
   an error that says why, never a panic. A renderer failed from outside refuses with that reason.
   This needs a GPU or a software adapter, and skips without one.
 * Shell, with a stand-in renderer (unit tests open no device). An injected loss:

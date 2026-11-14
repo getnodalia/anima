@@ -2,18 +2,22 @@
 //! Plain Text Frames exporter on the sample movie and the Stepped Eases on a tween.
 //!
 //! They are built by `examples/plugins/build.sh` (CI's web job does, then sets
-//! `ANICRAFT_EXAMPLE_PLUGINS` to their folder, so a missing module fails there). Without the
+//! `ANIMA_EXAMPLE_PLUGINS` to their folder, so a missing module fails there). Without the
 //! variable the test uses `examples/plugins/dist` when it is there and otherwise skips.
 
-use anicraft_engine::Session;
+use anima_engine::Session;
 use serde_json::{Value, json};
 use std::path::PathBuf;
 use std::time::Instant;
 
 fn folder() -> Option<PathBuf> {
-    if let Ok(d) = std::env::var("ANICRAFT_EXAMPLE_PLUGINS") {
+    if let Ok(d) = std::env::var("ANIMA_EXAMPLE_PLUGINS") {
         let d = PathBuf::from(d);
-        assert!(d.join("text_export.wasm").is_file() && d.join("stepped_ease.wasm").is_file(), "ANICRAFT_EXAMPLE_PLUGINS={} has no built sample plug-ins", d.display());
+        assert!(
+            d.join("text_export.wasm").is_file() && d.join("stepped_ease.wasm").is_file(),
+            "ANIMA_EXAMPLE_PLUGINS={} has no built sample plug-ins",
+            d.display()
+        );
         return Some(d);
     }
     let d = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../examples/plugins/dist");
@@ -32,24 +36,32 @@ fn run(s: &mut Session, id: &str, p: Value) -> Value {
 #[test]
 fn the_text_exporter_writes_the_sample_movie() {
     let Some(dir) = folder() else { return };
-    let mut s = Session::new(anicraft_doc::sample::demo());
+    let mut s = Session::new(anima_doc::sample::demo());
     run(&mut s, "plugin.install", json!({"path": dir.join("text_export.wasm").display().to_string()}));
     let formats = run(&mut s, "file.export_formats", json!({}));
-    assert!(formats["formats"].as_array().is_some_and(|f| f.iter().any(|x| x["id"] == "org.anicraft.text-export" && x["extensions"][0] == "txt")));
-    let out = std::env::temp_dir().join(format!("anicraft-example-text-{}.txt", std::process::id()));
+    assert!(formats["formats"].as_array().is_some_and(|f| f.iter().any(|x| x["id"] == "org.anima.text-export" && x["extensions"][0] == "txt")));
+    let out = std::env::temp_dir().join(format!("anima-example-text-{}.txt", std::process::id()));
     let _ = std::fs::remove_file(&out);
     let t = Instant::now();
-    let v = run(&mut s, "file.export_plugin", json!({"format": "org.anicraft.text-export", "path": out.display().to_string(), "options": {"detail": "Paths"}}));
+    let v = run(
+        &mut s,
+        "file.export_plugin",
+        json!({"format": "org.anima.text-export", "path": out.display().to_string(), "options": {"detail": "Paths"}}),
+    );
     let ms = t.elapsed().as_secs_f64() * 1e3;
     let text = std::fs::read_to_string(&out).expect("written");
     let frames = s.doc.frame_count();
     assert_eq!(v["frames_read"].as_u64(), Some(u64::from(frames)));
-    assert!(text.starts_with("# anicraft-example-text-"), "{}", &text[..80.min(text.len())]);
+    assert!(text.starts_with("# anima-example-text-"), "{}", &text[..80.min(text.len())]);
     assert_eq!(text.matches("\nframe ").count(), frames as usize);
     assert!(text.contains("\nframe 1 (scene 1): ") && text.contains("    M"), "shapes with their outlines");
     eprintln!("Plain Text Frames: {frames} frames, {} bytes, {} instructions, {ms:.0} ms", text.len(), v["fuel"]);
     // Every other frame, summary only.
-    let v = run(&mut s, "file.export_plugin", json!({"format": "org.anicraft.text-export", "path": out.display().to_string(), "options": {"detail": "Summary", "every": 2}, "confirm": true}));
+    let v = run(
+        &mut s,
+        "file.export_plugin",
+        json!({"format": "org.anima.text-export", "path": out.display().to_string(), "options": {"detail": "Summary", "every": 2}, "confirm": true}),
+    );
     assert_eq!(v["frames_read"].as_u64(), Some(u64::from(frames.div_ceil(2))));
     assert!(!std::fs::read_to_string(&out).expect("written").contains("element "));
     let _ = std::fs::remove_file(&out);
@@ -70,7 +82,7 @@ fn the_stepped_eases_drive_a_tween() {
     run(&mut s, "timeline.insert_keyframe", json!({}));
     run(&mut s, "edit.select_all", json!({}));
     run(&mut s, "element.translate", json!({"dx": 80, "dy": 0}));
-    run(&mut s, "timeline.create_tween", json!({"frame": 0, "easing": {"plugin": "org.anicraft.stepped-ease", "ease": "steps2"}}));
+    run(&mut s, "timeline.create_tween", json!({"frame": 0, "easing": {"plugin": "org.anima.stepped-ease", "ease": "steps2"}}));
     let xs: Vec<f32> = (0..9)
         .map(|f| {
             s.set_frame(f);

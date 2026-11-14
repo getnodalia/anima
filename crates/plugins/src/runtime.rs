@@ -1,13 +1,16 @@
 //! The wasmi host: loading, instantiating and running a plug-in under resource limits.
 //!
-//! Host calls use wasmi's *resumable* calls: `anicraft.call` copies the request out of the
+//! Host calls use wasmi's *resumable* calls: `anima.call` copies the request out of the
 //! module's memory and traps with a [`HostCall`] marker; the run loop answers it through the
 //! [`Host`] (which borrows the session mutably, so it can't live in the `'static` store) and
 //! resumes the module with the response length. Running out of fuel resumes the same way,
 //! slice by slice, so the deadline is checked while a module computes.
 
 use serde_json::{Map, Value};
-use wasmi::{Caller, Config, EnforcedLimits, Engine, Extern, ExternType, Instance, Linker, Memory, Module, Store, StoreLimits, StoreLimitsBuilder, TypedFunc, TypedResumableCall, Val, WasmParams, WasmResults};
+use wasmi::{
+    Caller, Config, EnforcedLimits, Engine, Extern, ExternType, Instance, Linker, Memory, Module, Store, StoreLimits, StoreLimitsBuilder, TypedFunc,
+    TypedResumableCall, Val, WasmParams, WasmResults,
+};
 
 use crate::manifest::{Kind, MAX_MANIFEST_BYTES, Manifest};
 use crate::{Error, Host, Result};
@@ -24,7 +27,7 @@ const FUEL_SLICE: u64 = 10_000_000;
 /// Longest log line kept, in characters.
 const MAX_LOG_CHARS: usize = 500;
 
-/// Samples AniCraft takes of each plug-in ease, at `t = i / (EASE_SAMPLES − 1)` (ADR 0088).
+/// Samples Ánima takes of each plug-in ease, at `t = i / (EASE_SAMPLES − 1)` (ADR 0088).
 pub const EASE_SAMPLES: usize = 257;
 /// Values a plug-in ease may reach (as custom eases: overshoot, never unbounded).
 pub const MAX_EASE_VALUE: f64 = 10.0;
@@ -56,7 +59,7 @@ pub struct Limits {
     /// Wall-clock budget for one run, host calls included, in milliseconds. Native builds
     /// only: the web build has no clock in `std`, so the fuel budget alone bounds it there.
     pub wall_time_ms: u64,
-    /// Most `anicraft.call` requests in one run.
+    /// Most `anima.call` requests in one run.
     pub max_calls: u32,
     /// Largest request a plug-in may send, and largest response it is given.
     pub max_request_bytes: usize,
@@ -165,9 +168,9 @@ impl wasmi::errors::HostError for HostCall {}
 struct Ctx {
     limits: StoreLimits,
     max_request: usize,
-    /// The request `anicraft.call` copied out, for the run loop to answer.
+    /// The request `anima.call` copied out, for the run loop to answer.
     pending: Option<Vec<u8>>,
-    /// The last response, for `anicraft.response`.
+    /// The last response, for `anima.response`.
     response: Vec<u8>,
 }
 
@@ -233,7 +236,7 @@ fn caller_memory(caller: &Caller<'_, Ctx>) -> std::result::Result<Memory, wasmi:
     caller.get_export("memory").and_then(Extern::into_memory).ok_or_else(|| wasmi::Error::new("the module must export its memory as `memory`"))
 }
 
-/// `anicraft.call(ptr, len) -> i32`: copies the request out and hands it to the run loop.
+/// `anima.call(ptr, len) -> i32`: copies the request out and hands it to the run loop.
 fn host_call(caller: Caller<'_, Ctx>, ptr: i32, len: i32) -> std::result::Result<i32, wasmi::Error> {
     let mut caller = caller;
     let (p, l) = (ptr as u32 as usize, len as u32 as usize);
@@ -241,19 +244,20 @@ fn host_call(caller: Caller<'_, Ctx>, ptr: i32, len: i32) -> std::result::Result
         return Err(wasmi::Error::new(format!("request of {l} bytes is over the {} byte limit", caller.data().max_request)));
     }
     let memory = caller_memory(&caller)?;
-    let bytes = memory.data(&caller).get(p..p.saturating_add(l)).ok_or_else(|| wasmi::Error::new("anicraft.call: the request points outside memory"))?.to_vec();
+    let bytes =
+        memory.data(&caller).get(p..p.saturating_add(l)).ok_or_else(|| wasmi::Error::new("anima.call: the request points outside memory"))?.to_vec();
     caller.data_mut().pending = Some(bytes);
     Err(wasmi::Error::host(HostCall))
 }
 
-/// `anicraft.response(ptr, cap) -> i32`: copies up to `cap` bytes of the last response.
+/// `anima.response(ptr, cap) -> i32`: copies up to `cap` bytes of the last response.
 fn host_response(caller: Caller<'_, Ctx>, ptr: i32, cap: i32) -> std::result::Result<i32, wasmi::Error> {
     let mut caller = caller;
     let memory = caller_memory(&caller)?;
     let (data, ctx) = memory.data_and_store_mut(&mut caller);
     let n = ctx.response.len().min(cap.max(0) as usize);
     let p = ptr as u32 as usize;
-    let dst = data.get_mut(p..p.saturating_add(n)).ok_or_else(|| wasmi::Error::new("anicraft.response: the buffer points outside memory"))?;
+    let dst = data.get_mut(p..p.saturating_add(n)).ok_or_else(|| wasmi::Error::new("anima.response: the buffer points outside memory"))?;
     dst.copy_from_slice(ctx.response.get(..n).unwrap_or_default());
     Ok(n as i32)
 }
@@ -276,13 +280,15 @@ impl Plugin {
             let known = IMPORTS.iter().find(|(n, _, _)| imp.module() == IMPORT_MODULE && imp.name() == *n);
             let Some((_, np, nr)) = known else {
                 return Err(Error::Abi(format!(
-                    "the module imports `{}.{}`; plug-ins may import only anicraft.call and anicraft.response (no WASI, files, clock or network)",
+                    "the module imports `{}.{}`; plug-ins may import only anima.call and anima.response (no WASI, files, clock or network)",
                     imp.module(),
                     imp.name()
                 )));
             };
             let ok = match imp.ty() {
-                ExternType::Func(f) => f.params().len() == *np && f.results().len() == *nr && f.params().iter().chain(f.results()).all(|t| *t == wasmi::ValType::I32),
+                ExternType::Func(f) => {
+                    f.params().len() == *np && f.results().len() == *nr && f.params().iter().chain(f.results()).all(|t| *t == wasmi::ValType::I32)
+                }
                 _ => false,
             };
             if !ok {
@@ -296,7 +302,7 @@ impl Plugin {
         let version: TypedFunc<(), i32> = live.func("ac_abi_version")?;
         let v = p.call(&mut live, &version, (), load_fuel, &deadline, &mut None, &p.limits)?;
         if v != ABI_VERSION {
-            return Err(Error::Abi(format!("ac_abi_version returned {v}; this AniCraft runs ABI version {ABI_VERSION}")));
+            return Err(Error::Abi(format!("ac_abi_version returned {v}; this Ánima runs ABI version {ABI_VERSION}")));
         }
         let manifest: TypedFunc<(), i64> = live.func("ac_manifest")?;
         let packed = p.call(&mut live, &manifest, (), load_fuel, &deadline, &mut None, &p.limits)? as u64;
@@ -340,7 +346,13 @@ impl Plugin {
                 if v.abs() > MAX_EASE_VALUE {
                     return Err(bad(format!("gave {v:.3}, outside −{MAX_EASE_VALUE}..{MAX_EASE_VALUE}")));
                 }
-                let end = if k == 0 { Some(0.0) } else if k == EASE_SAMPLES - 1 { Some(1.0) } else { None };
+                let end = if k == 0 {
+                    Some(0.0)
+                } else if k == EASE_SAMPLES - 1 {
+                    Some(1.0)
+                } else {
+                    None
+                };
                 if let Some(e) = end
                     && (v - e).abs() > EASE_END_TOLERANCE
                 {
@@ -381,7 +393,8 @@ impl Plugin {
     }
 
     fn instantiate(&self, fuel: u64) -> Result<Live> {
-        let limits = StoreLimitsBuilder::new().memory_size(self.limits.max_memory_bytes).memories(1).tables(4).table_elements(100_000).instances(1).build();
+        let limits =
+            StoreLimitsBuilder::new().memory_size(self.limits.max_memory_bytes).memories(1).tables(4).table_elements(100_000).instances(1).build();
         let ctx = Ctx { limits, max_request: self.limits.max_request_bytes, pending: None, response: Vec::new() };
         let mut store = Store::new(&self.engine, ctx);
         store.limiter(|c| &mut c.limits);
@@ -401,7 +414,16 @@ impl Plugin {
     /// Calls `f` with at most `fuel` instructions, in slices, checking the deadline between
     /// them and answering host calls through `host` (`None`: host calls are an error).
     #[allow(clippy::too_many_arguments)]
-    fn call<P: WasmParams, R: WasmResults>(&self, live: &mut Live, f: &TypedFunc<P, R>, params: P, fuel: u64, deadline: &Deadline, host: &mut Option<(&mut dyn Host, &mut RunReport)>, limits: &Limits) -> Result<R> {
+    fn call<P: WasmParams, R: WasmResults>(
+        &self,
+        live: &mut Live,
+        f: &TypedFunc<P, R>,
+        params: P,
+        fuel: u64,
+        deadline: &Deadline,
+        host: &mut Option<(&mut dyn Host, &mut RunReport)>,
+        limits: &Limits,
+    ) -> Result<R> {
         let mut left = fuel;
         let give = left.min(FUEL_SLICE);
         left -= give;
@@ -419,7 +441,7 @@ impl Plugin {
                     }
                     deadline.check()?;
                     cancelled(host)?;
-                    let request =live.store.data_mut().pending.take().unwrap_or_default();
+                    let request = live.store.data_mut().pending.take().unwrap_or_default();
                     let response = match host {
                         Some((h, report)) => self.answer(&mut **h, report, &request, limits)?,
                         None => return Err(Error::Abi("host calls are allowed only while the plug-in runs (not while loading)".into())),
@@ -481,7 +503,11 @@ impl Plugin {
             Err(e) => envelope(false, &Value::String(e.clone())),
         };
         if bytes.len() > limits.max_response_bytes {
-            let msg = format!("the response is {} bytes, over the {} byte limit; ask for less (e.g. without paths)", bytes.len(), limits.max_response_bytes);
+            let msg = format!(
+                "the response is {} bytes, over the {} byte limit; ask for less (e.g. without paths)",
+                bytes.len(),
+                limits.max_response_bytes
+            );
             return Ok(envelope(false, &Value::String(msg)));
         }
         Ok(bytes)
@@ -511,7 +537,11 @@ impl Plugin {
             return Err(Error::Failed("ac_alloc returned 0 (out of memory)".into()));
         }
         let (p, l) = (ptr as usize, text.len());
-        live.memory.data_mut(&mut live.store).get_mut(p..p.saturating_add(l)).ok_or_else(|| Error::Abi("ac_alloc returned a block outside memory".into()))?.copy_from_slice(&text);
+        live.memory
+            .data_mut(&mut live.store)
+            .get_mut(p..p.saturating_add(l))
+            .ok_or_else(|| Error::Abi("ac_alloc returned a block outside memory".into()))?
+            .copy_from_slice(&text);
         live.used = 0;
         let rc = {
             let mut h: Option<(&mut dyn Host, &mut RunReport)> = Some((host, &mut report));
@@ -551,7 +581,11 @@ impl Plugin {
             return Err(Error::Failed("ac_alloc returned 0 (out of memory)".into()));
         }
         let (p, l) = (ptr as usize, text.len());
-        live.memory.data_mut(&mut live.store).get_mut(p..p.saturating_add(l)).ok_or_else(|| Error::Abi("ac_alloc returned a block outside memory".into()))?.copy_from_slice(&text);
+        live.memory
+            .data_mut(&mut live.store)
+            .get_mut(p..p.saturating_add(l))
+            .ok_or_else(|| Error::Abi("ac_alloc returned a block outside memory".into()))?
+            .copy_from_slice(&text);
         live.used = 0;
         let packed = {
             let mut h: Option<(&mut dyn Host, &mut RunReport)> = Some((host, &mut report));
@@ -565,7 +599,11 @@ impl Plugin {
         }
         let (ptr, len) = ((packed as u64 & 0xffff_ffff) as u32, ((packed as u64) >> 32) as u32);
         if len as usize > limits.max_output_bytes {
-            return Err(Error::Limit(format!("output size: it returned {} MiB and an export may be at most {} MiB", (len as usize) >> 20, limits.max_output_bytes >> 20)));
+            return Err(Error::Limit(format!(
+                "output size: it returned {} MiB and an export may be at most {} MiB",
+                (len as usize) >> 20,
+                limits.max_output_bytes >> 20
+            )));
         }
         let bytes = live.bytes(ptr, len, "the exported file")?.to_vec();
         Ok((bytes, report))

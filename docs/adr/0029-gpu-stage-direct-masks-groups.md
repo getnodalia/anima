@@ -30,7 +30,7 @@ then the GPU as the default stage.
   `Raster::Native { image, width, height }`, where `image` is an opaque
   `Arc<dyn Any + Send + Sync>`; the render service caches either (GPU pictures under their own
   384 MB budget, counted at 4 bytes a pixel) and only the shell, which installed the
-  rasterizer, downcasts it to `anicraft_gpu::GpuTexture` and registers it with
+  rasterizer, downcasts it to `anima_gpu::GpuTexture` and registers it with
   `egui_wgpu::Renderer::register_native_texture`. Evicting a stage tile frees the registration.
 * **Fallbacks, in order.** The window's device (direct) → a headless device of our own with
   readback (when the window runs on OpenGL, or its device lacks compute, storage textures or
@@ -88,7 +88,7 @@ stroker to keep parity. Not yet; revisit at 50k+ shapes or when 8K stages matter
 
 ## Measured (2026-11-09, release, RTX 5090 over Vulkan, 32 threads)
 
-`cargo run --release -p anicraft-gpu --example gpu_bench`. *Read-back* is the first slice's
+`cargo run --release -p anima-gpu --example gpu_bench`. *Read-back* is the first slice's
 whole call; *direct* is what the calling thread spends with `render_texture` (prepare + bin +
 upload and submit); *tiled* is the stage's way, 512 px tiles in parallel, until the GPU has
 finished. Parity is the direct path's texture against the oracle.

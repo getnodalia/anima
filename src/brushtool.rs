@@ -8,11 +8,11 @@
 use crate::app::{App, Drag, Tool};
 use crate::pathtools::Xf;
 use crate::theme::{T, to_color32};
-use anicraft_engine::cmds_brush::PaintMode;
-use anicraft_engine::brush_library::{BrushPreset, Shape};
-use anicraft_engine::geom::brush::{TipShape, size_factor};
-use anicraft_engine::geom::pressure::PressureCurve;
-use anicraft_engine::geom::{Affine, Vec2};
+use anima_engine::brush_library::{BrushPreset, Shape};
+use anima_engine::cmds_brush::PaintMode;
+use anima_engine::geom::brush::{TipShape, size_factor};
+use anima_engine::geom::pressure::PressureCurve;
+use anima_engine::geom::{Affine, Vec2};
 use egui::{Pos2, Stroke};
 use serde_json::json;
 
@@ -133,7 +133,8 @@ impl BrushOptions {
 
     /// The tip mapped onto the stage, for previews: unit circle or square → the tip at `at`.
     pub fn tip_to_stage(&self, at: Vec2, factor: f32) -> Affine {
-        let tip = anicraft_engine::geom::brush::Tip { shape: self.shape, size: self.size * factor, angle: self.angle, roundness: self.roundness / 100.0 };
+        let tip =
+            anima_engine::geom::brush::Tip { shape: self.shape, size: self.size * factor, angle: self.angle, roundness: self.roundness / 100.0 };
         Affine::translate(at.x, at.y).mul(&tip.to_stage())
     }
 
@@ -149,7 +150,17 @@ impl BrushOptions {
 /// `[` and `]`: the next size down or up (steps of 1 below 10, 5 below 50, 10 below 200, then
 /// 50), as in paint programs.
 pub fn step_size(size: f32, larger: bool) -> f32 {
-    let step = |s: f32| if s < 10.0 { 1.0 } else if s < 50.0 { 5.0 } else if s < 200.0 { 10.0 } else { 50.0 };
+    let step = |s: f32| {
+        if s < 10.0 {
+            1.0
+        } else if s < 50.0 {
+            5.0
+        } else if s < 200.0 {
+            10.0
+        } else {
+            50.0
+        }
+    };
     let next = if larger { size + step(size) } else { size - step(size - 0.01) };
     // Land on the step grid, so sizes stay round numbers.
     let g = step(if larger { size } else { size - 0.01 });
@@ -201,14 +212,14 @@ pub fn frame_pressure(ctx: &egui::Context) -> Option<f32> {
 /// touch events carry only pressure, and winit 0.30 reports tilt only on iOS, so on the desktop
 /// this is `None` until they carry it. When it isn't, the Tilt options appear (see
 /// [`App::pen_tilt_seen`]).
-pub fn frame_tilt(ctx: &egui::Context) -> Option<anicraft_engine::geom::brush::Tilt> {
+pub fn frame_tilt(ctx: &egui::Context) -> Option<anima_engine::geom::brush::Tilt> {
     // No egui event carries a tilt yet; this is where it is read once one does.
     let _ = ctx;
     None
 }
 
 /// Notes a tilt reported this frame, so the Tilt options show from then on.
-pub fn note_tilt(app: &mut App, tilt: Option<anicraft_engine::geom::brush::Tilt>) {
+pub fn note_tilt(app: &mut App, tilt: Option<anima_engine::geom::brush::Tilt>) {
     if tilt.is_some() {
         app.pen_tilt_seen = true;
     }
@@ -273,7 +284,7 @@ pub fn sample(app: &mut App, p: Vec2, pressure: Option<f32>, xf: Xf, now: f64) {
     }
     let pr = app.pen_pressure;
     let far = app.brush_samples.last().is_none_or(|(l, lp)| l.distance(p) * xf.zoom >= 0.5 || (pr.unwrap_or(1.0) - lp.unwrap_or(1.0)).abs() > 0.05);
-    if far && app.brush_samples.len() < anicraft_engine::geom::brush::MAX_SAMPLES {
+    if far && app.brush_samples.len() < anima_engine::geom::brush::MAX_SAMPLES {
         app.brush_samples.push((p, pr));
     }
 }
@@ -306,7 +317,8 @@ pub fn commit(app: &mut App, xf: Xf) {
         && v["elements"].as_array().is_some_and(Vec::is_empty)
     {
         match o.mode {
-            PaintMode::Selection => app.status_ok(tr!("Nothing painted: Paint Selection paints only inside the selected fills. Select them with the Selection tool first.")),
+            PaintMode::Selection => app
+                .status_ok(tr!("Nothing painted: Paint Selection paints only inside the selected fills. Select them with the Selection tool first.")),
             PaintMode::Inside => app.status_ok(tr!("Nothing painted: Paint Inside paints only inside the fill where the stroke starts.")),
             _ => app.status_ok(tr!("Nothing to paint behind there: Paint Behind only paints empty areas.")),
         }
@@ -352,10 +364,14 @@ pub fn draw_overlay(app: &App, painter: &egui::Painter, xf: Xf, hover: Option<Po
     }
     // The Paint Brush draws a round line in the stroke colour (the tip's shape is the Brush's).
     let o = options(app);
-    let (paint, tip) = if app.tool == Tool::PaintBrush { (app.s.style.stroke, BrushOptions { shape: TipShape::Round, roundness: 100.0, ..*o }) } else { (app.s.style.fill, *o) };
+    let (paint, tip) = if app.tool == Tool::PaintBrush {
+        (app.s.style.stroke, BrushOptions { shape: TipShape::Round, roundness: 100.0, ..*o })
+    } else {
+        (app.s.style.fill, *o)
+    };
     if app.drag == Drag::Brush {
         // Opaque, so overlapping pieces don't darken each other.
-        let color = to_color32(anicraft_engine::doc::Rgba { a: 1.0, ..paint });
+        let color = to_color32(anima_engine::doc::Rgba { a: 1.0, ..paint });
         draw_sweep(painter, xf, &tip, &app.brush_samples, color);
     }
     if let Some(h) = hover {
@@ -414,7 +430,7 @@ mod tests {
 
     #[test]
     fn presets_go_in_and_out_of_the_options() {
-        let ink = anicraft_engine::brush_library::builtin("ink_pen").unwrap();
+        let ink = anima_engine::brush_library::builtin("ink_pen").unwrap();
         let mut o = BrushOptions { mode: PaintMode::Behind, velocity: true, ..BrushOptions::default() };
         assert!(!o.matches(&ink));
         o.apply(&ink);
@@ -445,8 +461,8 @@ mod tests {
 
     #[test]
     fn hull_of_two_tips() {
-
-        let h = hull(vec![Pos2::new(0.0, 0.0), Pos2::new(1.0, 0.0), Pos2::new(0.5, 0.2), Pos2::new(1.0, 1.0), Pos2::new(0.0, 1.0), Pos2::new(0.0, 0.0)]);
+        let h =
+            hull(vec![Pos2::new(0.0, 0.0), Pos2::new(1.0, 0.0), Pos2::new(0.5, 0.2), Pos2::new(1.0, 1.0), Pos2::new(0.0, 1.0), Pos2::new(0.0, 0.0)]);
         assert_eq!(h.len(), 4, "{h:?}");
     }
 }

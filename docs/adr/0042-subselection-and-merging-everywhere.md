@@ -61,7 +61,7 @@ nothing was copied.
    * `raw.points {ids?}` lists anchors and handles.
    * `raw.move_handle {id, cmd, slot, dx, dy, merge?}` moves a control point. Every raw shape
      with that edge follows (`edit_edge`, which `path.bend_segment` now shares; built on
-     `anicraft_geom::raw::follow`).
+     `anima_geom::raw::follow`).
 
    As in ADR 0041, a drag runs its command every frame with `merge: false` and `raw.merge` on
    release. The whole drag is one gesture, so one undo step (ADR 0004: undoable, no
@@ -108,12 +108,12 @@ nothing was copied.
 7. **Pasted raw shapes merge where they land** (Paste, Paste in Place), cutting and joining
    like a drop (ADR 0031). Objects on the clipboard go on top whole, as before.
 
-8. **Animate's raw shapes import raw.** In `anicraft-xfl`, a `DOMShape` loose on a frame
+8. **Animate's raw shapes import raw.** In `anima-xfl`, a `DOMShape` loose on a frame
    (not `isDrawingObject`, not inside a `DOMGroup`) makes shapes with `merge: true`. The
    importer is layer L2, below the engine. So when `file.open` imports, the engine merges each
    keyframe's raw shapes into one drawing (`merge::merge_document`), across scenes and symbols.
    * XFL arrives one shape per style; afterwards there is one element per fill region and per
-     stroke run, as AniCraft draws.
+     stroke run, as Ánima draws.
    * Keyframes a tween joins keep their shapes as they came, because tweens pair shapes in
      order.
    * The corpus renders still match their goldens. A raw outline is one stroke per side, so at

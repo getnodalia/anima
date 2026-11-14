@@ -10,9 +10,9 @@ Import to Stage (`file.import`, `crates/svg`) brought an SVG drawing across as s
 layer, and reported `clipPath`, `mask` and `text` as skipped (drawn unclipped, or not at
 all). Those three are everywhere in real drawings: design tools wrap every frame in a clip,
 illustrations crop artwork into shapes, icons use masks, and posters and diagrams carry text.
-AniCraft already has the models to receive them: mask layers (ADR 0010: a mask layer's fills
+Ánima already has the models to receive them: mask layers (ADR 0010: a mask layer's fills
 reveal the normal layers under it) and text blocks (ADR 0012), with the font lookup and
-reporting written for Animate documents (ADR 0014). AniCraft's own SVG export writes masks
+reporting written for Animate documents (ADR 0014). Ánima's own SVG export writes masks
 as `clipPath`s, so a masked frame should also come back.
 
 SVG clipping is more general than mask layers: clips nest (a clipped group inside a clipped
@@ -36,7 +36,7 @@ and from self-authored drawings.
    clip of design-tool exports), a clip that misses it hides it (left out). Several clips left
    are intersected exactly when all but one are convex polygons, by clipping the remaining
    clip's shapes against the polygons (Sutherland–Hodgman extended to Bézier segments,
-   `anicraft_geom::clip`: curves stay curves, holes and fill rules survive). Two curved clips
+   `anima_geom::clip`: curves stay curves, holes and fill rules survive). Two curved clips
    can't be intersected without general path booleans: the inner one is kept and the report
    counts it. Mask layers ignore strokes and opacity, which matches clip paths exactly.
 3. **Masks come across when they are coverage.** A `mask` whose content is opaque (fill alpha
@@ -48,7 +48,7 @@ and from self-authored drawings.
    the renderer; they wait for that.
 4. **Text becomes text blocks, one per text chunk.** A chunk starts at a `text` and at every
    `tspan` with an absolute `x`; it is one single-line block placed by its baseline (`x`, `y`,
-   a leading `dx`/`dy`; `anicraft-text` now reports the first baseline) and `text-anchor`
+   a leading `dx`/`dy`; `anima-text` now reports the first baseline) and `text-anchor`
    (start, middle, end, also kept as the block's alignment). Style: `font-family` (the first
    installed family of the list, generic families mapped to `_sans`, `_serif`,
    `_typewriter`), `font-size` (lengths, keywords, `em`/`%`), `font-weight` (600 and up is
@@ -66,14 +66,14 @@ and from self-authored drawings.
    their content again, so the work is bounded by a count of visited elements (2 million), not
    by the file size.
 6. **Ordered text needs mixed content.** The shared XML reader keeps character data in order
-   among the children of elements named by the caller (`anicraft_xml::parse_mixed`, as
+   among the children of elements named by the caller (`anima_xml::parse_mixed`, as
    `#text` nodes); other elements, and XFL, read as before.
 
 ## Consequences
 
 * Masked frames exported as SVG come back as the same picture on mask layers (tested: pixel
   identical at half size), and typical design-tool exports lose their redundant frame clips.
-* Imported clips are editable as AniCraft masks: move, reshape or unlock them like any mask.
+* Imported clips are editable as Ánima masks: move, reshape or unlock them like any mask.
 * A drawing with many clips makes many layers (two per masked run), inside one folder.
 * Text in SVG files is laid out with this computer's fonts once, on import, then stored as
   outlines like all text (ADR 0012).

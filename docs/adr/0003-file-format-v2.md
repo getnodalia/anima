@@ -1,4 +1,4 @@
-# ADR 0003: `.anicraft` v2: SVG path strings, shared path table, streaming read
+# ADR 0003: `.anima` v2: SVG path strings, shared path table, streaming read
 
 * Status: accepted (2026-10-28)
 

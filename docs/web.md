@@ -1,10 +1,10 @@
 # The web editor
 
-AniCraft also runs in a web browser: the same program, built for WebAssembly
+Ánima also runs in a web browser: the same program, built for WebAssembly
 (`wasm32-unknown-unknown`), drawing into a page with WebGL2. How it is built, and why, is in
 [ADR 0036](adr/0036-web-build.md). Nothing is hosted yet and the releases don't carry it yet; you
 build it and serve it yourself. `packaging/web/package.sh` builds it and zips it as the release
-download `dist/release/anicraft-web-<version>.zip`, the static site to unzip onto a web server.
+download `dist/release/anima-web-<version>.zip`, the static site to unzip onto a web server.
 
 ## Build
 
@@ -26,10 +26,10 @@ scripts\build-web.ps1         # Windows PowerShell
 | File | What |
 |---|---|
 | `index.html` | the page (from `packaging/web/index.html`) |
-| `anicraft.js` | wasm-bindgen's loader |
-| `anicraft_bg.wasm` | the editor, about 9 MB (3.3 MB gzipped) |
-| `anicraft.png` | the page icon |
-| `guide/` | the user guide as HTML pages (`anicraft-cli guide`), opened by Help › User Guide |
+| `anima.js` | wasm-bindgen's loader |
+| `anima_bg.wasm` | the editor, about 9 MB (3.3 MB gzipped) |
+| `anima.png` | the page icon |
+| `guide/` | the user guide as HTML pages (`anima-cli guide`), opened by Help › User Guide |
 
 A plain `cargo build --target wasm32-unknown-unknown` (the whole workspace, default features)
 also works: that is what CI checks.
@@ -45,7 +45,7 @@ python3 -m http.server --directory web 8080
 
 Then open <http://localhost:8080>. `localhost` counts as a secure page, so Web Locks (used by
 autosave) work. On another host, serve over HTTPS for the same reason. Compressing
-`anicraft_bg.wasm` (gzip or brotli) cuts the download to about a third.
+`anima_bg.wasm` (gzip or brotli) cuts the download to about a third.
 
 ## How it differs from the desktop app
 
@@ -94,7 +94,7 @@ There was no browser on the build machine. These checks ran instead:
   store the browser uses.
 
 Only a browser can confirm the canvas, the picker, downloads, storage, Web Locks and the
-leave-page prompt. To check them by hand: build, serve, then in the page open a `.anicraft` file,
+leave-page prompt. To check them by hand: build, serve, then in the page open a `.anima` file,
 draw, save (a download arrives), close the tab with unsaved work, reopen it (Restore is
 offered), and export a GIF.
 
@@ -102,5 +102,5 @@ Run the WebAssembly tests yourself (Node and the wasm-bindgen CLI installed):
 
 ```sh
 CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER=wasm-bindgen-test-runner \
-  cargo test -p anicraft-engine --target wasm32-unknown-unknown --test wasm
+  cargo test -p anima-engine --target wasm32-unknown-unknown --test wasm
 ```

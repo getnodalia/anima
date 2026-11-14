@@ -4,12 +4,12 @@
 
 use super::*;
 use crate::{EngineError, Session, vfs};
-use anicraft_doc::sample;
+use anima_doc::sample;
 use serde_json::json;
 use std::path::{Path, PathBuf};
 
 fn temp(name: &str) -> PathBuf {
-    let d = std::env::temp_dir().join(format!("anicraft-publish-{name}-{}", std::process::id()));
+    let d = std::env::temp_dir().join(format!("anima-publish-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&d);
     std::fs::create_dir_all(&d).unwrap();
     d
@@ -19,11 +19,11 @@ fn run(s: &mut Session, id: &str, p: Value) -> Value {
     s.execute(id, &p).unwrap_or_else(|e| panic!("{id} {p}: {e}"))
 }
 
-/// The demo, saved as `walk.anicraft` in a fresh folder.
+/// The demo, saved as `walk.anima` in a fresh folder.
 fn saved(name: &str) -> (Session, PathBuf) {
     let dir = temp(name);
     let mut s = Session::new(sample::demo());
-    run(&mut s, "file.save", json!({"path": dir.join("walk.anicraft").display().to_string()}));
+    run(&mut s, "file.save", json!({"path": dir.join("walk.anima").display().to_string()}));
     (s, dir)
 }
 
@@ -42,19 +42,23 @@ fn templates_resolve_inside_the_documents_folder() {
     assert!(r(PublishFormat::Gif, "C:\\x.gif").is_err() && r(PublishFormat::Gif, "C:x.gif").is_err());
     assert!(r(PublishFormat::Gif, &"a".repeat(600)).is_err());
     // The folder and name come from the document's path.
-    assert_eq!(base(Some(Path::new("art/walk.anicraft"))).unwrap(), (PathBuf::from("art"), "walk".to_string()));
+    assert_eq!(base(Some(Path::new("art/walk.anima"))).unwrap(), (PathBuf::from("art"), "walk".to_string()));
     assert!(base(None).is_err(), "an untitled document on disk saves first");
 }
 
 #[test]
 fn settings_round_trip_through_the_file_and_older_files_get_defaults() {
     let (mut s, dir) = saved("roundtrip");
-    let v = run(&mut s, "publish.settings_set", json!({"format": "gif", "enabled": true, "output": "web/{name}.gif", "scale": 0.5, "loop": false, "from": 2, "to": 9}));
+    let v = run(
+        &mut s,
+        "publish.settings_set",
+        json!({"format": "gif", "enabled": true, "output": "web/{name}.gif", "scale": 0.5, "loop": false, "from": 2, "to": 9}),
+    );
     let gif = v["formats"].as_array().unwrap().iter().find(|f| f["format"] == "gif").unwrap();
     assert_eq!(gif["path"], json!(dir.join("web").join("walk.gif").display().to_string()));
     run(&mut s, "publish.settings_set", json!({"format": "html", "title": "Walk cycle", "sound": false}));
     run(&mut s, "publish.settings_set", json!({"format": "audio", "rate": 22050, "bits": 24, "to": null}));
-    let path = dir.join("walk.anicraft");
+    let path = dir.join("walk.anima");
     run(&mut s, "file.save", json!({}));
     let back = crate::format::load(&path).unwrap();
     assert_eq!(*back.publish, *s.doc.publish);
@@ -66,7 +70,7 @@ fn settings_round_trip_through_the_file_and_older_files_get_defaults() {
     let mut fresh = Session::new(sample::demo());
     let text = serde_json::to_string(&fresh.doc).unwrap();
     assert!(!text.contains("\"publish\""));
-    let older: anicraft_doc::Document = serde_json::from_str(&text).unwrap();
+    let older: anima_doc::Document = serde_json::from_str(&text).unwrap();
     assert_eq!(older.publish.enabled(), vec![PublishFormat::Html]);
     // Settings are a document change: undo takes them back.
     run(&mut fresh, "publish.settings_set", json!({"format": "svg", "enabled": true}));
@@ -118,23 +122,30 @@ fn the_plan_runs_each_exporter_with_its_options() {
     p.sprite_sheet.columns = 2;
     p.svg.enabled = true;
     p.svg.frame = 5;
-    let steps = plan(&doc, Some(Path::new("art/walk.anicraft")), None).unwrap();
+    let steps = plan(&doc, Some(Path::new("art/walk.anima")), None).unwrap();
     let order: Vec<PublishFormat> = steps.iter().map(|s| s.format).collect();
     assert_eq!(order, [PublishFormat::Html, PublishFormat::Gif, PublishFormat::SpriteSheet, PublishFormat::Svg], "in Publish's order");
     let gif = &steps[1];
     assert_eq!(gif.command, "file.export_gif");
-    assert_eq!((gif.params["scale"].as_f64(), gif.params["loop"].as_bool(), gif.params["from"].as_u64(), gif.params["to"].as_u64(), gif.frames), (Some(0.25), Some(false), Some(1), Some(4), 4));
+    assert_eq!(
+        (gif.params["scale"].as_f64(), gif.params["loop"].as_bool(), gif.params["from"].as_u64(), gif.params["to"].as_u64(), gif.frames),
+        (Some(0.25), Some(false), Some(1), Some(4), 4)
+    );
     assert_eq!(gif.params["path"], json!(Path::new("art").join("walk.gif").display().to_string()));
-    assert_eq!(steps[2].outputs, vec![Path::new("art").join("walk_sheet.png"), Path::new("art").join("walk_sheet.json")], "the sheet and its frame map");
+    assert_eq!(
+        steps[2].outputs,
+        vec![Path::new("art").join("walk_sheet.png"), Path::new("art").join("walk_sheet.json")],
+        "the sheet and its frame map"
+    );
     assert_eq!(steps[2].params["columns"], 2);
     assert_eq!((steps[3].scene, steps[3].params["frame"].as_u64()), (0, Some(5)));
     // Only some formats, when asked.
-    let some = plan(&doc, Some(Path::new("walk.anicraft")), Some(&[PublishFormat::Svg])).unwrap();
+    let some = plan(&doc, Some(Path::new("walk.anima")), Some(&[PublishFormat::Svg])).unwrap();
     assert_eq!(some.len(), 1);
     // Two formats writing one file is refused, whatever the case.
     std::sync::Arc::make_mut(&mut doc.publish).png.enabled = true;
     std::sync::Arc::make_mut(&mut doc.publish).png.output = "{name}_SHEET.png".into();
-    let err = plan(&doc, Some(Path::new("walk.anicraft")), None).unwrap_err();
+    let err = plan(&doc, Some(Path::new("walk.anima")), None).unwrap_err();
     assert!(err.contains("Sprite sheet") && err.contains("PNG image"), "{err}");
     // Untitled, it asks to save first.
     assert!(plan(&doc, None, None).unwrap_err().contains("save"));
@@ -163,7 +174,10 @@ fn publish_writes_every_format_and_reports_once() {
     }
     assert_eq!(status("audio"), "skipped", "the demo has no sounds");
     assert_eq!(status("video"), Value::Null, "off formats don't run");
-    assert_eq!((v["published"].as_u64(), v["skipped"].as_u64(), v["failed"].as_u64(), v["cancelled"].as_bool()), (Some(7), Some(1), Some(0), Some(false)));
+    assert_eq!(
+        (v["published"].as_u64(), v["skipped"].as_u64(), v["failed"].as_u64(), v["cancelled"].as_bool()),
+        (Some(7), Some(1), Some(0), Some(false))
+    );
     let report = v["report"].as_str().unwrap();
     assert!(report.contains("Audio skipped: the movie has no sounds."), "{report}");
     // The files are there, made with each format's options.
@@ -174,7 +188,7 @@ fn publish_writes_every_format_and_reports_once() {
     assert_eq!(frames, 3, "frames 1 to 3, in a folder made for them");
     let gif = std::fs::read(dir.join("walk.gif")).unwrap();
     let (w, h) = (u16::from_le_bytes([gif[6], gif[7]]), u16::from_le_bytes([gif[8], gif[9]]));
-    let view = anicraft_render::View::stage(&s.doc, 0.1);
+    let view = anima_render::View::stage(&s.doc, 0.1);
     assert_eq!((u32::from(w), u32::from(h)), (view.width, view.height), "the GIF's scale");
     let sheet: Value = serde_json::from_str(&std::fs::read_to_string(dir.join("walk_sheet.json")).unwrap()).unwrap();
     assert_eq!(sheet["frames"].as_object().unwrap().len(), 4);
@@ -185,7 +199,7 @@ fn publish_writes_every_format_and_reports_once() {
     // ...but another session (the next time the app starts) asks first.
     run(&mut s, "file.save", json!({}));
     let mut t = Session::default();
-    run(&mut t, "file.open", json!({"path": dir.join("walk.anicraft").display().to_string()}));
+    run(&mut t, "file.open", json!({"path": dir.join("walk.anima").display().to_string()}));
     let err = t.execute("file.publish", &json!({})).unwrap_err();
     assert!(matches!(err, EngineError::NeedsConfirmation(_)), "{err}");
     assert!(err.to_string().contains("walk.html"), "{err}");
@@ -211,7 +225,11 @@ fn one_failing_format_doesnt_stop_the_others() {
 #[test]
 fn cancel_stops_cleanly() {
     let (mut s, dir) = saved("cancel");
-    for p in [json!({"format": "gif", "enabled": true, "scale": 0.1}), json!({"format": "svg", "enabled": true}), json!({"format": "png_sequence", "enabled": true, "scale": 0.1})] {
+    for p in [
+        json!({"format": "gif", "enabled": true, "scale": 0.1}),
+        json!({"format": "svg", "enabled": true}),
+        json!({"format": "png_sequence", "enabled": true, "scale": 0.1}),
+    ] {
         run(&mut s, "publish.settings_set", p);
     }
     // Cancelled after the first format: the rest never run.
@@ -236,7 +254,10 @@ fn cancel_stops_cleanly() {
     assert!(!gif.exists());
     let seq = dir.join("seq");
     assert!(matches!(s.execute("file.export_png_sequence", &json!({"dir": seq.display().to_string(), "scale": 0.1})), Err(EngineError::Cancelled)));
-    assert!(matches!(s.execute("file.export_sprite_sheet", &json!({"path": dir.join("s.png").display().to_string(), "scale": 0.1})), Err(EngineError::Cancelled)));
+    assert!(matches!(
+        s.execute("file.export_sprite_sheet", &json!({"path": dir.join("s.png").display().to_string(), "scale": 0.1})),
+        Err(EngineError::Cancelled)
+    ));
     assert!(!dir.join("s.png").exists());
     // Progress counts frames made.
     let watch = Arc::new(Control::default());
@@ -267,7 +288,11 @@ fn in_a_browser_every_file_comes_back_and_several_make_one_zip() {
         vfs::use_memory();
         // Untitled: the browser has no folders, so it publishes as "Untitled".
         let mut s = Session::new(sample::demo());
-        for p in [json!({"format": "gif", "enabled": true, "scale": 0.1, "to": 2}), json!({"format": "video", "enabled": true}), json!({"format": "svg", "enabled": true, "output": "img/{name}.svg"})] {
+        for p in [
+            json!({"format": "gif", "enabled": true, "scale": 0.1, "to": 2}),
+            json!({"format": "video", "enabled": true}),
+            json!({"format": "svg", "enabled": true, "output": "img/{name}.svg"}),
+        ] {
             run(&mut s, "publish.settings_set", p);
         }
         let v = run(&mut s, "file.publish", json!({}));
@@ -283,9 +308,9 @@ fn in_a_browser_every_file_comes_back_and_several_make_one_zip() {
         assert_eq!(&z[end..end + 4], &[0x50, 0x4b, 0x05, 0x06]);
         assert_eq!(u16::from_le_bytes([z[end + 10], z[end + 11]]), 3);
         assert!(z.windows(16).any(|w| w == b"img/Untitled.svg"));
-        // AniCraft's hardened ZIP reader (the .fla one) opens it, checks every CRC, and gets
+        // Ánima's hardened ZIP reader (the .fla one) opens it, checks every CRC, and gets
         // each file back exactly.
-        let archive = anicraft_xfl::zip::Archive::open(&z).unwrap();
+        let archive = anima_xfl::zip::Archive::open(&z).unwrap();
         for (p, data) in &files {
             let name = p.to_string_lossy().replace('\\', "/");
             assert_eq!(archive.read(&name).unwrap().as_ref(), Some(data), "{name}");
@@ -296,7 +321,6 @@ fn in_a_browser_every_file_comes_back_and_several_make_one_zip() {
     .join()
     .unwrap();
 }
-
 
 #[test]
 fn plugins_may_read_but_not_change_or_run_publishing() {

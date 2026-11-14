@@ -9,8 +9,8 @@ use crate::a11y::{self, Named};
 use crate::app::App;
 use crate::platform;
 use crate::theme::{self, FORM_LABEL_DOCK, T, TARGET, Type, form_row, text};
-use anicraft_engine::plugins::{ParamKind, Plugin, SelectionNeed};
-use anicraft_engine::{CommandSpec, Session};
+use anima_engine::plugins::{ParamKind, Plugin, SelectionNeed};
+use anima_engine::{CommandSpec, Session};
 use egui::Key;
 use serde_json::{Map, Value, json};
 use std::sync::Arc;
@@ -25,15 +25,20 @@ pub struct Dialog {
     error: Option<String>,
 }
 
-/// Loads the plug-ins at start-up: `ANICRAFT_PLUGINS` when set, otherwise the plug-ins folder
-/// in the settings folder (screenshot runs use only `ANICRAFT_PLUGINS`, to stay repeatable).
+/// Loads the plug-ins at start-up: `ANIMA_PLUGINS` when set, otherwise the plug-ins folder
+/// in the settings folder (screenshot runs use only `ANIMA_PLUGINS`, to stay repeatable).
 pub fn load_at_start(app: &mut App) {
-    let env = std::env::var("ANICRAFT_PLUGINS").ok().filter(|v| !v.trim().is_empty()).map(std::path::PathBuf::from);
+    let env = std::env::var("ANIMA_PLUGINS").ok().filter(|v| !v.trim().is_empty()).map(std::path::PathBuf::from);
     let folder = env.or_else(|| if app.shot.is_some() { None } else { platform::plugins_dir() });
     let Some(folder) = folder else { return };
     match app.s.execute("plugin.reload", &json!({"folder": folder.display().to_string()})) {
         Ok(v) => {
-            let failed: Vec<String> = v["failed"].as_array().into_iter().flatten().map(|f| format!("{} ({})", f["file"].as_str().unwrap_or(""), f["error"].as_str().unwrap_or(""))).collect();
+            let failed: Vec<String> = v["failed"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .map(|f| format!("{} ({})", f["file"].as_str().unwrap_or(""), f["error"].as_str().unwrap_or("")))
+                .collect();
             if !failed.is_empty() {
                 app.status_err(tr!("Some plug-ins could not be loaded: {list}", list = failed.join("; ")));
             }
@@ -49,17 +54,19 @@ fn plugin(app: &App, id: &str) -> Option<Arc<Plugin>> {
 /// Why `p` can't run now (it works on the selection and nothing is selected).
 fn blocked(s: &Session, p: &Plugin) -> Option<&'static str> {
     match p.manifest().kind {
-        anicraft_engine::plugins::Kind::FrameScript => return Some(tr!("A frame script: it runs while the movie plays. Pick it for a keyframe in the Actions panel (F9)")),
-        anicraft_engine::plugins::Kind::Exporter => return Some(tr!("An export format: find it in File › Export")),
-        anicraft_engine::plugins::Kind::Ease => return Some(tr!("Eases: pick them in a tween's ease menu")),
-        anicraft_engine::plugins::Kind::Command => {}
+        anima_engine::plugins::Kind::FrameScript => {
+            return Some(tr!("A frame script: it runs while the movie plays. Pick it for a keyframe in the Actions panel (F9)"));
+        }
+        anima_engine::plugins::Kind::Exporter => return Some(tr!("An export format: find it in File › Export")),
+        anima_engine::plugins::Kind::Ease => return Some(tr!("Eases: pick them in a tween's ease menu")),
+        anima_engine::plugins::Kind::Command => {}
     }
     (p.manifest().selection == SelectionNeed::Required && s.selection.is_empty()).then(|| tr!("Select some artwork first"))
 }
 
 /// Plug-ins that run as commands (frame scripts run from keyframes instead).
 pub fn is_command(p: &Plugin) -> bool {
-    p.manifest().kind == anicraft_engine::plugins::Kind::Command
+    p.manifest().kind == anima_engine::plugins::Kind::Command
 }
 
 /// The menu label: an ellipsis when it asks for settings first.
@@ -174,13 +181,15 @@ pub(crate) fn control(ui: &mut egui::Ui, name: &str, kind: &ParamKind, v: &mut V
         ParamKind::Choice { options, .. } => {
             let mut cur = v.as_str().unwrap_or("").to_string();
             let mut changed = false;
-            egui::ComboBox::from_id_salt(ui.next_auto_id()).selected_text(text(Type::Body, cur.clone())).show_ui(ui, |ui| {
-                for o in options {
-                    changed |= ui.selectable_value(&mut cur, o.clone(), text(Type::Body, o.clone())).changed();
-                }
-            })
-            .response
-            .set_name(name);
+            egui::ComboBox::from_id_salt(ui.next_auto_id())
+                .selected_text(text(Type::Body, cur.clone()))
+                .show_ui(ui, |ui| {
+                    for o in options {
+                        changed |= ui.selectable_value(&mut cur, o.clone(), text(Type::Body, o.clone())).changed();
+                    }
+                })
+                .response
+                .set_name(name);
             *v = json!(cur);
             changed
         }
@@ -303,12 +312,12 @@ fn manager(app: &mut App, ctx: &egui::Context) {
                         action = Some(("plugin.remove", p.id().to_string()));
                     }
                     match m.kind {
-                        anicraft_engine::plugins::Kind::Exporter => {
+                        anima_engine::plugins::Kind::Exporter => {
                             if ui.button(tr!("Export…")).on_hover_text(tr!("Export the movie in this format")).clicked() {
                                 action = Some(("export", p.id().to_string()));
                             }
                         }
-                        anicraft_engine::plugins::Kind::Ease => {
+                        anima_engine::plugins::Kind::Ease => {
                             ui.label(text(Type::Caption, trn!("{n} ease, in the ease menus", "{n} eases, in the ease menus", p.eases().len())));
                         }
                         _ => {
@@ -354,7 +363,7 @@ fn manager(app: &mut App, ctx: &egui::Context) {
                 action = Some(("show", f.display().to_string()));
             }
         });
-        ui.label(text(Type::Caption, tr!("Plug-ins run sandboxed: they can change the open document through AniCraft's commands, never your files. An export format only reads the frames; AniCraft writes its file.")));
+        ui.label(text(Type::Caption, tr!("Plug-ins run sandboxed: they can change the open document through Ánima's commands, never your files. An export format only reads the frames; Ánima writes its file.")));
     });
     a11y::name_title_bar(&shown, title);
     app.show_plugins = open;
@@ -406,7 +415,12 @@ pub fn status(app: &mut App, id: &str, v: &Value) {
             let n = v["installed"].as_u64().unwrap_or(0);
             let failed = v["failed"].as_array().map_or(0, Vec::len);
             if failed > 0 {
-                app.status_err(trn!("{n} plug-in installed; {failed} could not be loaded", "{n} plug-ins installed; {failed} could not be loaded", n, failed = failed));
+                app.status_err(trn!(
+                    "{n} plug-in installed; {failed} could not be loaded",
+                    "{n} plug-ins installed; {failed} could not be loaded",
+                    n,
+                    failed = failed
+                ));
             } else {
                 app.status_ok(trn!("{n} plug-in installed", "{n} plug-ins installed", n));
             }

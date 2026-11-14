@@ -74,8 +74,8 @@ impl ColorTransform {
     pub fn lerp(&self, o: &ColorTransform, t: f32) -> ColorTransform {
         let mut out = ColorTransform::IDENTITY;
         for i in 0..4 {
-            out.mul[i] = anicraft_geom::lerp(self.mul[i], o.mul[i], t);
-            out.add[i] = anicraft_geom::lerp(self.add[i], o.add[i], t);
+            out.mul[i] = anima_geom::lerp(self.mul[i], o.mul[i], t);
+            out.add[i] = anima_geom::lerp(self.add[i], o.add[i], t);
         }
         out
     }
@@ -208,7 +208,9 @@ impl ColorEffect {
         match *self {
             ColorEffect::None => ColorEffect::None,
             ColorEffect::Brightness(b) => ColorEffect::Brightness(fin(b, 0.0).clamp(-1.0, 1.0)),
-            ColorEffect::Tint { color, amount } => ColorEffect::Tint { color: color.sanitized().with_alpha(1.0), amount: fin(amount, 0.0).clamp(0.0, 1.0) },
+            ColorEffect::Tint { color, amount } => {
+                ColorEffect::Tint { color: color.sanitized().with_alpha(1.0), amount: fin(amount, 0.0).clamp(0.0, 1.0) }
+            }
             ColorEffect::Advanced(t) => {
                 let mut o = t;
                 for i in 0..4 {
@@ -281,7 +283,7 @@ impl ColorEffect {
     /// colour and amount); None meets any style as that style's rest value; any other change of
     /// style travels in the Advanced space (multiplies and offsets), as in Animate.
     pub fn lerp(&self, o: &ColorEffect, t: f32) -> ColorEffect {
-        use anicraft_geom::lerp;
+        use anima_geom::lerp;
         let rest = |s: ColorStyle| ColorEffect::None.to_style(s);
         let (a, b) = match (self, o) {
             (ColorEffect::None, ColorEffect::None) => return ColorEffect::None,
@@ -291,14 +293,20 @@ impl ColorEffect {
         };
         // A tint meeting None keeps its colour all the way.
         let (a, b) = match (a, b) {
-            (ColorEffect::Tint { amount, .. }, ColorEffect::Tint { color, amount: k }) if self.style() == ColorStyle::None => (ColorEffect::Tint { color, amount }, ColorEffect::Tint { color, amount: k }),
-            (ColorEffect::Tint { color, amount }, ColorEffect::Tint { amount: k, .. }) if o.style() == ColorStyle::None => (ColorEffect::Tint { color, amount }, ColorEffect::Tint { color, amount: k }),
+            (ColorEffect::Tint { amount, .. }, ColorEffect::Tint { color, amount: k }) if self.style() == ColorStyle::None => {
+                (ColorEffect::Tint { color, amount }, ColorEffect::Tint { color, amount: k })
+            }
+            (ColorEffect::Tint { color, amount }, ColorEffect::Tint { amount: k, .. }) if o.style() == ColorStyle::None => {
+                (ColorEffect::Tint { color, amount }, ColorEffect::Tint { color, amount: k })
+            }
             p => p,
         };
         match (a, b) {
             (ColorEffect::Brightness(x), ColorEffect::Brightness(y)) => ColorEffect::Brightness(lerp(x, y, t)),
             (ColorEffect::Alpha(x), ColorEffect::Alpha(y)) => ColorEffect::Alpha(lerp(x, y, t)),
-            (ColorEffect::Tint { color: c1, amount: k1 }, ColorEffect::Tint { color: c2, amount: k2 }) => ColorEffect::Tint { color: c1.lerp(c2, t), amount: lerp(k1, k2, t) },
+            (ColorEffect::Tint { color: c1, amount: k1 }, ColorEffect::Tint { color: c2, amount: k2 }) => {
+                ColorEffect::Tint { color: c1.lerp(c2, t), amount: lerp(k1, k2, t) }
+            }
             (x, y) => ColorEffect::Advanced(x.transform().lerp(&y.transform(), t)),
         }
     }
@@ -341,7 +349,7 @@ impl ColorEffect {
 
 // ----- files ---------------------------------------------------------------------------------
 //
-// Every effect is written with the fields older AniCraft files have (`alpha`, `tint`,
+// Every effect is written with the fields older Ánima files have (`alpha`, `tint`,
 // `tint_amount`: the look as near as they can say it), so None, Alpha and Tint effects are
 // written exactly as before. `style` (and `brightness`, `multiply`, `offset`) are added only
 // when those fields alone would read back as something else. A file without `style` reads as
@@ -413,7 +421,9 @@ impl<'de> Deserialize<'de> for ColorEffect {
             Some(ColorStyle::Alpha) => ColorEffect::Alpha(w.alpha),
             Some(ColorStyle::Tint) => ColorEffect::Tint { color: w.tint, amount: w.tint_amount },
             Some(ColorStyle::Brightness) => ColorEffect::Brightness(w.brightness.unwrap_or(0.0)),
-            Some(ColorStyle::Advanced) => ColorEffect::Advanced(ColorTransform { mul: w.multiply.unwrap_or([1.0; 4]), add: w.offset.unwrap_or([0.0; 4]) }),
+            Some(ColorStyle::Advanced) => {
+                ColorEffect::Advanced(ColorTransform { mul: w.multiply.unwrap_or([1.0; 4]), add: w.offset.unwrap_or([0.0; 4]) })
+            }
         };
         Ok(fx.sanitized())
     }
@@ -466,7 +476,10 @@ mod tests {
         assert_eq!(ColorEffect::Alpha(1.0).lerp(&ColorEffect::Alpha(0.0), 0.25), ColorEffect::Alpha(0.75));
         assert_eq!(ColorEffect::None.lerp(&ColorEffect::Brightness(-1.0), 0.5), ColorEffect::Brightness(-0.5));
         assert_eq!(ColorEffect::None.lerp(&ColorEffect::Tint { color: red, amount: 1.0 }, 0.5), ColorEffect::Tint { color: red, amount: 0.5 });
-        assert_eq!(ColorEffect::Tint { color: red, amount: 1.0 }.lerp(&ColorEffect::Tint { color: blue, amount: 1.0 }, 0.5), ColorEffect::Tint { color: Rgba::new(0.5, 0.0, 0.5, 1.0), amount: 1.0 });
+        assert_eq!(
+            ColorEffect::Tint { color: red, amount: 1.0 }.lerp(&ColorEffect::Tint { color: blue, amount: 1.0 }, 0.5),
+            ColorEffect::Tint { color: Rgba::new(0.5, 0.0, 0.5, 1.0), amount: 1.0 }
+        );
         // A style change travels in the advanced space: halfway between the two transforms.
         let a = ColorEffect::Tint { color: red, amount: 1.0 };
         let b = ColorEffect::Alpha(0.5);

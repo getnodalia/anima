@@ -1,8 +1,8 @@
 # Shortcut reference
 
-AniCraft's default keyboard shortcuts. On macOS, **Ctrl** is **⌘** (Command) and **Alt** is **⌥** (Option). To change a shortcut, open **Help › Keyboard Shortcuts** (**F1**): see [Preferences, shortcuts, accessibility and languages](../preferences-shortcuts-accessibility.md). The keys in the fixed rows can't be reassigned. Every command, with or without a key, is in the [command reference](commands.md).
+Ánima's default keyboard shortcuts. On macOS, **Ctrl** is **⌘** (Command) and **Alt** is **⌥** (Option). To change a shortcut, open **Help › Keyboard Shortcuts** (**F1**): see [Preferences, shortcuts, accessibility and languages](../preferences-shortcuts-accessibility.md). The keys in the fixed rows can't be reassigned. Every command, with or without a key, is in the [command reference](commands.md).
 
-This page is generated from the editor's shortcut map, so it always matches the version of AniCraft it came with.
+This page is generated from the editor's shortcut map, so it always matches the version of Ánima it came with.
 
 ## Essentials
 

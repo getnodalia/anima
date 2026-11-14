@@ -2,7 +2,7 @@
 //! eases, F6 inside a span, removal, conversion, frames clipboard and the file round trip.
 
 use super::*;
-use anicraft_doc::{Easing, Property};
+use anima_doc::{Easing, Property};
 use serde_json::json;
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -32,7 +32,7 @@ fn layer(s: &Session) -> &Layer {
     s.active_layer().expect("active layer")
 }
 
-fn motion(s: &Session) -> &anicraft_doc::MotionTween {
+fn motion(s: &Session) -> &anima_doc::MotionTween {
     layer(s).keyframes[0].motion.as_ref().expect("motion tween")
 }
 
@@ -62,7 +62,7 @@ fn moving_the_object_inside_a_motion_tween_adds_property_keys_not_keyframes() {
     assert_eq!(pos(&mut s, 23), (100.0, 55.0));
     assert_eq!(motion(&s).track(Property::Y).map(|t| t.keys.len()), Some(2));
     // The stored object is still its first-frame self.
-    assert_eq!(layer(&s).keyframes[0].elements[0].transform.translation(), anicraft_geom::Vec2::new(5.0, 5.0));
+    assert_eq!(layer(&s).keyframes[0].elements[0].transform.translation(), anima_geom::Vec2::new(5.0, 5.0));
     // Undo takes the keys back one edit at a time.
     run(&mut s, "edit.undo", json!({}));
     assert!(motion(&s).track(Property::Y).is_none());
@@ -104,7 +104,7 @@ fn transforms_and_colour_edits_key_their_own_properties() {
         ElementKind::Shape(sh) => sh.fill.clone(),
         _ => None,
     };
-    assert_eq!(fill, Some(anicraft_doc::Paint::Solid(anicraft_doc::Rgba::hex(0xff0000))));
+    assert_eq!(fill, Some(anima_doc::Paint::Solid(anima_doc::Rgba::hex(0xff0000))));
     assert_eq!(layer(&s).keyframes.len(), 1);
 }
 
@@ -116,7 +116,7 @@ fn rotating_past_half_a_turn_keeps_turning_the_same_way() {
     run(&mut s, "edit.select_all", json!({}));
     // 20° more about the centre: 190°, not −170° (which would spin back the long way).
     let (c, r) = (5.0f32, 20f32.to_radians());
-    let m = anicraft_geom::Affine::translate(c, c).mul(&anicraft_geom::Affine::rotate(r)).mul(&anicraft_geom::Affine::translate(-c, -c));
+    let m = anima_geom::Affine::translate(c, c).mul(&anima_geom::Affine::rotate(r)).mul(&anima_geom::Affine::translate(-c, -c));
     let [a, b, cc, d, e, f] = m.m;
     run(&mut s, "modify.transform", json!({"a": a, "b": b, "c": cc, "d": d, "e": e, "f": f}));
     let rot = motion(&s).track(Property::Rotation).and_then(|t| t.keys.last()).map(|k| k.value).unwrap_or(0.0);

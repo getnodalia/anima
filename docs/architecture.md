@@ -1,4 +1,4 @@
-# AniCraft architecture
+# Ánima architecture
 
 ## 1. Philosophy
 
@@ -26,7 +26,7 @@
 ## 2. Crate map
 
 ```text
-app/                         workspace root; the root package is the desktop app (`anicraft`)
+app/                         workspace root; the root package is the desktop app (`anima`)
   crates/
     geom      L0  Vec2, Affine (+ decompose/compose for tweening), Rect, Path, flattening, hit test,
                   planar merge (merge drawing, ADR 0031), brush sweeps (ADR 0033)
@@ -37,28 +37,28 @@ app/                         workspace root; the root package is the desktop app
     render    L2  CPU oracle rasterizer, paints/gradients, compositor, PNG encode
     engine    L3  Session (document + history + selection + playhead), command registry, file format
     gpu       L3  wgpu stage renderer over the oracle's prepared fills (ADR 0019, 0029, 0032, 0048; shell feature `gpu-stage`, on by default)
-    cli       L4  `anicraft-cli`: info / render / render-seq / commands / run / serve (JSON-lines)
+    cli       L4  `anima-cli`: info / render / render-seq / commands / run / serve (JSON-lines)
   src/        L5  egui shell: menus (from registry), tools, stage, timeline, properties, library
   docs/           requirements, architecture, roadmap
 ```
 
 | Layer | Crate | May depend on |
 |---|---|---|
-| L0 | `anicraft-geom` | std, serde |
-| L0 | `anicraft-plugins` | wasmi, serde_json (knows nothing of documents; the engine is its host) |
-| L0 | `anicraft-audio` | std, lewton, nanomp3 |
-| L0 | `anicraft-actions` | serde (knows nothing of documents: targets are name paths) |
-| L1 | `anicraft-doc` | geom, audio, actions |
-| L2 | `anicraft-render` | geom, doc, rayon, png |
-| L3 | `anicraft-engine` | geom, doc, render, serde_json |
-| L3 | `anicraft-gpu` | geom, doc, render, wgpu (the version egui brings), pollster, bytemuck |
-| L4 | `anicraft-cli` | engine (+ lower) |
-| L5 | `anicraft` (shell) | engine (+ lower), eframe/egui |
+| L0 | `anima-geom` | std, serde |
+| L0 | `anima-plugins` | wasmi, serde_json (knows nothing of documents; the engine is its host) |
+| L0 | `anima-audio` | std, lewton, nanomp3 |
+| L0 | `anima-actions` | serde (knows nothing of documents: targets are name paths) |
+| L1 | `anima-doc` | geom, audio, actions |
+| L2 | `anima-render` | geom, doc, rayon, png |
+| L3 | `anima-engine` | geom, doc, render, serde_json |
+| L3 | `anima-gpu` | geom, doc, render, wgpu (the version egui brings), pollster, bytemuck |
+| L4 | `anima-cli` | engine (+ lower) |
+| L5 | `anima` (shell) | engine (+ lower), eframe/egui |
 
 Planned crates: `io` (L3, XFL/SVG/Lottie/GIF),
 `automation` (L4, MCP), `testkit`.
 
-## 3. Document model (`anicraft-doc`)
+## 3. Document model (`anima-doc`)
 
 ```text
 Document
@@ -95,7 +95,7 @@ when they are compatible:
   naive matrix lerp would.
 * **Colour effects** (alpha multiplier, tint) and **paints** interpolate linearly in
   straight-alpha sRGB, like the reference tools.
-* **Shape tweens** morph any two outlines (`anicraft_geom::morph`): subpaths paired by size,
+* **Shape tweens** morph any two outlines (`anima_geom::morph`): subpaths paired by size,
   segments equalized, windings and start points aligned. **Shape hints** (ADR 0023) on the
   tween's first keyframe steer it: placed hints join subpaths, cut both outlines at the hinted
   points and match the pieces in order by length.
@@ -128,8 +128,8 @@ iterations and a bisection fallback, the same model CSS uses.
 ### Interactive playback
 
 Interactivity is time as a function too (ADR 0013, ADR 0024). Keyframes and button or movie
-clip instances carry lists of typed actions (`anicraft-actions`) or a frame-script plug-in
-entry, or keep a script in another language verbatim (ADR 0013 tier 1: `FrameScript::Source`; ActionScript 3.0 in the timeline subset compiles once, in `anicraft_actions::as3`, to actions and mouse listeners the player runs, tier 2); nothing in the document changes while a movie plays. `player::step(doc, &state,
+clip instances carry lists of typed actions (`anima-actions`) or a frame-script plug-in
+entry, or keep a script in another language verbatim (ADR 0013 tier 1: `FrameScript::Source`; ActionScript 3.0 in the timeline subset compiles once, in `anima_actions::as3`, to actions and mouse listeners the player runs, tier 2); nothing in the document changes while a movie plays. `player::step(doc, &state,
 &events, scripts) -> Step` advances a `PlayerState` (the main timeline's scene and playhead,
 each movie clip instance's playhead by its element-id path, script-set properties, the
 pointer) by one frame, runs the actions of the frames entered and routes pointer events to
@@ -156,7 +156,7 @@ per-channel `audio::Envelope` on the voice, and layer volumes its gain. The inte
 reports the sounds of the keyframes it enters (`Step::sounds`, graphics included when their
 frame changes), and `doc::sound::trigger` turns them into voices for Test Movie.
 
-## 4. Rendering (`anicraft-render`)
+## 4. Rendering (`anima-render`)
 
 ```text
 DisplayList ──► for each item:
@@ -188,7 +188,7 @@ DisplayList ──► for each item:
 [ADR 0032](adr/0032-gpu-stage-bitmaps-filters-default.md), [ADR 0048](adr/0048-gpu-binning-and-hairlines.md);
 the shell's `gpu-stage` feature, on by default, and the default stage renderer):
 `render::prepare_scene` hands the oracle's own prepared fills, with their clips, groups, bitmap
-shaders and filtered layers, to `anicraft-gpu`, which bins edge pieces into 16 × 16 tiles with
+shaders and filtered layers, to `anima-gpu`, which bins edge pieces into 16 × 16 tiles with
 an integer backdrop per tile and steps on the tiles' left edges, and writes each tile's stream
 of entries in drawing order. Heavy scenes without masks or groups are binned on the GPU (count,
 prefix sum, scatter and tile-list passes; the CPU only lays out the points and the fills'
@@ -206,7 +206,7 @@ engine's `RenderService` takes any `Rasterizer`, whose pictures may be bytes or 
 image (`Raster::Native`) only the shell can show, and falls back to the oracle per job, so the
 engine itself never depends on the GPU.
 
-## 5. Engine (`anicraft-engine`)
+## 5. Engine (`anima-engine`)
 
 * `Session` owns the `Document` (a **persistent, structurally shared tree**: layers,
   keyframes, elements, paths and symbols live behind `Arc`, mutated only via `Arc::make_mut`),
@@ -221,32 +221,32 @@ engine itself never depends on the GPU.
 * `CommandSpec { id, label, menu, shortcut, params, run }`. `run(&mut Session, &Value) ->
   Result<Value, EngineError>`. The registry (`commands()`) is the single list the shell, CLI and
   agents read. `Session::execute(id, params)` handles undo snapshots for mutating commands.
-* **File format** `.anicraft` v2: JSON `{ "format", "version": 2, "paths": [svg…], "document" }`
+* **File format** `.anima` v2: JSON `{ "format", "version": 2, "paths": [svg…], "document" }`
   with paths as SVG path strings, shared paths written once and streamed back as shared `Arc`s.
   v1 files still load; unknown fields are ignored and missing fields default. See
   [ADR 0003](adr/0003-file-format-v2.md).
-* **Files go through `vfs`.** Commands read and write files through `anicraft_engine::vfs`,
+* **Files go through `vfs`.** Commands read and write files through `anima_engine::vfs`,
   never `std::fs` directly, and only on the command's own thread. On the desktop `vfs` is the
   file system. In the web build it is an in-memory store: the shell fills it from the
   browser's file picker and turns what commands wrote into downloads. See
   [ADR 0036](adr/0036-web-build.md).
 
-## 6. Headless and agents (`anicraft-cli`)
+## 6. Headless and agents (`anima-cli`)
 
 ```text
-anicraft-cli info <file|--sample>
-anicraft-cli render <file|--sample> --frame N --out frame.png [--scale S]
-anicraft-cli render-seq <file|--sample> --out-dir dir [--from A --to B]
-anicraft-cli commands                       # registry as JSON (id, label, menu, params)
-anicraft-cli run <file|--sample> <script.json> [--save out.anicraft]
-anicraft-cli serve [file]                   # JSON-lines: {"id":1,"cmd":"draw.rect","params":{…}}
+anima-cli info <file|--sample>
+anima-cli render <file|--sample> --frame N --out frame.png [--scale S]
+anima-cli render-seq <file|--sample> --out-dir dir [--from A --to B]
+anima-cli commands                       # registry as JSON (id, label, menu, params)
+anima-cli run <file|--sample> <script.json> [--save out.anima]
+anima-cli serve [file]                   # JSON-lines: {"id":1,"cmd":"draw.rect","params":{…}}
 ```
 
 `serve` keeps one session alive and answers each request line with
 `{"id":…, "ok":true, "result":…}` or `{"id":…, "ok":false, "error":"…"}`. The MCP server (M2)
 is a thin adapter over the same loop.
 
-## 7. Desktop shell (`anicraft`)
+## 7. Desktop shell (`anima`)
 
 Panels follow the familiar animation-tool layout. The menu bar sits on top, with an edit bar
 under it. Tools are on the left, the stage in the centre over a pasteboard, and Properties and

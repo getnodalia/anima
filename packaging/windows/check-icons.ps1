@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Check the MSI's icon references without building or installing AniCraft.
+  Check the MSI's icon references without building or installing Ánima.
 
 .DESCRIPTION
   ICE50 requires advertised shortcut icon identifiers to have the target file's extension.
@@ -9,11 +9,11 @@
   the ICO the build embeds exists. Runs in packaging-lint (Linux pwsh) and in package.ps1.
 #>
 param(
-  [string] $WxsPath = (Join-Path $PSScriptRoot 'anicraft.wxs')
+  [string] $WxsPath = (Join-Path $PSScriptRoot 'anima.wxs')
 )
 $ErrorActionPreference = 'Stop'
 $Root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$Ico = Join-Path (Join-Path (Join-Path $Root 'assets') 'app-icon') 'anicraft.ico'
+$Ico = Join-Path (Join-Path (Join-Path $Root 'assets') 'app-icon') 'anima.ico'
 if (-not (Test-Path -LiteralPath $Ico)) { throw "The app icon $Ico is missing." }
 
 [xml] $Wxs = Get-Content -LiteralPath $WxsPath -Raw

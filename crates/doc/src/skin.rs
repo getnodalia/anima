@@ -25,7 +25,7 @@
 
 use crate::armature::{Armature, BoneId, Pose};
 use crate::{Element, ElementId, ElementKind};
-use anicraft_geom::{Affine, Path, PathCmd, Vec2, segment_distance};
+use anima_geom::{Affine, Path, PathCmd, Vec2, segment_distance};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -65,9 +65,11 @@ impl Binding {
     pub fn normalize(&mut self, keep: impl Fn(BoneId) -> bool) -> bool {
         let before = self.bones.clone();
         let mut seen = Vec::with_capacity(self.bones.len());
-        self.bones.retain(|i| i.1.is_finite() && i.1 > 0.0 && keep(i.0) && !seen.contains(&i.0) && {
-            seen.push(i.0);
-            true
+        self.bones.retain(|i| {
+            i.1.is_finite() && i.1 > 0.0 && keep(i.0) && !seen.contains(&i.0) && {
+                seen.push(i.0);
+                true
+            }
         });
         self.bones.sort_by(|a, b| b.1.total_cmp(&a.1));
         self.bones.truncate(MAX_INFLUENCES);
@@ -193,7 +195,7 @@ pub fn matrices(arm: &Armature, pose: &Pose) -> HashMap<BoneId, Affine> {
     for b in &arm.bones {
         let Some(wp) = node.get(&b.parent).copied() else { continue };
         let (a, s) = (b.allow(pose.angle(b.id)), b.allow_slide(pose.slide(b.id)));
-        let wc = if a == 0.0 && s == anicraft_geom::Vec2::ZERO { wp.mul(&b.rest) } else { crate::armature::joint(b, &wp, a, s).1 };
+        let wc = if a == 0.0 && s == anima_geom::Vec2::ZERO { wp.mul(&b.rest) } else { crate::armature::joint(b, &wp, a, s).1 };
         if wc.is_finite() {
             node.insert(b.child, wc);
             out.insert(b.id, wc);

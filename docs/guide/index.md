@@ -1,17 +1,17 @@
-# AniCraft User Guide
+# Ánima User Guide
 
-Welcome to AniCraft, a free and open-source 2D animation studio for Windows, macOS, Linux and the
+Welcome to Ánima, a free and open-source 2D animation studio for Windows, macOS, Linux and the
 web browser. This guide is written for artists: it shows you where things are and how to get
 work done, one task at a time. You don't need to read it in order.
 
-![The AniCraft window: tools on the left, the stage in the middle, the timeline below and the Properties and Library panels on the right](images/workspace.png)
+![The Ánima window: tools on the left, the stage in the middle, the timeline below and the Properties and Library panels on the right](images/workspace.png)
 
 **Coming from Adobe Animate?** Start with [Coming from Animate](coming-from-animate.md): it maps
-the panels, tools and shortcuts you know to AniCraft's, and lists what works differently.
+the panels, tools and shortcuts you know to Ánima's, and lists what works differently.
 
 ## Start here
 
-1. [Getting started](getting-started.md): install AniCraft, make your first animation and save it.
+1. [Getting started](getting-started.md): install Ánima, make your first animation and save it.
 2. [The workspace](workspace.md): the panels, the stage, the command palette and finding your way around.
 
 ## Making animation
@@ -28,9 +28,9 @@ the panels, tools and shortcuts you know to AniCraft's, and lists what works dif
 ## Sharing your work
 
 11. [Exporting and Publish](exporting-and-publish.md): pictures, GIFs, animated PNG and WebP, video, HTML and Publish Settings.
-12. [Opening Animate files](opening-animate-files.md): what comes across from `.fla` and XFL, and what AniCraft tells you about the rest.
+12. [Opening Animate files](opening-animate-files.md): what comes across from `.fla` and XFL, and what Ánima tells you about the rest.
 
-## Making AniCraft yours
+## Making Ánima yours
 
 13. [Preferences, shortcuts, accessibility and languages](preferences-shortcuts-accessibility.md).
 14. [Plug-ins](plugins.md): add commands safely.
@@ -46,15 +46,15 @@ the panels, tools and shortcuts you know to AniCraft's, and lists what works dif
 * [Command reference](reference/commands.md): every command, with its menu, shortcut and parameters.
 * [Shortcut reference](reference/shortcuts.md): every default key, for Windows and Linux and for macOS.
 
-Both reference pages are generated from AniCraft itself, so they always match the version you
+Both reference pages are generated from Ánima itself, so they always match the version you
 have. On macOS, **Ctrl** in this guide means **⌘** (Command) and **Alt** means **⌥** (Option).
 
 ## About this guide
 
-The guide comes with AniCraft: **Help › User Guide** opens it in your web browser, and it works
+The guide comes with Ánima: **Help › User Guide** opens it in your web browser, and it works
 without an internet connection. You can also read it on
-[GitHub](https://github.com/storytold/AniCraft). Found a mistake or something missing? Please
-[open an issue](https://github.com/storytold/AniCraft/issues).
+[GitHub](https://github.com/getnodalia/anima). Found a mistake or something missing? Please
+[open an issue](https://github.com/getnodalia/anima/issues).
 
-AniCraft is not affiliated with or endorsed by Adobe. Adobe and Animate are trademarks of Adobe;
-they are named here only to describe what AniCraft can work with.
+Ánima is not affiliated with or endorsed by Adobe. Adobe and Animate are trademarks of Adobe;
+they are named here only to describe what Ánima can work with.

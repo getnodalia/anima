@@ -1,5 +1,5 @@
 //! Drawing aids saved with the document (ADR 0076): each scene's guides, and how the grid and
-//! the guides look. Whether they show and snap is the editor's (`anicraft_engine::ViewAids`):
+//! the guides look. Whether they show and snap is the editor's (`anima_engine::ViewAids`):
 //! a working preference, like Snap to Objects, not part of the artwork. None of this is ever
 //! rendered into a picture or an export; the editor's stage draws it.
 

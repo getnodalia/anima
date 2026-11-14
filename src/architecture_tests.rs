@@ -5,9 +5,23 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-/// Each crate's layer, as AGENTS.md documents it. The shell (`anicraft`, `src/`) is L5.
-const LAYERS: &[(&str, u8)] =
-    &[("geom", 0), ("xml", 0), ("plugins", 0), ("audio", 0), ("actions", 0), ("guide", 0), ("doc", 1), ("text", 1), ("render", 2), ("xfl", 2), ("svg", 2), ("engine", 3), ("gpu", 3), ("cli", 4)];
+/// Each crate's layer, as AGENTS.md documents it. The shell (`anima`, `src/`) is L5.
+const LAYERS: &[(&str, u8)] = &[
+    ("geom", 0),
+    ("xml", 0),
+    ("plugins", 0),
+    ("audio", 0),
+    ("actions", 0),
+    ("guide", 0),
+    ("doc", 1),
+    ("text", 1),
+    ("render", 2),
+    ("xfl", 2),
+    ("svg", 2),
+    ("engine", 3),
+    ("gpu", 3),
+    ("cli", 4),
+];
 const SHELL_LAYER: u8 = 5;
 /// UI crates only the shell may use.
 const UI_CRATES: &[&str] = &["egui", "eframe", "winit", "egui-wgpu", "egui_glow"];
@@ -57,18 +71,18 @@ fn crates_depend_only_on_lower_layers_and_never_on_the_ui() {
             if UI_CRATES.contains(&dep.as_str()) {
                 problems.push(format!("crates/{name} (L{own}) depends on {dep}; only the shell may use the UI toolkit"));
             }
-            if let Some(d) = dep.strip_prefix("anicraft-")
+            if let Some(d) = dep.strip_prefix("anima-")
                 && let Some(l) = layer_of(d)
                 && l >= own
             {
-                problems.push(format!("crates/{name} (L{own}) depends on anicraft-{d} (L{l}); a crate may use only lower layers"));
+                problems.push(format!("crates/{name} (L{own}) depends on anima-{d} (L{l}); a crate may use only lower layers"));
             }
         }
     }
     assert!(seen.len() >= LAYERS.len(), "expected every crate in LAYERS to exist, found {seen:?}");
     // The shell may use any crate.
     for dep in dependencies(&std::fs::read_to_string(root().join("Cargo.toml")).unwrap_or_default()) {
-        if let Some(l) = dep.strip_prefix("anicraft-").and_then(layer_of) {
+        if let Some(l) = dep.strip_prefix("anima-").and_then(layer_of) {
             assert!(l < SHELL_LAYER);
         }
     }
@@ -94,6 +108,6 @@ fn the_workspace_map_in_agents_md_matches_the_crates() {
 
 #[test]
 fn dependency_lines_are_read_from_every_table() {
-    let m = "[package]\nname = \"x\"\n\n[dependencies]\nanicraft-geom.workspace = true\nserde = { version = \"1\" }\n# a comment\n\n[dev-dependencies]\npng.workspace = true\n\n[lints]\nworkspace = true\n";
-    assert_eq!(dependencies(m), ["anicraft-geom", "serde", "png"]);
+    let m = "[package]\nname = \"x\"\n\n[dependencies]\nanima-geom.workspace = true\nserde = { version = \"1\" }\n# a comment\n\n[dev-dependencies]\npng.workspace = true\n\n[lints]\nworkspace = true\n";
+    assert_eq!(dependencies(m), ["anima-geom", "serde", "png"]);
 }

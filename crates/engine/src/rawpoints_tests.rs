@@ -2,10 +2,10 @@
 //! drawing (ADR 0045), through the commands.
 
 use crate::Session;
-use anicraft_doc::{Element, ElementKind};
-use anicraft_geom::raw::{self as rawgeom};
-use anicraft_geom::walk::cubic_point;
-use anicraft_geom::Vec2;
+use anima_doc::{Element, ElementKind};
+use anima_geom::Vec2;
+use anima_geom::raw::{self as rawgeom};
+use anima_geom::walk::cubic_point;
 use serde_json::{Value, json};
 use std::sync::Arc;
 
@@ -14,7 +14,7 @@ fn run(s: &mut Session, id: &str, p: Value) -> Value {
 }
 
 fn raw_session() -> Session {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.object_drawing", json!({"on": false}));
     s
 }
@@ -27,7 +27,7 @@ fn is_fill(e: &Element) -> bool {
     matches!(&e.kind, ElementKind::Shape(sh) if sh.fill.is_some())
 }
 
-fn all_ids(s: &Session) -> Vec<anicraft_doc::ElementId> {
+fn all_ids(s: &Session) -> Vec<anima_doc::ElementId> {
     raw(s).iter().map(|e| e.id).collect()
 }
 
@@ -41,7 +41,12 @@ fn has(points: &[Vec2], p: (f32, f32)) -> bool {
 
 fn area(e: &Element) -> f32 {
     let ElementKind::Shape(sh) = &e.kind else { return 0.0 };
-    sh.path.flatten(&e.transform, 0.01).iter().map(|pl| pl.points.iter().zip(pl.points.iter().cycle().skip(1)).map(|(a, b)| a.cross(*b)).sum::<f32>() * 0.5).sum::<f32>().abs()
+    sh.path
+        .flatten(&e.transform, 0.01)
+        .iter()
+        .map(|pl| pl.points.iter().zip(pl.points.iter().cycle().skip(1)).map(|(a, b)| a.cross(*b)).sum::<f32>() * 0.5)
+        .sum::<f32>()
+        .abs()
 }
 
 /// Every shape's anchors in stage space.
@@ -71,7 +76,7 @@ fn an_added_point_is_shared_by_every_shape_on_the_edge_and_the_curve_keeps_its_s
     let c = arc(&mut s);
     let before = anchors(&s).len();
     // How far the outlines are from the drawn curve (flattening): adding may not change it.
-    let was: Vec<(anicraft_doc::ElementId, f32)> = raw(&s).iter().map(|e| (e.id, off_outline(e, &c))).collect();
+    let was: Vec<(anima_doc::ElementId, f32)> = raw(&s).iter().map(|e| (e.id, off_outline(e, &c))).collect();
     let top = cubic_point(&c, 0.5);
     let v = run(&mut s, "raw.add_point", json!({"x": top.x, "y": top.y + 1.0, "slop": 4}));
     let at = Vec2::new(v["x"].as_f64().unwrap_or(0.0) as f32, v["y"].as_f64().unwrap_or(0.0) as f32);
@@ -242,7 +247,7 @@ fn drawing_snaps_to_anchors_then_lines_while_snap_to_objects_is_on() {
 
 #[test]
 fn an_object_paths_smooth_anchor_keeps_its_handles_opposite() {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     let v = run(&mut s, "draw.path", json!({"d": "M0 0 C0 -50 60 -50 100 0 C140 50 200 50 200 0", "stroke": "#000000", "fill": null}));
     let id = v["element"].as_u64().unwrap_or(0);
     let el = s.visible_elements().into_iter().find(|e| e.id.0 == id).unwrap_or_else(|| panic!("the path"));
@@ -309,17 +314,26 @@ fn raw_points_timings() {
     let t = std::time::Instant::now();
     run(&mut s, "raw.move_point", json!({"x": a.x, "y": a.y, "to_x": a.x - 5.0, "to_y": a.y}));
     let inside = ms(t);
-    eprintln!("{n} raw shapes; add point {add:.2} ms, delete point {delete:.2} ms, make smooth {smooth:.2} ms, smooth handle frame {pair:.2} ms, draw snap {snap:.3} ms; inside a symbol: open {open:.2} ms, stage picture {picture:.2} ms (frame {}), point move {inside:.2} ms", pic.frame);
+    eprintln!(
+        "{n} raw shapes; add point {add:.2} ms, delete point {delete:.2} ms, make smooth {smooth:.2} ms, smooth handle frame {pair:.2} ms, draw snap {snap:.3} ms; inside a symbol: open {open:.2} ms, stage picture {picture:.2} ms (frame {}), point move {inside:.2} ms",
+        pic.frame
+    );
 }
 
 #[test]
 fn point_edits_keep_a_dashed_lines_style() {
     let mut s = raw_session();
     // A dashed, butt-capped, mitred zigzag (ADR 0046).
-    run(&mut s, "draw.path", json!({"d": "M0 0 L50 40 L100 0 L150 40", "stroke": "#000000", "fill": null, "stroke_width": 2, "cap": "none", "join": "miter", "dash": [6, 3]}));
+    run(
+        &mut s,
+        "draw.path",
+        json!({"d": "M0 0 L50 40 L100 0 L150 40", "stroke": "#000000", "fill": null, "stroke_width": 2, "cap": "none", "join": "miter", "dash": [6, 3]}),
+    );
     let styled = |s: &Session| {
         raw(s).iter().all(|e| match &e.kind {
-            ElementKind::Shape(sh) => sh.stroke.as_ref().is_some_and(|st| st.style.dash == anicraft_doc::Dash::dashed(6.0, 3.0) && st.style.cap == anicraft_doc::Cap::Butt && st.style.join == anicraft_doc::Join::Miter),
+            ElementKind::Shape(sh) => sh.stroke.as_ref().is_some_and(|st| {
+                st.style.dash == anima_doc::Dash::dashed(6.0, 3.0) && st.style.cap == anima_doc::Cap::Butt && st.style.join == anima_doc::Join::Miter
+            }),
             _ => false,
         })
     };

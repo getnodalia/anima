@@ -1,4 +1,4 @@
-// AniCraft GPU stage: filters on a filtered group's layer (ADR 0031).
+// Ánima GPU stage: filters on a filtered group's layer (ADR 0031).
 //
 // The same steps as the CPU oracle's filters (crates/render/src/filters.rs), resolved by it
 // (`filters::resolve`: box widths, whole-pixel offsets, premultiplied colours, ramp tables, the

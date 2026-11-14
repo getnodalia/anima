@@ -2,9 +2,9 @@
 //! plain transform.
 
 use super::*;
-use anicraft_doc::warp::{Pin, PinId, Warp};
-use anicraft_doc::{BitmapId, ElementId, LayerId, Pixels, Shape};
-use anicraft_geom::Path;
+use anima_doc::warp::{Pin, PinId, Warp};
+use anima_doc::{BitmapId, ElementId, LayerId, Pixels, Shape};
+use anima_geom::Path;
 use std::sync::Arc;
 
 /// A 32 × 16 image: a horizontal red ramp, green rows, blue on every fourth column.
@@ -52,7 +52,7 @@ fn draw(items: Vec<DisplayItem>, w: u32, h: u32) -> Pixmap {
 }
 
 fn pin(id: u64, rest: (f32, f32), at: (f32, f32)) -> Pin {
-    Pin { id: PinId(id), rest: anicraft_geom::Vec2::new(rest.0, rest.1), at: anicraft_geom::Vec2::new(at.0, at.1) }
+    Pin { id: PinId(id), rest: anima_geom::Vec2::new(rest.0, rest.1), at: anima_geom::Vec2::new(at.0, at.1) }
 }
 
 fn warped(pins: Vec<Pin>, resolution: u32) -> Shape {
@@ -106,7 +106,7 @@ fn a_bent_image_has_no_cracks_and_is_deterministic() {
     let mut inside = 0;
     for y in 0..110 {
         for x in 0..140 {
-            let p = anicraft_geom::Vec2::new(x as f32 + 0.5, y as f32 + 0.5);
+            let p = anima_geom::Vec2::new(x as f32 + 0.5, y as f32 + 0.5);
             if outline.contains(p, &m, FillRule::NonZero) && outline.distance_to_edge(p, &m) > 1.0 {
                 inside += 1;
                 let px = a.data[y * 140 + x];
@@ -123,7 +123,8 @@ fn the_gpu_stage_gets_the_same_prepared_fill() {
     let s = warped(vec![pin(1, (16.0, 8.0), (20.0, 8.0)), pin(2, (2.0, 2.0), (2.0, 2.0))], 6);
     let dl = DisplayList { items: vec![item(&s, Affine::IDENTITY, true)], ..Default::default() };
     let view = View { transform: Affine::IDENTITY, width: 48, height: 24, background: None };
-    let (scene, _) = prepare_scene(&dl, &view).unwrap_or_else(|_| (Scene { fills: Vec::new(), clips: Vec::new(), groups: Vec::new(), layers: Vec::new() }, RenderStats::default()));
+    let (scene, _) = prepare_scene(&dl, &view)
+        .unwrap_or_else(|_| (Scene { fills: Vec::new(), clips: Vec::new(), groups: Vec::new(), layers: Vec::new() }, RenderStats::default()));
     assert_eq!(scene.fills.len(), 1);
     assert!(matches!(&scene.fills[0].shader, paint::Shader::Bitmap { smooth: false, repeat: false, .. }));
 }
@@ -132,7 +133,7 @@ fn the_gpu_stage_gets_the_same_prepared_fill() {
 fn svg_bakes_a_warped_bitmap_as_the_image_drawn() {
     let s = warped(vec![pin(1, (2.0, 8.0), (2.0, 8.0)), pin(2, (30.0, 8.0), (36.0, 18.0))], 8);
     let dl = DisplayList { items: vec![item(&s, Affine::translate(5.0, 5.0), true)], ..Default::default() };
-    let stage = anicraft_doc::Stage { width: 64, height: 48, ..Default::default() };
+    let stage = anima_doc::Stage { width: 64, height: 48, ..Default::default() };
     let svg = crate::svg::to_svg(&dl, &stage);
     assert!(svg.contains("<image x=") && svg.contains("data:image/png;base64,"), "{svg}");
     assert!(!svg.contains("<pattern"), "the unbent pattern isn't written");
@@ -142,7 +143,7 @@ fn svg_bakes_a_warped_bitmap_as_the_image_drawn() {
 }
 
 #[test]
-#[ignore = "a measurement: cargo test -p anicraft-render warp_measured -- --ignored --nocapture"]
+#[ignore = "a measurement: cargo test -p anima-render warp_measured -- --ignored --nocapture"]
 fn warp_measured() {
     // The 32 × 16 image bent by three pins and drawn 30× (960 × 480 px), on a 1,000 × 700 view.
     let s = warped(vec![pin(1, (2.0, 8.0), (2.0, 8.0)), pin(2, (16.0, 8.0), (16.0, 6.0)), pin(3, (30.0, 8.0), (31.0, 14.0))], 48);

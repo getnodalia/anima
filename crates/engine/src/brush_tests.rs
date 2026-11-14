@@ -1,8 +1,8 @@
 //! The Brush tool's command (ADR 0033).
 
 use crate::Session;
-use anicraft_doc::{ElementKind, Paint, Rgba, Shape};
-use anicraft_geom::{Affine, FillRule, Vec2};
+use anima_doc::{ElementKind, Paint, Rgba, Shape};
+use anima_geom::{Affine, FillRule, Vec2};
 use serde_json::{Value, json};
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -10,7 +10,7 @@ fn run(s: &mut Session, id: &str, p: Value) -> Value {
 }
 
 fn blank(object: bool) -> Session {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.object_drawing", json!({"on": object}));
     s
 }
@@ -50,8 +50,8 @@ fn area(sh: &Shape) -> f32 {
 }
 
 /// The curve's own bounds (control points reach past it).
-fn bounds(sh: &Shape) -> anicraft_geom::Rect {
-    let mut r = anicraft_geom::Rect::EMPTY;
+fn bounds(sh: &Shape) -> anima_geom::Rect {
+    let mut r = anima_geom::Rect::EMPTY;
     sh.path.flatten(&Affine::IDENTITY, 0.01).iter().flat_map(|pl| pl.points.iter()).for_each(|p| r.include(*p));
     r
 }
@@ -153,7 +153,7 @@ fn paint_behind_only_fills_empty_areas() {
         let first = shapes(&s).first().and_then(|(sh, _)| fill_of(sh));
         assert_eq!(first, Some(Rgba::hex(0xff0000)), "object {object}: painted at the bottom");
         // The CPU renderer agrees (the oracle).
-        let px = |x, y| anicraft_render::render_frame(&s.doc, 0, 1.0).unwrap().pixel(x, y).unwrap();
+        let px = |x, y| anima_render::render_frame(&s.doc, 0, 1.0).unwrap().pixel(x, y).unwrap();
         let (on, off) = (px(200, 150), px(70, 150));
         assert!(on[2] > 0.9 && on[0] < 0.1 && off[0] > 0.9 && off[2] < 0.1, "{on:?} {off:?}");
     }
@@ -173,7 +173,8 @@ fn paint_fills_leaves_lines() {
     let mut n = blank(false);
     run(&mut n, "draw.line", json!({"x0": 200, "y0": 50, "x1": 200, "y1": 250, "stroke": "#000000", "stroke_width": 4}));
     run(&mut n, "draw.brush", json!({"points": stroke(100.0, 150.0, 300.0, 150.0), "size": 30, "color": RED}));
-    let hidden = shapes(&n).iter().filter(|(sh, _)| sh.stroke.is_some()).all(|(sh, m)| !sh.path.bounds().transformed(m).contains(Vec2::new(200.0, 150.0)));
+    let hidden =
+        shapes(&n).iter().filter(|(sh, _)| sh.stroke.is_some()).all(|(sh, m)| !sh.path.bounds().transformed(m).contains(Vec2::new(200.0, 150.0)));
     assert!(hidden, "Paint Normal covers the line where it crosses it");
 }
 
@@ -261,7 +262,13 @@ fn tilt_turns_and_widens_the_tip_and_a_mouse_is_unaffected() {
         run(&mut s, "draw.brush", json!({"points": tilted(alt, 0.0), "size": 10, "smoothing": 0, "tilt_width": true}));
         bounds(&shapes(&s).remove(0).0).height()
     };
-    assert!((round(0.0) - 20.0).abs() < 0.5 && (round(45.0) - 15.0).abs() < 0.5 && (round(90.0) - 10.0).abs() < 0.5, "{} {} {}", round(0.0), round(45.0), round(90.0));
+    assert!(
+        (round(0.0) - 20.0).abs() < 0.5 && (round(45.0) - 15.0).abs() < 0.5 && (round(90.0) - 10.0).abs() < 0.5,
+        "{} {} {}",
+        round(0.0),
+        round(45.0),
+        round(90.0)
+    );
     // The Paint Brush: tilt widens its stroke's profile.
     let mut s = blank(true);
     run(&mut s, "draw.brush", json!({"points": tilted(0.0, 0.0), "size": 6, "as_stroke": true, "tilt_width": true, "pressure_size": false}));
@@ -281,7 +288,7 @@ fn textured_and_scattered_brushes_paint_vector_fills_that_merge() {
     assert_eq!(r["merged"], true, "raw paint, merged like any other");
     let raw: Vec<Shape> = shapes(&s).into_iter().map(|(sh, _)| sh).collect();
     assert!(raw.iter().all(|sh| sh.merge && fill_of(sh).is_some()));
-    let holes: usize = raw.iter().map(|sh| sh.path.cmds.iter().filter(|c| matches!(c, anicraft_geom::PathCmd::MoveTo(_))).count()).sum();
+    let holes: usize = raw.iter().map(|sh| sh.path.cmds.iter().filter(|c| matches!(c, anima_geom::PathCmd::MoveTo(_))).count()).sum();
     assert!(holes > 10, "the paper grain shows through: {holes} loops");
     // The same stroke again gives the same paint.
     let mut t = blank(false);
@@ -291,7 +298,9 @@ fn textured_and_scattered_brushes_paint_vector_fills_that_merge() {
     run(&mut s, "draw.brush", json!({"points": stroke(100.0, 400.0, 400.0, 400.0), "preset": "spatter", "color": BLUE}));
     let json = crate::format::to_json(&s.doc).unwrap();
     assert_eq!(crate::format::from_json(&json).unwrap(), s.doc);
-    for p in [json!({"points": [[0, 0]], "texture": 101}), json!({"points": [[0, 0]], "scatter": -1}), json!({"points": [[0, 0]], "tilt_angle": "yes"})] {
+    for p in
+        [json!({"points": [[0, 0]], "texture": 101}), json!({"points": [[0, 0]], "scatter": -1}), json!({"points": [[0, 0]], "tilt_angle": "yes"})]
+    {
         assert!(s.execute("draw.brush", &p).is_err(), "{p}");
     }
     let _ = RED;

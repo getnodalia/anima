@@ -31,8 +31,8 @@ jobs:
     uses: storytold/craft-common-actions/.github/workflows/release.yml@main
     with:
       dry-run: ${{ github.event_name == 'schedule' }}
-      app-name: anicraft
-      app-title: AniCraft
+      app-name: anima
+      app-title: Ánima
       craft-fonts-ref: b076417b5880bd4154bd22f00695b1d28c6bea83
       # The web editor builds (ADR 0036) and packaging/web/package.sh makes its zip (#210), but
       # releases don't carry it until the team decides where it is hosted: off for now.

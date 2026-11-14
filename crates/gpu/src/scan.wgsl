@@ -1,4 +1,4 @@
-// AniCraft GPU stage: the prefix sum for the GPU binning (ADR 0048, bin.wgsl).
+// Ánima GPU stage: the prefix sum for the GPU binning (ADR 0048, bin.wgsl).
 //
 // An exclusive scan of `n` values in `values` (the binning's working buffer): each workgroup
 // scans 1024 of them (four per invocation, then the invocations' totals in workgroup memory)

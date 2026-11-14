@@ -1,4 +1,4 @@
-// AniCraft HTML canvas player: the page (ADR 0028). SPDX-License-Identifier: MIT OR Apache-2.0
+// Ánima HTML canvas player: the page (ADR 0028). SPDX-License-Identifier: MIT OR Apache-2.0
 //
 // Draws what player.js evaluates on a <canvas> 2D context, steps the movie at its frame rate,
 // sends the pointer to its buttons and plays its sounds with Web Audio; the viewer types into
@@ -11,8 +11,8 @@
 // 2D lacks, are composited per pixel there too.
 (function () {
   "use strict";
-  const data = document.getElementById("anicraft-movie");
-  const canvas = document.getElementById("anicraft-stage");
+  const data = document.getElementById("anima-movie");
+  const canvas = document.getElementById("anima-stage");
   if (!data || !canvas || !canvas.getContext) return;
   const movie = JSON.parse(data.textContent);
   const W = movie.stage.w, H = movie.stage.h, fit = movie.fit !== false;
@@ -47,7 +47,7 @@
   // Each page load gets its own Math.random() sequence (a movie's, not for security); the
   // player itself is deterministic.
   const seed = Date.now() % 4294967296;
-  const player = new AniCraft.Player(movie, host, seed);
+  const player = new Ánima.Player(movie, host, seed);
 
   function stagePath(path, m) {
     const out = new Path2D();
@@ -149,12 +149,12 @@
       if (bx <= ax || by <= ay) return;
       try {
         const s = srcCtx.getImageData(ax - dx, ay - dy, bx - ax, by - ay);
-        const r = AniCraftFilters.region(s.data, bx - ax, by - ay, 0);
+        const r = AnimaFilters.region(s.data, bx - ax, by - ay, 0);
         if (!r) return;
         const rw = r[2] - r[0], rh = r[3] - r[1];
         const part = rw === bx - ax && rh === by - ay ? s : srcCtx.getImageData(ax - dx + r[0], ay - dy + r[1], rw, rh);
         const d = g.getImageData(ax + r[0], ay + r[1], rw, rh);
-        AniCraftFilters.blendImage(d.data, part.data, alpha, mode);
+        AnimaFilters.blendImage(d.data, part.data, alpha, mode);
         g.putImageData(d, ax + r[0], ay + r[1]);
         return;
       } catch (e) {
@@ -183,13 +183,13 @@
     let out = null;
     try {
       const px = l.ctx.getImageData(0, 0, l.w, l.h);
-      const r = AniCraftFilters.region(px.data, l.w, l.h, AniCraftFilters.reach(grp.margin, scale));
+      const r = AnimaFilters.region(px.data, l.w, l.h, AnimaFilters.reach(grp.margin, scale));
       if (r) {
         const w = r[2] - r[0], h = r[3] - r[1];
         const cut = l.ctx.getImageData(r[0], r[1], w, h);
-        const buf = AniCraftFilters.premul(cut.data);
-        AniCraftFilters.apply(buf, w, h, grp.filters, scale);
-        AniCraftFilters.straight(buf, cut.data);
+        const buf = AnimaFilters.premul(cut.data);
+        AnimaFilters.apply(buf, w, h, grp.filters, scale);
+        AnimaFilters.straight(buf, cut.data);
         const c = document.createElement("canvas");
         c.width = w;
         c.height = h;
@@ -216,10 +216,10 @@
   function paintStyle(g, f, fx) {
     const p = movie.paints[f];
     if (!p) return null;
-    if (p.s) return css(AniCraft.applyEffect(fx, p.s));
+    if (p.s) return css(Anima.applyEffect(fx, p.s));
     if (p.l || p.r) {
       const gr = p.l ? g.createLinearGradient(p.l[0], p.l[1], p.l[2], p.l[3]) : g.createRadialGradient(p.f ? p.f[0] : p.r[0], p.f ? p.f[1] : p.r[1], 0, p.r[0], p.r[1], p.r[2]);
-      for (const s of p.st) gr.addColorStop(s[0], css(AniCraft.applyEffect(fx, [s[1], s[2], s[3], s[4]])));
+      for (const s of p.st) gr.addColorStop(s[0], css(Anima.applyEffect(fx, [s[1], s[2], s[3], s[4]])));
       return gr;
     }
     if (p.b !== undefined) {
@@ -227,7 +227,7 @@
       if (!im || !im.complete || !im.naturalWidth) return "rgba(128,128,128,1)";
       // A colour effect beyond alpha draws the bitmap's pixels through it (ADR 0056), as the
       // renderer does: once per bitmap and effect while the effect stays the same.
-      const recolour = AniCraft.recolours(fx);
+      const recolour = Ánima.recolours(fx);
       const key = recolour ? f + ":" + fx.join(",") : f;
       let pat = patterns.get(key);
       if (!pat) {
@@ -256,7 +256,7 @@
     }
     const d = px.data;
     for (let i = 0; i < d.length; i += 4) {
-      const o = AniCraft.applyEffect(fx, [d[i] / 255, d[i + 1] / 255, d[i + 2] / 255, d[i + 3] / 255]);
+      const o = Anima.applyEffect(fx, [d[i] / 255, d[i + 1] / 255, d[i + 2] / 255, d[i + 3] / 255]);
       d[i] = Math.round(o[0] * 255);
       d[i + 1] = Math.round(o[1] * 255);
       d[i + 2] = Math.round(o[2] * 255);
@@ -281,7 +281,7 @@
   const inputs = new Map();
   const MAX_LINES = 1000;
   function ours(t) {
-    return !!t && t.dataset !== undefined && t.dataset.anicraftField !== undefined;
+    return !!t && t.dataset !== undefined && t.dataset.animaField !== undefined;
   }
   function fieldFont(tf) {
     const f = tf.font || {};
@@ -298,7 +298,7 @@
   }
   function fieldColour(f) {
     const p = movie.paints[f.tf.f];
-    return css(AniCraft.applyEffect(f.c, p && p.s ? p.s : [0, 0, 0, 1]));
+    return css(Anima.applyEffect(f.c, p && p.s ? p.s : [0, 0, 0, 1]));
   }
   // `text` as the field's lines: broken where it breaks, and in a Multiline field wrapped at the
   // box less its gutters (greedily, at spaces).
@@ -347,7 +347,7 @@
   function drawField(L, f, set, seen) {
     const g = L.ctx;
     const tf = f.tf, m = f.m, box = paths[tf.r];
-    if (!AniCraft.finite(m) || !box) return;
+    if (!Ánima.finite(m) || !box) return;
     if (tf.bg !== undefined) {
       const style = paintStyle(g, tf.bg, f.c);
       if (style) {
@@ -377,10 +377,10 @@
     if (tf.bd) {
       // 1 px in the field's space, mitred, like any stroke (stage width × the mean scale).
       g.setTransform(scale, 0, 0, scale, -L.x0, -L.y0);
-      g.lineWidth = AniCraft.meanScale(m);
+      g.lineWidth = Ánima.meanScale(m);
       g.lineJoin = "miter";
       g.lineCap = "butt";
-      g.strokeStyle = css(AniCraft.applyEffect(f.c, tf.bd));
+      g.strokeStyle = css(Anima.applyEffect(f.c, tf.bd));
       g.stroke(stagePath(box, m));
       g.lineJoin = "round";
       g.lineCap = "round";
@@ -392,7 +392,7 @@
     const el = document.createElement(multi ? "textarea" : "input");
     if (!multi) el.type = tf.ln === "password" ? "password" : "text";
     else el.wrap = tf.ln === "multiline" ? "soft" : "off";
-    el.dataset.anicraftField = key;
+    el.dataset.animaField = key;
     el.setAttribute("aria-label", f.name || "Text field");
     el.setAttribute("autocomplete", "off");
     el.setAttribute("autocapitalize", "off");
@@ -496,7 +496,7 @@
     player.evaluate({
       item: function (it) {
         const path = paths[it.p];
-        if (!path || !AniCraft.finite(it.m)) return;
+        if (!path || !Ánima.finite(it.m)) return;
         if (filtering) trail.push("i" + it.p + "," + it.m.join(",") + "," + it.f + "," + (it.s ? it.s.join(",") : "") + "," + it.c.join(",") + "," + (it.k ? JSON.stringify(it.k) : "") + "," + it.eo + "," + it.masks);
         let L = top();
         if (it.masks !== null) {
@@ -519,7 +519,7 @@
           const style = paintStyle(g, it.f, it.c);
           if (style) {
             const bitmap = movie.paints[it.f] && movie.paints[it.f].b !== undefined;
-            g.globalAlpha = bitmap && !AniCraft.recolours(it.c) ? Math.min(Math.max(it.c[3], 0), 1) : 1;
+            g.globalAlpha = bitmap && !Ánima.recolours(it.c) ? Math.min(Math.max(it.c[3], 0), 1) : 1;
             set(L, it.m);
             g.fillStyle = style;
             // A bitmap without Allow Smoothing keeps hard pixel edges (ADR 0050).
@@ -531,7 +531,7 @@
           }
         }
         if (it.s) {
-          const scale = AniCraft.meanScale(it.m);
+          const scale = Ánima.meanScale(it.m);
           const w = it.s[4] * scale * k;
           if (w > 0 && Number.isFinite(w)) {
             g.setTransform(k, 0, 0, k, -L.x0, -L.y0);
@@ -546,7 +546,7 @@
               g.setLineDash(st.d.map((x) => x * scale));
               g.lineDashOffset = (st.o || 0) * scale;
             }
-            g.strokeStyle = css(AniCraft.applyEffect(it.c, it.s));
+            g.strokeStyle = css(Anima.applyEffect(it.c, it.s));
             g.stroke(stagePath(path, it.m));
             if (dashed) {
               g.setLineDash([]);
@@ -565,7 +565,7 @@
         if (filtering) trail.push("g" + grp.alpha + "," + grp.blend + "," + grp.margin + "," + (grp.filters ? JSON.stringify(grp.filters) : ""));
         if (grp.filters) {
           // Room for the filters to spread past the layer below, as far as they reach.
-          const around = Math.min(AniCraftFilters.reach(grp.margin, scale), room(P.w, P.h));
+          const around = Math.min(AnimaFilters.reach(grp.margin, scale), room(P.w, P.h));
           const l = layer(P.x0 - around, P.y0 - around, P.w + 2 * around, P.h + 2 * around, true);
           l.mark = trail.length;
           filtering++;
@@ -657,7 +657,7 @@
         const bin = atob(s.data);
         const bytes = new Uint8Array(bin.length);
         for (let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
-        audio.decodeAudioData(bytes.buffer).then((b) => (buffers[i] = b), () => console.warn("AniCraft: this browser can't play the sound “" + s.name + "”"));
+        audio.decodeAudioData(bytes.buffer).then((b) => (buffers[i] = b), () => console.warn("Ánima: this browser can't play the sound “" + s.name + "”"));
       });
     }
     if (audio.state === "suspended") audio.resume();
@@ -781,5 +781,5 @@
     report(player.start());
     resize();
     requestAnimationFrame(tick);
-  }).catch((e) => console.error("AniCraft: the movie couldn't start", e));
+  }).catch((e) => console.error("Ánima: the movie couldn't start", e));
 })();

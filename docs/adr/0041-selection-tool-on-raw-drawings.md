@@ -32,7 +32,7 @@ was copied.
 
 1. **Shared geometry is edited in every copy.** ADR 0031's model stores a shared edge or corner
    once in each raw shape that has it. We keep that model and make each edit change all the
-   copies alike, then merge the shapes again. Pure parts are in `anicraft_geom::raw`:
+   copies alike, then merge the shapes again. Pure parts are in `anima_geom::raw`:
    * `follow` replaces every stretch of a path that runs along an edge (within `SNAP`) with the
      same stretch of the bent edge. It splits a longer segment at the edge's ends first.
    * `anchors_at` gives a path's anchors at a point. When only an edge passes there (another

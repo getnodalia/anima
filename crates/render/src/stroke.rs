@@ -4,9 +4,9 @@
 //! Every emitted polygon has the same orientation, so overlaps only add winding and the
 //! non-zero rule gives a seamless union without computing an outline offset.
 
-use anicraft_doc::width::left_normal;
-use anicraft_doc::{Cap, DisplayItem, DisplayList, Join, Stroke, WidthProfile};
-use anicraft_geom::{Affine, Path, Polyline, Vec2};
+use anima_doc::width::left_normal;
+use anima_doc::{Cap, DisplayItem, DisplayList, Join, Stroke, WidthProfile};
+use anima_geom::{Affine, Path, Polyline, Vec2};
 
 fn signed_area(p: &[Vec2]) -> f32 {
     let n = p.len();
@@ -202,7 +202,9 @@ pub fn variable_polygons(lines: &[Polyline], hw: f32, profile: &WidthProfile, to
         if !closed {
             // Caps: half a disc across the end's cross-section (from its left edge to its
             // right), so a one-sided width stays on its side.
-            let cap = |at: Vec2, nrm: Vec2, (l, r): (f32, f32), sweep: f32| fan(at + nrm * ((l - r) * 0.5), angle(nrm), sweep, (l + r) * 0.5, (l + r) * 0.5);
+            let cap = |at: Vec2, nrm: Vec2, (l, r): (f32, f32), sweep: f32| {
+                fan(at + nrm * ((l - r) * 0.5), angle(nrm), sweep, (l + r) * 0.5, (l + r) * 0.5)
+            };
             // (Turning the left normal by −90° on screen points backwards.)
             out.extend(cap(p(0), left_normal(dir(0)), w(0), -std::f32::consts::PI));
             out.extend(cap(p(n - 1), left_normal(dir(n - 2)), w(n - 1), std::f32::consts::PI));
@@ -212,7 +214,7 @@ pub fn variable_polygons(lines: &[Polyline], hw: f32, profile: &WidthProfile, to
 }
 
 /// How a stroke's outline is shaped, in output units (the stroker's view of a
-/// [`anicraft_doc::StrokeStyle`]).
+/// [`anima_doc::StrokeStyle`]).
 #[derive(Clone, Copy, Debug)]
 pub struct Outline<'a> {
     pub cap: Cap,
@@ -225,7 +227,8 @@ pub struct Outline<'a> {
 
 impl Outline<'_> {
     /// Round caps and joins, solid: the stroke every shape had before styles.
-    pub const ROUND: Outline<'static> = Outline { cap: Cap::Round, join: Join::Round, miter_limit: anicraft_doc::stroke_style::DEFAULT_MITER_LIMIT, dash: None };
+    pub const ROUND: Outline<'static> =
+        Outline { cap: Cap::Round, join: Join::Round, miter_limit: anima_doc::stroke_style::DEFAULT_MITER_LIMIT, dash: None };
 
     fn is_round(&self) -> bool {
         self.cap == Cap::Round && self.join == Join::Round && self.dash.is_none()
@@ -244,7 +247,14 @@ const MAX_DASHES: usize = 200_000;
 /// along the flattened lines in output units and restart at every subpath, as in SVG; each
 /// dash is an open piece with the stroke's caps, its widths those of its place on the whole
 /// subpath. A zero-length dash is a dot: its caps alone.
-pub fn styled_polygons(lines: &[Polyline], hw: f32, outline: &Outline, profile: Option<&WidthProfile>, to_local: Option<&Affine>, flip: bool) -> Vec<Vec<Vec2>> {
+pub fn styled_polygons(
+    lines: &[Polyline],
+    hw: f32,
+    outline: &Outline,
+    profile: Option<&WidthProfile>,
+    to_local: Option<&Affine>,
+    flip: bool,
+) -> Vec<Vec<Vec2>> {
     if outline.is_round() {
         return match profile {
             Some(pr) => variable_polygons(lines, hw, pr, to_local, flip),
@@ -480,7 +490,7 @@ fn join(p: Vec2, u: Vec2, v: Vec2, (l, r): (f32, f32), outline: &Outline) -> Opt
             // The outer edges meet at p + (o0 + o1) / (1 + o0·o1) · radius, 1 / cos(θ/2) half-
             // widths out (θ the turn); SVG's miter ratio is that over the half-width.
             let c = 1.0 + o0.dot(o1);
-            let limit = outline.miter_limit.clamp(1.0, anicraft_doc::stroke_style::MAX_MITER_LIMIT);
+            let limit = outline.miter_limit.clamp(1.0, anima_doc::stroke_style::MAX_MITER_LIMIT);
             if outline.join == Join::Miter && c > 1e-6 && c * limit * limit >= 2.0 {
                 let tip = p + (o0 + o1) * (radius / c);
                 Some(oriented(vec![p, a, tip, b]))
@@ -653,10 +663,23 @@ pub fn outline_variable_strokes(dl: &DisplayList) -> std::borrow::Cow<'_, Displa
         }
         let outline = stroke_outline(&it.path, &it.transform, st, crate::TOLERANCE);
         if !outline.is_empty() {
-            items.push(DisplayItem { path: std::sync::Arc::new(outline), transform: Affine::IDENTITY, fill: Some(anicraft_doc::Paint::Solid(st.color)), stroke: None, fill_rule: anicraft_geom::FillRule::NonZero, image: None, ..it.clone() });
+            items.push(DisplayItem {
+                path: std::sync::Arc::new(outline),
+                transform: Affine::IDENTITY,
+                fill: Some(anima_doc::Paint::Solid(st.color)),
+                stroke: None,
+                fill_rule: anima_geom::FillRule::NonZero,
+                image: None,
+                ..it.clone()
+            });
         }
     }
-    std::borrow::Cow::Owned(DisplayList { clip_modes: dl.clip_modes.clone(), items, clip_parents: dl.clip_parents.clone(), groups: dl.groups.clone() })
+    std::borrow::Cow::Owned(DisplayList {
+        clip_modes: dl.clip_modes.clone(),
+        items,
+        clip_parents: dl.clip_parents.clone(),
+        groups: dl.groups.clone(),
+    })
 }
 
 #[cfg(test)]
@@ -692,7 +715,7 @@ mod tests {
     #[test]
     fn variable_polygons_are_positive_and_follow_the_profile() {
         let line = Polyline { points: vec![Vec2::new(0.0, 0.0), Vec2::new(100.0, 0.0)], closed: false };
-        let taper = anicraft_doc::ProfilePreset::TaperBoth.profile().unwrap();
+        let taper = anima_doc::ProfilePreset::TaperBoth.profile().unwrap();
         let polys = variable_polygons(std::slice::from_ref(&line), 5.0, &taper, None, false);
         assert!(polys.len() > 50, "the line is subdivided so the width can vary: {}", polys.len());
         assert!(polys.iter().all(|p| signed_area(p) >= 0.0 && p.iter().all(|q| q.is_finite())));
@@ -701,7 +724,7 @@ mod tests {
         assert!(half(0.0) < 0.2 && half(100.0) < 0.2, "{} {}", half(0.0), half(100.0));
         assert!((half(50.0) - 5.0).abs() < 0.05, "full width in the middle: {}", half(50.0));
         // One side only: the other side stays on the line.
-        let one = WidthProfile::new(vec![anicraft_doc::WidthPoint::new(0.5, 2.0, 0.0)]).unwrap();
+        let one = WidthProfile::new(vec![anima_doc::WidthPoint::new(0.5, 2.0, 0.0)]).unwrap();
         let polys = variable_polygons(std::slice::from_ref(&line), 5.0, &one, None, false);
         let ys: Vec<f32> = polys.iter().flatten().map(|q| q.y).collect();
         assert!(ys.iter().all(|&y| y < 1e-3) && ys.iter().any(|&y| (y + 10.0).abs() < 1e-3), "heading +x on a y-down screen, the left is -y");
@@ -710,15 +733,23 @@ mod tests {
         assert!(flipped.iter().flatten().all(|q| q.y > -1e-3));
         // Degenerate input is safe.
         assert!(variable_polygons(&[], 1.0, &one, None, false).is_empty());
-        assert!(variable_polygons(&[Polyline { points: vec![Vec2::ZERO; 3], closed: true }], 1.0, &one, None, false).iter().flatten().all(|q| q.is_finite()));
-        assert!(variable_polygons(&[Polyline { points: vec![Vec2::ZERO, Vec2::new(f32::INFINITY, 0.0)], closed: false }], f32::NAN, &one, None, false).is_empty());
+        assert!(
+            variable_polygons(&[Polyline { points: vec![Vec2::ZERO; 3], closed: true }], 1.0, &one, None, false)
+                .iter()
+                .flatten()
+                .all(|q| q.is_finite())
+        );
+        assert!(
+            variable_polygons(&[Polyline { points: vec![Vec2::ZERO, Vec2::new(f32::INFINITY, 0.0)], closed: false }], f32::NAN, &one, None, false)
+                .is_empty()
+        );
     }
 
     #[test]
     fn a_sharp_bend_gets_a_join_on_its_outer_side() {
         // Right 20, then straight back: the outer side of the U-turn is the front.
         let pl = Polyline { points: vec![Vec2::new(0.0, 0.0), Vec2::new(20.0, 0.0), Vec2::new(20.0, 10.0)], closed: false };
-        let fat = WidthProfile::new(vec![anicraft_doc::WidthPoint::new(0.0, 2.0, 2.0)]).unwrap();
+        let fat = WidthProfile::new(vec![anima_doc::WidthPoint::new(0.0, 2.0, 2.0)]).unwrap();
         let polys = variable_polygons(&[pl], 2.0, &fat, None, false);
         // The corner's outer quarter (x > 20, y < 0) is covered by the join, within radius 4.
         let reach = polys.iter().flatten().filter(|q| q.x > 20.0 && q.y < 0.0).map(|q| q.distance(Vec2::new(20.0, 0.0))).fold(0.0f32, f32::max);

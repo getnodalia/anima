@@ -23,9 +23,9 @@ png_size() {
 }
 
 # Windows: the .ico build.rs embeds and the MSI's shortcut and Add/Remove Programs icon.
-need "$ICONS/anicraft.ico"
-# macOS: package.sh makes AniCraft.icns from the tile on Apple's grid.
-need "$ICONS/anicraft-padded-1024.png"
+need "$ICONS/anima.ico"
+# macOS: package.sh makes Anima.icns from the tile on Apple's grid.
+need "$ICONS/anima-padded-1024.png"
 # Linux: hicolor theme icons (desktop entry, AppStream, MIME type, AppImage, Flatpak).
 for s in 16 24 32 48 64 128 256 512; do
   png="$ICONS/hicolor/${s}x${s}/apps/$APP_ID.png"
@@ -36,8 +36,8 @@ for s in 16 24 32 48 64 128 256 512; do
   fi
 done
 need "$ICONS/hicolor/scalable/apps/$APP_ID.svg"
-if [[ -s "$ICONS/anicraft-padded-1024.png" ]] && [[ "$(png_size "$ICONS/anicraft-padded-1024.png")" != "1024x1024" ]]; then
-  echo "error: anicraft-padded-1024.png is not 1024x1024" >&2
+if [[ -s "$ICONS/anima-padded-1024.png" ]] && [[ "$(png_size "$ICONS/anima-padded-1024.png")" != "1024x1024" ]]; then
+  echo "error: anima-padded-1024.png is not 1024x1024" >&2
   failed=1
 fi
 

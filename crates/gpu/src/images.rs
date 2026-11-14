@@ -8,8 +8,8 @@
 //! submitted frame still samples it stays valid for that frame (wgpu keeps it alive).
 
 use crate::{GpuError, describe};
-use anicraft_doc::Pixels;
-use anicraft_render::NeedsFull;
+use anima_doc::Pixels;
+use anima_render::NeedsFull;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -39,7 +39,13 @@ impl Images {
     }
 
     /// Texture views for `want` (in order), uploading what isn't cached yet.
-    pub(crate) fn views(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, max_edge: u32, want: &[Arc<Pixels>]) -> Result<Vec<wgpu::TextureView>, GpuError> {
+    pub(crate) fn views(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        max_edge: u32,
+        want: &[Arc<Pixels>],
+    ) -> Result<Vec<wgpu::TextureView>, GpuError> {
         self.clock += 1;
         let now = self.clock;
         let mut out = Vec::with_capacity(want.len());
@@ -87,7 +93,7 @@ fn upload(device: &wgpu::Device, queue: &wgpu::Queue, max_edge: u32, px: &Pixels
     let scopes = crate::Scopes::push(device);
     let size = wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 };
     let texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("anicraft-bitmap"),
+        label: Some("anima-bitmap"),
         size,
         mip_level_count: 1,
         sample_count: 1,

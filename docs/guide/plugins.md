@@ -1,6 +1,6 @@
 # Plug-ins
 
-Plug-ins add to AniCraft: generators that draw for you, effects that change the selection,
+Plug-ins add to Ánima: generators that draw for you, effects that change the selection,
 scripts that steer a movie while it plays, export formats and eases. This chapter shows how to
 install, run and manage them, and what a plug-in is and isn't allowed to do.
 
@@ -22,35 +22,35 @@ and Linux. There are four kinds:
 * **Ease plug-ins** add eases to every ease menu, under **Plug-in eases**. See
   [Plug-in eases](#plug-in-eases).
 
-A plug-in changes your document only through AniCraft's own commands, the same ones the menus
+A plug-in changes your document only through Ánima's own commands, the same ones the menus
 use. So everything it does is checked like any other edit, and the whole run is a single step
 you can undo.
 
-Plug-ins belong to AniCraft on your computer, not to a document. They stay installed when you
+Plug-ins belong to Ánima on your computer, not to a document. They stay installed when you
 open or create documents, and a document never contains a plug-in.
 
 ## Installing a plug-in
 
 1. Choose **Commands › Install Plug-in…**.
 2. Pick the `.wasm` file.
-3. AniCraft checks the file and copies it into its plug-ins folder. The status bar says
+3. Ánima checks the file and copies it into its plug-ins folder. The status bar says
    "Installed Star Field 1.0.0 — find it in Commands › Plug-ins" (with the plug-in's own name and
    version).
 
-If a plug-in with the same id is already installed, installing replaces it, and AniCraft asks
+If a plug-in with the same id is already installed, installing replaces it, and Ánima asks
 first because the old file is overwritten. The status bar then says "Updated".
 
 You can also copy `.wasm` files into the plug-ins folder yourself and choose **Commands › Reload
-Plug-ins**. Every `.wasm` in the folder loads when AniCraft starts. The folder is called
-`plugins` and sits in AniCraft's settings folder:
+Plug-ins**. Every `.wasm` in the folder loads when Ánima starts. The folder is called
+`plugins` and sits in Ánima's settings folder:
 
 | System | Plug-ins folder |
 |---|---|
-| Windows | `%APPDATA%\AniCraft\plugins` |
-| macOS | `~/Library/Application Support/AniCraft/plugins` |
-| Linux | `~/.config/anicraft/plugins` (or `$XDG_CONFIG_HOME/anicraft/plugins`) |
+| Windows | `%APPDATA%\Ánima\plugins` |
+| macOS | `~/Library/Application Support/Ánima/plugins` |
+| Linux | `~/.config/anima/plugins` (or `$XDG_CONFIG_HOME/anima/plugins`) |
 
-If a file can't be loaded, AniCraft starts anyway, skips it and names it in the status bar.
+If a file can't be loaded, Ánima starts anyway, skips it and names it in the status bar.
 
 Only install plug-ins from people you trust, as you would with any download. The sandbox below
 keeps them away from your files, but a plug-in can still change the open document in ways you
@@ -87,7 +87,7 @@ plug-in with its name, version, author, id and size, and its description.
 
 * **Run** (or **Run…** for plug-ins with settings) runs it, as the menu does.
 * **Remove…** uninstalls it. Because this deletes the plug-in's file from the plug-ins folder,
-  AniCraft asks first, and it can't be undone. Keep a copy of the `.wasm` if you might want it
+  Ánima asks first, and it can't be undone. Keep a copy of the `.wasm` if you might want it
   again.
 * **Folder** shows where the plug-ins folder is. **Show Folder** opens it on your computer.
 * **Install Plug-in…** and **Reload** do the same as the Commands menu items.
@@ -109,7 +109,7 @@ already there. Replace it? This can't be undone."), and the button becomes **Rep
 export is done, the window closes and the status bar says where the file went and how big it
 is.
 
-An export-format plug-in never sees your document. AniCraft hands it each frame as the stage
+An export-format plug-in never sees your document. Ánima hands it each frame as the stage
 draws it (shapes, positions, colours) and writes the file it makes. In the Plug-ins window, such
 a plug-in has an **Export…** button instead of Run.
 
@@ -128,15 +128,15 @@ like it.
 ## The sandbox: what plug-ins may do
 
 Plug-ins run sandboxed. In the words of the Plug-ins window: they can change the open document
-through AniCraft's commands, never your files.
+through Ánima's commands, never your files.
 
 A plug-in **can**:
 
 * read the stage size, frame rate, scenes, layers and the current selection;
 * read the elements on the active layer at the playhead;
-* run AniCraft's editing commands: draw shapes, add layers, move, transform and recolour artwork,
+* run Ánima's editing commands: draw shapes, add layers, move, transform and recolour artwork,
   add keyframes and so on, with the same checks as the menus;
-* write lines to its own log, which AniCraft shows when the run fails.
+* write lines to its own log, which Ánima shows when the run fails.
 
 A plug-in **cannot**:
 
@@ -152,7 +152,7 @@ how long it may take (5 seconds), how much memory it may use and how much it may
 document. If a plug-in goes over a limit, fails or crashes, the run stops, the document goes back
 to how it was before the run, and the status bar says why.
 
-While a command plug-in runs, AniCraft waits for it, at most for its time limit. Frame-script
+While a command plug-in runs, Ánima waits for it, at most for its time limit. Frame-script
 plug-ins have much tighter limits per frame, and if one runs out the movie keeps playing. An
 export runs in the background with more time (up to 10 minutes) and a limit on the size of
 the file (64 MB). An ease plug-in's eases are worked out once, when it loads; one that gives
@@ -184,8 +184,8 @@ Test Movie notes it and plays on without it.
 * **The web version** can't install, remove or reload plug-ins, because they live in a folder on
   your computer. Use the desktop app.
 * **On the command line**, plug-ins load only when you ask, so scripted runs are repeatable. See
-  [Working headless](working-headless.md). `anicraft-cli export --format <id>` exports with a
-  plug-in's format (or a built-in one), and `anicraft-cli formats` lists them.
+  [Working headless](working-headless.md). `anima-cli export --format <id>` exports with a
+  plug-in's format (or a built-in one), and `anima-cli formats` lists them.
 
 ## What isn't there yet
 
@@ -197,12 +197,12 @@ Test Movie notes it and plays on without it.
 
 ## For plug-in authors
 
-Plug-ins can be written in any language that compiles to WebAssembly. The AniCraft repository
+Plug-ins can be written in any language that compiles to WebAssembly. The Ánima repository
 has a small Rust kit and four complete sample plug-ins: Star Field (a generator), Jitter
 Selection (a selection effect), Plain Text Frames (an export format) and Stepped Eases (eases). The plug-in interface, the manifest that describes a plug-in's
 settings, the exact limits and the frame-script requests are documented in
-[the plug-in API on GitHub](https://github.com/storytold/AniCraft/blob/main/docs/plugins.md).
+[the plug-in API on GitHub](https://github.com/getnodalia/anima/blob/main/docs/plugins.md).
 
-You can test a plug-in without installing it: point AniCraft at a folder of `.wasm` files with
-the `ANICRAFT_PLUGINS` environment variable, then use **Commands › Reload Plug-ins** after each
+You can test a plug-in without installing it: point Ánima at a folder of `.wasm` files with
+the `ANIMA_PLUGINS` environment variable, then use **Commands › Reload Plug-ins** after each
 build. Every command a plug-in can run is listed in [the command reference](reference/commands.md).

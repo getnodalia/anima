@@ -9,7 +9,7 @@
 
 ADR 0026 shipped a Windows portable zip and a Linux tar.gz that still kept their settings in the
 user's profile, and an AppImage that nothing adds to the applications menu: double-clicking a
-`.anicraft` did nothing until the user wrote a `.desktop` file by hand. Artists carry their setup
+`.anima` did nothing until the user wrote a `.desktop` file by hand. Artists carry their setup
 between studio and home machines on a stick, and an AppImage user expects the app to offer to
 integrate once, as AppImageLauncher-style tools do. App stores (Flathub, winget, the Microsoft
 Store) reject metadata errors at submission time, which is late.
@@ -21,10 +21,10 @@ Store) reject metadata errors at submission time, which is late.
    other folder (preferences, `Recovery`, `Logs`, `plugins`, `Templates`, `Thumbnails`) already
    hangs off `config_dir()`. Recent files, brushes, filter presets and workspaces are in
    `prefs.json`, so they follow. The offline user guide goes to `data/Cache`. The environment
-   overrides (`ANICRAFT_RECOVERY_DIR`, `ANICRAFT_LOG_DIR`, `ANICRAFT_TEMPLATES_DIR`) still win.
-2. **A marker file, not a guess.** A copy is portable when a file named `anicraft-portable`
+   overrides (`ANIMA_RECOVERY_DIR`, `ANIMA_LOG_DIR`, `ANIMA_TEMPLATES_DIR`) still win.
+2. **A marker file, not a guess.** A copy is portable when a file named `anima-portable`
    (contents ignored) is found: next to the program; above `bin/` (the tar.gz layout); next to
-   `AniCraft.app` on macOS (never inside the bundle, which would break its signature); next to the
+   `Anima.app` on macOS (never inside the bundle, which would break its signature); next to the
    `.AppImage` (`$APPIMAGE`), not inside its read-only mount. Data goes to `data/` beside the
    marker. The Windows zip and the Linux tar.gz ship the marker; the MSI, DMG, deb, rpm, Flatpak
    and Arch package never have one (the Flatpak and Arch builds copy only `bin/` and `share/` from
@@ -36,9 +36,9 @@ Store) reject metadata errors at submission time, which is late.
    with settings that silently never save.
 4. **Desktop integration is engine commands.** `desktop.integrate {appimage, data_home}`,
    `desktop.remove {data_home}` and `desktop.status` (`crates/engine/src/cmds_desktop.rs`) so the
-   CLI and MCP can do it too. They write exactly: `applications/ai.storyteller.anicraft.desktop`
-   (the packaged entry with `Exec`/`TryExec` pointing at the AppImage and an `X-AniCraft-AppImage`
-   key marking it as ours), `mime/packages/ai.storyteller.anicraft.xml` (the packaged MIME types)
+   CLI and MCP can do it too. They write exactly: `applications/dev.danielmiguelt.Anima.desktop`
+   (the packaged entry with `Exec`/`TryExec` pointing at the AppImage and an `X-Anima-AppImage`
+   key marking it as ours), `mime/packages/dev.danielmiguelt.Anima.xml` (the packaged MIME types)
    and the hicolor icons (16–256 px and the SVG), then run `update-mime-database` and
    `update-desktop-database` when installed (bounded to 5 s each, output ignored). The packaged
    desktop and MIME files and the icons are compiled in from `packaging/linux` and
@@ -57,10 +57,10 @@ Store) reject metadata errors at submission time, which is late.
      `~/.local/share`.
    * **Idempotent and safe to undo:** writing again rewrites only files that differ (temp file +
      rename); removing deletes only our file names, and nothing at all when the entry there
-     wasn't written by AniCraft (no marker key), which `integrate` also refuses to replace.
+     wasn't written by Ánima (no marker key), which `integrate` also refuses to replace.
    * Plug-ins may not call `desktop.*` (`plugin_may_call`).
 5. **Offered once, never modal.** On the first start from an AppImage (not portable, no entry
-   yet) a card at the bottom right asks "Add AniCraft to your applications menu?" with **Add to
+   yet) a card at the bottom right asks "Add Ánima to your applications menu?" with **Add to
    Menu** and **Not Now**. Either answer is kept (`desktop_offered` in the preferences); editing
    never waits on it. Preferences › About has Add / Remove / Use This Copy at any time. An entry
    that points at an AppImage which no longer exists (moved, or replaced by an update) is
@@ -78,14 +78,14 @@ Store) reject metadata errors at submission time, which is late.
 ## Consequences
 
 * A zip or tarball unpacked to a stick keeps everything on the stick. Existing users of the zip
-  start with fresh preferences in `data/` (their old ones stay in `%APPDATA%\AniCraft`); the
+  start with fresh preferences in `data/` (their old ones stay in `%APPDATA%\Ánima`); the
   guide says how to copy them over or delete the marker.
 * AppImage users get a menu entry and file associations with one click, and lose them with one.
 * The engine and CLI carry about 270 KB more (the icons and two text files).
 
 ## Not in this slice
 
-* Making `mimeapps.list` name AniCraft the default for `.anicraft` (it is the only handler, so
+* Making `mimeapps.list` name Ánima the default for `.anima` (it is the only handler, so
   desktops pick it anyway); `.fla`/`.xfl` stay "Open with" as in ADR 0026.
 * Self-update inside a portable copy (craft-update keeps its own state folder) and moving
   existing settings into a new portable copy.
@@ -96,7 +96,7 @@ Store) reject metadata errors at submission time, which is late.
 
 * **The sibling apps' `AppRun` shell script that integrates on every start.** Rejected: it writes
   without asking, can't be undone from the app, and runs before the app can show anything.
-* **A different desktop file name (`appimagekit_<hash>-anicraft.desktop`).** Rejected: the window
+* **A different desktop file name (`appimagekit_<hash>-anima.desktop`).** Rejected: the window
   would no longer match its launcher on Wayland, and the dock would show a generic icon.
 * **Detecting portable from the install path.** See decision 2.
 

@@ -8,7 +8,7 @@
 use crate::app::{App, Drag, Tool};
 use crate::pathtools::Xf;
 use crate::theme::T;
-use anicraft_engine::doc::{ScaleGrid, SymbolId};
+use anima_engine::doc::{ScaleGrid, SymbolId};
 use egui::{Color32, CursorIcon, Painter, Pos2, Rect, Stroke, pos2};
 use serde_json::json;
 
@@ -69,7 +69,7 @@ pub fn hit(app: &App, p: Pos2, xf: Xf) -> Option<Guide> {
     }
     let (_, g) = shown(app)?;
     let near = |guide: Guide| {
-        let s = xf.to_screen(anicraft_engine::geom::Vec2::new(guide.at(&g), guide.at(&g)));
+        let s = xf.to_screen(anima_engine::geom::Vec2::new(guide.at(&g), guide.at(&g)));
         if guide.vertical() { (p.x - s.x).abs() } else { (p.y - s.y).abs() }
     };
     Guide::ALL.into_iter().map(|guide| (guide, near(guide))).filter(|(_, d)| *d <= GRAB).min_by(|a, b| a.1.total_cmp(&b.1)).map(|(guide, _)| guide)
@@ -103,8 +103,12 @@ pub fn drag_to(app: &mut App, guide: Guide, c: Pos2) {
 pub fn draw(app: &App, painter: &Painter, xf: Xf, canvas: Rect, hot: Option<Guide>) {
     let Some((_, g)) = shown(app) else { return };
     for guide in Guide::ALL {
-        let s = xf.to_screen(anicraft_engine::geom::Vec2::new(guide.at(&g), guide.at(&g)));
-        let ends = if guide.vertical() { [pos2(s.x, canvas.top()), pos2(s.x, canvas.bottom())] } else { [pos2(canvas.left(), s.y), pos2(canvas.right(), s.y)] };
+        let s = xf.to_screen(anima_engine::geom::Vec2::new(guide.at(&g), guide.at(&g)));
+        let ends = if guide.vertical() {
+            [pos2(s.x, canvas.top()), pos2(s.x, canvas.bottom())]
+        } else {
+            [pos2(canvas.left(), s.y), pos2(canvas.right(), s.y)]
+        };
         let width = if hot == Some(guide) { 2.0 } else { 1.0 };
         painter.line_segment(ends, Stroke::new(width + 2.0, Color32::WHITE.gamma_multiply(0.7)));
         painter.extend(egui::Shape::dashed_line(&ends, Stroke::new(width, T.slice_guide), 6.0, 4.0));
@@ -122,7 +126,7 @@ mod tests {
     /// x = ±70 and y = ±14 in its space.
     fn app() -> App {
         let ctx = egui::Context::default();
-        let session = anicraft_engine::Session::new(anicraft_engine::doc::sample::demo());
+        let session = anima_engine::Session::new(anima_engine::doc::sample::demo());
         let mut app = App::with_context(&ctx, session, Some(std::path::PathBuf::from("unused.png")));
         app.open_panel(Some("nineslicedit"));
         app

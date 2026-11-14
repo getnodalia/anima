@@ -26,8 +26,8 @@ use std::sync::{LazyLock, Mutex};
 
 use catalog::Catalog;
 
-// `CRAFT_I18N: &[(&str, &str, &str)]`: (locale, its shared `common.tsv`, AniCraft's
-// `anicraft.tsv`), `""` for a missing file; empty without `CRAFT_I18N_DIR`.
+// `CRAFT_I18N: &[(&str, &str, &str)]`: (locale, its shared `common.tsv`, Ánima's
+// `anima.tsv`), `""` for a missing file; empty without `CRAFT_I18N_DIR`.
 include!(concat!(env!("OUT_DIR"), "/craft_i18n.rs"));
 
 /// The `language` preference that follows the system's language.
@@ -41,7 +41,8 @@ pub const PSEUDO: &str = "pseudo";
 /// other locale is embedded but not offered (docs/localisation.md › Scripts and direction).
 /// A regional variant (`es-mx`) is ready when its language is.
 pub const READY: &[&str] = &[
-    "az", "bg", "bs", "ca", "cs", "da", "de", "el", "es", "et", "fi", "fr", "gl", "hr", "hu", "id", "it", "kk", "lt", "lv", "nb", "nl", "pl", "pt", "pt-br", "ro", "ru", "sk", "sl", "sq", "sr", "sr-latn", "sv", "tr", "uk",
+    "az", "bg", "bs", "ca", "cs", "da", "de", "el", "es", "et", "fi", "fr", "gl", "hr", "hu", "id", "it", "kk", "lt", "lv", "nb", "nl", "pl", "pt",
+    "pt-br", "ro", "ru", "sk", "sl", "sq", "sr", "sr-latn", "sv", "tr", "uk",
 ];
 
 enum Kind {
@@ -59,7 +60,8 @@ struct Language {
 /// The last subtag is a region (`br`, `419`): the locale falls back to its base language.
 fn regional_base(code: &str) -> Option<&str> {
     let (base, region) = code.rsplit_once('-')?;
-    let is_region = (region.len() == 2 && region.chars().all(|c| c.is_ascii_alphabetic())) || (region.len() == 3 && region.chars().all(|c| c.is_ascii_digit()));
+    let is_region =
+        (region.len() == 2 && region.chars().all(|c| c.is_ascii_alphabetic())) || (region.len() == 3 && region.chars().all(|c| c.is_ascii_digit()));
     is_region.then_some(base)
 }
 
@@ -74,7 +76,7 @@ pub struct Languages {
 
 impl Languages {
     /// From embedded `(locale, common, app)` catalogs. A locale is offered when it has its own
-    /// AniCraft catalog and is [`READY`]; one with only shared strings, or a base language
+    /// Ánima catalog and is [`READY`]; one with only shared strings, or a base language
     /// embedded for its regional variants' sake, is a fallback only. Returns the skipped rows
     /// too, as `locale/file:line: why`.
     pub fn new(embedded: &[(&str, &str, &str)], ready_codes: &[&str]) -> (Languages, Vec<String>) {
@@ -87,7 +89,7 @@ impl Languages {
                 problems.extend(bad.into_iter().map(|p| format!("{code}/{file}:{}: {}", p.line, p.why)));
                 rows
             };
-            let entry = (read("common.tsv", common), read("anicraft.tsv", app), !app.is_empty());
+            let entry = (read("common.tsv", common), read("anima.tsv", app), !app.is_empty());
             parsed.insert(code, entry);
         }
         let mut list = vec![Language { code: ENGLISH.into(), name: "English".into(), kind: Kind::English }];
@@ -243,7 +245,13 @@ pub fn known(pref: &str) -> bool {
 /// pseudo-locale is listed in debug builds and while it is in use.
 pub fn offered() -> Vec<(&'static str, &'static str)> {
     let now = current();
-    LANGUAGES.list.iter().enumerate().filter(|(i, l)| !matches!(l.kind, Kind::Pseudo) || cfg!(debug_assertions) || *i == now).map(|(_, l)| (l.code.as_str(), l.name.as_str())).collect()
+    LANGUAGES
+        .list
+        .iter()
+        .enumerate()
+        .filter(|(i, l)| !matches!(l.kind, Kind::Pseudo) || cfg!(debug_assertions) || *i == now)
+        .map(|(_, l)| (l.code.as_str(), l.name.as_str()))
+        .collect()
 }
 
 /// The name of the language [`AUTO`] picks on this computer, for the picker's first entry.
@@ -299,7 +307,11 @@ impl Languages {
     fn count<'a>(&'a self, i: usize, one: &'static str, other: &'static str, n: u64) -> &'a str {
         match self.get(i).kind {
             Kind::English => {
-                if n == 1 { one } else { other }
+                if n == 1 {
+                    one
+                } else {
+                    other
+                }
             }
             Kind::Pseudo => pseudo_static(if n == 1 { one } else { other }),
             Kind::Catalog(_) => self.plural(i, one, other, n),

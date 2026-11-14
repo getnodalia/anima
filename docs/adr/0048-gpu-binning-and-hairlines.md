@@ -85,7 +85,7 @@ step. The CPU binning stays the reference and this fallback.
 least 32,768 edges and the device runs Vulkan (below, Direct3D 12 measured slower in stage
 tiles; other backends aren't measured yet). Below that many edges the CPU bins a stage tile faster than the GPU's passes set up
 (measured: forcing the GPU on every 512 px tile made the 1,000-shape 4K stage 1.9× slower, and
-the 10k-shape one 1.3× slower). `ANICRAFT_GPU_BINNING=cpu|gpu|auto` overrides it for
+the 10k-shape one 1.3× slower). `ANIMA_GPU_BINNING=cpu|gpu|auto` overrides it for
 comparisons; `render_with`/`render_texture_with` take it per call (tests, the bench). The
 start-up self-test also renders its rectangles binned on the GPU; if that comes back wrong,
 only the binning stays on the CPU on that device (`gpu_binning_off` says why), and the tests
@@ -122,7 +122,7 @@ which is its own decision.
 
 ## Measured (2026-11-10, release, RTX 5090, 32 threads, a machine shared with other builds)
 
-`cargo run --release -p anicraft-gpu --example gpu_bench`: *direct* is what the calling thread
+`cargo run --release -p anima-gpu --example gpu_bench`: *direct* is what the calling thread
 spends with `render_texture` (prepare + bin + upload and submit), *tiled* is the stage's way
 (512 px tiles in parallel until the GPU has finished). Before: binned on the CPU; after: as
 `Binning::Auto` bins (the GPU from 32,768 edges, on Vulkan). Best of three runs, Vulkan.

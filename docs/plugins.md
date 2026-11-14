@@ -1,9 +1,9 @@
 # Plug-ins: the WebAssembly plug-in API (ABI v1)
 
-AniCraft plug-ins are **WebAssembly modules** run in a sandbox, the same host model as the other
+Ánima plug-ins are **WebAssembly modules** run in a sandbox, the same host model as the other
 Craft apps (PhotoCraft's filter plug-ins). One `.wasm` file works on Windows, macOS, Linux and,
 later, the web build. A plug-in adds a command: it reads the open document and changes it
-through AniCraft's own command registry, so everything it does is checked like any other edit
+through Ánima's own command registry, so everything it does is checked like any other edit
 and can be undone in one step. The decision and the alternatives are in
 [ADR 0017](adr/0017-wasm-plugins.md).
 
@@ -29,19 +29,19 @@ the selection is greyed out until something is selected.
 | `plugin.reload` | `{"folder"?: "…"}` | Re-reads every `*.wasm` in the plug-ins folder (first making `folder` the plug-ins folder when given). A bad module is reported and skipped. |
 
 **Where plug-ins live.** The app uses a `plugins` folder in its settings folder:
-`%APPDATA%\AniCraft\plugins` on Windows, `~/Library/Application Support/AniCraft/plugins` on
-macOS, `$XDG_CONFIG_HOME/anicraft/plugins` (default `~/.config/anicraft/plugins`) on Linux. Every
-`*.wasm` in it loads at start. The `ANICRAFT_PLUGINS` environment variable points somewhere
+`%APPDATA%\Ánima\plugins` on Windows, `~/Library/Application Support/Ánima/plugins` on
+macOS, `$XDG_CONFIG_HOME/anima/plugins` (default `~/.config/anima/plugins`) on Linux. Every
+`*.wasm` in it loads at start. The `ANIMA_PLUGINS` environment variable points somewhere
 else instead (handy while writing a plug-in). Plug-ins belong to the session, not the
 document: they stay installed across New and Open, and documents never contain plug-ins.
 
-**Headless.** `anicraft-cli` loads plug-ins only when asked, so scripted runs are repeatable:
-`--plugins <folder>` (or `ANICRAFT_PLUGINS`) on any subcommand, or `plugin.reload` with a folder.
-Over MCP the same commands are available through `anicraft_run`.
+**Headless.** `anima-cli` loads plug-ins only when asked, so scripted runs are repeatable:
+`--plugins <folder>` (or `ANIMA_PLUGINS`) on any subcommand, or `plugin.reload` with a folder.
+Over MCP the same commands are available through `anima_run`.
 
 ```sh
-anicraft-cli exec --sample plugin.run '{"id":"org.anicraft.star-field","params":{"count":200}}' \
-    --plugins examples/plugins/dist --save stars.anicraft
+anima-cli exec --sample plugin.run '{"id":"org.anima.star-field","params":{"count":200}}' \
+    --plugins examples/plugins/dist --save stars.anima
 ```
 
 ## The sandbox
@@ -49,11 +49,11 @@ anicraft-cli exec --sample plugin.run '{"id":"org.anicraft.star-field","params":
 The host is [`wasmi`](https://github.com/wasmi-labs/wasmi), a pure-Rust WebAssembly interpreter
 (MIT OR Apache-2.0), built with full validation, its strict module limits and the portable
 dispatcher (the default tail-call dispatcher can overflow the host stack on a long-running
-module, which would abort the process). Limits (`anicraft_plugins::Limits`, defaults):
+module, which would abort the process). Limits (`anima_plugins::Limits`, defaults):
 
 | Limit | Default | On violation |
 |---|---|---|
-| Host imports | only `anicraft.call` and `anicraft.response` (no WASI, files, clock, randomness or network) | module rejected at install |
+| Host imports | only `anima.call` and `anima.response` (no WASI, files, clock, randomness or network) | module rejected at install |
 | Module size | 16 MiB | rejected |
 | Linear memory | 256 MiB per instance | `memory.grow` returns −1; an oversized initial memory fails to load |
 | Instructions (fuel) | 1,000,000,000 per run (a tenth for loading) | the run stops: "exceeded its instruction budget" |
@@ -99,7 +99,7 @@ unless noted; pointers are offsets into the module's memory.
 | `ac_alloc` | `(size) -> ptr` | A block of `size` bytes the host may write, or `0` on failure. Never freed: each run gets a fresh instance. |
 | `ac_run` | `(params_ptr, params_len) -> i32` | Runs the command with the validated parameters (UTF-8 JSON object). `0` = success; anything else fails the run (and undoes it), with the last log line as the message. |
 
-### Imports (module `anicraft`, both optional)
+### Imports (module `anima`, both optional)
 
 | Import | Signature | Meaning |
 |---|---|---|
@@ -113,7 +113,7 @@ first). A refused or failed request is an answer, not a trap: the plug-in decide
 
 | Request | Result |
 |---|---|
-| `{"op":"command","id":"draw.star","params":{…}}` | The command's result (see `anicraft-cli commands` for ids and params). |
+| `{"op":"command","id":"draw.star","params":{…}}` | The command's result (see `anima-cli commands` for ids and params). |
 | `{"op":"document"}` | `{abi, stage: {width, height, fps, background}, scene, scenes, frame, frames, layer, layers: [{id, name, kind, visible, locked, parent}], selection: [ids]}` (the selection on every layer, ADR 0044) |
 | `{"op":"elements","selected"?:bool,"paths"?:bool}` | The elements on the active layer at the playhead (tweens applied): `{layer, frame, elements: [{id, kind: shape\|symbol\|text, name, selected, transform: [a,b,c,d,e,f], bounds: [x,y,w,h] (stage), alpha, fill, stroke, path (SVG path data, local space, with "paths")}]}` (at most 10,000). |
 | `{"op":"log","message":"…"}` | `null`; the line goes into the run's report, and the last one explains a failure. |
@@ -191,7 +191,7 @@ fn run(p: &Value) -> Result<(), String> {
 An exporter adds an export format. File › Export lists it below the built-in formats; it opens
 an Export window with the plug-in's options, the frames and the file, then shows a progress bar
 and Cancel while the export runs (on a worker thread, with a snapshot of the document).
-Headless: `file.export_plugin` and `anicraft-cli export --format <id>`.
+Headless: `file.export_plugin` and `anima-cli export --format <id>`.
 
 ```json
 {"id": "org.example.text", "name": "Plain Text Frames", "kind": "exporter",
@@ -205,7 +205,7 @@ Headless: `file.export_plugin` and `anicraft-cli export --format <id>`.
 * Exports: `memory`, `ac_abi_version`, `ac_manifest`, `ac_alloc` and
   **`ac_export(options_ptr, options_len) -> i64`**: `(len << 32) | ptr` of the file's bytes in
   the module's memory, or a negative number when it fails (the last log line says why).
-  AniCraft writes the file; an exporter never touches files.
+  Ánima writes the file; an exporter never touches files.
 * An exporter **never sees the document**, only evaluated frames:
 
 | Request | Result |
@@ -246,7 +246,7 @@ Editor), under **Plug-in eases**.
 * `eases`: 1-32 of `{id ([A-Za-z0-9_-]{1,32}), name (1-48 printable characters)}`. No `params`.
 * Exports: `memory`, `ac_abi_version`, `ac_manifest` and
   **`ac_ease(index: i32, t: f64) -> f64`**: ease number `index`'s eased progress at time `t`.
-* AniCraft calls it **once, when the plug-in loads**, at 257 times (`t = i / 256`), with no host
+* Ánima calls it **once, when the plug-in loads**, at 257 times (`t = i / 256`), with no host
   calls allowed, and keeps the table. The values must be finite, within −10..10, 0 at t = 0
   and 1 at t = 1 (within 0.001); otherwise the plug-in doesn't load and the message names the
   ease, the time and the value.
@@ -333,7 +333,7 @@ Built for anything but WebAssembly, the SDK's host imports are stand-ins that an
 request with an error, so `cargo test` runs a plug-in's pure parts natively (the samples do).
 
 ```rust
-use anicraft_plugin_sdk::{self as ac, Rng};
+use anima_plugin_sdk::{self as ac, Rng};
 use serde_json::{Value, json};
 
 const MANIFEST: &str = r#"{"id":"org.example.dots","name":"Dots","kind":"command",
@@ -363,8 +363,8 @@ WAT).
 
 ## Performance
 
-Measured on the development machine (Windows, debug build of AniCraft with optimised
-dependencies, `anicraft-cli run --sample … --plugins examples/plugins/dist`):
+Measured on the development machine (Windows, debug build of Ánima with optimised
+dependencies, `anima-cli run --sample … --plugins examples/plugins/dist`):
 
 | | |
 |---|---|

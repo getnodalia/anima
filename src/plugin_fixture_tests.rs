@@ -53,13 +53,17 @@ pub const EASES: &str = "org.test.steps";
 
 /// An ease plug-in with two eases: four steps, and the straight line.
 pub fn eases() -> Vec<u8> {
-    let m = r#"{"id":"org.test.steps","name":"Test Steps","kind":"ease","eases":[{"id":"steps4","name":"Stepped 4"},{"id":"line","name":"Straight"}]}"#;
-    module(m, r#"(func (export "ac_ease") (param $i i32) (param $t f64) (result f64) (if (result f64) (i32.eqz (local.get $i)) (then (f64.div (f64.floor (f64.mul (local.get $t) (f64.const 4))) (f64.const 4))) (else (local.get $t))))"#)
+    let m =
+        r#"{"id":"org.test.steps","name":"Test Steps","kind":"ease","eases":[{"id":"steps4","name":"Stepped 4"},{"id":"line","name":"Straight"}]}"#;
+    module(
+        m,
+        r#"(func (export "ac_ease") (param $i i32) (param $t f64) (result f64) (if (result f64) (i32.eqz (local.get $i)) (then (f64.div (f64.floor (f64.mul (local.get $t) (f64.const 4))) (f64.const 4))) (else (local.get $t))))"#,
+    )
 }
 
 /// A scratch folder for one test.
 pub fn temp(name: &str) -> std::path::PathBuf {
-    let d = std::env::temp_dir().join(format!("anicraft-shell-plugins-{name}-{}", std::process::id()));
+    let d = std::env::temp_dir().join(format!("anima-shell-plugins-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&d);
     std::fs::create_dir_all(&d).expect("temp dir");
     d

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AniCraft XFL corpus: tweens. Classic tweens (eased in, a custom ease curve, a turn with
+<!-- Ánima XFL corpus: tweens. Classic tweens (eased in, a custom ease curve, a turn with
      extra clockwise spins asked for, and per-property custom eases of several segments), a
      shape tween eased out with a shape hint, and a motion tween (kept as keyframes, reported).
      Self-authored. -->

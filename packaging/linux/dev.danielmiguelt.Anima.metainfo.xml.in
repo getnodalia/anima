@@ -2,17 +2,17 @@
 <!-- AppStream metadata (software centres, Flathub). Template: package.sh and the Flatpak
      manifest substitute @VERSION@ and @DATE@ from Cargo.toml and the build date. -->
 <component type="desktop-application">
-  <id>ai.storyteller.anicraft</id>
+  <id>dev.danielmiguelt.Anima</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT OR Apache-2.0</project_license>
-  <name>AniCraft</name>
+  <name>Ánima</name>
   <summary>Draw and animate 2D vector art on a timeline</summary>
-  <developer id="ai.storyteller">
+  <developer id="dev.danielmiguelt">
     <name>ArtCraft Team</name>
   </developer>
   <description>
     <p>
-      AniCraft is an open-source, native 2D animation studio. Draw with vector tools, animate on a
+      Ánima is an open-source, native 2D animation studio. Draw with vector tools, animate on a
       layered timeline with keyframes, classic, shape and motion tweens, and export frames, GIFs,
       sprite sheets, SVG, Lottie and video.
     </p>
@@ -24,12 +24,12 @@
       <li>Every action is a command, scriptable from a CLI, a JSON control channel and an MCP server</li>
     </ul>
   </description>
-  <launchable type="desktop-id">ai.storyteller.anicraft.desktop</launchable>
-  <icon type="stock">ai.storyteller.anicraft</icon>
+  <launchable type="desktop-id">dev.danielmiguelt.Anima.desktop</launchable>
+  <icon type="stock">dev.danielmiguelt.Anima</icon>
   <!-- Only url types known to appstream 0.15 (Ubuntu 22.04, where release CI validates): no vcs-browser. -->
-  <url type="homepage">https://getartcraft.com/apps/anicraft</url>
-  <url type="bugtracker">https://github.com/storytold/AniCraft/issues</url>
-  <url type="help">https://github.com/storytold/AniCraft</url>
+  <url type="homepage">https://getnodalia.com/anima</url>
+  <url type="bugtracker">https://github.com/getnodalia/anima/issues</url>
+  <url type="help">https://github.com/getnodalia/anima</url>
   <categories>
     <category>Graphics</category>
     <category>2DGraphics</category>
@@ -45,7 +45,7 @@
   <screenshots>
     <screenshot type="default">
       <caption>The sample animation on the stage, with tweens on the timeline and the easing curve in Properties</caption>
-      <image>https://raw.githubusercontent.com/storytold/AniCraft/main/docs/images/shot-1-stage.png</image>
+      <image>https://raw.githubusercontent.com/getnodalia/anima/main/docs/images/shot-1-stage.png</image>
     </screenshot>
   </screenshots>
   <branding>
@@ -61,9 +61,9 @@
     <control>tablet</control>
   </supports>
   <provides>
-    <binary>anicraft</binary>
-    <binary>anicraft-cli</binary>
-    <mediatype>application/x-anicraft</mediatype>
+    <binary>anima</binary>
+    <binary>anima-cli</binary>
+    <mediatype>application/x-anima</mediatype>
     <mediatype>application/x-fla</mediatype>
     <mediatype>application/x-xfl</mediatype>
   </provides>

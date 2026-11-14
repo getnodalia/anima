@@ -64,7 +64,7 @@ MCP and scripts.
 
 ### Swatch files
 
-* **Our format** is a small JSON file, `{"format": "anicraft-swatches", "version": 1,
+* **Our format** is a small JSON file, `{"format": "anima-swatches", "version": 1,
   "swatches": [{"type": "solid", "color": "#rrggbbaa", "name": …}, {"type": "linear", "stops":
   […], "spread": …, "linear_rgb": …}, …]}`, the same shape `swatch.add` takes, so one parser
   serves both. Unknown swatch kinds in a newer file are skipped rather than failing the import,

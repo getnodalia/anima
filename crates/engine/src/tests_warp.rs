@@ -3,10 +3,10 @@
 //! exports, and plug-in policy.
 
 use super::*;
-use anicraft_doc::warp::PinId;
-use anicraft_doc::{Document, ElementKind, Shape, Stage};
-use anicraft_geom::{Path, Vec2};
-use anicraft_render::render_frame;
+use anima_doc::warp::PinId;
+use anima_doc::{Document, ElementKind, Shape, Stage};
+use anima_geom::{Path, Vec2};
+use anima_render::render_frame;
 use serde_json::json;
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -43,16 +43,17 @@ fn shape_at(s: &Session, id: u64, frame: u32) -> Shape {
 pub(crate) fn warped() -> (Session, u64, u64) {
     let d = Document { stage: Stage { width: 400, height: 300, ..Stage::default() }, ..Document::default() };
     let mut s = Session::new(d);
-    let rect = run(&mut s, "draw.rect", json!({"x": 100, "y": 100, "w": 200, "h": 80, "fill": "#3080ff", "object": true}))["element"].as_u64().unwrap();
-    let bm = anicraft_doc::BitmapId(s.doc.alloc_id());
+    let rect =
+        run(&mut s, "draw.rect", json!({"x": 100, "y": 100, "w": 200, "h": 80, "fill": "#3080ff", "object": true}))["element"].as_u64().unwrap();
+    let bm = anima_doc::BitmapId(s.doc.alloc_id());
     let mut rgba = Vec::new();
     for y in 0..20u32 {
         for x in 0..40u32 {
             rgba.extend_from_slice(&[(x * 6) as u8, (y * 12) as u8, 128, 255]);
         }
     }
-    let png = anicraft_render::encode_png(40, 20, &rgba).unwrap();
-    s.doc.bitmaps.push(Arc::new(anicraft_doc::Bitmap::from_png(bm, "ramp.png", png).unwrap()));
+    let png = anima_render::encode_png(40, 20, &rgba).unwrap();
+    s.doc.bitmaps.push(Arc::new(anima_doc::Bitmap::from_png(bm, "ramp.png", png).unwrap()));
     let bitmap = run(&mut s, "library.place", json!({"bitmap": bm.0, "x": 300, "y": 230}))["element"].as_u64().unwrap();
     run(&mut s, "timeline.insert_frame", json!({"frame": 19}));
     run(&mut s, "timeline.goto", json!({"frame": 0}));
@@ -69,7 +70,10 @@ fn pins_bend_a_shape_and_the_rest_pose_is_the_drawing() {
     let drawn = shape_at(&s, rect, 0).path.clone();
     let before = render_frame(&s.doc, 0, 1.0).unwrap().data;
     let v = run(&mut s, "warp.add", json!({"element": rect}));
-    assert_eq!((v["created"].as_bool(), v["resolution"].as_u64(), v["columns"].as_u64(), v["rows"].as_u64()), (Some(true), Some(12), Some(12), Some(5)));
+    assert_eq!(
+        (v["created"].as_bool(), v["resolution"].as_u64(), v["columns"].as_u64(), v["rows"].as_u64()),
+        (Some(true), Some(12), Some(12), Some(5))
+    );
     let a = pin_add(&mut s, rect, 110.0, 140.0);
     let b = pin_add(&mut s, rect, 200.0, 140.0);
     let c = pin_add(&mut s, rect, 290.0, 140.0);
@@ -165,14 +169,14 @@ fn a_bitmap_bends_in_every_renderer_and_export() {
     run(&mut s, "warp.pin_move", json!({"element": bmp, "pin": p, "x": 315, "y": 270}));
     let after = render_frame(&s.doc, 0, 1.0).unwrap();
     // The bent image covers pixels below where the image was.
-    let covered = |pm: &anicraft_render::Pixmap, x: u32, y: u32| pm.pixel(x, y).is_some_and(|c| c[2] > 0.45 && c[0] < 0.95);
+    let covered = |pm: &anima_render::Pixmap, x: u32, y: u32| pm.pixel(x, y).is_some_and(|c| c[2] > 0.45 && c[0] < 0.95);
     assert!(!covered(&before, 318, 262) && covered(&after, 318, 262));
     let info = run(&mut s, "warp.info", json!({"element": bmp}));
     assert_eq!((info["bitmap"].as_bool(), info["bent"].as_bool()), (Some(true), Some(true)));
     // SVG bakes the bent image; the HTML page reports it.
     let svg = crate::cmds_file::frame_svg(&s.doc, 0);
     assert!(svg.contains("<image x="));
-    let html = anicraft_render::html::to_html(&s.doc, &anicraft_render::html::HtmlOptions { title: "t".into(), sound: false, fit: false }).unwrap();
+    let html = anima_render::html::to_html(&s.doc, &anima_render::html::HtmlOptions { title: "t".into(), sound: false, fit: false }).unwrap();
     assert!(html.report.keys().any(|k| k.starts_with("warped bitmaps")), "{:?}", html.report);
 }
 
@@ -204,7 +208,7 @@ fn warps_survive_the_file_and_stale_artwork_starts_again() {
         let k = Arc::make_mut(&mut l.keyframes[0]);
         let e = k.elements.iter_mut().find(|e| e.id.0 == rect).unwrap();
         let ElementKind::Shape(sh) = &mut Arc::make_mut(e).kind else { panic!() };
-        sh.path = Arc::new(sh.path.transformed(&anicraft_geom::Affine::translate(5.0, 0.0)));
+        sh.path = Arc::new(sh.path.transformed(&anima_geom::Affine::translate(5.0, 0.0)));
         sh.path.clone()
     };
     assert!(shape_at(&t, rect, 0).live_warp().is_none());
@@ -252,13 +256,23 @@ fn warp_measured() {
         p.line_to(Vec2::new(i as f32, 200.0 + (i as f32 * 0.05).cos() * 20.0));
     }
     p.close();
-    let mut w = anicraft_doc::warp::Warp::new(Arc::new(p), 48);
-    w.pins = (0..32).map(|i| anicraft_doc::warp::Pin { id: PinId(i), rest: Vec2::new(i as f32 * 18.0, 100.0), at: Vec2::new(i as f32 * 18.0, 100.0 + (i % 5) as f32 * 9.0) }).collect();
+    let mut w = anima_doc::warp::Warp::new(Arc::new(p), 48);
+    w.pins = (0..32)
+        .map(|i| anima_doc::warp::Pin {
+            id: PinId(i),
+            rest: Vec2::new(i as f32 * 18.0, 100.0),
+            at: Vec2::new(i as f32 * 18.0, 100.0 + (i % 5) as f32 * 9.0),
+        })
+        .collect();
     let t = std::time::Instant::now();
     let n = 20;
     let mut cmds = 0;
     for _ in 0..n {
         cmds += w.outline().cmds.len();
     }
-    eprintln!("warp: bend 1,200 anchors on 48×48 with 32 pins: {:.3} ms per frame ({} commands)", t.elapsed().as_secs_f64() * 1000.0 / f64::from(n), cmds / n as usize);
+    eprintln!(
+        "warp: bend 1,200 anchors on 48×48 with 32 pins: {:.3} ms per frame ({} commands)",
+        t.elapsed().as_secs_f64() * 1000.0 / f64::from(n),
+        cmds / n as usize
+    );
 }

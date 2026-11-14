@@ -37,12 +37,12 @@ jobs:
         # tests, and the engine running the built modules.
         examples/plugins/build.sh
         (cd examples/plugins && cargo test --locked)
-        ANICRAFT_EXAMPLE_PLUGINS="$PWD/examples/plugins/dist" cargo test -p anicraft-engine --test example_plugins --locked
+        ANIMA_EXAMPLE_PLUGINS="$PWD/examples/plugins/dist" cargo test -p anima-engine --test example_plugins --locked
         # wasm-bindgen CLI at the version Cargo.lock pins.
         version="$(awk '/^name = "wasm-bindgen"$/ { getline; gsub(/version = |"/, ""); print; exit }' Cargo.lock)"
         cargo install wasm-bindgen-cli --version "$version" --locked
         # The engine inside WebAssembly (Node).
-        CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER=wasm-bindgen-test-runner           cargo test -p anicraft-engine --target wasm32-unknown-unknown --test wasm --locked
+        CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER=wasm-bindgen-test-runner           cargo test -p anima-engine --target wasm32-unknown-unknown --test wasm --locked
         # The web editor bundle and its release zip (#210): what the release workflow's web job runs.
         packaging/web/package.sh
         ls -l web dist/release

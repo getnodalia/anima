@@ -82,7 +82,7 @@ the public XFL descriptions; the ease formulas are the classic public easing equ
    frames and colour probes.
 8. **Exports go through `evaluate`.** Lottie bakes every frame (its own eases are one cubic per
    key pair, which can't draw a multi-segment, Bounce or Elastic curve exactly), and the HTML
-   canvas page plays the frames AniCraft evaluates; a parity test runs a custom, per-group and
+   canvas page plays the frames Ánima evaluates; a parity test runs a custom, per-group and
    Elastic movie in the page's JavaScript player against the Rust player step by step.
 9. **The file format stays version 3.** `eases`, `groups` and the new `Easing` variants are
    additive (`#[serde(default)]`, skipped when empty). Older files open unchanged. An older

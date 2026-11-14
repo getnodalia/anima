@@ -1,7 +1,7 @@
 //! The player's engine side (ADR 0024): plug-in frame scripts run on the WebAssembly host, a
 //! JSON view of the player state for scripts and agents, and headless test runs.
 //!
-//! The player itself is pure (`anicraft_doc::player`); this module gives it a
+//! The player itself is pure (`anima_doc::player`); this module gives it a
 //! [`ScriptHost`] over the session's plug-in registry. A frame script is a `frame-script`
 //! plug-in entry point: it runs in a fresh instance when the playhead enters its keyframe,
 //! reads the player state (`{"op":"player"}`), emits actions (`{"op":"action"}`) and logs to
@@ -9,13 +9,13 @@
 //! its scripts, so a script that loops forever costs one frame's budget, then stops with a
 //! message.
 
-use anicraft_doc::actions::as3::Problem;
-use anicraft_doc::actions::{Action, CompileResult, FrameScript, MAX_ACTIONS, PluginScript, check_actions};
-use anicraft_doc::player::{Event, Node, NodeKind, PlayerState, ScriptContext, ScriptHost, ScriptRun, Step, TimelineRef};
-use anicraft_doc::field::{CaretLine, FieldLook};
-use anicraft_doc::{Document, LayerKind, SymbolKind, TextBlock, Timeline, player};
-use anicraft_geom::Vec2;
-use anicraft_plugins::{Host, Kind, Limits, Registry};
+use anima_doc::actions::as3::Problem;
+use anima_doc::actions::{Action, CompileResult, FrameScript, MAX_ACTIONS, PluginScript, check_actions};
+use anima_doc::field::{CaretLine, FieldLook};
+use anima_doc::player::{Event, Node, NodeKind, PlayerState, ScriptContext, ScriptHost, ScriptRun, Step, TimelineRef};
+use anima_doc::{Document, LayerKind, SymbolKind, TextBlock, Timeline, player};
+use anima_geom::Vec2;
+use anima_plugins::{Host, Kind, Limits, Registry};
 use serde_json::{Map, Value, json};
 
 /// Most movie clips the `player` view lists.
@@ -103,7 +103,7 @@ impl ScriptHost for ScriptRunner<'_> {
 /// (ADR 0066).
 pub fn field_look(block: &TextBlock, shown: &str) -> Option<FieldLook> {
     let f = block.field.as_ref()?;
-    let l = crate::cmds_text::field_layout(anicraft_text::Fonts::get(), &crate::cmds_text::style_of(block), f, block.box_width, shown).ok()?;
+    let l = crate::cmds_text::field_layout(anima_text::Fonts::get(), &crate::cmds_text::style_of(block), f, block.box_width, shown).ok()?;
     let mut lines: Vec<CaretLine> = l.carets.into_iter().map(|c| CaretLine { start: c.start, end: c.end, stops: c.stops }).collect();
     if lines.is_empty() {
         lines.push(CaretLine { start: 0, end: 0, stops: vec![(0, 0.0)] });
@@ -146,7 +146,7 @@ impl Host for FrameHost<'_, '_> {
 pub fn path_name(nodes: &[Node], i: usize) -> String {
     let mut names = Vec::new();
     let mut cur = i;
-    for _ in 0..=anicraft_doc::MAX_SYMBOL_DEPTH {
+    for _ in 0..=anima_doc::MAX_SYMBOL_DEPTH {
         let Some(n) = nodes.get(cur) else { break };
         if n.kind == NodeKind::Root {
             break;
@@ -169,7 +169,8 @@ pub fn state_view(doc: &Document, st: &PlayerState, nodes: &[Node], here: Option
         .take(MAX_VIEW_CLIPS)
         .map(|(i, n)| json!({"path": path_name(nodes, i), "name": n.name, "frame": n.frame, "frames": n.frames, "playing": st.clips.get(&n.path).is_some_and(|c| c.playing)}))
         .collect();
-    let path_of = |p: &Option<Vec<anicraft_doc::ElementId>>| p.as_ref().and_then(|p| nodes.iter().position(|n| &n.path == p)).map(|i| path_name(nodes, i));
+    let path_of =
+        |p: &Option<Vec<anima_doc::ElementId>>| p.as_ref().and_then(|p| nodes.iter().position(|n| &n.path == p)).map(|i| path_name(nodes, i));
     let mut v = json!({
         "scene": st.scene,
         "scene_name": doc.scenes.get(st.scene).map(|s| s.name.clone()),
@@ -216,7 +217,7 @@ pub struct Movie {
     pub output: Vec<(u64, String)>,
     /// Sounds started since the owner last took them ([`Movie::take_sounds`]), with the step
     /// that started each (ADR 0039).
-    sounds: Vec<(u64, anicraft_doc::sound::Started)>,
+    sounds: Vec<(u64, anima_doc::sound::Started)>,
 }
 
 /// Most output lines a [`Movie`] keeps.
@@ -271,7 +272,7 @@ impl Movie {
 
     /// The sounds started since the last call, with the step (tick) that started each: what
     /// a window playing the movie should start hearing.
-    pub fn take_sounds(&mut self) -> Vec<(u64, anicraft_doc::sound::Started)> {
+    pub fn take_sounds(&mut self) -> Vec<(u64, anima_doc::sound::Started)> {
         std::mem::take(&mut self.sounds)
     }
 }
@@ -286,9 +287,12 @@ pub fn parse_key(v: &Value) -> Result<u32, String> {
             let one = t.chars().count() == 1 && t.chars().all(|c| c.is_ascii_alphanumeric());
             if one {
                 let c = t.to_ascii_uppercase();
-                return anicraft_doc::actions::as3::ir::key_code(&c).or_else(|| anicraft_doc::actions::as3::ir::key_code(&format!("NUMBER_{c}"))).ok_or_else(|| format!("unknown key '{t}'"));
+                return anima_doc::actions::as3::ir::key_code(&c)
+                    .or_else(|| anima_doc::actions::as3::ir::key_code(&format!("NUMBER_{c}")))
+                    .ok_or_else(|| format!("unknown key '{t}'"));
             }
-            anicraft_doc::actions::as3::ir::key_code(&t.to_ascii_uppercase()).ok_or_else(|| format!("unknown key '{t}' (a key code, a letter, or a Keyboard name such as LEFT or SPACE)"))
+            anima_doc::actions::as3::ir::key_code(&t.to_ascii_uppercase())
+                .ok_or_else(|| format!("unknown key '{t}' (a key code, a letter, or a Keyboard name such as LEFT or SPACE)"))
         }
         _ => Err("a key event needs a \"key\": a key code, a letter, or a Keyboard name such as LEFT".into()),
     }
@@ -302,7 +306,10 @@ pub const MAX_TYPED: usize = 10_000;
 /// is a press and a release), or typing into the focused text field (ADR 0066):
 /// `{type: text, text}` (each character typed in turn) and `{type: select_all}`.
 pub fn parse_events(v: &Value) -> Result<Vec<Event>, String> {
-    let kind = v.get("type").and_then(Value::as_str).ok_or("an event needs a \"type\": move, down, up, click, leave, key_down, key_up, key, text or select_all")?;
+    let kind = v
+        .get("type")
+        .and_then(Value::as_str)
+        .ok_or("an event needs a \"type\": move, down, up, click, leave, key_down, key_up, key, text or select_all")?;
     if kind == "text" {
         let t = v.get("text").and_then(Value::as_str).ok_or("a text event needs a \"text\" to type")?;
         if t.chars().count() > MAX_TYPED {
@@ -321,7 +328,13 @@ pub fn parse_events(v: &Value) -> Result<Vec<Event>, String> {
             _ => vec![Event::KeyDown(k), Event::KeyUp(k)],
         });
     }
-    let num = |k: &str| -> Result<f32, String> { v.get(k).and_then(Value::as_f64).filter(|f| f.is_finite() && f.abs() <= 1e7).map(|f| f as f32).ok_or(format!("a {kind} event needs a finite \"{k}\"")) };
+    let num = |k: &str| -> Result<f32, String> {
+        v.get(k)
+            .and_then(Value::as_f64)
+            .filter(|f| f.is_finite() && f.abs() <= 1e7)
+            .map(|f| f as f32)
+            .ok_or(format!("a {kind} event needs a finite \"{k}\""))
+    };
     Ok(match kind {
         "leave" => vec![Event::Leave],
         "move" => vec![Event::Move(Vec2::new(num("x")?, num("y")?))],
@@ -384,7 +397,12 @@ pub fn kept_scripts(doc: &Document) -> Vec<KeptScript<'_>> {
                     Ok(c) if runs => decls.problems(c),
                     _ => Vec::new(),
                 };
-                out.push(KeptScript { place: format!("{name} › {}, frame {}", layer.name, u64::from(k.start) + 1), plays: runs && layer_plays(tl, index), compiled: src.compiled(), links });
+                out.push(KeptScript {
+                    place: format!("{name} › {}, frame {}", layer.name, u64::from(k.start) + 1),
+                    plays: runs && layer_plays(tl, index),
+                    compiled: src.compiled(),
+                    links,
+                });
             }
         }
     }
@@ -397,7 +415,10 @@ pub fn script_summary(doc: &Document) -> Vec<String> {
     let mut lines = Vec::new();
     for k in kept_scripts(doc) {
         match (k.plays, k.compiled) {
-            (false, _) => lines.push(format!("Frame script not run: {}: graphic and button timelines, guide layers and hidden layers don't run frame scripts", k.place)),
+            (false, _) => lines.push(format!(
+                "Frame script not run: {}: graphic and button timelines, guide layers and hidden layers don't run frame scripts",
+                k.place
+            )),
             (true, Ok(c)) if k.links.is_empty() => {
                 lines.push(format!("Frame script runs: {}", k.place));
                 lines.extend(c.notes.iter().map(|n| format!("Frame script at {}: {n}", k.place)));

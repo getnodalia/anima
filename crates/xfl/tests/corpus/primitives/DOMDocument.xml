@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AniCraft XFL corpus: rectangle and oval primitives and groups (with their own matrices,
+<!-- Ánima XFL corpus: rectangle and oval primitives and groups (with their own matrices,
      nested), and a hidden layer that must not draw. Self-authored. -->
 <DOMDocument xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" width="320" height="180" frameRate="24" backgroundColor="#FFFFFF">
   <timelines>

@@ -5,7 +5,7 @@
 //! actually copied. History is bounded by an estimate of that unique memory, not by step count,
 //! so a thousand small nudges are cheap while one huge import is still evictable.
 
-use anicraft_doc::{Document, Element, ElementKind, Keyframe, Layer, LayerId, Symbol};
+use anima_doc::{Document, Element, ElementKind, Keyframe, Layer, LayerId, Symbol};
 use std::collections::{HashSet, VecDeque};
 use std::mem::size_of;
 use std::sync::Arc;
@@ -55,7 +55,15 @@ pub struct History {
 
 impl Default for History {
     fn default() -> Self {
-        History { undo: VecDeque::new(), redo: Vec::new(), budget_bytes: DEFAULT_BUDGET_BYTES, max_steps: MAX_STEPS, undo_bytes: 0, redo_bytes: 0, evicted: 0 }
+        History {
+            undo: VecDeque::new(),
+            redo: Vec::new(),
+            budget_bytes: DEFAULT_BUDGET_BYTES,
+            max_steps: MAX_STEPS,
+            undo_bytes: 0,
+            redo_bytes: 0,
+            evicted: 0,
+        }
     }
 }
 
@@ -142,8 +150,8 @@ fn ptr<T>(a: &Arc<T>) -> usize {
 
 fn path_bytes(e: &Element) -> usize {
     match &e.kind {
-        ElementKind::Shape(s) => size_of::<anicraft_geom::Path>() + s.path.cmds.len() * size_of::<anicraft_geom::PathCmd>(),
-        ElementKind::Text(t) => size_of::<anicraft_geom::Path>() + t.outline.cmds.len() * size_of::<anicraft_geom::PathCmd>(),
+        ElementKind::Shape(s) => size_of::<anima_geom::Path>() + s.path.cmds.len() * size_of::<anima_geom::PathCmd>(),
+        ElementKind::Text(t) => size_of::<anima_geom::Path>() + t.outline.cmds.len() * size_of::<anima_geom::PathCmd>(),
         ElementKind::Symbol { .. } | ElementKind::Camera | ElementKind::Group { .. } => 0,
     }
 }
@@ -154,16 +162,16 @@ fn element_bytes(e: &Element, shared_paths: &HashSet<usize>) -> usize {
         if !shared_paths.contains(&ptr(&s.path)) {
             b += path_bytes(e);
         }
-        if let Some(anicraft_doc::Paint::Linear { stops, .. } | anicraft_doc::Paint::Radial { stops, .. }) = &s.fill {
-            b += stops.len() * size_of::<anicraft_doc::GradientStop>();
+        if let Some(anima_doc::Paint::Linear { stops, .. } | anima_doc::Paint::Radial { stops, .. }) = &s.fill {
+            b += stops.len() * size_of::<anima_doc::GradientStop>();
         }
     }
     // A group's members, as if each stood alone (ADR 0073; nesting is bounded by MAX_GROUP_DEPTH).
     if let ElementKind::Group { .. } = &e.kind {
-        b += size_of::<anicraft_doc::Layer>() + e.kind.group_members().iter().map(|m| element_bytes(m, shared_paths)).sum::<usize>();
+        b += size_of::<anima_doc::Layer>() + e.kind.group_members().iter().map(|m| element_bytes(m, shared_paths)).sum::<usize>();
     }
     if let ElementKind::Text(t) = &e.kind {
-        b += size_of::<anicraft_doc::TextBlock>() + t.text.len() + t.font.len();
+        b += size_of::<anima_doc::TextBlock>() + t.text.len() + t.font.len();
         if !shared_paths.contains(&ptr(&t.outline)) {
             b += path_bytes(e);
         }
@@ -187,8 +195,8 @@ fn keyframe_bytes(k: &Keyframe, other: Option<&Keyframe>) -> usize {
         .unwrap_or_default();
     let mut b = size_of::<Keyframe>() + k.label.len() + k.elements.len() * size_of::<usize>();
     // A kept script's text (up to 1 MiB), unless the other keyframe shares it.
-    if let Some(anicraft_doc::FrameScript::Source(src)) = &k.script
-        && !matches!(other.and_then(|o| o.script.as_ref()), Some(anicraft_doc::FrameScript::Source(o)) if Arc::ptr_eq(o, src))
+    if let Some(anima_doc::FrameScript::Source(src)) = &k.script
+        && !matches!(other.and_then(|o| o.script.as_ref()), Some(anima_doc::FrameScript::Source(o)) if Arc::ptr_eq(o, src))
     {
         b += src.text.len();
     }
@@ -249,6 +257,19 @@ pub fn unique_bytes(old: &Document, new: &Document) -> usize {
 
 /// Estimated total bytes of a document (as if nothing were shared). Used for reporting.
 pub fn document_bytes(doc: &Document) -> usize {
-    let empty = Document { stage: doc.stage, scenes: Vec::new(), library: Vec::new(), bitmaps: Vec::new(), sounds: Vec::new(), library_tree: Default::default(), document_class: String::new(), publish: Default::default(), aids: doc.aids.clone(), swatches: doc.swatches.clone(), eases: doc.eases.clone(), next_id: doc.next_id };
+    let empty = Document {
+        stage: doc.stage,
+        scenes: Vec::new(),
+        library: Vec::new(),
+        bitmaps: Vec::new(),
+        sounds: Vec::new(),
+        library_tree: Default::default(),
+        document_class: String::new(),
+        publish: Default::default(),
+        aids: doc.aids.clone(),
+        swatches: doc.swatches.clone(),
+        eases: doc.eases.clone(),
+        next_id: doc.next_id,
+    };
     unique_bytes(doc, &empty)
 }

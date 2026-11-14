@@ -18,8 +18,8 @@ Clicking with the Selection tool selects one fill or one stroke segment, shown w
 pattern rather than a box. Double-clicking selects what is connected. A dragged fill cuts into
 whatever it is dropped on. *Object Drawing* (J) switches this off.
 
-AniCraft only had drawing objects: every shape was an element of its own that never touched
-another. Artists coming from Animate (issue #42) found that the most visible way AniCraft did
+Ánima only had drawing objects: every shape was an element of its own that never touched
+another. Artists coming from Animate (issue #42) found that the most visible way Ánima did
 not behave like Animate. Behaviour was learned from Adobe's public help pages and from watching
 the program; nothing was copied.
 
@@ -43,7 +43,7 @@ the program; nothing was copied.
    parts of an element. That is a rewrite of the editor for the first slice. The flag keeps that
    door open: the merge already builds the planar map, so a later change can keep it.
 
-2. **The merge is pure geometry** (`anicraft_geom::planar`), with no styles or documents.
+2. **The merge is pure geometry** (`anima_geom::planar`), with no styles or documents.
    * **Input:** paths bottom to top, each with a fill-style number, a stroke-style number and a
      fill rule.
    * **Cutting:** every segment is cut where it meets another. Pieces are exact sub-curves (de

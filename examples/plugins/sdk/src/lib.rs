@@ -1,12 +1,12 @@
-//! Guest-side helpers for AniCraft WebAssembly plug-ins (ABI v1, `docs/plugins.md`).
+//! Guest-side helpers for Ánima WebAssembly plug-ins (ABI v1, `docs/plugins.md`).
 //!
 //! A command plug-in names its manifest and its `run` function with [`plugin!`] and talks to
-//! AniCraft with [`command`], [`document`], [`selected_elements`] and [`log`]. An exporter
+//! Ánima with [`command`], [`document`], [`selected_elements`] and [`log`]. An exporter
 //! names its export function with [`exporter!`] and reads frames with [`movie`] and [`frame`];
 //! an ease plug-in names its ease function with [`ease!`]. The only `unsafe` a plug-in needs is
 //! here: the two host imports and the raw pointers the exports receive. Everything else is
 //! plain Rust; `std` is fine as long as nothing touches WASI (files, clock, randomness), since
-//! AniCraft refuses modules with any other import.
+//! Ánima refuses modules with any other import.
 //!
 //! Built for anything but WebAssembly (a plug-in's own `cargo test`), the host imports are
 //! stand-ins that answer every request with an error, so the pure parts can be unit-tested.
@@ -14,7 +14,7 @@
 use serde_json::{Value, json};
 
 #[cfg(target_arch = "wasm32")]
-#[link(wasm_import_module = "anicraft")]
+#[link(wasm_import_module = "anima")]
 unsafe extern "C" {
     /// Sends `len` bytes of JSON at `ptr`; returns the length of the response.
     #[link_name = "call"]
@@ -24,7 +24,7 @@ unsafe extern "C" {
     fn host_response(ptr: *mut u8, cap: usize) -> i32;
 }
 
-/// Outside AniCraft (native unit tests) there is no host: no response.
+/// Outside Ánima (native unit tests) there is no host: no response.
 #[cfg(not(target_arch = "wasm32"))]
 unsafe fn host_call(_: *const u8, _: usize) -> i32 {
     0
@@ -48,8 +48,8 @@ pub fn request(req: &Value) -> Result<Value, String> {
     if v["ok"] == true { Ok(v["result"].clone()) } else { Err(v["error"].as_str().unwrap_or("the host refused the request").to_string()) }
 }
 
-/// Runs an AniCraft command by id (`draw.star`, `element.translate`, …; see
-/// `anicraft-cli commands`).
+/// Runs an Ánima command by id (`draw.star`, `element.translate`, …; see
+/// `anima-cli commands`).
 pub fn command(id: &str, params: Value) -> Result<Value, String> {
     request(&json!({"op": "command", "id": id, "params": params})).map_err(|e| format!("{id}: {e}"))
 }
@@ -161,7 +161,7 @@ macro_rules! exporter {
 
 /// Exports the entry points of an ease plug-in: `ease!(MANIFEST, ease)` where
 /// `ease: fn(usize, f64) -> f64` is the eased progress of the manifest's ease number `index` at
-/// time `t` (0..=1). AniCraft samples it when the plug-in loads; it gets no host calls.
+/// time `t` (0..=1). Ánima samples it when the plug-in loads; it gets no host calls.
 #[macro_export]
 macro_rules! ease {
     ($manifest:expr, $ease:path) => {

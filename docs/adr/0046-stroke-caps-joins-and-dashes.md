@@ -8,7 +8,7 @@
 
 ## Context
 
-Every AniCraft stroke had round caps and round joins and was solid. Artists coming from Animate
+Every Ánima stroke had round caps and round joins and was solid. Artists coming from Animate
 expect Properties › Stroke to offer Cap (None, Round, Square), Join (Miter, Round, Bevel) with
 a Miter limit, and a Style (Solid, Dashed, Dotted, Ragged, Stipple, Hatched). SVG files use
 `stroke-linecap`, `stroke-linejoin`, `stroke-miterlimit` and `stroke-dasharray`; the SVG and XFL
@@ -16,7 +16,7 @@ importers reported all of these as drawn differently.
 
 ## Decision
 
-1. **Model: a `StrokeStyle` on every `Stroke`** (`anicraft_doc::stroke_style`): `cap`, `join`,
+1. **Model: a `StrokeStyle` on every `Stroke`** (`anima_doc::stroke_style`): `cap`, `join`,
    `miter_limit` and an optional `dash`. Its default is what every stroke was before (round,
    round, solid; miter limit 3, Animate's default) and is written as nothing
    (`#[serde(default, skip_serializing_if)]`), so older files open unchanged and unstyled

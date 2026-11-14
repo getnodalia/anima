@@ -23,7 +23,7 @@ was copied.
 ## Decision
 
 1. **The eraser is a fill in the merge that comes out empty.** The eraser's outline is the
-   Brush's swept tip (`anicraft_geom::brush::outline`, the same tip model: size, round or
+   Brush's swept tip (`anima_geom::brush::outline`, the same tip model: size, round or
    square, angle, roundness, pressure), with almost no smoothing (a third of a screen point).
    It goes into the planar merge (ADR 0031) as one more item with a reserved fill style. The
    merge already gives each face the topmost fill over it and hides a line that a later fill
@@ -54,7 +54,7 @@ was copied.
 
 2. **Only raw shapes are erased.** Drawing objects, gradient or bitmap fills and width-profiled
    strokes (which the merge keeps whole, ADR 0031), symbols and text are left alone, as in
-   Animate. AniCraft has no "edit inside a symbol" mode yet, so symbols are never erased.
+   Animate. Ánima has no "edit inside a symbol" mode yet, so symbols are never erased.
 
 3. **Nothing erased, nothing changed.** A stroke that only comes near the artwork must not
    create a keyframe or an undo step. The command compares the total fill area and line length

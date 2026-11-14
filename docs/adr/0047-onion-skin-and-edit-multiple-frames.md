@@ -18,7 +18,7 @@ and from watching the program; nothing was copied.
 
 ## Decision
 
-1. **Settings are view state, composition is a pure function.** `anicraft_engine::onion::
+1. **Settings are view state, composition is a pure function.** `anima_engine::onion::
    OnionSkin` holds: on/off, Edit Multiple Frames on/off, the markers, tint, past and future
    colours, fade by distance, outlines, keyframes only. The shell owns one (`App::onion`), and
    passes it with each render job (`FrameJob::onion`, was a `bool`). `onion::compose(doc, scene,

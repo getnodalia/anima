@@ -3,8 +3,8 @@
 
 use crate::Session;
 use crate::cmds_erase::measure_els;
-use anicraft_doc::{ElementKind, Paint, Rgba, Shape};
-use anicraft_geom::{Affine, Vec2};
+use anima_doc::{ElementKind, Paint, Rgba, Shape};
+use anima_geom::{Affine, Vec2};
 use serde_json::{Value, json};
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -12,7 +12,7 @@ fn run(s: &mut Session, id: &str, p: Value) -> Value {
 }
 
 fn blank(object: bool) -> Session {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.object_drawing", json!({"on": object}));
     s
 }
@@ -36,15 +36,18 @@ fn fill_area(s: &Session) -> f64 {
     raw + objects
 }
 
-fn area_of(path: &anicraft_geom::Path, m: &Affine) -> f64 {
+fn area_of(path: &anima_geom::Path, m: &Affine) -> f64 {
     path.flatten(m, 0.005)
         .iter()
         .map(|pl| {
             let n = pl.points.len();
-            (0..n).map(|i| {
-                let (a, b) = (pl.points[i], pl.points[(i + 1) % n]);
-                f64::from(a.x) * f64::from(b.y) - f64::from(b.x) * f64::from(a.y)
-            }).sum::<f64>() * 0.5
+            (0..n)
+                .map(|i| {
+                    let (a, b) = (pl.points[i], pl.points[(i + 1) % n]);
+                    f64::from(a.x) * f64::from(b.y) - f64::from(b.x) * f64::from(a.y)
+                })
+                .sum::<f64>()
+                * 0.5
         })
         .sum::<f64>()
         .abs()
@@ -70,7 +73,11 @@ fn polystar_polygon_and_star_areas() {
             let want = f64::from(n) / 2.0 * 2500.0 * (std::f64::consts::TAU / f64::from(n)).sin();
             assert!((fill_area(&s) - want).abs() < want * 1e-4, "polygon {n} object {object}: {} vs {want}", fill_area(&s));
             let mut t = blank(object);
-            let v = run(&mut t, "draw.star", json!({"cx": 100, "cy": 100, "outer": 50, "sides": n, "point_size": 1.0, "stroke": null, "fill": "#336699"}));
+            let v = run(
+                &mut t,
+                "draw.star",
+                json!({"cx": 100, "cy": 100, "outer": 50, "sides": n, "point_size": 1.0, "stroke": null, "fill": "#336699"}),
+            );
             assert_eq!(v["kind"], "star");
             assert!((fill_area(&t) - want).abs() < want * 1e-4, "star {n} at size 1");
         }
@@ -139,15 +146,21 @@ fn two_squares() -> Session {
 }
 
 fn brush(s: &mut Session, mode: &str, from: [f32; 2], to: [f32; 2]) -> Value {
-    let pts: Vec<[f32; 2]> = (0..=40).map(|i| {
-        let t = i as f32 / 40.0;
-        [from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t]
-    }).collect();
+    let pts: Vec<[f32; 2]> = (0..=40)
+        .map(|i| {
+            let t = i as f32 / 40.0;
+            [from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t]
+        })
+        .collect();
     run(s, "draw.brush", json!({"points": pts, "size": 20, "smoothing": 0, "mode": mode, "color": "#ff0000"}))
 }
 
 fn blue_id(s: &Session) -> u64 {
-    s.visible_elements().iter().find(|e| matches!(&e.kind, ElementKind::Shape(sh) if sh.fill == Some(Paint::Solid(Rgba::hex(0x0000ff))))).map(|e| e.id.0).expect("the blue square")
+    s.visible_elements()
+        .iter()
+        .find(|e| matches!(&e.kind, ElementKind::Shape(sh) if sh.fill == Some(Paint::Solid(Rgba::hex(0x0000ff)))))
+        .map(|e| e.id.0)
+        .expect("the blue square")
 }
 
 /// Paint Selection: a stroke across both squares paints only the selected one, exactly over
@@ -315,7 +328,7 @@ fn drawing_object_merges_only_inside() {
 #[test]
 fn drawing_object_edit_keeps_one_object() {
     let (mut s, id) = object_and_raw();
-    let before = s.element_bounds(anicraft_doc::ElementId(id));
+    let before = s.element_bounds(anima_doc::ElementId(id));
     run(&mut s, "symbol.edit", json!({"id": id}));
     run(&mut s, "edit.select_all", json!({}));
     run(&mut s, "element.translate", json!({"dx": 30, "dy": 10}));
@@ -323,13 +336,13 @@ fn drawing_object_edit_keeps_one_object() {
     let els = s.visible_elements();
     let obj = els.iter().find(|e| e.id.0 == id).expect("the object");
     assert!(matches!(&obj.kind, ElementKind::Shape(sh) if !sh.merge), "one drawing object again");
-    let after = s.element_bounds(anicraft_doc::ElementId(id));
+    let after = s.element_bounds(anima_doc::ElementId(id));
     assert!((after.min.x - before.min.x - 30.0).abs() < 1e-3 && (after.min.y - before.min.y - 10.0).abs() < 1e-3, "{before:?} → {after:?}");
     // Undo: inside again, before the move.
     run(&mut s, "edit.undo", json!({}));
     assert!(s.editing_drawing());
     run(&mut s, "symbol.exit", json!({}));
-    assert!((s.element_bounds(anicraft_doc::ElementId(id)).min.x - before.min.x).abs() < 1e-3);
+    assert!((s.element_bounds(anima_doc::ElementId(id)).min.x - before.min.x).abs() < 1e-3);
 }
 
 /// Everything inside deleted: closing it removes the object.
@@ -414,7 +427,7 @@ fn envelope_bends_by_the_mesh() {
     assert!((mesh[2].y - pts[2][1]).abs() < 1e-4 && (mesh[1].y - (pts[1][1] - 30.0)).abs() < 1e-4);
     run(&mut s, "edit.undo", json!({}));
     let (_, rest, mesh) = s.envelope().expect("still open");
-    assert_eq!(mesh, anicraft_geom::envelope::rest_mesh(&rest));
+    assert_eq!(mesh, anima_geom::envelope::rest_mesh(&rest));
     assert!((fill_area(&s) - 5000.0).abs() < 0.01);
 }
 
@@ -487,13 +500,13 @@ fn envelope_drag_is_one_step() {
     assert!(s.envelope.as_ref().is_some_and(|e| e.states_len() == 2));
     run(&mut s, "edit.undo", json!({}));
     let (_, rest, mesh) = s.envelope().expect("open");
-    assert_eq!(mesh, anicraft_geom::envelope::rest_mesh(&rest));
+    assert_eq!(mesh, anima_geom::envelope::rest_mesh(&rest));
     run(&mut s, "edit.redo", json!({}));
     let (_, _, mesh) = s.envelope().expect("open");
     assert!((mesh[15].x - (pts[15][0] + 30.0)).abs() < 1e-3);
 }
 
-/// Timings for ADR 0080 (`cargo test --release -p anicraft-engine parity_timings -- --ignored --nocapture`).
+/// Timings for ADR 0080 (`cargo test --release -p anima-engine parity_timings -- --ignored --nocapture`).
 #[test]
 #[ignore = "a measurement"]
 fn parity_timings() {

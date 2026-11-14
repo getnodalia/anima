@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Build, sign and (optionally) notarize the macOS release artifacts:
 #
-#   $DIST/anicraft-<version>-macos-<arch>.dmg          AniCraft.app on a drag-to-Applications DMG
-#   $DIST/anicraft-cli-<version>-macos-<arch>.zip      the headless CLI
+#   $DIST/anima-<version>-macos-<arch>.dmg          Anima.app on a drag-to-Applications DMG
+#   $DIST/anima-cli-<version>-macos-<arch>.zip      the headless CLI
 #
 # Usage: packaging/macos/package.sh [--arch universal|aarch64|x86_64] [--skip-build]
 #
@@ -39,9 +39,9 @@ export MACOSX_DEPLOYMENT_TARGET=11.0
 IDENTITY="${MACOS_SIGN_IDENTITY:--}"
 SHORT_VERSION="${VERSION%%-*}"
 WORK="$CARGO_TARGET_DIR/macos-package"
-APP="$WORK/AniCraft.app"
-DMG="$DIST/anicraft-$VERSION-macos-$ARCH.dmg"
-CLI_ZIP="$DIST/anicraft-cli-$VERSION-macos-$ARCH.zip"
+APP="$WORK/Anima.app"
+DMG="$DIST/anima-$VERSION-macos-$ARCH.dmg"
+CLI_ZIP="$DIST/anima-cli-$VERSION-macos-$ARCH.zip"
 
 NOTARIZE=0
 if [[ "$IDENTITY" = "-" ]]; then
@@ -52,18 +52,18 @@ else
   warn "macOS: APPLE_ID / APPLE_PASSWORD / APPLE_TEAM_ID incomplete; signed but not notarized"
 fi
 
-echo "==> AniCraft $VERSION for macOS ($ARCH), identity: $IDENTITY, notarize: $NOTARIZE"
+echo "==> Ánima $VERSION for macOS ($ARCH), identity: $IDENTITY, notarize: $NOTARIZE"
 
 # ---- build -------------------------------------------------------------------------------------
 if [[ "$SKIP_BUILD" = 0 ]]; then
   args=()
   for t in "${TARGETS[@]}"; do args+=(--target "$t"); done
-  (cd "$ROOT" && cargo build --release --locked -p anicraft -p anicraft-cli "${args[@]}")
+  (cd "$ROOT" && cargo build --release --locked -p anima -p anima-cli "${args[@]}")
 fi
 
 rm -rf "$WORK"
 mkdir -p "$WORK/bin"
-for bin in anicraft anicraft-cli; do
+for bin in anima anima-cli; do
   inputs=()
   for t in "${TARGETS[@]}"; do inputs+=("$CARGO_TARGET_DIR/$t/release/$bin"); done
   lipo -create -output "$WORK/bin/$bin" "${inputs[@]}"
@@ -115,21 +115,21 @@ staple() {
   done
 }
 
-# ---- AniCraft.app ----------------------------------------------------------------------------
+# ---- Anima.app ----------------------------------------------------------------------------
 echo "==> assembling $APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 # Executable and icon carry the display name (CFBundleExecutable / CFBundleIconFile).
-cp "$WORK/bin/anicraft" "$APP/Contents/MacOS/AniCraft"
-cp "$WORK/bin/anicraft-cli" "$APP/Contents/MacOS/anicraft-cli"
+cp "$WORK/bin/anima" "$APP/Contents/MacOS/Anima"
+cp "$WORK/bin/anima-cli" "$APP/Contents/MacOS/anima-cli"
 # The .icns is made here from the committed tile on Apple's grid (assets/app-icon/README.md) with
 # the system's own sips and iconutil, so no generated binary is committed for it.
-ICONSET="$WORK/AniCraft.iconset"
+ICONSET="$WORK/Ánima.iconset"
 mkdir -p "$ICONSET"
 for s in 16 32 128 256 512; do
-  sips -z "$s" "$s" "$ROOT/assets/app-icon/anicraft-padded-1024.png" --out "$ICONSET/icon_${s}x${s}.png" >/dev/null
-  sips -z $((s * 2)) $((s * 2)) "$ROOT/assets/app-icon/anicraft-padded-1024.png" --out "$ICONSET/icon_${s}x${s}@2x.png" >/dev/null
+  sips -z "$s" "$s" "$ROOT/assets/app-icon/anima-padded-1024.png" --out "$ICONSET/icon_${s}x${s}.png" >/dev/null
+  sips -z $((s * 2)) $((s * 2)) "$ROOT/assets/app-icon/anima-padded-1024.png" --out "$ICONSET/icon_${s}x${s}@2x.png" >/dev/null
 done
-iconutil -c icns -o "$APP/Contents/Resources/AniCraft.icns" "$ICONSET"
+iconutil -c icns -o "$APP/Contents/Resources/Anima.icns" "$ICONSET"
 # Licences and notices, inside the bundle before it is signed.
 cp "$ROOT/NOTICE" "$ROOT/ATTRIBUTION.md" "$ROOT/LICENSE-MIT" "$ROOT/LICENSE-APACHE" "$APP/Contents/Resources/"
 # Licences of the embedded craft-fonts fonts (only when built with CRAFT_FONTS_DIR).
@@ -138,21 +138,21 @@ if [[ -n "${CRAFT_FONTS_DIR:-}" ]]; then
   copy_font_licences "$APP/Contents/Resources/Licenses"
 fi
 sed -e "s/@VERSION@/$VERSION/g" -e "s/@SHORT_VERSION@/$SHORT_VERSION/g" \
-  -e "s/@BUILD_SHA@/${ANICRAFT_BUILD_SHA:-unknown}/g" \
+  -e "s/@BUILD_SHA@/${ANIMA_BUILD_SHA:-unknown}/g" \
   "$HERE/Info.plist.in" >"$APP/Contents/Info.plist"
 plutil -lint "$APP/Contents/Info.plist"
 printf 'APPL????' >"$APP/Contents/PkgInfo"
 
 # Sign inside-out: nested code first, then the bundle itself (no --deep on the final signature).
 # The bundled CLI is nested executable code; sign it before sealing the app bundle.
-sign --options runtime --identifier ai.storyteller.anicraft-cli "$APP/Contents/MacOS/anicraft-cli"
-sign --options runtime --entitlements "$HERE/entitlements.plist" "$APP/Contents/MacOS/AniCraft"
+sign --options runtime --identifier dev.danielmiguelt.Anima-cli "$APP/Contents/MacOS/anima-cli"
+sign --options runtime --entitlements "$HERE/entitlements.plist" "$APP/Contents/MacOS/Anima"
 sign --options runtime --entitlements "$HERE/entitlements.plist" "$APP"
 codesign --verify --strict --deep --verbose=2 "$APP"
 
 if [[ "$NOTARIZE" = 1 ]]; then
-  ditto -c -k --keepParent "$APP" "$WORK/AniCraft-notarize.zip"
-  notarize "$WORK/AniCraft-notarize.zip"
+  ditto -c -k --keepParent "$APP" "$WORK/Anima-notarize.zip"
+  notarize "$WORK/Anima-notarize.zip"
   staple "$APP"
   spctl --assess --type execute -vvv "$APP"
 fi
@@ -161,7 +161,7 @@ fi
 echo "==> building $DMG"
 STAGE="$WORK/dmg"
 mkdir -p "$STAGE"
-ditto "$APP" "$STAGE/AniCraft.app"
+ditto "$APP" "$STAGE/Anima.app"
 ln -s /Applications "$STAGE/Applications"
 # Finder window layout: background, icon size and positions (packaging/macos/dmg/README.md).
 mkdir -p "$STAGE/.background"
@@ -171,7 +171,7 @@ rm -f "$DMG" "$WORK/raw.dmg"
 # makehybrid + convert builds the image without attaching a device, unlike `create -srcfolder`,
 # which is flaky on CI runners ("Resource busy") and hangs in sandboxed sessions.
 # The volume name has no version: .DS_Store finds the background through an alias that includes it.
-hdiutil makehybrid -hfs -hfs-volume-name "AniCraft" -hfs-openfolder "$STAGE" -o "$WORK/raw.dmg" "$STAGE"
+hdiutil makehybrid -hfs -hfs-volume-name "Anima" -hfs-openfolder "$STAGE" -o "$WORK/raw.dmg" "$STAGE"
 hdiutil convert "$WORK/raw.dmg" -format UDZO -imagekey zlib-level=9 -o "$DMG"
 rm -f "$WORK/raw.dmg"
 sign "$DMG"
@@ -184,20 +184,20 @@ fi
 
 # ---- CLI ---------------------------------------------------------------------------------------
 echo "==> building $CLI_ZIP"
-CLI_DIR="$WORK/anicraft-cli-$VERSION-macos-$ARCH"
+CLI_DIR="$WORK/anima-cli-$VERSION-macos-$ARCH"
 mkdir -p "$CLI_DIR"
-cp "$WORK/bin/anicraft-cli" "$CLI_DIR/"
+cp "$WORK/bin/anima-cli" "$CLI_DIR/"
 copy_docs "$CLI_DIR"
 # Same Developer ID and hardened runtime as the app, with an explicit reverse-DNS identifier
 # (codesign would otherwise use the bare file name).
-sign --options runtime --identifier ai.storyteller.anicraft-cli "$CLI_DIR/anicraft-cli"
-codesign --verify --strict --verbose=2 "$CLI_DIR/anicraft-cli"
+sign --options runtime --identifier dev.danielmiguelt.Anima-cli "$CLI_DIR/anima-cli"
+codesign --verify --strict --verbose=2 "$CLI_DIR/anima-cli"
 rm -f "$CLI_ZIP"
 ditto -c -k --keepParent "$CLI_DIR" "$CLI_ZIP"
 # notarytool accepts a zip of the bare binary. A bare Mach-O can't carry a stapled ticket, so
 # Gatekeeper looks the notarization up online when a quarantined copy first runs.
 if [[ "$NOTARIZE" = 1 ]]; then notarize "$CLI_ZIP"; fi
 
-"$WORK/bin/anicraft-cli" --version
+"$WORK/bin/anima-cli" --version
 echo "==> done (check the artifacts as shipped with packaging/macos/verify.sh --arch $ARCH)"
 ls -lh "$DMG" "$CLI_ZIP"

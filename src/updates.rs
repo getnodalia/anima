@@ -4,7 +4,7 @@ use craft_update::{App, Http, Paths, Platform, Release, Stop, self_update};
 use std::sync::mpsc::{Receiver, TryRecvError, channel};
 
 // i18n-exempt: stable release identity, not interface text.
-pub const APP: App = App::new("anicraft", "AniCraft", "Animation", "storytold/anicraft");
+pub const APP: App = App::new("anima", "Ánima", "Animation", "getnodalia/anima");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// A pinned, nightly, or unknown launcher choice must never be replaced by a stable update.
@@ -12,7 +12,7 @@ fn stable_choice() -> Result<(), String> {
     if Pins::load_default().choice(APP.id) == Choice::Stable {
         Ok(())
     } else {
-        Err(tr!("ArtCraft Launcher manages this app's version. Change its version there.").into())
+        Err(tr!("Nodalia Launcher manages this app's version. Change its version there.").into())
     }
 }
 
@@ -65,7 +65,7 @@ impl Updates {
     pub fn check(&mut self, ctx: &egui::Context) {
         self.check_using(ctx, || {
             let result = stable_choice()
-                .and_then(|()| Http::new(concat!("AniCraft/", env!("CARGO_PKG_VERSION"))))
+                .and_then(|()| Http::new(concat!("Ánima/", env!("CARGO_PKG_VERSION"))))
                 .and_then(|http| craft_update::check_for_update(&APP, &http, VERSION));
             let installable = result
                 .as_ref()
@@ -102,7 +102,7 @@ impl Updates {
             let install = self_update::current(&APP)
                 .ok_or(tr!("This installation is managed externally. Update it with its package manager or open Releases."))?;
             let platform = Platform::current().ok_or(tr!("No installer is available for this platform."))?;
-            let http = Http::new(concat!("AniCraft/", env!("CARGO_PKG_VERSION")))?;
+            let http = Http::new(concat!("Ánima/", env!("CARGO_PKG_VERSION")))?;
             let paths = Paths::for_app(&APP)?;
             self_update::prepare_update(
                 &APP,
@@ -194,7 +194,7 @@ impl Updates {
                 .default_width(440.0)
                 .max_width((ctx.content_rect().width() - 32.0).max(160.0))
                 .show(ctx, |ui| {
-                    ui.label(tr!("AniCraft {version}", version = VERSION));
+                    ui.label(tr!("Ánima {version}", version = VERSION));
                     ui.label(&self.message);
                     if !safe_to_install && self.release.is_some() {
                         ui.label(tr!("Save your work and stop running tasks before installing an update."));
@@ -307,7 +307,7 @@ mod tests {
             tx.send(reply).expect("receiver");
             updates.worker = Some(rx);
             draw(&mut updates, true, false);
-            assert!(updates.message.contains("ArtCraft Launcher"));
+            assert!(updates.message.contains("Nodalia Launcher"));
             assert!(updates.release.is_none());
             assert!(!updates.installable);
             assert!(finish_helper().is_none());
@@ -414,7 +414,7 @@ mod tests {
     #[test]
     fn uncommitted_stage_text_and_pen_paths_prevent_installation() {
         let ctx = egui::Context::default();
-        let session = anicraft_engine::Session::new(anicraft_engine::doc::sample::demo());
+        let session = anima_engine::Session::new(anima_engine::doc::sample::demo());
         let mut app = crate::app::App::with_context(&ctx, session, Some(std::path::PathBuf::from("unused.png")));
         assert!(!app.s.is_dirty());
         assert!(safe_to_install(&app));
@@ -428,7 +428,7 @@ mod tests {
         assert!(!app.s.is_dirty(), "the edit has not reached Session yet");
         assert!(!safe_to_install(&app), "restarting would discard the text buffer");
         app.text_edit = None;
-        app.pen = Some(crate::pathtools::PenPath { knots: vec![[anicraft_engine::geom::Vec2::ZERO; 3]], dragging: false });
+        app.pen = Some(crate::pathtools::PenPath { knots: vec![[anima_engine::geom::Vec2::ZERO; 3]], dragging: false });
         assert!(!app.s.is_dirty());
         assert!(!safe_to_install(&app), "an unfinished Pen path is also pending work");
         app.pen = None;

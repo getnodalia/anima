@@ -2,7 +2,7 @@
 //! moving it along, flipping and releasing it, edits keeping it on the path, undo, the file.
 
 use crate::Session;
-use anicraft_doc::{ElementId, ElementKind, TextBlock};
+use anima_doc::{ElementId, ElementKind, TextBlock};
 use serde_json::{Value, json};
 use std::sync::Arc;
 
@@ -11,14 +11,14 @@ fn run(s: &mut Session, id: &str, p: Value) -> Value {
 }
 
 fn fonts() -> bool {
-    let ok = !anicraft_text::Fonts::get().families().is_empty();
+    let ok = !anima_text::Fonts::get().families().is_empty();
     if !ok {
         eprintln!("no fonts on this computer: text on a path tests skipped");
     }
     ok
 }
 
-fn text_of(s: &Session, id: ElementId) -> (anicraft_geom::Affine, Arc<TextBlock>) {
+fn text_of(s: &Session, id: ElementId) -> (anima_geom::Affine, Arc<TextBlock>) {
     let e = s.visible_elements().into_iter().find(|e| e.id == id).unwrap();
     match &e.kind {
         ElementKind::Text(t) => (e.transform, t.clone()),
@@ -56,7 +56,13 @@ fn text_attaches_to_a_selected_shape_and_sits_on_it() {
     assert!((path.min.x - 100.0).abs() < 1e-3 && (path.max.x - 500.0).abs() < 1e-3);
     // The box holds the path and the glyphs from the origin.
     let local = t.outline.bounds().union(&on.path.bounds());
-    assert!(local.min.x.abs() < 1e-3 && local.min.y.abs() < 1e-3 && (local.width() - t.box_width).abs() < 1e-3 && (local.height() - t.box_height).abs() < 1e-3, "{local:?}");
+    assert!(
+        local.min.x.abs() < 1e-3
+            && local.min.y.abs() < 1e-3
+            && (local.width() - t.box_width).abs() < 1e-3
+            && (local.height() - t.box_height).abs() < 1e-3,
+        "{local:?}"
+    );
     // The shape is left as it is, and only the text is selected.
     assert!(s.visible_elements().iter().any(|e| e.id == line));
     assert_eq!(s.selection.on(s.layer), vec![text]);
@@ -159,6 +165,6 @@ fn text_on_a_path_is_saved_and_older_files_open_without_it() {
     v.as_object_mut().unwrap().remove("on_path");
     assert!(serde_json::from_value::<TextBlock>(v).unwrap().on_path.is_none());
     // It renders from its outlines alone: the same pixels without the font.
-    let a = anicraft_render::render_frame(&s.doc, 0, 0.5).unwrap();
+    let a = anima_render::render_frame(&s.doc, 0, 0.5).unwrap();
     assert!(a.data.iter().any(|p| p[0] < 0.5), "the text draws");
 }

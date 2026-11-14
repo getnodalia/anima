@@ -11,7 +11,7 @@
 Animate's most used publish target today is HTML5 Canvas: a web page that plays the movie,
 buttons and timeline scripts included. Our users expect File › Export to give them that, as a
 file they can open in a browser, put on a server or send to someone. ADR 0024 gave us the
-interactivity model: a typed action IR and a pure, budgeted player in `anicraft-doc`. This
+interactivity model: a typed action IR and a pure, budgeted player in `anima-doc`. This
 ADR decides what the page contains, how the movie's data is represented, how the browser runs
 the player's semantics, and how we keep the browser's behaviour equal to ours.
 
@@ -52,9 +52,9 @@ Two halves with different needs:
 
 Baking rather than interpolating in JavaScript, because:
 
-* **Fidelity.** The browser shows exactly AniCraft's frames. A JS interpolator would have to
+* **Fidelity.** The browser shows exactly Ánima's frames. A JS interpolator would have to
   reimplement easing presets and custom curves, motion-tween property tracks, guide-path
-  walking with orientation, and shape morphing with hints (`anicraft-geom::morph` alone is
+  walking with orientation, and shape morphing with hints (`anima-geom::morph` alone is
   ~900 lines): a second implementation to drift from the first, for every feature added later.
 * **Size stays reasonable.** Three tables make it compact: paths are stored once (by pointer,
   then by their rounded data), paints once, and identical frames once, as runs per timeline.
@@ -89,7 +89,7 @@ JS doesn't parse paths; a malformed target carries its error message instead.
 
 **Test strategy.** A permissive pure-Rust JavaScript engine exists: **Boa** (`boa_engine`,
 Unlicense OR MIT, crates.io, default features off). It is a **dev-dependency of
-`anicraft-render` only**, never in the app or CLI: 66 crates in `Cargo.lock`, all under
+`anima-render` only**, never in the app or CLI: 66 crates in `Cargo.lock`, all under
 licences `deny.toml` already allows, about 35 s added once to a clean test build. Tests run
 `player.js` in Boa and drive both players through the same scripts (frames, pointer moves,
 presses and releases, between frames and within steps), comparing at every step:
@@ -153,7 +153,7 @@ leaves sounds out.
 
 `file.export_html {path, title?, sound?, fit?, confirm?}` in File › Export › Export HTML
 Canvas…; replacing a file asks first (ADR 0004 tier 1, like every export). It reports the
-size, the frames stored and what was approximated. Headless: `anicraft-cli exec … file.export_html`.
+size, the frames stored and what was approximated. Headless: `anima-cli exec … file.export_html`.
 
 ### Not carried across (reported)
 
@@ -176,7 +176,7 @@ plug-ins in the browser (wasm in the page through the same ABI); ActionScript (A
 
 * The browser's behaviour has a reference: a change to `player.rs` that isn't mirrored in
   `player.js` fails the comparison tests.
-* `instance_start` and `guide_walk` become public in `anicraft-doc`, so the exporter evaluates
+* `instance_start` and `guide_walk` become public in `anima-doc`, so the exporter evaluates
   exactly as the renderer does.
 * `FORMAT_VERSION` (the `v` field) versions the embedded data; a page always carries the
   player that reads it, so old pages keep playing.

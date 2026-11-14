@@ -1,16 +1,16 @@
 //! Path drawing (Pen, Pencil) and point editing (Subselection).
 //!
 //! Points are addressed as `(cmd, slot)` on the shape's path in its local space: slot 0 is the
-//! anchor a command ends on, 1 and 2 its control points (`anicraft_geom::edit`). A closed
+//! anchor a command ends on, 1 and 2 its control points (`anima_geom::edit`). A closed
 //! subpath's start is one anchor even though the path stores it twice; commands accept either
 //! copy. Deltas and positions in params are in stage space.
 
 use crate::cmds_draw::{MAX_EXTENT, add_shape, object_param, style};
 use crate::params::*;
 use crate::{CommandSpec, EngineError, Result, Session};
-use anicraft_doc::{Element, ElementId, ElementKind, Shape};
-use anicraft_geom::edit::{ANCHOR, C1, C2, polyline_path, simplify};
-use anicraft_geom::{Affine, Path, PathCmd, Vec2, fit_curve};
+use anima_doc::{Element, ElementId, ElementKind, Shape};
+use anima_geom::edit::{ANCHOR, C1, C2, polyline_path, simplify};
+use anima_geom::{Affine, Path, PathCmd, Vec2, fit_curve};
 use serde_json::{Value, json};
 use std::collections::BTreeSet;
 use std::sync::Arc;
@@ -18,7 +18,15 @@ use std::sync::Arc;
 pub fn specs() -> Vec<CommandSpec> {
     let c = |id, label, menu, shortcut, params, mutates, run| CommandSpec { id, label, menu, shortcut, params, mutates, run };
     vec![
-        c("draw.path", "Pen Path", "", None, "{d: SVG path data (stage space), fill?, stroke?, stroke_width?, object?}", true, draw_path as crate::RunFn),
+        c(
+            "draw.path",
+            "Pen Path",
+            "",
+            None,
+            "{d: SVG path data (stage space), fill?, stroke?, stroke_width?, object?}",
+            true,
+            draw_path as crate::RunFn,
+        ),
         c(
             "draw.freehand",
             "Pencil Stroke",
@@ -28,7 +36,15 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             draw_freehand,
         ),
-        c("path.move_points", "Move Points", "", None, "{id, points: [[cmd, slot], ..], dx, dy, smooth?: bool} (a handle moved alone at a smooth anchor turns the other one with it, keeping its length, unless smooth is false: Alt breaks the pair)", true, move_points),
+        c(
+            "path.move_points",
+            "Move Points",
+            "",
+            None,
+            "{id, points: [[cmd, slot], ..], dx, dy, smooth?: bool} (a handle moved alone at a smooth anchor turns the other one with it, keeping its length, unless smooth is false: Alt breaks the pair)",
+            true,
+            move_points,
+        ),
         c("path.add_point", "Add Anchor Point", "", None, "{id, x, y, slop?}", true, add_point),
         c("path.delete_points", "Delete Anchor Points", "", None, "{id, cmds: [..]}", true, delete_points),
         c("path.convert_point", "Convert Anchor Point", "", None, "{id, cmd, smooth: bool}", true, convert_point),
@@ -72,7 +88,7 @@ fn draw_path(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(EngineError::Param("param 'd' is too long".into()));
     }
     // Full SVG path data: relative commands, H/V, S/T shorthands and arcs too.
-    let path = anicraft_geom::svg::parse_path_data(d).map_err(|e| EngineError::Param(format!("param 'd': {e}")))?;
+    let path = anima_geom::svg::parse_path_data(d).map_err(|e| EngineError::Param(format!("param 'd': {e}")))?;
     add_path(s, "path", path, p)
 }
 
@@ -176,7 +192,8 @@ fn move_points(s: &mut Session, p: &Value) -> Result<Value> {
             }
         }
         // The other handle of a smooth anchor whose handle moves alone (ADR 0045), as it was.
-        let partners: Vec<(usize, u8, Vec2, Vec2)> = if smooth { set.iter().filter_map(|&(cmd, slot)| partner(path, &set, cmd, slot)).collect() } else { Vec::new() };
+        let partners: Vec<(usize, u8, Vec2, Vec2)> =
+            if smooth { set.iter().filter_map(|&(cmd, slot)| partner(path, &set, cmd, slot)).collect() } else { Vec::new() };
         for &(cmd, slot) in &set {
             if let Some(q) = path.point(cmd, slot) {
                 path.set_point(cmd, slot, q + local);
@@ -184,7 +201,7 @@ fn move_points(s: &mut Session, p: &Value) -> Result<Value> {
         }
         for (cmd, slot, anchor, handle) in partners {
             if let Some(k) = path.point(cmd, slot) {
-                path.set_point(cmd, slot, anicraft_geom::raw::turned_opposite(anchor, handle + local, k));
+                path.set_point(cmd, slot, anima_geom::raw::turned_opposite(anchor, handle + local, k));
             }
         }
         check_path(path)?;
@@ -209,7 +226,7 @@ fn partner(path: &Path, moving: &BTreeSet<(usize, u8)>, cmd: usize, slot: u8) ->
     let (a, h, k) = (path.point(anchor, ANCHOR)?, path.point(cmd, slot)?, path.point(other.0, other.1)?);
     // A quadratic's control is both its ends' handle: turning it would bend the other end.
     let cubic = |c: usize| matches!(path.cmds.get(c), Some(PathCmd::CubicTo(..)));
-    (cubic(other.0) && anicraft_geom::raw::smooth_at(a, h, k)).then_some((other.0, other.1, a, h))
+    (cubic(other.0) && anima_geom::raw::smooth_at(a, h, k)).then_some((other.0, other.1, a, h))
 }
 
 fn add_point(s: &mut Session, p: &Value) -> Result<Value> {

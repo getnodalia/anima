@@ -1,7 +1,7 @@
 //! The Swatches panel's commands (ADR 0078).
 
 use crate::Session;
-use anicraft_doc::{Document, ElementId, ElementKind, Paint, Rgba, Shape, Swatch, SwatchPaint};
+use anima_doc::{Document, ElementId, ElementKind, Paint, Rgba, Shape, Swatch, SwatchPaint};
 use serde_json::{Value, json};
 use std::path::Path;
 
@@ -42,7 +42,7 @@ fn a_new_document_has_the_default_swatches_and_older_files_open_with_them() {
     let text = crate::format::to_json(&s.doc).unwrap();
     assert!(!text.contains("\"swatches\""), "the default set isn't written");
     let back = crate::format::from_json(&text).unwrap();
-    assert!(anicraft_doc::swatch::is_default_set(&back.swatches));
+    assert!(anima_doc::swatch::is_default_set(&back.swatches));
 }
 
 #[test]
@@ -50,7 +50,11 @@ fn swatches_round_trip_through_the_file() {
     let mut s = blank();
     run(&mut s, "swatch.clear", json!({"confirm": true}));
     run(&mut s, "swatch.add", json!({"color": "#12345680", "name": "Ink"}));
-    run(&mut s, "swatch.add", json!({"type": "radial", "stops": [{"offset": 0, "color": "#ffffff"}, {"offset": 0.7, "color": "#ff000080"}], "spread": "reflect", "linear_rgb": true, "focal": 0.5, "name": "Glow"}));
+    run(
+        &mut s,
+        "swatch.add",
+        json!({"type": "radial", "stops": [{"offset": 0, "color": "#ffffff"}, {"offset": 0.7, "color": "#ff000080"}], "spread": "reflect", "linear_rgb": true, "focal": 0.5, "name": "Glow"}),
+    );
     let text = crate::format::to_json(&s.doc).unwrap();
     let back = crate::format::from_json(&text).unwrap();
     assert_eq!(*back.swatches, *s.doc.swatches);
@@ -85,12 +89,20 @@ fn add_takes_the_current_fill_or_stroke_or_a_given_swatch() {
     // A gradient fill swatch adds its ramp and options.
     run(&mut s, "paint.set_fill", json!({"type": "radial", "spread": "repeat", "selection": false}));
     let i = run(&mut s, "swatch.add", json!({"from": "fill"}))["index"].as_u64().unwrap() as usize;
-    assert!(matches!(&s.doc.swatches[i].paint, SwatchPaint::Radial { spread: anicraft_doc::Spread::Repeat, .. }));
+    assert!(matches!(&s.doc.swatches[i].paint, SwatchPaint::Radial { spread: anima_doc::Spread::Repeat, .. }));
     // Each add is one undo step.
     let len = s.doc.swatches.len();
     run(&mut s, "edit.undo", json!({}));
     assert_eq!(s.doc.swatches.len(), len - 1);
-    for bad in [json!({"from": "middle"}), json!({"type": "solid"}), json!({"type": "linear"}), json!({"type": "conic", "color": "#000000"}), json!({"from": "fill", "color": "#000000"}), json!({"color": "#00"}), json!({"color": "#000000", "at": 9999})] {
+    for bad in [
+        json!({"from": "middle"}),
+        json!({"type": "solid"}),
+        json!({"type": "linear"}),
+        json!({"type": "conic", "color": "#000000"}),
+        json!({"from": "fill", "color": "#000000"}),
+        json!({"color": "#00"}),
+        json!({"color": "#000000", "at": 9999}),
+    ] {
         assert!(s.execute("swatch.add", &bad).is_err(), "{bad}");
     }
 }
@@ -111,7 +123,13 @@ fn remove_move_duplicate_and_rename() {
     assert_eq!(s.doc.swatches[n].name, "Fire engine");
     run(&mut s, "swatch.remove", json!({"index": n}));
     assert_eq!(s.doc.swatches.len(), n);
-    for (id, bad) in [("swatch.remove", json!({"index": n})), ("swatch.remove", json!({})), ("swatch.move", json!({"from": 0, "to": n})), ("swatch.duplicate", json!({"index": -1})), ("swatch.rename", json!({"index": 0}))] {
+    for (id, bad) in [
+        ("swatch.remove", json!({"index": n})),
+        ("swatch.remove", json!({})),
+        ("swatch.move", json!({"from": 0, "to": n})),
+        ("swatch.duplicate", json!({"index": -1})),
+        ("swatch.rename", json!({"index": 0})),
+    ] {
         assert!(s.execute(id, &bad).is_err(), "{id} {bad}");
     }
 }
@@ -173,7 +191,7 @@ fn clear_and_reset_ask_first_and_undo() {
     assert!(s.confirmation("swatch.clear", &json!({})).is_none(), "nothing to lose");
     assert!(s.confirmation("swatch.reset", &json!({})).is_some());
     run(&mut s, "swatch.reset", json!({}));
-    assert!(anicraft_doc::swatch::is_default_set(&s.doc.swatches));
+    assert!(anima_doc::swatch::is_default_set(&s.doc.swatches));
     assert!(s.confirmation("swatch.reset", &json!({})).is_none(), "already the default set");
     run(&mut s, "edit.undo", json!({}));
     assert_eq!(s.doc.swatches.len(), 2);
@@ -197,11 +215,15 @@ fn swatch_files_export_and_import() {
 
 fn swatch_files_export_and_import_in_memory() {
     let mut s = blank();
-    run(&mut s, "swatch.add", json!({"type": "linear", "stops": [{"offset": 0, "color": "#000000"}, {"offset": 1, "color": "#ffffff00"}], "name": "Fade"}));
+    run(
+        &mut s,
+        "swatch.add",
+        json!({"type": "linear", "stops": [{"offset": 0, "color": "#000000"}, {"offset": 1, "color": "#ffffff00"}], "name": "Fade"}),
+    );
     let v = run(&mut s, "swatch.export", json!({"path": "set.json"}));
     assert_eq!(v["swatches"], 20);
     let text = crate::vfs::read_to_string(Path::new("set.json")).unwrap();
-    assert!(text.contains("\"format\": \"anicraft-swatches\"") && text.contains("\"Fade\"") && text.contains("#ffffff00"));
+    assert!(text.contains("\"format\": \"anima-swatches\"") && text.contains("\"Fade\"") && text.contains("#ffffff00"));
     assert!(s.confirmation("swatch.export", &json!({"path": "set.json"})).is_some_and(|c| c.irreversible), "overwriting a file asks");
     // Another document: added at the end, or replacing (which asks by default).
     let mut t = blank();
@@ -210,11 +232,21 @@ fn swatch_files_export_and_import_in_memory() {
     run(&mut t, "swatch.import", json!({"path": "set.json", "replace": true}));
     assert_eq!(*t.doc.swatches, *s.doc.swatches, "the same swatches, exactly");
     // Unknown swatches in a newer file are skipped; junk is refused.
-    crate::vfs::put(Path::new("new.json"), br##"{"format": "anicraft-swatches", "version": 2, "swatches": [{"type": "conic"}, {"type": "solid", "color": "#010203"}]}"##.to_vec()).unwrap();
+    crate::vfs::put(
+        Path::new("new.json"),
+        br##"{"format": "anima-swatches", "version": 2, "swatches": [{"type": "conic"}, {"type": "solid", "color": "#010203"}]}"##.to_vec(),
+    )
+    .unwrap();
     let before = t.doc.swatches.len();
     assert_eq!(run(&mut t, "swatch.import", json!({"path": "new.json"}))["imported"], 1);
     assert_eq!(t.doc.swatches.len(), before + 1);
-    for (name, body) in [("a.json", "{}"), ("b.json", "[1, 2]"), ("c.json", "not json"), ("d.json", r#"{"format": "anicraft-brushes"}"#), ("e.json", r#"{"format": "anicraft-swatches", "swatches": []}"#)] {
+    for (name, body) in [
+        ("a.json", "{}"),
+        ("b.json", "[1, 2]"),
+        ("c.json", "not json"),
+        ("d.json", r#"{"format": "anima-brushes"}"#),
+        ("e.json", r#"{"format": "anima-swatches", "swatches": []}"#),
+    ] {
         crate::vfs::put(Path::new(name), body.as_bytes().to_vec()).unwrap();
         assert!(t.execute("swatch.import", &json!({"path": name})).is_err(), "{name}");
     }
@@ -228,7 +260,11 @@ fn gimp_palettes_import() {
 
 fn gimp_palettes_import_in_memory() {
     let mut s = blank();
-    crate::vfs::put(Path::new("brand.gpl"), b"GIMP Palette\nName: Brand\nColumns: 3\n#\n230  57  70\tRed\n 29  53  87\tNavy\n241 250 238 Untitled\n".to_vec()).unwrap();
+    crate::vfs::put(
+        Path::new("brand.gpl"),
+        b"GIMP Palette\nName: Brand\nColumns: 3\n#\n230  57  70\tRed\n 29  53  87\tNavy\n241 250 238 Untitled\n".to_vec(),
+    )
+    .unwrap();
     run(&mut s, "swatch.import", json!({"path": "brand.gpl", "replace": true, "confirm": true}));
     assert_eq!(s.doc.swatches.len(), 3);
     assert_eq!(s.doc.swatches[0].name, "Red");
@@ -243,11 +279,11 @@ fn gimp_palettes_import_in_memory() {
 #[test]
 fn swatches_are_bounded() {
     let mut s = blank();
-    s.doc.swatches = std::sync::Arc::new(vec![Swatch::solid(Rgba::BLACK); anicraft_doc::MAX_SWATCHES]);
+    s.doc.swatches = std::sync::Arc::new(vec![Swatch::solid(Rgba::BLACK); anima_doc::MAX_SWATCHES]);
     assert!(s.execute("swatch.add", &json!({"color": "#ffffff"})).is_err());
     assert!(s.execute("swatch.duplicate", &json!({"index": 0})).is_err());
     let list = run(&mut s, "swatch.list", json!({}));
-    assert_eq!(list["count"], anicraft_doc::MAX_SWATCHES);
+    assert_eq!(list["count"], anima_doc::MAX_SWATCHES);
     assert_eq!(list["swatches"][3]["index"], 3);
 }
 

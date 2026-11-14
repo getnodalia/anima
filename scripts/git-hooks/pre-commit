@@ -1,9 +1,9 @@
 #!/bin/sh
-# AniCraft: `main` changes only through pull requests (docs/release.md, "How changes land").
+# Ánima: `main` changes only through pull requests (docs/release.md, "How changes land").
 # Work on a topic branch:  git switch -c feat/<name>
 branch=$(git symbolic-ref --short -q HEAD)
-if [ "$branch" = "main" ] && [ "$ANICRAFT_ALLOW_MAIN_COMMIT" != "1" ]; then
-  echo "AniCraft: commit blocked - main changes only through pull requests." >&2
+if [ "$branch" = "main" ] && [ "$ANIMA_ALLOW_MAIN_COMMIT" != "1" ]; then
+  echo "Ánima: commit blocked - main changes only through pull requests." >&2
   echo "          Start a topic branch first: git switch -c feat/<name>" >&2
   exit 1
 fi

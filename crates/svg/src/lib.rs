@@ -1,4 +1,4 @@
-//! AniCraft SVG import (layer L2): an SVG drawing into editable vector shapes and text.
+//! Ánima SVG import (layer L2): an SVG drawing into editable vector shapes and text.
 //!
 //! Written from the public W3C SVG 1.1 / SVG 2 and CSS Masking specifications. Supported: `svg`,
 //! `g`, `a`, `switch`, `use`, `path`, `rect` (rounded), `circle`, `ellipse`, `line`, `polyline`
@@ -12,25 +12,25 @@
 //! linear and radial gradients (both unit systems, `gradientTransform`, stops inherited through
 //! `href`).
 //!
-//! **Clip paths and masks** (`clip`, ADR 0015) become AniCraft mask layers: the drawing comes
+//! **Clip paths and masks** (`clip`, ADR 0015) become Ánima mask layers: the drawing comes
 //! out as layers, bottom first, and artwork under a clip is a masked layer under a mask layer
 //! holding the clip's shapes. A clip that cuts nothing is dropped, artwork it hides entirely is
 //! left out, and clips inside clips are intersected exactly when all but one are convex
 //! polygons. A `mask` comes across when its content is opaque (and white, for a luminance mask),
 //! so that it is the coverage of its shapes. **Text** (`text`) becomes text blocks laid out by
-//! `anicraft-text`, one per text chunk, with the missing-font reporting of Animate import
+//! `anima-text`, one per text chunk, with the missing-font reporting of Animate import
 //! (ADR 0014).
 //!
-//! What AniCraft cannot represent yet is reported, never guessed silently: images, filters,
+//! What Ánima cannot represent yet is reported, never guessed silently: images, filters,
 //! soft masks, patterns, style sheets, text on a path, reflected/repeated gradients and
 //! skewed gradient transforms (approximated).
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
-use anicraft_doc::{Cap, Dash, ElementKind, GradientStop, Join, Paint, Rgba, Shape, Spread, Stroke, StrokeStyle, MAX_FOCAL};
-use anicraft_geom::svg::parse_path_data;
-use anicraft_geom::{Affine, FillRule, Path, Rect, Vec2};
-use anicraft_text::{FaceMatch, Fonts};
-use anicraft_xml::Element as X;
+use anima_doc::{Cap, Dash, ElementKind, GradientStop, Join, MAX_FOCAL, Paint, Rgba, Shape, Spread, Stroke, StrokeStyle};
+use anima_geom::svg::parse_path_data;
+use anima_geom::{Affine, FillRule, Path, Rect, Vec2};
+use anima_text::{FaceMatch, Fonts};
+use anima_xml::Element as X;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::rc::Rc;
 use std::sync::Arc;
@@ -56,7 +56,7 @@ const MAX_VISITS: usize = 2_000_000;
 #[derive(Debug, thiserror::Error)]
 pub enum SvgError {
     #[error(transparent)]
-    Xml(#[from] anicraft_xml::XmlError),
+    Xml(#[from] anima_xml::XmlError),
     #[error("this is not an SVG drawing (its root element is <{0}>)")]
     NotSvg(String),
 }
@@ -116,7 +116,7 @@ pub struct ImportedMask {
     pub elements: Vec<ImportedElement>,
     /// How the mask layer reveals (ADR 0070): coverage for clip paths and opaque masks, else
     /// the `mask`'s `mask-type` (luminance by default, or alpha), its artwork as drawn.
-    pub mode: anicraft_doc::MaskMode,
+    pub mode: anima_doc::MaskMode,
 }
 
 /// Artwork drawn together on one layer, bottom first; masked by `mask` when there is one.
@@ -167,7 +167,7 @@ pub fn import_with_fonts(bytes: &[u8], fonts: &Fonts) -> Result<SvgImport, SvgEr
 }
 
 fn import_from(bytes: &[u8], fonts: Option<&Fonts>) -> Result<SvgImport, SvgError> {
-    let root = anicraft_xml::parse_mixed(bytes, TEXT_CONTENT)?;
+    let root = anima_xml::parse_mixed(bytes, TEXT_CONTENT)?;
     if local(&root.name) != "svg" {
         return Err(SvgError::NotSvg(root.name.clone()));
     }
@@ -266,8 +266,17 @@ fn numbers(s: &str) -> Vec<f32> {
 fn length(v: &str, reference: f32) -> Option<f32> {
     let v = v.trim();
     // The unit is a known suffix, so exponents ("1e2px") still parse.
-    let units: [(&str, f32); 9] =
-        [("%", reference / 100.0), ("px", 1.0), ("pt", 96.0 / 72.0), ("pc", 16.0), ("mm", 96.0 / 25.4), ("cm", 96.0 / 2.54), ("in", 96.0), ("em", 16.0), ("ex", 8.0)];
+    let units: [(&str, f32); 9] = [
+        ("%", reference / 100.0),
+        ("px", 1.0),
+        ("pt", 96.0 / 72.0),
+        ("pc", 16.0),
+        ("mm", 96.0 / 25.4),
+        ("cm", 96.0 / 2.54),
+        ("in", 96.0),
+        ("em", 16.0),
+        ("ex", 8.0),
+    ];
     let (num, k) = units.iter().find_map(|(u, k)| v.strip_suffix(u).map(|n| (n, *k))).unwrap_or((v, 1.0));
     let n: f32 = num.trim().parse().ok().filter(|n: &f32| n.is_finite())?;
     Some(n * k).filter(|x| x.is_finite())
@@ -289,7 +298,15 @@ fn view_box_transform(vb: Rect, w: f32, h: f32, par: &str) -> Affine {
     }
     let slice = words.next() == Some("slice");
     let s = if slice { sx.max(sy) } else { sx.min(sy) };
-    let frac = |key: &str| if align.contains(&format!("{key}Min")) { 0.0 } else if align.contains(&format!("{key}Max")) { 1.0 } else { 0.5 };
+    let frac = |key: &str| {
+        if align.contains(&format!("{key}Min")) {
+            0.0
+        } else if align.contains(&format!("{key}Max")) {
+            1.0
+        } else {
+            0.5
+        }
+    };
     let tx = (w - vb.width() * s) * frac("x");
     let ty = (h - vb.height() * s) * frac("Y");
     Affine::translate(tx, ty).mul(&Affine::scale(s, s)).mul(&Affine::translate(-vb.min.x, -vb.min.y))
@@ -500,7 +517,7 @@ impl Default for Style {
             stroke: PaintSpec::None,
             stroke_opacity: 1.0,
             stroke_width: 1.0,
-            // SVG's initial values, not AniCraft's (round) defaults.
+            // SVG's initial values, not Ánima's (round) defaults.
             cap: Cap::Butt,
             join: Join::Miter,
             miter_limit: 4.0,
@@ -611,7 +628,11 @@ fn font_size(v: &str, parent: f32) -> Option<f32> {
         _ => None,
     };
     let rel = |suffix: &str, k: f32| v.strip_suffix(suffix).and_then(|n| n.trim().parse::<f32>().ok()).map(|n| n * k);
-    let size = keyword.or_else(|| rel("em", parent)).or_else(|| rel("ex", parent * 0.5)).or_else(|| rel("%", parent / 100.0)).or_else(|| length(v, parent))?;
+    let size = keyword
+        .or_else(|| rel("em", parent))
+        .or_else(|| rel("ex", parent * 0.5))
+        .or_else(|| rel("%", parent / 100.0))
+        .or_else(|| length(v, parent))?;
     size.is_finite().then(|| size.clamp(0.0, 2000.0))
 }
 
@@ -704,7 +725,7 @@ impl Style {
         }
         if let Some(v) = get(&d, "stroke-dasharray").filter(|v| *v != "inherit") {
             s.dash = dash_array(v);
-            if s.dash.as_ref().is_some_and(|l| l.len() > anicraft_doc::stroke_style::MAX_DASH_ENTRIES) {
+            if s.dash.as_ref().is_some_and(|l| l.len() > anima_doc::stroke_style::MAX_DASH_ENTRIES) {
                 report.skip("dash patterns of more than 16 lengths (shortened)");
             }
         }
@@ -769,8 +790,9 @@ impl<'a> Builder<'a> {
         let name = local(&el.name);
         // Containers that never draw by themselves.
         match name {
-            "defs" | "linearGradient" | "radialGradient" | "stop" | "symbol" | "metadata" | "title" | "desc" | "clipPath" | "mask" | "marker" | "pattern" | "filter" | "script" => return,
-            anicraft_xml::TEXT_NODE => return,
+            "defs" | "linearGradient" | "radialGradient" | "stop" | "symbol" | "metadata" | "title" | "desc" | "clipPath" | "mask" | "marker"
+            | "pattern" | "filter" | "script" => return,
+            anima_xml::TEXT_NODE => return,
             "style" => {
                 self.report.skip("style sheets (inline styles are read)");
                 return;
@@ -855,7 +877,10 @@ impl<'a> Builder<'a> {
                     return;
                 }
                 let shape = Shape { path: Arc::new(path), fill, stroke, fill_rule: style.fill_rule, merge: false, warp: None };
-                self.items.push(Item { el: ImportedElement { name: name_of(el), transform: *m, alpha, kind: ElementKind::Shape(shape) }, clips: Vec::new() });
+                self.items.push(Item {
+                    el: ImportedElement { name: name_of(el), transform: *m, alpha, kind: ElementKind::Shape(shape) },
+                    clips: Vec::new(),
+                });
             }
         }
     }
@@ -913,7 +938,11 @@ impl<'a> Builder<'a> {
                 let mut p = Path::new();
                 for (i, &[x, y]) in n.as_chunks::<2>().0.iter().enumerate() {
                     let q = Vec2::new(x, y);
-                    if i == 0 { p.move_to(q) } else { p.line_to(q) };
+                    if i == 0 {
+                        p.move_to(q)
+                    } else {
+                        p.line_to(q)
+                    };
                 }
                 if name == "polygon" && !p.is_empty() {
                     p.close();
@@ -939,7 +968,12 @@ impl<'a> Builder<'a> {
             }
         };
         let dash = style.dash.as_ref().and_then(|l| Dash::Dashed { lengths: l.iter().copied().collect(), offset: style.dash_offset }.sanitized());
-        Some(Stroke::new(color, style.stroke_width).with_style(StrokeStyle { cap: style.cap, join: style.join, miter_limit: style.miter_limit, dash }))
+        Some(Stroke::new(color, style.stroke_width).with_style(StrokeStyle {
+            cap: style.cap,
+            join: style.join,
+            miter_limit: style.miter_limit,
+            dash,
+        }))
     }
 
     /// A fill or stroke paint, with `opacity` folded in; `None` draws nothing.
@@ -996,16 +1030,33 @@ impl<'a> Builder<'a> {
         let user = attr("gradientUnits") == Some("userSpaceOnUse");
         let (vw, vh) = self.viewport;
         // Gradient space → the shape's local space.
-        let units = if user { Affine::IDENTITY } else { Affine::translate(bounds.min.x, bounds.min.y).mul(&Affine::scale(bounds.width().max(1e-6), bounds.height().max(1e-6))) };
+        let units = if user {
+            Affine::IDENTITY
+        } else {
+            Affine::translate(bounds.min.x, bounds.min.y).mul(&Affine::scale(bounds.width().max(1e-6), bounds.height().max(1e-6)))
+        };
         let g = units.mul(&attr("gradientTransform").map_or(Affine::IDENTITY, transform));
         if !g.is_finite() {
             return None;
         }
         let coord = |key: &str, default: f32, reference: f32| -> f32 {
             match attr(key) {
-                Some(v) if !user => v.trim().strip_suffix('%').and_then(|p| p.parse::<f32>().ok()).map(|p| p / 100.0).or_else(|| v.trim().parse().ok()).filter(|x: &f32| x.is_finite()).unwrap_or(default),
+                Some(v) if !user => v
+                    .trim()
+                    .strip_suffix('%')
+                    .and_then(|p| p.parse::<f32>().ok())
+                    .map(|p| p / 100.0)
+                    .or_else(|| v.trim().parse().ok())
+                    .filter(|x: &f32| x.is_finite())
+                    .unwrap_or(default),
                 Some(v) => length(v, reference).unwrap_or(default),
-                None => if user { default * reference } else { default },
+                None => {
+                    if user {
+                        default * reference
+                    } else {
+                        default
+                    }
+                }
             }
         };
         // What shows past the ends and how the stops mix carry over (ADR 0074).

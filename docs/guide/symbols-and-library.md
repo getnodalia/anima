@@ -167,7 +167,7 @@ Deleting a folder that holds items asks first, and its items go with it.
 * **Duplicate Symbol** (right-click): makes a copy called, for example, "Ball copy" in the
   same folder, ready to rename and change.
 * **Delete** (right-click, the delete button, or **Delete**): removes the selected items and
-  folders. If the movie uses an item, AniCraft asks first, and its instances go with it.
+  folders. If the movie uses an item, Ánima asks first, and its instances go with it.
   Undo brings everything back.
 
 ### Sorting and searching
@@ -199,7 +199,7 @@ The Library takes:
 * **SVG drawings**, which become one graphic symbol named after the file.
 
 **File › Import › Import to Stage…** (**Ctrl+R**) adds the file to the Library and places it
-on the stage as well. Images and sounds are stored inside your `.anicraft` file, so the
+on the stage as well. Images and sounds are stored inside your `.anima` file, so the
 document stays complete if you move it. See [Images and sound](images-and-sound.md) for more.
 
 ## Sounds in symbols
@@ -234,7 +234,7 @@ To set it up:
 
 Rotation and skew are applied after the 9-slice scaling. Symbols, text and bitmaps nested
 inside scale normally, as in Animate. If an instance is too small for its corners, they
-shrink together in proportion. If you turn the guides off, AniCraft remembers where they were.
+shrink together in proportion. If you turn the guides off, Ánima remembers where they were.
 
 The HTML canvas export doesn't do 9-slice scaling yet. It scales such instances as a whole,
 and its report says so.

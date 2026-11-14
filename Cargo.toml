@@ -11,29 +11,29 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 # An application, not a library: not published to crates.io.
 publish = false
-repository = "https://github.com/storytold/AniCraft"
+repository = "https://github.com/getnodalia/anima"
 rust-version = "1.95"
 
 [workspace.dependencies]
-anicraft-geom = { path = "crates/geom" }
-anicraft-doc = { path = "crates/doc" }
-anicraft-render = { path = "crates/render" }
-anicraft-engine = { path = "crates/engine" }
-anicraft-xfl = { path = "crates/xfl" }
-anicraft-xml = { path = "crates/xml" }
-anicraft-svg = { path = "crates/svg" }
-anicraft-text = { path = "crates/text" }
-anicraft-plugins = { path = "crates/plugins" }
-anicraft-audio = { path = "crates/audio" }
-anicraft-gpu = { path = "crates/gpu" }
-anicraft-guide = { path = "crates/guide" }
-craft-anicraft-format = { git = "https://github.com/storytold/craft-libs", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18" }
-craft-audio = { git = "https://github.com/storytold/craft-libs", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18", default-features = false, features = ["decode", "pcm-encode"] }
-craft-gif = { git = "https://github.com/storytold/craft-libs", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18" }
-craft-image-codecs = { git = "https://github.com/storytold/craft-libs", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18" }
-craft-webp = { git = "https://github.com/storytold/craft-libs", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18" }
-craft-xfl = { git = "https://github.com/storytold/craft-libs", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18" }
-craft-xml = { git = "https://github.com/storytold/craft-libs", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18" }
+anima-geom = { path = "crates/geom" }
+anima-doc = { path = "crates/doc" }
+anima-render = { path = "crates/render" }
+anima-engine = { path = "crates/engine" }
+anima-xfl = { path = "crates/xfl" }
+anima-xml = { path = "crates/xml" }
+anima-svg = { path = "crates/svg" }
+anima-text = { path = "crates/text" }
+anima-plugins = { path = "crates/plugins" }
+anima-audio = { path = "crates/audio" }
+anima-gpu = { path = "crates/gpu" }
+anima-guide = { path = "crates/guide" }
+craft-anicraft-format = { git = "https://github.com/getnodalia/foundation", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18" }
+craft-audio = { git = "https://github.com/getnodalia/foundation", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18", default-features = false, features = ["decode", "pcm-encode"] }
+craft-gif = { git = "https://github.com/getnodalia/foundation", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18" }
+craft-image-codecs = { git = "https://github.com/getnodalia/foundation", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18" }
+craft-webp = { git = "https://github.com/getnodalia/foundation", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18" }
+craft-xfl = { git = "https://github.com/getnodalia/foundation", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18" }
+craft-xml = { git = "https://github.com/getnodalia/foundation", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18" }
 # The GPU stage (ADR 0019) uses the wgpu that eframe's egui-wgpu brings, with the same
 # (default) features, so the tree keeps one wgpu build.
 wgpu = "30"
@@ -41,7 +41,7 @@ wgpu = "30"
 naga = { version = "30", features = ["wgsl-in"] }
 pollster = "1"
 bytemuck = "1"
-anicraft-actions = { path = "crates/actions" }
+anima-actions = { path = "crates/actions" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
@@ -72,14 +72,14 @@ dbg_macro = "warn"
 todo = "warn"
 
 [package]
-name = "anicraft"
-description = "AniCraft desktop app: egui shell over the AniCraft engine"
+name = "anima"
+description = "Ánima desktop app: egui shell over the Ánima engine"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
 repository.workspace = true
-default-run = "anicraft"
+default-run = "anima"
 
 [features]
 # Plays sound during stage playback. Off: playback is silent (for builders without ALSA headers).
@@ -89,22 +89,22 @@ sound-output = ["dep:cpal"]
 # when there is a usable one, and on the CPU (the oracle, and what exports use) otherwise and
 # for anything the GPU can't draw. Preferences › Stage › Renderer can choose the CPU. Build with
 # `--no-default-features --features sound-output` for a CPU-only shell.
-gpu-stage = ["dep:anicraft-gpu"]
+gpu-stage = ["dep:anima-gpu"]
 
 [[bin]]
-name = "anicraft"
+name = "anima"
 path = "src/main.rs"
 
 [dependencies]
-anicraft-geom.workspace = true
-anicraft-doc.workspace = true
-anicraft-render.workspace = true
-anicraft-engine.workspace = true
-anicraft-gpu = { workspace = true, optional = true }
+anima-geom.workspace = true
+anima-doc.workspace = true
+anima-render.workspace = true
+anima-engine.workspace = true
+anima-gpu = { workspace = true, optional = true }
 egui.workspace = true
 serde.workspace = true
 fontdb.workspace = true
-anicraft-audio.workspace = true
+anima-audio.workspace = true
 serde_json.workspace = true
 web-time.workspace = true
 # The system's interface language, for the default language (ADR 0040; MIT OR Apache-2.0).
@@ -112,8 +112,8 @@ sys-locale = "0.3"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # The user guide, bundled for Help › User Guide (ADR 0069). The web build serves it as pages instead.
-anicraft-guide.workspace = true
-craft-update = { git = "https://github.com/storytold/craft-libs", rev = "6ac2a6a34ae83fc0f0bfb25a569ba6388b72266a" }
+anima-guide.workspace = true
+craft-update = { git = "https://github.com/getnodalia/foundation", rev = "6ac2a6a34ae83fc0f0bfb25a569ba6388b72266a" }
 
 eframe = { workspace = true, features = ["links"] }
 rfd.workspace = true
@@ -155,7 +155,7 @@ web-sys = { version = "0.3", features = ["BeforeUnloadEvent", "Blob", "BlobPrope
 wat = "1.228"
 
 [build-dependencies]
-# Embeds the app icon in anicraft.exe on Windows (build.rs); does nothing on other targets.
+# Embeds the app icon in anima.exe on Windows (build.rs); does nothing on other targets.
 winresource = "0.1"
 
 [lints]
@@ -195,8 +195,8 @@ opt-level = "s"
 strip = true
 
 # ...except the CPU renderer and the geometry under it, which draw the stage there on one thread.
-[profile.web.package.anicraft-render]
+[profile.web.package.anima-render]
 opt-level = 3
 
-[profile.web.package.anicraft-geom]
+[profile.web.package.anima-geom]
 opt-level = 3

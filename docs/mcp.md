@@ -1,13 +1,13 @@
-# AniCraft for AI assistants (MCP)
+# Ánima for AI assistants (MCP)
 
-`anicraft-cli mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server. Any
+`anima-cli mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server. Any
 MCP client (an AI assistant, an editor, a script) can then open a document, draw, animate,
 look at frames and export through the same commands the app uses.
 
 ```sh
-anicraft-cli mcp                      # a new, empty document
-anicraft-cli mcp scene.anicraft       # open a document
-anicraft-cli mcp --sample             # the sample animation
+anima-cli mcp                      # a new, empty document
+anima-cli mcp scene.anima       # open a document
+anima-cli mcp --sample             # the sample animation
 ```
 
 The server talks MCP's stdio transport: JSON-RPC 2.0, one message per line on stdin and stdout.
@@ -15,14 +15,14 @@ It speaks protocol revisions 2025-06-18, 2025-03-26 and 2024-11-05.
 
 ## Connecting a client
 
-Most clients take a server entry like this one (use the full path to `anicraft-cli`):
+Most clients take a server entry like this one (use the full path to `anima-cli`):
 
 ```json
 {
   "mcpServers": {
-    "anicraft": {
-      "command": "/path/to/anicraft-cli",
-      "args": ["mcp", "/path/to/scene.anicraft"]
+    "anima": {
+      "command": "/path/to/anima-cli",
+      "args": ["mcp", "/path/to/scene.anima"]
     }
   }
 }
@@ -32,14 +32,14 @@ Most clients take a server entry like this one (use the full path to `anicraft-c
 
 | Tool | What it does |
 |---|---|
-| `anicraft_commands` | Lists the commands (id, label, menu, shortcut, params), optionally filtered by words such as `tween` or `export`. |
-| `anicraft_run` | Runs one command with its params. |
-| `anicraft_run_script` | Runs several commands in order; stops at the first error and says which step failed. |
-| `anicraft_document` | Describes the document: stage, scenes, layers and keyframes, library, and the current scene, frame, layer and selection. |
-| `anicraft_render` | Returns a frame of the current scene as a PNG picture, exactly as exported. |
+| `anima_commands` | Lists the commands (id, label, menu, shortcut, params), optionally filtered by words such as `tween` or `export`. |
+| `anima_run` | Runs one command with its params. |
+| `anima_run_script` | Runs several commands in order; stops at the first error and says which step failed. |
+| `anima_document` | Describes the document: stage, scenes, layers and keyframes, library, and the current scene, frame, layer and selection. |
+| `anima_render` | Returns a frame of the current scene as a PNG picture, exactly as exported. |
 
 The assistant sees one tool per job, not one per command: the command list is long and grows
-with every release, and `anicraft_commands` lets it find what it needs. Frames in params are
+with every release, and `anima_commands` lets it find what it needs. Frames in params are
 0-based, as everywhere in the engine (the CLI's own `--frame` flags are 1-based, as in the
 timeline).
 

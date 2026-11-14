@@ -5,7 +5,7 @@
 //!
 //! They live in the shell because the keys do: tool and view keys and the macOS labels are
 //! the shell's. A test compares them with `docs/guide/reference/` and fails when they are
-//! stale; `ANICRAFT_BLESS_GUIDE=1 cargo test -p anicraft guide_reference` writes them.
+//! stale; `ANIMA_BLESS_GUIDE=1 cargo test -p anima guide_reference` writes them.
 
 use crate::platform::{Os, shortcut_label_for};
 
@@ -62,17 +62,17 @@ fn ordered(mut groups: Vec<&str>) -> Vec<&str> {
 /// The command reference: every command, by top menu, with its id, menu path, default key,
 /// whether it changes the document, and its parameters.
 pub fn commands_md() -> String {
-    let cmds = anicraft_engine::commands();
+    let cmds = anima_engine::commands();
     let mut out = String::from("# Command reference\n\n");
     out.push_str(&format!(
-        "Everything you can do in AniCraft is a command: the menus, the shortcuts, the command palette (**Ctrl+K**, macOS **⌘K**), \
-         `anicraft-cli` and AI assistants over MCP all run the same {} commands, listed here by menu. The id is what scripts and \
+        "Everything you can do in Ánima is a command: the menus, the shortcuts, the command palette (**Ctrl+K**, macOS **⌘K**), \
+         `anima-cli` and AI assistants over MCP all run the same {} commands, listed here by menu. The id is what scripts and \
          [working headless](../working-headless.md) use; the parameters are what a command takes as JSON. Commands that change the \
          document are one undo step each. Your own shortcuts (**F1**) replace the defaults shown here; see the \
          [shortcut reference](shortcuts.md).\n\n",
         cmds.len()
     ));
-    out.push_str("This page is generated from the command registry, so it always matches the version of AniCraft it came with.\n");
+    out.push_str("This page is generated from the command registry, so it always matches the version of Ánima it came with.\n");
     const HEADLESS: &str = "Not in a menu";
     let top = |m: &'static str| if m.is_empty() { HEADLESS } else { m.split('/').next().unwrap_or(HEADLESS) };
     let mut groups = ordered(cmds.iter().map(|c| top(c.menu)).filter(|g| *g != HEADLESS).collect());
@@ -113,21 +113,22 @@ pub fn commands_md() -> String {
 pub fn shortcuts_md() -> String {
     let mut out = String::from("# Shortcut reference\n\n");
     out.push_str(
-        "AniCraft's default keyboard shortcuts. On macOS, **Ctrl** is **⌘** (Command) and **Alt** is **⌥** (Option). \
+        "Ánima's default keyboard shortcuts. On macOS, **Ctrl** is **⌘** (Command) and **Alt** is **⌥** (Option). \
          To change a shortcut, open **Help › Keyboard Shortcuts** (**F1**): see \
          [Preferences, shortcuts, accessibility and languages](../preferences-shortcuts-accessibility.md). \
          The keys in the fixed rows can't be reassigned. Every command, with or without a key, is in the \
          [command reference](commands.md).\n\n\
-         This page is generated from the editor's shortcut map, so it always matches the version of AniCraft it came with.\n",
+         This page is generated from the editor's shortcut map, so it always matches the version of Ánima it came with.\n",
     );
     // (group, action, keys): the bindable actions with default keys, then the fixed keys.
     // A command in a submenu is named with it ("Timeline › Keyframe"), as the menus show it.
-    let cmds = anicraft_engine::commands();
+    let cmds = anima_engine::commands();
     let name = |a: &crate::keymap::Action| match cmds.iter().find(|c| c.id == a.id).and_then(|c| c.menu.split_once('/')) {
         Some((_, sub)) => format!("{} › {}", sub.replace('/', " › "), a.label),
         None => a.label.to_string(),
     };
-    let mut rows: Vec<(&str, String, Vec<&str>)> = crate::keymap::actions().into_iter().filter(|a| !a.defaults.is_empty()).map(|a| (a.group, name(&a), a.defaults)).collect();
+    let mut rows: Vec<(&str, String, Vec<&str>)> =
+        crate::keymap::actions().into_iter().filter(|a| !a.defaults.is_empty()).map(|a| (a.group, name(&a), a.defaults)).collect();
     for (group, label, keys) in crate::dialogs::fixed_rows() {
         let label = if matches!(label, "Quit" | "Exit") { "Exit (Quit on macOS)".to_string() } else { label.to_string() };
         rows.push((group, label, keys));
@@ -153,10 +154,10 @@ mod tests {
     }
 
     /// Compares a generated page with the committed one (line endings aside), or writes it
-    /// when `ANICRAFT_BLESS_GUIDE` is set.
+    /// when `ANIMA_BLESS_GUIDE` is set.
     fn fresh(file: &str, generated: &str) {
         let path = file.split('/').fold(reference_dir(), |p, part| p.join(part));
-        if std::env::var_os("ANICRAFT_BLESS_GUIDE").is_some() {
+        if std::env::var_os("ANIMA_BLESS_GUIDE").is_some() {
             std::fs::create_dir_all(path.parent().expect("has a folder")).expect("folder");
             std::fs::write(&path, generated).expect("writes the reference");
             return;
@@ -164,7 +165,7 @@ mod tests {
         let committed = std::fs::read_to_string(&path).unwrap_or_default().replace("\r\n", "\n");
         assert!(
             committed == generated,
-            "docs/guide/{file} is out of date with the commands and shortcuts. Regenerate it with\n  ANICRAFT_BLESS_GUIDE=1 cargo test -p anicraft guide_reference\nand commit the result."
+            "docs/guide/{file} is out of date with the commands and shortcuts. Regenerate it with\n  ANIMA_BLESS_GUIDE=1 cargo test -p anima guide_reference\nand commit the result."
         );
     }
 
@@ -181,7 +182,7 @@ mod tests {
     #[test]
     fn guide_reference_lists_every_command_and_key() {
         let md = commands_md();
-        for c in anicraft_engine::commands() {
+        for c in anima_engine::commands() {
             assert!(md.contains(&code(c.id)), "{} missing from the command reference", c.id);
         }
         let keys = shortcuts_md();

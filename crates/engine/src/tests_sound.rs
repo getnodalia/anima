@@ -2,8 +2,8 @@
 //! and the mixed soundtrack, checked sample for sample.
 
 use super::*;
-use anicraft_doc::audio;
-use anicraft_doc::{SoundId, SoundSync};
+use anima_doc::audio;
+use anima_doc::{SoundId, SoundSync};
 use serde_json::json;
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -14,7 +14,7 @@ fn run(s: &mut Session, id: &str, p: Value) -> Value {
 }
 
 fn temp_dir(tag: &str) -> std::path::PathBuf {
-    let dir = std::env::temp_dir().join(format!("anicraft-sound-{tag}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("anima-sound-{tag}-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     dir
 }
@@ -56,7 +56,11 @@ fn a_placed_sound_mixes_into_the_exported_wav_sample_exactly() {
     let dir = temp_dir("mix");
     let (mut s, id) = session_with_sound(&dir);
     let v = run(&mut s, "sound.place", json!({"sound": id, "frame": 2, "extend": true}));
-    assert_eq!((v["keyframe"].as_u64(), v["duration"].as_u64(), v["frames"].as_u64()), (Some(2), Some(3), Some(3)), "2500 samples span 3 frames at 8 fps");
+    assert_eq!(
+        (v["keyframe"].as_u64(), v["duration"].as_u64(), v["frames"].as_u64()),
+        (Some(2), Some(3), Some(3)),
+        "2500 samples span 3 frames at 8 fps"
+    );
     assert_eq!(s.frame_count(), 5);
     let mix = export(&mut s, &dir, "a.wav", json!({}));
     assert_eq!((mix.rate, mix.channels, mix.frames()), (8000, 2, 5000), "the movie's length");
@@ -92,7 +96,12 @@ fn a_placed_sound_mixes_into_the_exported_wav_sample_exactly() {
     assert_eq!((p.rate, p.frames()), (44_100, 27_563));
     // Replacing a file needs consent; bad params are errors.
     assert!(s.execute("file.export_audio", &json!({"path": out.display().to_string()})).is_err());
-    for bad in [json!({"path": "x.mp3"}), json!({"path": "x.wav", "rate": 5}), json!({"path": "x.wav", "bits": 8}), json!({"path": "x.wav", "from": 5, "to": 1})] {
+    for bad in [
+        json!({"path": "x.mp3"}),
+        json!({"path": "x.wav", "rate": 5}),
+        json!({"path": "x.wav", "bits": 8}),
+        json!({"path": "x.wav", "from": 5, "to": 1}),
+    ] {
         assert!(s.execute("file.export_audio", &bad).is_err(), "{bad}");
     }
     let _ = std::fs::remove_dir_all(&dir);
@@ -200,8 +209,13 @@ fn settings_removal_deletion_and_import_to_stage() {
 
 #[test]
 fn video_export_carries_the_soundtrack() {
-    let program = std::env::var("ANICRAFT_FFMPEG").unwrap_or_else(|_| "ffmpeg".into());
-    let have = std::process::Command::new(&program).arg("-version").stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).status().is_ok_and(|st| st.success());
+    let program = std::env::var("ANIMA_FFMPEG").unwrap_or_else(|_| "ffmpeg".into());
+    let have = std::process::Command::new(&program)
+        .arg("-version")
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .is_ok_and(|st| st.success());
     if !have {
         eprintln!("no ffmpeg here: video soundtrack not tested");
         return;
@@ -215,7 +229,11 @@ fn video_export_carries_the_soundtrack() {
         assert_eq!(v["audio"], true);
         let bytes = std::fs::read(&out).unwrap();
         assert!(bytes.windows(codec.len()).any(|w| w == codec), "{name} has an audio track");
-        let v = run(&mut s, "file.export_video", json!({"path": dir.join(format!("silent-{name}")).display().to_string(), "scale": 0.05, "audio": false}));
+        let v = run(
+            &mut s,
+            "file.export_video",
+            json!({"path": dir.join(format!("silent-{name}")).display().to_string(), "scale": 0.05, "audio": false}),
+        );
         assert_eq!(v["audio"], false);
     }
     let _ = std::fs::remove_dir_all(&dir);
@@ -227,7 +245,7 @@ fn right(p: &audio::Pcm) -> Vec<f32> {
 
 #[test]
 fn effects_shape_the_exported_soundtrack_and_custom_starts_from_the_preset() {
-    use anicraft_doc::SoundEffect;
+    use anima_doc::SoundEffect;
     use audio::mix::lerp;
     let dir = temp_dir("effects");
     let (mut s, id) = session_with_sound(&dir);
@@ -255,7 +273,14 @@ fn effects_shape_the_exported_soundtrack_and_custom_starts_from_the_preset() {
     let mix = export(&mut s, &dir, "d.wav", json!({}));
     assert_eq!((left(&mix)[500], right(&mix)[1500]), (src[500] * 0.5, src[1500] * lerp(0.5, 1.0, 0.5)));
     assert_eq!((left(&mix)[2200], right(&mix)[2200]), (0.0, src[2200]));
-    for bad in [json!({"effect": "louder"}), json!({"envelope": []}), json!({"envelope": [[0, 2, 0]]}), json!({"envelope": [[-1, 1, 1]]}), json!({"envelope": (0..17).map(|i| json!([i, 1, 1])).collect::<Vec<_>>()}), json!({"envelope": [{"at": 0}]})] {
+    for bad in [
+        json!({"effect": "louder"}),
+        json!({"envelope": []}),
+        json!({"envelope": [[0, 2, 0]]}),
+        json!({"envelope": [[-1, 1, 1]]}),
+        json!({"envelope": (0..17).map(|i| json!([i, 1, 1])).collect::<Vec<_>>()}),
+        json!({"envelope": [{"at": 0}]}),
+    ] {
         assert!(s.execute("sound.set", &bad).is_err(), "{bad}");
     }
     let f = s.doc.timeline(0).layers[0].keyframes[0].sound.clone().unwrap();
@@ -264,7 +289,9 @@ fn effects_shape_the_exported_soundtrack_and_custom_starts_from_the_preset() {
     let back = format::from_json(&format::to_json(&s.doc).unwrap()).unwrap();
     assert_eq!(back, s.doc);
     run(&mut s, "edit.undo", json!({}));
-    assert!(matches!(&s.doc.timeline(0).layers[0].keyframes[0].sound.as_ref().unwrap().effect, SoundEffect::Custom(p) if p.len() == 2 && p[1].at == 0.3125));
+    assert!(
+        matches!(&s.doc.timeline(0).layers[0].keyframes[0].sound.as_ref().unwrap().effect, SoundEffect::Custom(p) if p.len() == 2 && p[1].at == 0.3125)
+    );
     run(&mut s, "sound.set", json!({"effect": "none"}));
     assert_eq!(left(&export(&mut s, &dir, "e.wav", json!({})))[..2500], src[..]);
     // Custom from None: full volume, a point at each end of the heard time.
@@ -299,7 +326,7 @@ fn layer_volume_and_mute_reach_the_export_and_are_undoable() {
 
 #[test]
 fn sounds_inside_symbols_are_in_the_exported_soundtrack_at_their_offset_and_loops() {
-    use anicraft_doc::{Element, ElementId, ElementKind, FrameSound, Keyframe, Layer, LayerId, LoopMode, Symbol, SymbolId, SymbolKind, Timeline};
+    use anima_doc::{Element, ElementId, ElementKind, FrameSound, Keyframe, Layer, LayerId, LoopMode, Symbol, SymbolId, SymbolKind, Timeline};
     let dir = temp_dir("nested");
     let (mut s, id) = session_with_sound(&dir);
     // A 4-frame graphic with the sound (an event) on its frame 1, shown looping from frame 1 to
@@ -308,9 +335,30 @@ fn sounds_inside_symbols_are_in_the_exported_soundtrack_at_their_offset_and_loop
     let mut k = Keyframe::new(1, 3);
     k.sound = Some(FrameSound::new(SoundId(id)));
     inner.keyframes = vec![Arc::new(Keyframe::new(0, 1)), Arc::new(k)];
-    s.doc.library.push(Arc::new(Symbol { linkage: None, scale_grid_kept: None, scale_grid: None, id: SymbolId(501), name: "Talk".into(), kind: SymbolKind::Graphic, timeline: Timeline { layers: vec![Arc::new(inner)] } }));
+    s.doc.library.push(Arc::new(Symbol {
+        linkage: None,
+        scale_grid_kept: None,
+        scale_grid: None,
+        id: SymbolId(501),
+        name: "Talk".into(),
+        kind: SymbolKind::Graphic,
+        timeline: Timeline { layers: vec![Arc::new(inner)] },
+    }));
     let mut k = Keyframe::new(1, 8);
-    k.elements.push(Arc::new(Element { id: ElementId(502), name: String::new(), transform: Default::default(), color: Default::default(), kind: ElementKind::Symbol { symbol: SymbolId(501), loop_mode: LoopMode::Loop, first_frame: 0, blend: Default::default(), filters: Vec::new(), events: Vec::new() } }));
+    k.elements.push(Arc::new(Element {
+        id: ElementId(502),
+        name: String::new(),
+        transform: Default::default(),
+        color: Default::default(),
+        kind: ElementKind::Symbol {
+            symbol: SymbolId(501),
+            loop_mode: LoopMode::Loop,
+            first_frame: 0,
+            blend: Default::default(),
+            filters: Vec::new(),
+            events: Vec::new(),
+        },
+    }));
     let mut outer = Layer::new(LayerId(503), "puppet");
     outer.keyframes = vec![Arc::new(Keyframe::new(0, 1)), Arc::new(k)];
     outer.volume = 0.5;
@@ -334,17 +382,22 @@ fn sounds_on_a_button_s_frames_play_in_test_movie_and_stay_out_of_the_soundtrack
     let dir = temp_dir("button");
     let wav = dir.join("click.wav");
     std::fs::write(&wav, crate::cmds_sound::test_wav(8000, &source())).unwrap();
-    let mut s = Session::new(anicraft_doc::sample::interactive());
+    let mut s = Session::new(anima_doc::sample::interactive());
     let id = run(&mut s, "file.import_to_library", json!({"path": wav.display().to_string()}))["sound"].as_u64().unwrap();
     // Inside the Play button, a click on its Over frame and another on its Down frame.
-    let button = s.doc.library.iter().find(|x| x.kind == anicraft_doc::SymbolKind::Button).map(|x| x.id).unwrap();
+    let button = s.doc.library.iter().find(|x| x.kind == anima_doc::SymbolKind::Button).map(|x| x.id).unwrap();
     run(&mut s, "symbol.edit", json!({"symbol": button.0}));
     run(&mut s, "sound.place", json!({"sound": id, "frame": 1}));
     run(&mut s, "sound.place", json!({"sound": id, "frame": 2, "sync": "stream"}));
     run(&mut s, "symbol.exit", json!({}));
     // The button stands at (640, 400) on the menu.
-    let v = run(&mut s, "control.test_movie", json!({"frames": 6, "events": [{"tick": 2, "type": "move", "x": 640, "y": 400}, {"tick": 4, "type": "down", "x": 640, "y": 400}]}));
-    let heard: Vec<(u64, &str)> = v["sounds"].as_array().unwrap().iter().map(|x| (x["tick"].as_u64().unwrap(), x["sync"].as_str().unwrap())).collect();
+    let v = run(
+        &mut s,
+        "control.test_movie",
+        json!({"frames": 6, "events": [{"tick": 2, "type": "move", "x": 640, "y": 400}, {"tick": 4, "type": "down", "x": 640, "y": 400}]}),
+    );
+    let heard: Vec<(u64, &str)> =
+        v["sounds"].as_array().unwrap().iter().map(|x| (x["tick"].as_u64().unwrap(), x["sync"].as_str().unwrap())).collect();
     assert_eq!(heard, [(2, "event"), (4, "event")], "Over, then Down (a stream plays as an event): {v}");
     assert_eq!(v["sounds"][0]["name"], "click.wav");
     // Nothing on the timelines plays them: the exported soundtrack is silent.
@@ -373,7 +426,9 @@ fn hostile_envelopes_are_refused_or_tamed_and_always_mix() {
     let mut accepted = 0;
     for round in 0..200 {
         let n = next() % 20;
-        let points: Vec<Value> = (0..n).map(|_| json!({"at": times[next() % times.len()], "left": levels[next() % levels.len()], "right": levels[next() % levels.len()]})).collect();
+        let points: Vec<Value> = (0..n)
+            .map(|_| json!({"at": times[next() % times.len()], "left": levels[next() % levels.len()], "right": levels[next() % levels.len()]}))
+            .collect();
         let sync = ["event", "start", "stop", "stream"][round % 4];
         let repeats = [json!(0), json!(1), json!(65_535), json!(-3), json!(1e12)];
         let p = match round % 5 {
@@ -387,12 +442,15 @@ fn hostile_envelopes_are_refused_or_tamed_and_always_mix() {
             accepted += 1;
         }
         let fs = s.timeline().layers.iter().find_map(|l| l.keyframe_at(0).and_then(|k| k.sound.clone()));
-        if let Some(anicraft_doc::SoundEffect::Custom(points)) = fs.as_ref().map(|f| &f.effect) {
+        if let Some(anima_doc::SoundEffect::Custom(points)) = fs.as_ref().map(|f| &f.effect) {
             assert!(points.len() <= 16, "at most 16 points kept");
-            assert!(points.iter().all(|q| q.at.is_finite() && q.at >= 0.0 && (0.0..=1.0).contains(&q.left) && (0.0..=1.0).contains(&q.right)), "{points:?}");
+            assert!(
+                points.iter().all(|q| q.at.is_finite() && q.at >= 0.0 && (0.0..=1.0).contains(&q.left) && (0.0..=1.0).contains(&q.right)),
+                "{points:?}"
+            );
         }
         for rate in [8000, 44_100, 192_000] {
-            let voices = anicraft_doc::sound::voices(&s.doc, rate);
+            let voices = anima_doc::sound::voices(&s.doc, rate);
             let mut out = vec![0.0; 2 * 4096];
             for start in [0, 1000, u64::from(rate)] {
                 audio::mix(&voices, rate, audio::MixOptions::default(), start, &mut out);

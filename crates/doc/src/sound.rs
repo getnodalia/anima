@@ -9,7 +9,7 @@
 //! at a time.
 
 use crate::{Document, ElementKind, Keyframe, Layer, LayerKind, LoopMode, MAX_SYMBOL_DEPTH, SymbolId, SymbolKind, Timeline, instance_start};
-use anicraft_audio::{AudioError, EnvPoint, Envelope, Format, Pcm, Peaks, Voice, VoiceKind};
+use anima_audio::{AudioError, EnvPoint, Envelope, Format, Pcm, Peaks, Voice, VoiceKind};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, OnceLock};
@@ -82,7 +82,7 @@ impl Sound {
             Format::Vorbis => SoundFormat::Ogg,
             Format::Mp3 => SoundFormat::Mp3,
         };
-        let pcm = anicraft_audio::decode(&data)?;
+        let pcm = anima_audio::decode(&data)?;
         let (rate, channels, frames) = (pcm.rate, pcm.channels, pcm.frames() as u64);
         let decoded = OnceLock::new();
         let _ = decoded.set(Some(Arc::new(Decoded { peaks: Peaks::of(&pcm), pcm: Arc::new(pcm) })));
@@ -94,7 +94,7 @@ impl Sound {
     pub fn decoded(&self) -> Option<Arc<Decoded>> {
         self.decoded
             .get_or_init(|| {
-                let pcm = anicraft_audio::decode(&self.data).ok()?;
+                let pcm = anima_audio::decode(&self.data).ok()?;
                 Some(Arc::new(Decoded { peaks: Peaks::of(&pcm), pcm: Arc::new(pcm) }))
             })
             .clone()
@@ -168,7 +168,6 @@ impl SoundSync {
     }
 }
 
-
 /// Most repeats a frame sound takes.
 pub const MAX_REPEAT: u32 = 9_999;
 /// Most points a custom envelope keeps.
@@ -199,7 +198,11 @@ pub fn clean_points(points: &[EnvelopePoint]) -> Vec<EnvelopePoint> {
     let mut out: Vec<EnvelopePoint> = points
         .iter()
         .take(MAX_ENVELOPE_POINTS)
-        .map(|p| EnvelopePoint { at: if p.at.is_finite() { p.at.clamp(0.0, MAX_ENVELOPE_SECONDS) } else { 0.0 }, left: level(p.left), right: level(p.right) })
+        .map(|p| EnvelopePoint {
+            at: if p.at.is_finite() { p.at.clamp(0.0, MAX_ENVELOPE_SECONDS) } else { 0.0 },
+            left: level(p.left),
+            right: level(p.right),
+        })
         .collect();
     out.sort_by(|a, b| a.at.total_cmp(&b.at));
     out
@@ -317,7 +320,9 @@ impl SoundEffect {
     pub fn envelope(&self, length: u64, rate: u32) -> Option<Arc<Envelope>> {
         let points: Vec<EnvPoint> = match self {
             SoundEffect::None => return None,
-            SoundEffect::Custom(p) => clean_points(p).into_iter().map(|p| EnvPoint { at: (p.at * f64::from(rate)).round() as u64, left: p.left, right: p.right }).collect(),
+            SoundEffect::Custom(p) => {
+                clean_points(p).into_iter().map(|p| EnvPoint { at: (p.at * f64::from(rate)).round() as u64, left: p.left, right: p.right }).collect()
+            }
             preset => preset.shape().iter().map(|&(at_end, left, right)| EnvPoint { at: if at_end { length } else { 0 }, left, right }).collect(),
         };
         Envelope::new(points).map(Arc::new)
@@ -511,7 +516,11 @@ impl<'a> Layout<'a> {
             self.placed.push(Placed { at, skip, limit, span, fs: fs.clone(), gain });
             return;
         }
-        let entered = if st.advancing { start >= st.l0 && start < st.l0.saturating_add(st.n) && (start > st.l0 || st.enters) } else { start == st.l0 && st.enters };
+        let entered = if st.advancing {
+            start >= st.l0 && start < st.l0.saturating_add(st.n) && (start > st.l0 || st.enters)
+        } else {
+            start == st.l0 && st.enters
+        };
         if entered {
             let at = self.out(st.g0 + (start - st.l0));
             self.placed.push(Placed { at, skip: 0, limit: u64::MAX, span, fs: fs.clone(), gain });
@@ -598,7 +607,14 @@ pub fn voices(doc: &Document, rate: u32) -> Vec<Voice> {
     let movie_end = frame_start(u64::from(doc.frame_count()), fps, rate);
     let mut lay = Layout { doc, fps, rate, sounding: sounding_symbols(doc), placed: Vec::new(), budget: MAX_STRETCHES };
     for (si, scene) in doc.scenes.iter().enumerate() {
-        let st = Stretch { g0: u64::from(doc.scene_start(si)), l0: 0, n: u64::from(scene.timeline.frame_count()), advancing: true, enters: true, gain: 1.0 };
+        let st = Stretch {
+            g0: u64::from(doc.scene_start(si)),
+            l0: 0,
+            n: u64::from(scene.timeline.frame_count()),
+            advancing: true,
+            enters: true,
+            gain: 1.0,
+        };
         lay.timeline(&scene.timeline, st, 0);
     }
     let mut placed = lay.placed;

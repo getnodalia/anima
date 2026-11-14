@@ -8,11 +8,11 @@ use std::path::{Path, PathBuf};
 
 /// A fresh folder with a fake AppImage in a folder whose name has a space, and a data folder.
 fn setup(tag: &str) -> (PathBuf, PathBuf, PathBuf) {
-    let root = std::env::temp_dir().join(format!("anicraft-desktop-{tag}-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!("anima-desktop-{tag}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     let apps = root.join("My Apps");
     std::fs::create_dir_all(&apps).unwrap();
-    let appimage = apps.join("AniCraft-0.1.0-x86_64.AppImage");
+    let appimage = apps.join("Anima-0.1.0-x86_64.AppImage");
     std::fs::write(&appimage, b"\x7fELF fake").unwrap();
     let data = root.join("share");
     (root, appimage, data)
@@ -24,18 +24,18 @@ fn value<'a>(entry: &'a str, key: &str) -> Option<&'a str> {
 
 #[test]
 fn the_entry_starts_the_appimage_and_keeps_the_packaged_fields() {
-    let entry = desktop_entry(Path::new("/home/ana/Apps/AniCraft.AppImage")).unwrap();
+    let entry = desktop_entry(Path::new("/home/ana/Apps/Ánima.AppImage")).unwrap();
     assert!(entry.contains("[Desktop Entry]\n"));
-    assert_eq!(value(&entry, "Exec"), Some("\"/home/ana/Apps/AniCraft.AppImage\" %f"));
-    assert_eq!(value(&entry, "TryExec"), Some("/home/ana/Apps/AniCraft.AppImage"));
-    assert_eq!(value(&entry, MARKER_KEY), Some("/home/ana/Apps/AniCraft.AppImage"));
+    assert_eq!(value(&entry, "Exec"), Some("\"/home/ana/Apps/Ánima.AppImage\" %f"));
+    assert_eq!(value(&entry, "TryExec"), Some("/home/ana/Apps/Ánima.AppImage"));
+    assert_eq!(value(&entry, MARKER_KEY), Some("/home/ana/Apps/Ánima.AppImage"));
     // Everything else is the packaged entry, so menus, docks and file types match the packages.
     for key in ["Type", "Name", "Icon", "StartupWMClass", "Categories", "MimeType", "Terminal"] {
-        let packaged = include_str!("../../../packaging/linux/ai.storyteller.anicraft.desktop");
+        let packaged = include_str!("../../../packaging/linux/dev.danielmiguelt.Anima.desktop");
         assert_eq!(value(&entry, key), value(packaged, key), "{key}");
     }
     assert_eq!(value(&entry, "Icon"), Some(APP_ID));
-    assert_eq!(value(&entry, "MimeType"), Some("application/x-anicraft;application/x-fla;application/x-xfl;"));
+    assert_eq!(value(&entry, "MimeType"), Some("application/x-anima;application/x-fla;application/x-xfl;"));
     assert_eq!(entry.matches("Exec=").count(), 2, "one Exec and one TryExec");
 }
 
@@ -65,7 +65,7 @@ fn install_writes_the_entry_mime_types_and_icons_and_is_idempotent() {
     let entry = std::fs::read_to_string(data.join("applications").join(format!("{APP_ID}.desktop"))).unwrap();
     assert_eq!(entry_appimage(&entry).as_deref(), Some(appimage.as_path()));
     let mime = std::fs::read_to_string(data.join("mime/packages").join(format!("{APP_ID}.xml"))).unwrap();
-    for ty in ["application/x-anicraft", "application/x-fla", "application/x-xfl"] {
+    for ty in ["application/x-anima", "application/x-fla", "application/x-xfl"] {
         assert!(mime.contains(&format!("<mime-type type=\"{ty}\">")), "{ty}");
     }
     for size in ["16x16", "48x48", "256x256"] {
@@ -78,7 +78,7 @@ fn install_writes_the_entry_mime_types_and_icons_and_is_idempotent() {
     assert!(again.written.is_empty());
     assert_eq!(again.unchanged.len(), owned_files().len());
     // Moved to another folder: only the entry is rewritten.
-    let moved = root.join("AniCraft.AppImage");
+    let moved = root.join("Ánima.AppImage");
     std::fs::copy(&appimage, &moved).unwrap();
     let r = install(&moved, &data).unwrap();
     assert_eq!(r.written.len(), 1);
@@ -87,7 +87,7 @@ fn install_writes_the_entry_mime_types_and_icons_and_is_idempotent() {
     let mut stray = Vec::new();
     for rel in owned_files() {
         let dir = data.join(rel).parent().unwrap().to_path_buf();
-        stray.extend(std::fs::read_dir(dir).unwrap().flatten().filter(|e| e.file_name().to_string_lossy().ends_with(".anicraft-tmp")).map(|e| e.path()));
+        stray.extend(std::fs::read_dir(dir).unwrap().flatten().filter(|e| e.file_name().to_string_lossy().ends_with(".anima-tmp")).map(|e| e.path()));
     }
     assert!(stray.is_empty(), "{stray:?}");
     let _ = std::fs::remove_dir_all(root);
@@ -114,14 +114,14 @@ fn remove_deletes_exactly_what_install_wrote_and_is_idempotent() {
 }
 
 #[test]
-fn an_entry_anicraft_did_not_write_is_never_replaced_or_removed() {
+fn an_entry_anima_did_not_write_is_never_replaced_or_removed() {
     let (root, appimage, data) = setup("foreign");
     let entry = data.join("applications").join(format!("{APP_ID}.desktop"));
     std::fs::create_dir_all(entry.parent().unwrap()).unwrap();
-    std::fs::write(&entry, "[Desktop Entry]\nName=My own AniCraft\nExec=/opt/mine/anicraft\n").unwrap();
+    std::fs::write(&entry, "[Desktop Entry]\nName=My own Ánima\nExec=/opt/mine/anima\n").unwrap();
     assert!(install(&appimage, &data).is_err());
     assert!(uninstall(&data).is_err());
-    assert!(std::fs::read_to_string(&entry).unwrap().contains("My own AniCraft"));
+    assert!(std::fs::read_to_string(&entry).unwrap().contains("My own Ánima"));
     assert!(read_status(&data).foreign);
     let _ = std::fs::remove_dir_all(root);
 }
@@ -153,7 +153,9 @@ fn the_commands_add_report_and_remove() {
     assert!(!s.is_dirty(), "the document is untouched");
     let r = s.execute("desktop.remove", &json!({"data_home": d, "refresh": false})).unwrap();
     assert_eq!(r["removed"].as_array().map(Vec::len), Some(owned_files().len()));
-    for bad in [json!({}), json!({"appimage": a}), json!({"data_home": ""}), json!({"appimage": "", "data_home": d}), json!({"appimage": 3, "data_home": d})] {
+    for bad in
+        [json!({}), json!({"appimage": a}), json!({"data_home": ""}), json!({"appimage": "", "data_home": d}), json!({"appimage": 3, "data_home": d})]
+    {
         assert!(s.execute("desktop.integrate", &bad).is_err(), "{bad}");
     }
     assert!(crate::cmds_plugin::plugin_may_call("desktop.integrate").is_err());

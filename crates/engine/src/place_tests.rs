@@ -2,8 +2,8 @@
 //! into a folder (ADR 0053).
 
 use crate::Session;
-use anicraft_doc::{BitmapId, Element, ElementKind, FolderId, LibraryEntry, LibraryItem, Paint, SymbolId, SymbolKind, sample};
-use anicraft_geom::{Affine, Path, Vec2};
+use anima_doc::{BitmapId, Element, ElementKind, FolderId, LibraryEntry, LibraryItem, Paint, SymbolId, SymbolKind, sample};
+use anima_geom::{Affine, Path, Vec2};
 use serde_json::{Value, json};
 use std::sync::Arc;
 
@@ -28,24 +28,31 @@ fn sym(s: &Session, name: &str) -> u64 {
 /// A `w`×`h` bitmap of one colour, added to the Library.
 fn add_bitmap(s: &mut Session, name: &str, w: u32, h: u32) -> BitmapId {
     let id = BitmapId(s.doc.alloc_id());
-    let bytes = anicraft_render::encode_png(w, h, &[255, 0, 0, 255].repeat((w * h) as usize)).unwrap();
-    s.doc.bitmaps.push(Arc::new(anicraft_doc::Bitmap::from_png(id, name, bytes).unwrap()));
+    let bytes = anima_render::encode_png(w, h, &[255, 0, 0, 255].repeat((w * h) as usize)).unwrap();
+    s.doc.bitmaps.push(Arc::new(anima_doc::Bitmap::from_png(id, name, bytes).unwrap()));
     id
 }
 
 fn add_sound(s: &mut Session, name: &str) -> u64 {
-    let id = anicraft_doc::SoundId(s.doc.alloc_id());
+    let id = anima_doc::SoundId(s.doc.alloc_id());
     let wav = crate::cmds_sound::test_wav(8000, &[0.25; 8000]);
-    s.doc.sounds.push(Arc::new(anicraft_doc::Sound::from_data(id, name, wav).unwrap()));
+    s.doc.sounds.push(Arc::new(anima_doc::Sound::from_data(id, name, wav).unwrap()));
     id.0
 }
 
 /// Element `id` on the timeline being edited.
 fn element(s: &Session, id: u64) -> Element {
-    s.timeline().layers.iter().flat_map(|l| &l.keyframes).flat_map(|k| &k.elements).find(|e| e.id.0 == id).map(|e| (**e).clone()).unwrap_or_else(|| panic!("no element {id}"))
+    s.timeline()
+        .layers
+        .iter()
+        .flat_map(|l| &l.keyframes)
+        .flat_map(|k| &k.elements)
+        .find(|e| e.id.0 == id)
+        .map(|e| (**e).clone())
+        .unwrap_or_else(|| panic!("no element {id}"))
 }
 
-fn shape(e: &Element) -> &anicraft_doc::Shape {
+fn shape(e: &Element) -> &anima_doc::Shape {
     match &e.kind {
         ElementKind::Shape(sh) => sh,
         k => panic!("not a shape: {k:?}"),
@@ -62,7 +69,11 @@ fn a_drop_places_symbols_bitmaps_and_a_sound_in_one_undo_step() {
     let layer = s.layer;
     let before = s.doc.clone();
     let steps = s.history.undo_len();
-    let v = run(&mut s, "library.place", json!({"items": [{"symbol": ball}, {"symbol": star}, {"bitmap": bitmap.0}, {"sound": sound}], "x": 200, "y": 120}));
+    let v = run(
+        &mut s,
+        "library.place",
+        json!({"items": [{"symbol": ball}, {"symbol": star}, {"bitmap": bitmap.0}, {"sound": sound}], "x": 200, "y": 120}),
+    );
     assert_eq!(s.history.undo_len(), steps + 1, "one undo step");
     let ids: Vec<u64> = v["elements"].as_array().unwrap().iter().map(|x| x.as_u64().unwrap()).collect();
     assert_eq!(ids.len(), 3);
@@ -134,7 +145,18 @@ fn placing_inside_a_symbol_open_for_editing_uses_its_space() {
     let (ball, star) = (sym(&s, "Ball"), sym(&s, "Star"));
     run(&mut s, "symbol.edit", json!({"symbol": ball}));
     let el = run(&mut s, "library.place", json!({"symbol": star, "x": 5, "y": -7}))["element"].as_u64().unwrap();
-    let inside = s.doc.symbol(SymbolId(ball)).unwrap().timeline.layers.iter().flat_map(|l| &l.keyframes).flat_map(|k| &k.elements).find(|e| e.id.0 == el).cloned().expect("in the open symbol");
+    let inside = s
+        .doc
+        .symbol(SymbolId(ball))
+        .unwrap()
+        .timeline
+        .layers
+        .iter()
+        .flat_map(|l| &l.keyframes)
+        .flat_map(|k| &k.elements)
+        .find(|e| e.id.0 == el)
+        .cloned()
+        .expect("in the open symbol");
     assert_eq!(inside.transform.apply(Vec2::ZERO), Vec2::new(5.0, -7.0));
     assert!(err(&mut s, "library.place", json!({"items": [{"symbol": star}, {"symbol": ball}]})).contains("inside itself"));
 }

@@ -18,7 +18,7 @@ open a real audio device.
 
 ## Decision
 
-**A new L0 crate, `anicraft-audio`**, with no document knowledge: decoding into `Pcm` (`f32`,
+**A new L0 crate, `anima-audio`**, with no document knowledge: decoding into `Pcm` (`f32`,
 mono or stereo), a pure mixer over `Voice`s (a sound placed in output frames), WAV writing,
 waveform `Peaks`, and a device-independent `Player`. Decoders:
 
@@ -32,7 +32,7 @@ Every decoder is bounded (64 Mi samples, about 12 minutes of stereo) and the thi
 run under `catch_unwind`, so a malformed file is an error, never a crash.
 
 **Document model.** `Document.sounds: Vec<Arc<Sound>>` (like bitmaps). A `Sound` keeps **the
-bytes it was imported as** (WAV, OGG or MP3, base64 in `.anicraft`) plus its rate, channels and
+bytes it was imported as** (WAV, OGG or MP3, base64 in `.anima`) plus its rate, channels and
 length, and decodes once on first use into a cache shared by every clone of the document.
 `Keyframe.sound: Option<FrameSound { sound, sync, repeat, loop }>`. Both are
 `#[serde(default)]` and skipped when empty, so older files open unchanged and files without

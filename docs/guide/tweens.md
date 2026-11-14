@@ -1,10 +1,10 @@
 # Tweens
 
-A tween fills in the frames between two poses, so you draw the key moments and AniCraft does the
+A tween fills in the frames between two poses, so you draw the key moments and Ánima does the
 in-betweens. This chapter covers the three kinds of tween, easing, shape hints, the Motion
 Editor and motion paths.
 
-A note on keys: AniCraft uses **Ctrl** on Windows and Linux and **⌘** (Command) on macOS, and
+A note on keys: Ánima uses **Ctrl** on Windows and Linux and **⌘** (Command) on macOS, and
 **Alt** is **⌥** (Option) on macOS. So **Ctrl+Shift+H** is **⇧⌘H** on a Mac.
 
 ## Which tween should I use?
@@ -31,7 +31,7 @@ A classic tween runs from one keyframe to the next.
 4. Click a frame in the span between them and choose **Insert › Create Classic Tween**.
 
 Play it with **Enter**. If you change the object on a frame in the middle of a classic tween,
-AniCraft adds a keyframe there for you.
+Ánima adds a keyframe there for you.
 
 To take a tween away, choose **Insert › Remove Tween**. The frames keep the first keyframe's
 artwork.
@@ -109,7 +109,7 @@ Kind**; the easing is kept.
 
 ### Shape hints
 
-Sometimes a morph twists or folds in a way you don't want. Shape hints tell AniCraft which
+Sometimes a morph twists or folds in a way you don't want. Shape hints tell Ánima which
 point on the first shape becomes which point on the last.
 
 1. Put the playhead on the shape tween's first keyframe.
@@ -143,7 +143,7 @@ one frame long, it grows to a second's worth of frames. Both work as they do in 
 ### Adding property keyframes
 
 Move the playhead to any frame inside the span and change the object: move it, scale it, rotate
-it or fade it. AniCraft keys just the properties you changed, at that frame. A diamond on the
+it or fade it. Ánima keys just the properties you changed, at that frame. A diamond on the
 span marks each frame with property keyframes.
 
 Press **F6** inside the span to key every property at once.

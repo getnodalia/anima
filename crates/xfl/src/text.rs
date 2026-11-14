@@ -1,9 +1,9 @@
 //! Text fields (`DOMStaticText`, `DOMDynamicText`, `DOMInputText`) → text blocks laid out by
-//! `anicraft-text` (ADR 0014).
+//! `anima-text` (ADR 0014).
 //!
 //! A field holds text runs (`<textRuns><DOMTextRun><characters>…</characters><textAttrs>
 //! <DOMTextAttrs face="Arial-BoldMT" size="24" fillColor="#FF0000" alignment="center"
-//! letterSpacing="1" lineSpacing="2"/>`). An AniCraft text block has one style, so a field
+//! letterSpacing="1" lineSpacing="2"/>`). An Ánima text block has one style, so a field
 //! becomes one block per run of consecutive lines that share a style, stacked as Animate
 //! stacks them; a line that mixes styles takes the style most of its characters have, and the
 //! report says so.
@@ -14,9 +14,9 @@
 
 use crate::import::{Report, color};
 use crate::xml::Element as X;
-use anicraft_doc::{LineType, Rgba, TextAlign, TextBlock, TextField, TextKind};
-use anicraft_geom::Vec2;
-use anicraft_text::{Align, FaceMatch, Fonts, TextError};
+use anima_doc::{LineType, Rgba, TextAlign, TextBlock, TextField, TextKind};
+use anima_geom::Vec2;
+use anima_text::{Align, FaceMatch, Fonts, TextError};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -50,7 +50,18 @@ pub struct Placed {
 
 fn run_style(attrs: Option<&X>, flags: &mut Flags) -> RunStyle {
     let Some(a) = attrs else {
-        return RunStyle { face: String::new(), size: 12.0, bold: false, italic: false, color: Rgba::BLACK, align: TextAlign::Left, letter_spacing: 0.0, line_spacing: 0.0, left_margin: 0.0, right_margin: 0.0 };
+        return RunStyle {
+            face: String::new(),
+            size: 12.0,
+            bold: false,
+            italic: false,
+            color: Rgba::BLACK,
+            align: TextAlign::Left,
+            letter_spacing: 0.0,
+            line_spacing: 0.0,
+            left_margin: 0.0,
+            right_margin: 0.0,
+        };
     };
     let num = |k: &str, lo: f32, hi: f32| a.f32(k).unwrap_or(0.0).clamp(lo, hi);
     let align = match a.attr("alignment") {
@@ -73,7 +84,11 @@ fn run_style(attrs: Option<&X>, flags: &mut Flags) -> RunStyle {
         size: a.f32("size").unwrap_or(12.0).clamp(1.0, 2000.0),
         bold: a.bool("bold").unwrap_or(false),
         italic: a.bool("italic").unwrap_or(false),
-        color: if a.attr("fillColor").is_some() { color(a, "fillColor", "alpha") } else { Rgba::BLACK.with_alpha(a.f32("alpha").unwrap_or(1.0).clamp(0.0, 1.0)) },
+        color: if a.attr("fillColor").is_some() {
+            color(a, "fillColor", "alpha")
+        } else {
+            Rgba::BLACK.with_alpha(a.f32("alpha").unwrap_or(1.0).clamp(0.0, 1.0))
+        },
         align,
         letter_spacing: num("letterSpacing", -1000.0, 1000.0),
         line_spacing: num("lineSpacing", -1000.0, 1000.0),
@@ -82,7 +97,7 @@ fn run_style(attrs: Option<&X>, flags: &mut Flags) -> RunStyle {
     }
 }
 
-/// What a field used that AniCraft draws differently, reported once per field.
+/// What a field used that Ánima draws differently, reported once per field.
 #[derive(Default)]
 struct Flags {
     justified: bool,
@@ -160,7 +175,7 @@ pub fn field(el: &X, fonts: &Fonts, faces: &mut HashMap<String, FaceMatch>, repo
                 lines.push(Vec::new());
                 chars += 1;
             }
-            let room = anicraft_text::MAX_CHARS.saturating_sub(chars);
+            let room = anima_text::MAX_CHARS.saturating_sub(chars);
             let n = piece.chars().count();
             if n > room {
                 cut = true;
@@ -171,7 +186,7 @@ pub fn field(el: &X, fonts: &Fonts, faces: &mut HashMap<String, FaceMatch>, repo
                 l.push((piece, s));
             }
         }
-        if chars >= anicraft_text::MAX_CHARS {
+        if chars >= anima_text::MAX_CHARS {
             break;
         }
     }
@@ -218,7 +233,7 @@ pub fn field(el: &X, fonts: &Fonts, faces: &mut HashMap<String, FaceMatch>, repo
         let face = faces.entry(st.face.clone()).or_insert_with(|| fonts.find_face(&st.face)).clone();
         // A fixed-width field wraps inside its margins; an auto-size one never wraps.
         let width = if auto { None } else { field_width.map(|w| (w - st.left_margin - st.right_margin).max(1.0)) };
-        let style = anicraft_text::Style {
+        let style = anima_text::Style {
             family: face.family.clone().unwrap_or_default(),
             size: st.size,
             bold: st.bold || face.bold,
@@ -286,7 +301,14 @@ pub fn field(el: &X, fonts: &Fonts, faces: &mut HashMap<String, FaceMatch>, repo
 /// A dynamic or input field (ADR 0066): one block in the field's main style, its box from the
 /// field's `width` and `height` (or the text's size, for an auto-size field), its text laid out
 /// inside the gutter. Empty fields are kept (an empty input field is the usual kind).
-fn text_field(el: &X, fonts: &Fonts, faces: &mut HashMap<String, FaceMatch>, report: &mut Report, lines: &[Line], styles: &[RunStyle]) -> Option<Placed> {
+fn text_field(
+    el: &X,
+    fonts: &Fonts,
+    faces: &mut HashMap<String, FaceMatch>,
+    report: &mut Report,
+    lines: &[Line],
+    styles: &[RunStyle],
+) -> Option<Placed> {
     let kind = if el.name == "DOMInputText" { TextKind::Input } else { TextKind::Dynamic };
     report.run(if kind == TextKind::Input { "input text fields" } else { "dynamic text fields" });
     let all: Line = lines.iter().flatten().cloned().collect();
@@ -304,21 +326,29 @@ fn text_field(el: &X, fonts: &Fonts, faces: &mut HashMap<String, FaceMatch>, rep
         _ => LineType::Single,
     };
     let border = el.bool("border").unwrap_or(false);
-    let variable: String = el.attr("variableName").unwrap_or("").trim().chars().take(anicraft_doc::MAX_FIELD_NAME).collect();
+    let variable: String = el.attr("variableName").unwrap_or("").trim().chars().take(anima_doc::MAX_FIELD_NAME).collect();
     if !variable.is_empty() {
         report.keep("text field variables (ActionScript 1.0 and 2.0)");
     }
     if el.bool("renderAsHTML").unwrap_or(false) {
         report.skip("text fields rendered as HTML (drawn as plain text)");
     }
-    let max_chars = el.f32("maxCharacters").filter(|n| n.is_finite() && *n > 0.0).map_or(0, |n| n.min(anicraft_doc::MAX_FIELD_CHARS as f32) as u32);
+    let max_chars = el.f32("maxCharacters").filter(|n| n.is_finite() && *n > 0.0).map_or(0, |n| n.min(anima_doc::MAX_FIELD_CHARS as f32) as u32);
     // Animate's "show border" draws a black line round a white box.
-    let field = TextField { lines: line_type, selectable: el.bool("isSelectable").unwrap_or(true), border, background: border, max_chars, variable, ..TextField::new(kind) };
+    let field = TextField {
+        lines: line_type,
+        selectable: el.bool("isSelectable").unwrap_or(true),
+        border,
+        background: border,
+        max_chars,
+        variable,
+        ..TextField::new(kind)
+    };
     let auto = el.bool("autoExpand").unwrap_or(false);
     let width = el.f32("width").filter(|w| w.is_finite() && *w > 0.0).map(|w| w.min(100_000.0));
     let face = faces.entry(st.face.clone()).or_insert_with(|| fonts.find_face(&st.face)).clone();
     let wrap = width.and_then(|w| field.wrap_width(w - st.left_margin - st.right_margin));
-    let style = anicraft_text::Style {
+    let style = anima_text::Style {
         family: face.family.clone().unwrap_or_default(),
         size: st.size,
         bold: st.bold || face.bold,
@@ -330,7 +360,11 @@ fn text_field(el: &X, fonts: &Fonts, faces: &mut HashMap<String, FaceMatch>, rep
         },
         letter_spacing: st.letter_spacing,
         line_spacing: st.line_spacing,
-        width: wrap.or(if auto { None } else { width.map(|w| (w - 2.0 * GUTTER - st.left_margin - st.right_margin).max(1.0)).filter(|_| st.align != TextAlign::Left) }),
+        width: wrap.or(if auto {
+            None
+        } else {
+            width.map(|w| (w - 2.0 * GUTTER - st.left_margin - st.right_margin).max(1.0)).filter(|_| st.align != TextAlign::Left)
+        }),
     };
     let shown = field.shown(&text);
     let (outline, family, tw, th) = match fonts.layout(&shown, &style) {
@@ -339,12 +373,12 @@ fn text_field(el: &X, fonts: &Fonts, faces: &mut HashMap<String, FaceMatch>, rep
                 report.missing_fonts.insert(face.wanted.clone());
                 report.fallback_font.get_or_insert_with(|| l.family.clone());
             }
-            let moved = l.outline.transformed(&anicraft_geom::Affine::translate(GUTTER + st.left_margin, GUTTER));
+            let moved = l.outline.transformed(&anima_geom::Affine::translate(GUTTER + st.left_margin, GUTTER));
             (moved, l.family, l.width, l.height)
         }
         Err(e) => {
             report.skip(if e == TextError::NoFonts { "text fields (no fonts on this computer)" } else { "text cut to 100,000 characters per field" });
-            (anicraft_geom::Path::new(), face.wanted.clone(), 0.0, st.size * 1.2)
+            (anima_geom::Path::new(), face.wanted.clone(), 0.0, st.size * 1.2)
         }
     };
     let box_width = match (width, auto) {

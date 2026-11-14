@@ -1,7 +1,7 @@
-//! AniCraft GPU stage renderer (layer L3, beside the engine; ADR 0019, ADR 0029, ADR 0032).
+//! Ánima GPU stage renderer (layer L3, beside the engine; ADR 0019, ADR 0029, ADR 0032).
 //!
-//! Draws the same scene as the CPU oracle (`anicraft-render`) with wgpu compute: the oracle
-//! prepares it ([`anicraft_render::prepare_scene`]: flattening, strokes, paints and their
+//! Draws the same scene as the CPU oracle (`anima-render`) with wgpu compute: the oracle
+//! prepares it ([`anima_render::prepare_scene`]: flattening, strokes, paints and their
 //! gradient tables, clips and groups), the edges are sorted into 16 × 16 tiles, on the GPU
 //! ([`gpu_binning`], ADR 0048) or on the CPU ([`binning`], the reference, and the way for fills
 //! in masks and groups), and one compute pass computes every pixel's exact area coverage
@@ -27,15 +27,15 @@ pub mod gpu_binning;
 pub mod images;
 mod layers;
 
-use anicraft_doc::DisplayList;
-use anicraft_render::{MAX_PIXELS, NeedsFull, Pixmap, RenderStats, View, paint::premultiply, prepare_scene};
+use anima_doc::DisplayList;
+use anima_render::{MAX_PIXELS, NeedsFull, Pixmap, RenderStats, View, paint::premultiply, prepare_scene};
+pub use images::IMAGE_BUDGET;
 #[cfg(not(target_arch = "wasm32"))]
 use rayon::prelude::*;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 use web_time::Instant;
 use wgpu::util::DeviceExt;
-pub use images::IMAGE_BUDGET;
 
 #[derive(Debug, thiserror::Error)]
 pub enum GpuError {
@@ -109,9 +109,9 @@ impl Binning {
         }
     }
 
-    /// `ANICRAFT_GPU_BINNING=cpu|gpu|auto` (for comparing them in the app); auto otherwise.
+    /// `ANIMA_GPU_BINNING=cpu|gpu|auto` (for comparing them in the app); auto otherwise.
     fn from_env() -> Binning {
-        match std::env::var("ANICRAFT_GPU_BINNING").map(|v| v.trim().to_ascii_lowercase()).as_deref() {
+        match std::env::var("ANIMA_GPU_BINNING").map(|v| v.trim().to_ascii_lowercase()).as_deref() {
             Ok("cpu") => Binning::Cpu,
             Ok("gpu") => Binning::Gpu,
             _ => Binning::Auto,
@@ -252,7 +252,7 @@ struct LayerJob {
     at: u32,
     job: Box<Job>,
     view: View,
-    ops: Vec<anicraft_render::filters::FilterOp>,
+    ops: Vec<anima_render::filters::FilterOp>,
 }
 
 /// What a job tree costs, for the limits.
@@ -316,7 +316,11 @@ impl GpuRenderer {
 
     fn open(software: bool) -> Result<GpuRenderer, GpuError> {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle_from_env());
-        let options = wgpu::RequestAdapterOptions { power_preference: wgpu::PowerPreference::HighPerformance, force_fallback_adapter: software, ..Default::default() };
+        let options = wgpu::RequestAdapterOptions {
+            power_preference: wgpu::PowerPreference::HighPerformance,
+            force_fallback_adapter: software,
+            ..Default::default()
+        };
         let adapter = pollster::block_on(instance.request_adapter(&options)).map_err(|e| GpuError::Unavailable(e.to_string()))?;
         let info = adapter.get_info();
         let name = format!("{} ({:?})", info.name, info.backend);
@@ -331,8 +335,12 @@ impl GpuRenderer {
             ..wgpu::Limits::downlevel_defaults()
         };
         check(&adapter, &have, &name)?;
-        let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor { label: Some("anicraft-gpu"), required_limits: want.clone(), ..Default::default() }))
-            .map_err(|e| GpuError::Unavailable(format!("{name}: {e}")))?;
+        let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+            label: Some("anima-gpu"),
+            required_limits: want.clone(),
+            ..Default::default()
+        }))
+        .map_err(|e| GpuError::Unavailable(format!("{name}: {e}")))?;
         // Our own device: its uncaptured errors and its loss are ours to catch.
         let broken: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
         {
@@ -350,20 +358,40 @@ impl GpuRenderer {
         Self::build(device, queue, want, name, info.backend, false, broken)
     }
 
-    fn build(device: wgpu::Device, queue: wgpu::Queue, limits: wgpu::Limits, name: String, backend: wgpu::Backend, shared: bool, broken: Arc<Mutex<Option<String>>>) -> Result<GpuRenderer, GpuError> {
+    fn build(
+        device: wgpu::Device,
+        queue: wgpu::Queue,
+        limits: wgpu::Limits,
+        name: String,
+        backend: wgpu::Backend,
+        shared: bool,
+        broken: Arc<Mutex<Option<String>>>,
+    ) -> Result<GpuRenderer, GpuError> {
         let scopes = Scopes::push(&device);
-        let module = device.create_shader_module(wgpu::ShaderModuleDescriptor { label: Some("anicraft-fine"), source: wgpu::ShaderSource::Wgsl(include_str!("fine.wgsl").into()) });
-        let entry = |binding: u32, ty: wgpu::BindingType| wgpu::BindGroupLayoutEntry { binding, visibility: wgpu::ShaderStages::COMPUTE, ty, count: None };
+        let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("anima-fine"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("fine.wgsl").into()),
+        });
+        let entry =
+            |binding: u32, ty: wgpu::BindingType| wgpu::BindGroupLayoutEntry { binding, visibility: wgpu::ShaderStages::COMPUTE, ty, count: None };
         let buffer = |ty| wgpu::BindingType::Buffer { ty, has_dynamic_offset: false, min_binding_size: None };
         let read = || buffer(wgpu::BufferBindingType::Storage { read_only: true });
         let mut common = vec![entry(0, buffer(wgpu::BufferBindingType::Uniform)), entry(1, read()), entry(2, read()), entry(3, read())];
-        let image = wgpu::BindingType::Texture { sample_type: wgpu::TextureSampleType::Float { filterable: false }, view_dimension: wgpu::TextureViewDimension::D2, multisampled: false };
+        let image = wgpu::BindingType::Texture {
+            sample_type: wgpu::TextureSampleType::Float { filterable: false },
+            view_dimension: wgpu::TextureViewDimension::D2,
+            multisampled: false,
+        };
         common.extend((0..binning::MAX_IMAGES as u32).map(|i| entry(IMAGE_BINDING + i, image)));
         let make = |label: &str, out: wgpu::BindGroupLayoutEntry, entry_point: &str| {
             let mut entries = common.clone();
             entries.push(out);
             let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor { label: Some(label), entries: &entries });
-            let pl = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor { label: Some(label), bind_group_layouts: &[Some(&layout)], immediate_size: 0 });
+            let pl = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some(label),
+                bind_group_layouts: &[Some(&layout)],
+                immediate_size: 0,
+            });
             let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
                 label: Some(label),
                 layout: Some(&pl),
@@ -374,14 +402,18 @@ impl GpuRenderer {
             });
             (pipeline, layout)
         };
-        let (pipeline, layout) = make("anicraft-fine", entry(4, buffer(wgpu::BufferBindingType::Storage { read_only: false })), "main");
-        let storage_texture = wgpu::BindingType::StorageTexture { access: wgpu::StorageTextureAccess::WriteOnly, format: wgpu::TextureFormat::Rgba8Unorm, view_dimension: wgpu::TextureViewDimension::D2 };
-        let (texture_pipeline, texture_layout) = make("anicraft-fine-texture", entry(5, storage_texture), "main_texture");
+        let (pipeline, layout) = make("anima-fine", entry(4, buffer(wgpu::BufferBindingType::Storage { read_only: false })), "main");
+        let storage_texture = wgpu::BindingType::StorageTexture {
+            access: wgpu::StorageTextureAccess::WriteOnly,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            view_dimension: wgpu::TextureViewDimension::D2,
+        };
+        let (texture_pipeline, texture_layout) = make("anima-fine-texture", entry(5, storage_texture), "main_texture");
         let filters = layers::FilterPipelines::new(&device);
         let bins = gpu_binning::Pipelines::new(&device);
         let blank = device
             .create_texture(&wgpu::TextureDescriptor {
-                label: Some("anicraft-blank"),
+                label: Some("anima-blank"),
                 size: wgpu::Extent3d { width: 1, height: 1, depth_or_array_layers: 1 },
                 mip_level_count: 1,
                 sample_count: 1,
@@ -391,8 +423,15 @@ impl GpuRenderer {
                 view_formats: &[],
             })
             .create_view(&wgpu::TextureViewDescriptor::default());
-        let blank_buffer = |label| device.create_buffer(&wgpu::BufferDescriptor { label: Some(label), size: 16, usage: wgpu::BufferUsages::STORAGE, mapped_at_creation: false });
-        let (blank_coverage, blank_ramp) = (blank_buffer("anicraft-blank-coverage"), blank_buffer("anicraft-blank-ramp"));
+        let blank_buffer = |label| {
+            device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some(label),
+                size: 16,
+                usage: wgpu::BufferUsages::STORAGE,
+                mapped_at_creation: false,
+            })
+        };
+        let (blank_coverage, blank_ramp) = (blank_buffer("anima-blank-coverage"), blank_buffer("anima-blank-ramp"));
         if let Some(e) = scopes.pop() {
             return Err(GpuError::Unavailable(format!("{name}: the stage shaders did not build: {}", describe(&e))));
         }
@@ -426,8 +465,8 @@ impl GpuRenderer {
     /// symbol within the parity target. Catches drivers that build the pipelines but compute
     /// garbage.
     fn self_test(&self) -> Result<(), GpuError> {
-        use anicraft_doc::{ColorTransform, DisplayItem, ElementId, Filter, Group, LayerId, Paint, Pixels, Rgba};
-        use anicraft_geom::{Affine, FillRule, Path};
+        use anima_doc::{ColorTransform, DisplayItem, ElementId, Filter, Group, LayerId, Paint, Pixels, Rgba};
+        use anima_geom::{Affine, FillRule, Path};
         let item = |path: Path, fill: Paint| DisplayItem {
             path: Arc::new(path),
             transform: Affine::IDENTITY,
@@ -447,25 +486,40 @@ impl GpuRenderer {
             warp: None,
         };
         let solid = |x: f32, c: Rgba| item(Path::rect(x, 2.0, 8.0, 16.0), Paint::Solid(c));
-        let mut bitmap = item(Path::rect(2.0, 18.0, 20.0, 2.0), Paint::Bitmap { bitmap: anicraft_doc::BitmapId(1), repeat: true, matrix: Affine::scale(3.0, 1.0) });
+        let mut bitmap =
+            item(Path::rect(2.0, 18.0, 20.0, 2.0), Paint::Bitmap { bitmap: anima_doc::BitmapId(1), repeat: true, matrix: Affine::scale(3.0, 1.0) });
         bitmap.image = Some(Arc::new(Pixels { width: 2, height: 1, rgba: vec![255, 0, 0, 255, 0, 0, 255, 128] }));
         let mut blurred = item(Path::rect(10.0, 0.0, 4.0, 4.0), Paint::Solid(Rgba::new(0.0, 0.6, 0.0, 1.0)));
         blurred.group = Some(0);
-        let filters = Arc::from(vec![Filter::Blur { blur_x: 3.0, blur_y: 2.0, quality: 2 }, Filter::AdjustColor { brightness: 10.0, contrast: 0.0, saturation: -50.0, hue: 30.0 }]);
-        let groups = vec![Group { parent: None, alpha: 1.0, blend: anicraft_doc::BlendMode::Normal, filters, clip: None }];
-        let dl = DisplayList { clip_modes: Vec::new(), items: vec![solid(2.0, Rgba::new(1.0, 0.0, 0.0, 1.0)), solid(14.0, Rgba::new(0.0, 0.0, 1.0, 0.5)), bitmap, blurred], groups, ..Default::default() };
+        let filters = Arc::from(vec![
+            Filter::Blur { blur_x: 3.0, blur_y: 2.0, quality: 2 },
+            Filter::AdjustColor { brightness: 10.0, contrast: 0.0, saturation: -50.0, hue: 30.0 },
+        ]);
+        let groups = vec![Group { parent: None, alpha: 1.0, blend: anima_doc::BlendMode::Normal, filters, clip: None }];
+        let dl = DisplayList {
+            clip_modes: Vec::new(),
+            items: vec![solid(2.0, Rgba::new(1.0, 0.0, 0.0, 1.0)), solid(14.0, Rgba::new(0.0, 0.0, 1.0, 0.5)), bitmap, blurred],
+            groups,
+            ..Default::default()
+        };
         let view = View { transform: Affine::IDENTITY, width: 24, height: 20, background: Some(Rgba::WHITE) };
-        let (oracle, _) = anicraft_render::render(&dl, &view).map_err(|e| GpuError::Unavailable(e.to_string()))?;
+        let (oracle, _) = anima_render::render(&dl, &view).map_err(|e| GpuError::Unavailable(e.to_string()))?;
         let oracle = oracle.to_premul_rgba8();
         // `Err` says where it went wrong (for Preferences and bug reports).
         let check = |how: &str, bytes: &[u8]| -> Result<(), GpuError> {
             let px = |x: usize, y: usize| bytes.get((y * 24 + x) * 4..(y * 24 + x) * 4 + 4).map(<[u8]>::to_vec);
             let d = compare_premul8(bytes, &oracle);
-            if px(5, 10) == Some(vec![255, 0, 0, 255]) && px(18, 10) == Some(vec![128, 128, 255, 255]) && d.is_some_and(|d| d.max <= 2 && d.mean <= 0.1) {
+            if px(5, 10) == Some(vec![255, 0, 0, 255])
+                && px(18, 10) == Some(vec![128, 128, 255, 255])
+                && d.is_some_and(|d| d.max <= 2 && d.mean <= 0.1)
+            {
                 return Ok(());
             }
-            let first = bytes.as_chunks::<4>().0.iter().zip(oracle.as_chunks::<4>().0).position(|(a, b)| a.iter().zip(b).any(|(x, y)| x.abs_diff(*y) > 2));
-            let at = first.map_or(String::new(), |i| format!(", first at ({}, {}): {:?} for {:?}", i % 24, i / 24, bytes.get(i * 4..i * 4 + 4), oracle.get(i * 4..i * 4 + 4)));
+            let first =
+                bytes.as_chunks::<4>().0.iter().zip(oracle.as_chunks::<4>().0).position(|(a, b)| a.iter().zip(b).any(|(x, y)| x.abs_diff(*y) > 2));
+            let at = first.map_or(String::new(), |i| {
+                format!(", first at ({}, {}): {:?} for {:?}", i % 24, i / 24, bytes.get(i * 4..i * 4 + 4), oracle.get(i * 4..i * 4 + 4))
+            });
             let off = d.map_or("a wrong size".to_string(), |d| format!("{} of {} pixels off, by up to {}/255{at}", d.differing, d.pixels, d.max));
             Err(GpuError::Unavailable(format!("{}: the self-test render came back wrong {how} ({off})", self.adapter)))
         };
@@ -475,7 +529,7 @@ impl GpuRenderer {
         // Binned on the GPU (the plain fills; the bitmap and the symbol bin on the CPU): if that
         // comes back wrong, only the binning stays on the CPU here.
         let plain = DisplayList { clip_modes: Vec::new(), items: dl.items.iter().take(3).cloned().collect(), ..Default::default() };
-        let (want, _) = anicraft_render::render(&plain, &view).map_err(|e| GpuError::Unavailable(e.to_string()))?;
+        let (want, _) = anima_render::render(&plain, &view).map_err(|e| GpuError::Unavailable(e.to_string()))?;
         let why = match self.render_with(&plain, &view, Output::Premul8, Binning::Gpu) {
             Ok(got) => match compare_premul8(&got.premul8, &want.to_premul_rgba8()) {
                 Some(d) if got.gpu_binned && d.max <= 2 && d.mean <= 0.1 => None,
@@ -485,7 +539,8 @@ impl GpuRenderer {
             Err(GpuError::Device(e)) => return Err(GpuError::Unavailable(format!("{}: the GPU binning failed: {e}", self.adapter))),
             Err(e) => Some(e.to_string()),
         };
-        *self.no_gpu_binning.lock().unwrap_or_else(PoisonError::into_inner) = why.map(|w| format!("{}: the self-test came back wrong binned on the GPU ({w}); binning on the CPU", self.adapter));
+        *self.no_gpu_binning.lock().unwrap_or_else(PoisonError::into_inner) =
+            why.map(|w| format!("{}: the self-test came back wrong binned on the GPU ({w}); binning on the CPU", self.adapter));
         Ok(())
     }
 
@@ -538,7 +593,17 @@ impl GpuRenderer {
             let t = Instant::now();
             let (premul8, pixmap) = self.run_readback(&job, view, output)?;
             timings.gpu = ms(t);
-            Ok(GpuFrame { width: view.width, height: view.height, premul8, pixmap, stats, timings, entries: cost.entries, pieces: cost.pieces, gpu_binned: job.binned.gpu.is_some() })
+            Ok(GpuFrame {
+                width: view.width,
+                height: view.height,
+                premul8,
+                pixmap,
+                stats,
+                timings,
+                entries: cost.entries,
+                pieces: cost.pieces,
+                gpu_binned: job.binned.gpu.is_some(),
+            })
         })
     }
 
@@ -559,7 +624,7 @@ impl GpuRenderer {
             }
             let scopes = Scopes::push(&self.device);
             let texture = self.device.create_texture(&wgpu::TextureDescriptor {
-                label: Some("anicraft-stage"),
+                label: Some("anima-stage"),
                 size: wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 },
                 mip_level_count: 1,
                 sample_count: 1,
@@ -569,7 +634,7 @@ impl GpuRenderer {
                 view_formats: &[],
             });
             let tex_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-            let mut enc = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("anicraft-stage") });
+            let mut enc = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("anima-stage") });
             let recorded = self.record(&mut enc, &job, view, Output::Premul8, Target::Texture(&tex_view));
             // Pop the scopes whatever happened while recording (they are this thread's).
             if let Err(e) = recorded {
@@ -579,7 +644,17 @@ impl GpuRenderer {
             self.queue.submit([enc.finish()]);
             self.pop(scopes)?;
             timings.gpu = ms(t);
-            Ok(GpuTexture { texture, view: tex_view, width: w, height: h, stats, timings, entries: cost.entries, pieces: cost.pieces, gpu_binned: job.binned.gpu.is_some() })
+            Ok(GpuTexture {
+                texture,
+                view: tex_view,
+                width: w,
+                height: h,
+                stats,
+                timings,
+                entries: cost.entries,
+                pieces: cost.pieces,
+                gpu_binned: job.binned.gpu.is_some(),
+            })
         })
     }
 
@@ -589,11 +664,19 @@ impl GpuRenderer {
         self.guard(|| {
             let row = (t.width * 4).div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT) * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
             let scopes = Scopes::push(&self.device);
-            let read = self.device.create_buffer(&wgpu::BufferDescriptor { label: Some("readback"), size: u64::from(row) * u64::from(t.height), usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST, mapped_at_creation: false });
-            let mut enc = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("anicraft-readback") });
+            let read = self.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("readback"),
+                size: u64::from(row) * u64::from(t.height),
+                usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            let mut enc = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("anima-readback") });
             enc.copy_texture_to_buffer(
                 wgpu::TexelCopyTextureInfo { texture: &t.texture, mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
-                wgpu::TexelCopyBufferInfo { buffer: &read, layout: wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(row), rows_per_image: Some(t.height) } },
+                wgpu::TexelCopyBufferInfo {
+                    buffer: &read,
+                    layout: wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(row), rows_per_image: Some(t.height) },
+                },
                 wgpu::Extent3d { width: t.width, height: t.height, depth_or_array_layers: 1 },
             );
             self.queue.submit([enc.finish()]);
@@ -617,7 +700,8 @@ impl GpuRenderer {
         if let Some(e) = self.broken() {
             return Err(GpuError::Device(e));
         }
-        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).unwrap_or_else(|_| Err(GpuError::Device("the GPU renderer failed on this frame".into())));
+        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(f))
+            .unwrap_or_else(|_| Err(GpuError::Device("the GPU renderer failed on this frame".into())));
         if let Err(GpuError::Device(e)) = &r {
             self.mark_broken(e);
         }
@@ -661,9 +745,10 @@ impl GpuRenderer {
         };
         let binned = binning::bin_with(&scene, view.width, view.height, lim.as_ref()).map_err(GpuError::NeedsFull)?;
         *bin_ms += ms(t);
-        let shown: Vec<(u32, anicraft_render::FilterLayer)> = std::mem::take(&mut scene.layers).into_iter().zip(&binned.layer_at).filter_map(|(l, at)| Some(((*at)?, l))).collect();
+        let shown: Vec<(u32, anima_render::FilterLayer)> =
+            std::mem::take(&mut scene.layers).into_iter().zip(&binned.layer_at).filter_map(|(l, at)| Some(((*at)?, l))).collect();
         // Free the prepared polygons on the pool, off this frame's path (as the oracle does).
-        anicraft_render::drop_in_background(scene);
+        anima_render::drop_in_background(scene);
         if !shown.is_empty() && depth >= MAX_FILTER_DEPTH {
             return Err(GpuError::NeedsFull(NeedsFull::Filters));
         }
@@ -694,7 +779,11 @@ impl GpuRenderer {
         let cap = self.binding_cap();
         let b = &job.binned;
         let pieces = b.gpu.as_ref().map_or(b.geo.len() as u64, |p| u64::from(p.piece_cap));
-        let sizes = [("tile lists", (u64::from(b.ops_at) + b.op_heads.len() as u64) * 4), ("edges", pieces * 16), ("paints and layers", b.paints_len as u64 * 16)];
+        let sizes = [
+            ("tile lists", (u64::from(b.ops_at) + b.op_heads.len() as u64) * 4),
+            ("edges", pieces * 16),
+            ("paints and layers", b.paints_len as u64 * 16),
+        ];
         for (what, n) in sizes {
             if n > cap {
                 return Err(GpuError::TooLarge(format!("{what} need {} MB, more than this GPU binds ({} MB)", n >> 20, cap >> 20)));
@@ -731,19 +820,38 @@ impl GpuRenderer {
         for l in &job.layers {
             let (w, h) = (l.view.width, l.view.height);
             let n = u64::from(w) * u64::from(h);
-            let img = self.device.create_buffer(&wgpu::BufferDescriptor { label: Some("layer"), size: 32 * n, usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC, mapped_at_creation: false });
+            let img = self.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("layer"),
+                size: 32 * n,
+                usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                mapped_at_creation: false,
+            });
             let cov = if layers::needs_coverage(&l.ops) {
-                self.device.create_buffer(&wgpu::BufferDescriptor { label: Some("layer-coverage"), size: 12 * n, usage: wgpu::BufferUsages::STORAGE, mapped_at_creation: false })
+                self.device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("layer-coverage"),
+                    size: 12 * n,
+                    usage: wgpu::BufferUsages::STORAGE,
+                    mapped_at_creation: false,
+                })
             } else {
                 self.blank_coverage.clone()
             };
             self.record(enc, &l.job, &l.view, Output::Float, Target::Buffer(&img, 16 * n))?;
-            layers::Recorder { device: &self.device, pipes: &self.filters, img: &img, cov: &cov, w, h, no_ramp: &self.blank_ramp }.record(enc, &l.ops);
+            layers::Recorder { device: &self.device, pipes: &self.filters, img: &img, cov: &cov, w, h, no_ramp: &self.blank_ramp }
+                .record(enc, &l.ops);
             enc.copy_buffer_to_buffer(&img, 0, &pbuf, u64::from(l.at) * 16, 16 * n);
         }
-        let views = self.images.lock().unwrap_or_else(PoisonError::into_inner).views(&self.device, &self.queue, self.limits.max_texture_dimension_2d, &b.images)?;
+        let views = self.images.lock().unwrap_or_else(PoisonError::into_inner).views(
+            &self.device,
+            &self.queue,
+            self.limits.max_texture_dimension_2d,
+            &b.images,
+        )?;
         let (ibuf, gbuf) = match &b.gpu {
-            Some(plan) => gpu_binning::record(&self.device, &self.queue, &self.bins, enc, plan, b.tiles_x, b.tiles_y, b.entries_at, b.ops_at, &b.op_heads).map_err(GpuError::Device)?,
+            Some(plan) => {
+                gpu_binning::record(&self.device, &self.queue, &self.bins, enc, plan, b.tiles_x, b.tiles_y, b.entries_at, b.ops_at, &b.op_heads)
+                    .map_err(GpuError::Device)?
+            }
             None => self.upload_lists(b)?,
         };
         self.fine_pass(enc, b, &ibuf, &gbuf, &pbuf, &views, view, output, target);
@@ -753,7 +861,12 @@ impl GpuRenderer {
     /// The CPU's tile lists and op headers, and its pieces, as buffers.
     fn upload_lists(&self, b: &binning::Binned) -> Result<(wgpu::Buffer, wgpu::Buffer), GpuError> {
         let len = (b.ops_at as usize + b.op_heads.len()).max(4);
-        let ibuf = self.device.create_buffer(&wgpu::BufferDescriptor { label: Some("index"), size: 4 * len as u64, usage: wgpu::BufferUsages::STORAGE, mapped_at_creation: true });
+        let ibuf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("index"),
+            size: 4 * len as u64,
+            usage: wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: true,
+        });
         {
             let mut m = ibuf.slice(..).get_mapped_range_mut().map_err(|e| GpuError::Device(e.to_string()))?;
             write_words(&mut m, 0, &b.index);
@@ -763,13 +876,28 @@ impl GpuRenderer {
         // Bindings can't be empty: pad to one vec4.
         let pad = [[0f32; 4]];
         let geo: &[[f32; 4]] = if b.geo.is_empty() { &pad } else { &b.geo };
-        let gbuf = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some("geo"), contents: bytemuck::cast_slice(geo), usage: wgpu::BufferUsages::STORAGE });
+        let gbuf = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("geo"),
+            contents: bytemuck::cast_slice(geo),
+            usage: wgpu::BufferUsages::STORAGE,
+        });
         Ok((ibuf, gbuf))
     }
 
     /// Uploads the binned scene and records the fine pass into `target`.
     #[allow(clippy::too_many_arguments)]
-    fn fine_pass(&self, enc: &mut wgpu::CommandEncoder, b: &binning::Binned, ibuf: &wgpu::Buffer, gbuf: &wgpu::Buffer, pbuf: &wgpu::Buffer, images: &[wgpu::TextureView], view: &View, output: Output, target: Target) {
+    fn fine_pass(
+        &self,
+        enc: &mut wgpu::CommandEncoder,
+        b: &binning::Binned,
+        ibuf: &wgpu::Buffer,
+        gbuf: &wgpu::Buffer,
+        pbuf: &wgpu::Buffer,
+        images: &[wgpu::TextureView],
+        view: &View,
+        output: Output,
+        target: Target,
+    ) {
         let bg = view.background.map_or([0.0; 4], premultiply);
         let mut uniform = [0u32; 12];
         uniform[..4].copy_from_slice(&[view.width, view.height, b.tiles_x, u32::from(output == Output::Float)]);
@@ -777,7 +905,11 @@ impl GpuRenderer {
         for (u, f) in uniform[8..].iter_mut().zip(bg) {
             *u = f.to_bits();
         }
-        let ubuf = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some("params"), contents: bytemuck::cast_slice(&uniform), usage: wgpu::BufferUsages::UNIFORM });
+        let ubuf = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("params"),
+            contents: bytemuck::cast_slice(&uniform),
+            usage: wgpu::BufferUsages::UNIFORM,
+        });
         let mut entries = vec![
             wgpu::BindGroupEntry { binding: 0, resource: ubuf.as_entire_binding() },
             wgpu::BindGroupEntry { binding: 1, resource: ibuf.as_entire_binding() },
@@ -790,7 +922,10 @@ impl GpuRenderer {
         }
         let (pipeline, layout) = match target {
             Target::Buffer(out, size) => {
-                entries.push(wgpu::BindGroupEntry { binding: 4, resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding { buffer: out, offset: 0, size: wgpu::BufferSize::new(size) }) });
+                entries.push(wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding { buffer: out, offset: 0, size: wgpu::BufferSize::new(size) }),
+                });
                 (&self.pipeline, &self.layout)
             }
             Target::Texture(view) => {
@@ -798,8 +933,8 @@ impl GpuRenderer {
                 (&self.texture_pipeline, &self.texture_layout)
             }
         };
-        let bind = self.device.create_bind_group(&wgpu::BindGroupDescriptor { label: Some("anicraft-fine"), layout, entries: &entries });
-        let mut pass = enc.begin_compute_pass(&wgpu::ComputePassDescriptor { label: Some("anicraft-fine"), timestamp_writes: None });
+        let bind = self.device.create_bind_group(&wgpu::BindGroupDescriptor { label: Some("anima-fine"), layout, entries: &entries });
+        let mut pass = enc.begin_compute_pass(&wgpu::ComputePassDescriptor { label: Some("anima-fine"), timestamp_writes: None });
         pass.set_pipeline(pipeline);
         pass.set_bind_group(0, &bind, &[]);
         pass.dispatch_workgroups(b.tiles_x, b.tiles_y, 1);
@@ -813,9 +948,19 @@ impl GpuRenderer {
             return Err(GpuError::TooLarge(format!("the image needs {} MB, more than this GPU binds ({} MB)", out_bytes >> 20, cap >> 20)));
         }
         let scopes = Scopes::push(&self.device);
-        let obuf = self.device.create_buffer(&wgpu::BufferDescriptor { label: Some("out"), size: out_bytes, usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC, mapped_at_creation: false });
-        let read = self.device.create_buffer(&wgpu::BufferDescriptor { label: Some("readback"), size: out_bytes, usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST, mapped_at_creation: false });
-        let mut enc = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("anicraft-fine") });
+        let obuf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("out"),
+            size: out_bytes,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+        let read = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("readback"),
+            size: out_bytes,
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let mut enc = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("anima-fine") });
         if let Err(e) = self.record(&mut enc, job, view, output, Target::Buffer(&obuf, out_bytes)) {
             let _ = self.pop(scopes);
             return Err(e);
@@ -846,10 +991,17 @@ impl GpuRenderer {
         let mut b = binning::bin_with(&scene, view.width, view.height, Some(&lim)).map_err(GpuError::NeedsFull)?;
         let Some(plan) = b.gpu.take() else { return Ok(None) };
         let scopes = Scopes::push(&self.device);
-        let mut enc = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("anicraft-bin-test") });
-        let (ibuf, gbuf) = gpu_binning::record(&self.device, &self.queue, &self.bins, &mut enc, &plan, b.tiles_x, b.tiles_y, b.entries_at, b.ops_at, &b.op_heads).map_err(GpuError::Device)?;
+        let mut enc = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("anima-bin-test") });
+        let (ibuf, gbuf) =
+            gpu_binning::record(&self.device, &self.queue, &self.bins, &mut enc, &plan, b.tiles_x, b.tiles_y, b.entries_at, b.ops_at, &b.op_heads)
+                .map_err(GpuError::Device)?;
         let (isize, gsize) = (ibuf.size(), gbuf.size());
-        let read = self.device.create_buffer(&wgpu::BufferDescriptor { label: Some("readback"), size: isize + gsize, usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST, mapped_at_creation: false });
+        let read = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("readback"),
+            size: isize + gsize,
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
         enc.copy_buffer_to_buffer(&ibuf, 0, &read, 0, isize);
         enc.copy_buffer_to_buffer(&gbuf, 0, &read, isize, gsize);
         self.queue.submit([enc.finish()]);

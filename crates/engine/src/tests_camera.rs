@@ -2,8 +2,8 @@
 //! parity, the file format, plug-in policy and robustness.
 
 use super::*;
-use anicraft_doc::{Document, LayerKind, Stage};
-use anicraft_render::render_frame;
+use anima_doc::{Document, LayerKind, Stage};
+use anima_render::render_frame;
 use serde_json::json;
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -71,7 +71,7 @@ fn a_camera_zoom_of_two_doubles_sizes_about_its_centre() {
     run(&mut s, "camera.set", json!({"dx": 20}));
     assert!(black(&s, 0, 50, 40) && !black(&s, 0, 49, 50) && black(&s, 0, 69, 59) && !black(&s, 0, 70, 50));
     // The stage itself (editing) is untouched: picking still finds the square where it is.
-    assert!(s.hit_test(anicraft_geom::Vec2::new(100.0, 50.0), 0.0).is_some());
+    assert!(s.hit_test(anima_geom::Vec2::new(100.0, 50.0), 0.0).is_some());
 }
 
 #[test]
@@ -107,12 +107,12 @@ fn a_classic_tween_of_the_camera_and_auto_keys() {
     run(&mut s, "timeline.goto", json!({"frame": 15}));
     run(&mut s, "camera.set", json!({"zoom": 100}));
     let k = s.doc.timeline(0).layers[0].keyframes.iter().find(|k| k.start == 10).cloned().unwrap();
-    assert!(k.motion.as_ref().unwrap().track(anicraft_doc::Property::ScaleX).is_some(), "zoom keyed as Scale X");
+    assert!(k.motion.as_ref().unwrap().track(anima_doc::Property::ScaleX).is_some(), "zoom keyed as Scale X");
     let at = |s: &mut Session, f: u32| run(s, "camera.info", json!({"frame": f}))["zoom"].as_f64().unwrap();
     assert!((at(&mut s, 10) - 300.0).abs() < 1e-3 && (at(&mut s, 15) - 100.0).abs() < 1e-3);
 }
 
-fn camera_id(s: &Session) -> anicraft_doc::LayerId {
+fn camera_id(s: &Session) -> anima_doc::LayerId {
     s.doc.timeline(s.scene).camera_layer().unwrap().id
 }
 
@@ -160,7 +160,7 @@ fn layer_depth_gives_parallax_in_the_movie() {
 
 #[test]
 fn every_export_sees_the_camera() {
-    let dir = std::env::temp_dir().join(format!("anicraft-camera-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("anima-camera-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let mut s = stage_with(&[(95.0, 45.0, 10.0, 10.0)]);
     run(&mut s, "camera.add", json!({}));
@@ -179,9 +179,9 @@ fn every_export_sees_the_camera() {
     assert_eq!(std::fs::read(first).unwrap(), oracle.encode_png().unwrap());
     // SVG and Lottie write the evaluated (camera) frame: the square is no longer where the stage
     // has it, and the tint shows.
-    assert_eq!(crate::cmds_file::frame_svg(&s.doc, 0), anicraft_render::svg::to_svg(&anicraft_doc::evaluate(&s.doc, 0), &s.doc.stage));
-    assert_ne!(anicraft_doc::evaluate(&s.doc, 0).items[0].transform, anicraft_doc::evaluate_scene(&s.doc, 0, 0).items[0].transform);
-    let lottie = anicraft_render::lottie::to_lottie(&s.doc, "t", 0, 0, false);
+    assert_eq!(crate::cmds_file::frame_svg(&s.doc, 0), anima_render::svg::to_svg(&anima_doc::evaluate(&s.doc, 0), &s.doc.stage));
+    assert_ne!(anima_doc::evaluate(&s.doc, 0).items[0].transform, anima_doc::evaluate_scene(&s.doc, 0, 0).items[0].transform);
+    let lottie = anima_render::lottie::to_lottie(&s.doc, "t", 0, 0, false);
     assert!(lottie.layers >= 1);
     // The tint reached the pixels: the square is blue-ish, not black.
     let p = oracle.pixel(100, 50).unwrap();
@@ -275,7 +275,7 @@ fn panic_hunt_with_a_camera() {
 
 /// A stage with a 10 × 10 square on a layer behind (depth `far`) and one on the stage plane,
 /// both at (95, 45), and a camera. Returns (session, far layer, near layer).
-fn two_planes(far: f32) -> (Session, anicraft_doc::LayerId, anicraft_doc::LayerId) {
+fn two_planes(far: f32) -> (Session, anima_doc::LayerId, anima_doc::LayerId) {
     let mut s = stage_with(&[(95.0, 45.0, 10.0, 10.0)]);
     let back = s.layer;
     run(&mut s, "layer.set_depth", json!({"depth": far}));
@@ -332,7 +332,7 @@ fn a_camera_zoom_scales_deeper_layers_less() {
     // 1000 px back grows by 4/3 (93.33..106.67).
     let (mut s, _, _) = two_planes(1000.0);
     run(&mut s, "camera.set", json!({"zoom": 200}));
-    let dl = anicraft_doc::evaluate(&s.doc, 0);
+    let dl = anima_doc::evaluate(&s.doc, 0);
     let scales: Vec<f32> = dl.items.iter().map(|i| i.transform.mean_scale()).collect();
     assert!((scales[0] - 4.0 / 3.0).abs() < 1e-4 && (scales[1] - 2.0).abs() < 1e-5, "{scales:?}");
     assert_eq!(left_edge(&s, 0, 50, 0), Some(90));
@@ -344,9 +344,9 @@ fn attached_layers_stay_on_screen_while_the_camera_moves() {
     assert_eq!(run(&mut s, "layer.set_attached", json!({"layer": near.0}))["attached"], true, "toggles on");
     run(&mut s, "camera.set", json!({"dx": 40, "zoom": 150, "rotation": 20}));
     // The attached square is exactly where it was drawn.
-    let dl = anicraft_doc::evaluate(&s.doc, 0);
+    let dl = anima_doc::evaluate(&s.doc, 0);
     let it = dl.items.iter().find(|i| i.layer == near).unwrap();
-    assert_eq!(it.transform, anicraft_doc::evaluate_scene(&s.doc, 0, 0).items.iter().find(|i| i.layer == near).unwrap().transform);
+    assert_eq!(it.transform, anima_doc::evaluate_scene(&s.doc, 0, 0).items.iter().find(|i| i.layer == near).unwrap().transform);
     assert!(black(&s, 0, 96, 46) && black(&s, 0, 104, 54));
     assert!(dl.items.iter().find(|i| i.layer == back).unwrap().transform != it.transform);
     // Listed, and refused on the camera layer and inside a symbol.
@@ -418,10 +418,10 @@ fn picking_through_the_camera_finds_what_the_movie_shows() {
     // Dragging maps the pointer back through the layer's view: 10 picture px on the far layer
     // are 10 stage px at zoom 100 % (a pan keeps sizes).
     let v = s.camera_view(back).unwrap();
-    let d = v.inverse().unwrap().apply_vector(anicraft_geom::Vec2::new(10.0, 0.0));
+    let d = v.inverse().unwrap().apply_vector(anima_geom::Vec2::new(10.0, 0.0));
     assert!((d.x - 10.0).abs() < 1e-4);
     run(&mut s, "camera.set", json!({"zoom": 200}));
     let v = s.camera_view(near).unwrap();
-    let d = v.inverse().unwrap().apply_vector(anicraft_geom::Vec2::new(10.0, 0.0));
+    let d = v.inverse().unwrap().apply_vector(anima_geom::Vec2::new(10.0, 0.0));
     assert!((d.x - 5.0).abs() < 1e-4, "{d:?}");
 }

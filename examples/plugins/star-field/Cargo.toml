@@ -1,6 +1,6 @@
 [package]
-name = "anicraft-plugin-star-field"
-description = "Sample AniCraft plug-in: scatters stars over the stage on a new layer"
+name = "anima-plugin-star-field"
+description = "Sample Ánima plug-in: scatters stars over the stage on a new layer"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -10,5 +10,5 @@ publish.workspace = true
 crate-type = ["cdylib"]
 
 [dependencies]
-anicraft-plugin-sdk.workspace = true
+anima-plugin-sdk.workspace = true
 serde_json.workspace = true

@@ -23,7 +23,7 @@
 
 use crate::params::*;
 use crate::{EngineError, Result, Session};
-use anicraft_render::{View, render};
+use anima_render::{View, render};
 use rayon::prelude::*;
 use serde_json::{Value, json};
 use std::path::PathBuf;
@@ -51,7 +51,7 @@ pub const MAX_WEBP_EDGE: u32 = 16_384;
 /// Pixels rendered at once (a batch of frames), so memory stays bounded at any size.
 const BATCH_PIXELS: u64 = 32 * 1024 * 1024;
 /// Most plays a loop count says (both formats store it in 16 bits for WebP's sake).
-pub const MAX_PLAYS: u32 = anicraft_doc::publish::MAX_PLAYS;
+pub const MAX_PLAYS: u32 = anima_doc::publish::MAX_PLAYS;
 /// Longest WebP frame duration (24 bits of milliseconds).
 const MAX_WEBP_MS: u64 = 0xFF_FFFF;
 
@@ -242,14 +242,10 @@ fn riff_chunk<'a>(riff: &'a [u8], id: &[u8; 4]) -> Option<&'a [u8]> {
 /// Compresses `px` (`w` × `h` RGBA8) as one frame's data.
 fn compress(kind: Kind, px: &[u8], w: u32, h: u32) -> Result<Vec<u8>> {
     let fail = |e: String| EngineError::Format(format!("{} frame: {e}", kind.name()));
-    let img = craft_image_codecs::Image::from_u8(w, h, craft_image_codecs::ChannelLayout::Rgba, px.to_vec())
-        .map_err(|e| fail(e.to_string()))?;
+    let img = craft_image_codecs::Image::from_u8(w, h, craft_image_codecs::ChannelLayout::Rgba, px.to_vec()).map_err(|e| fail(e.to_string()))?;
     match kind {
         Kind::Apng => {
-            let opts = craft_image_codecs::EncodeOptions {
-                png_compression: craft_image_codecs::PngCompression::Best,
-                ..Default::default()
-            };
+            let opts = craft_image_codecs::EncodeOptions { png_compression: craft_image_codecs::PngCompression::Best, ..Default::default() };
             let buf = craft_image_codecs::encode(&img, craft_image_codecs::Format::Png, &opts).map_err(|e| fail(e.to_string()))?;
             idat(&buf)
         }
@@ -275,12 +271,13 @@ fn still(kind: Kind) -> Result<Encoded> {
 // ----- the files ---------------------------------------------------------------------------
 
 fn png_chunk(out: &mut Vec<u8>, id: &[u8; 4], data: &[u8]) -> Result<()> {
-    let len = u32::try_from(data.len()).ok().filter(|l| *l < 1 << 31).ok_or_else(|| EngineError::Format("an animated PNG frame is too large".into()))?;
+    let len =
+        u32::try_from(data.len()).ok().filter(|l| *l < 1 << 31).ok_or_else(|| EngineError::Format("an animated PNG frame is too large".into()))?;
     out.extend_from_slice(&len.to_be_bytes());
     let from = out.len();
     out.extend_from_slice(id);
     out.extend_from_slice(data);
-    let crc = anicraft_xfl::zip::crc32(out.get(from..).unwrap_or(&[]));
+    let crc = anima_xfl::zip::crc32(out.get(from..).unwrap_or(&[]));
     out.extend_from_slice(&crc.to_be_bytes());
     Ok(())
 }
@@ -372,11 +369,11 @@ pub(crate) fn plays(p: &Value) -> Result<u32> {
     match p.get("loop") {
         None | Some(Value::Null) | Some(Value::Bool(true)) => Ok(0),
         Some(Value::Bool(false)) => Ok(1),
-        Some(v) => v
-            .as_u64()
-            .and_then(|n| u32::try_from(n).ok())
-            .filter(|n| *n <= MAX_PLAYS)
-            .ok_or_else(|| EngineError::Param(format!("param 'loop' must be true (forever), false (once) or how many times it plays (0 is forever, at most {MAX_PLAYS})"))),
+        Some(v) => v.as_u64().and_then(|n| u32::try_from(n).ok()).filter(|n| *n <= MAX_PLAYS).ok_or_else(|| {
+            EngineError::Param(format!(
+                "param 'loop' must be true (forever), false (once) or how many times it plays (0 is forever, at most {MAX_PLAYS})"
+            ))
+        }),
     }
 }
 
@@ -418,7 +415,7 @@ pub fn export(s: &mut Session, p: &Value, kind: Kind) -> Result<Value> {
         let images: Vec<Vec<u8>> = chunk
             .par_iter()
             .map(|&f| {
-                let (pm, _) = render(&anicraft_doc::evaluate(doc, f), &view)?;
+                let (pm, _) = render(&anima_doc::evaluate(doc, f), &view)?;
                 crate::publish::tick(job, 1)?;
                 Ok(pm.to_rgba8())
             })

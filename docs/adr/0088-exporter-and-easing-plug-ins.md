@@ -9,7 +9,7 @@
 
 ADR 0017 reserved two more plug-in kinds on the `wasmi` host: exporters (frames in, bytes out)
 and easing presets. Studios want their own formats (a game engine's animation data, a text dump
-for review tools) without forking AniCraft, and artists want eases the presets don't have
+for review tools) without forking Ánima, and artists want eases the presets don't have
 (stepped motion for stop-motion looks, house curves). Both must keep the guarantees of the
 sandbox: a hostile or buggy module ends in a clear error, never a crash or a hang; and both
 must keep the project rules: everything is a command (CLI and MCP too), time is a function
@@ -19,9 +19,9 @@ must keep the project rules: everything is a command (CLI and MCP too), time is 
 
 | Question | Options | Choice |
 |---|---|---|
-| What an exporter sees | the live document; the `.anicraft` JSON; **the evaluated display list per frame** | The display list: the flattened data AniCraft's own exporters draw (paths in local space, stage transform, paints, strokes, colour effects, clips, groups), one frame per request. The plug-in never sees the document model, which can change between versions, nor the session. |
-| Frames: pushed or pulled | AniCraft pushes every frame into memory; **the plug-in asks (`frame`)** | Pulled: memory stays bounded by one frame, a plug-in may skip frames (every nth), and progress and Cancel are checked at each request. |
-| How bytes come back | JSON chunks in requests (base64 for binary); **`ac_export` returns `(len << 32) \| ptr`** | Returned from memory: binary formats cost nothing extra; the length is checked against a cap before a byte is copied. AniCraft writes the file (the plug-in can't touch files). |
+| What an exporter sees | the live document; the `.anima` JSON; **the evaluated display list per frame** | The display list: the flattened data Ánima's own exporters draw (paths in local space, stage transform, paints, strokes, colour effects, clips, groups), one frame per request. The plug-in never sees the document model, which can change between versions, nor the session. |
+| Frames: pushed or pulled | Ánima pushes every frame into memory; **the plug-in asks (`frame`)** | Pulled: memory stays bounded by one frame, a plug-in may skip frames (every nth), and progress and Cancel are checked at each request. |
+| How bytes come back | JSON chunks in requests (base64 for binary); **`ac_export` returns `(len << 32) \| ptr`** | Returned from memory: binary formats cost nothing extra; the length is checked against a cap before a byte is copied. Ánima writes the file (the plug-in can't touch files). |
 | When an ease runs | at every evaluation (a plug-in call per frame per tween); **once, at load, into a table** | At load. Evaluation stays pure, deterministic, fast and runnable without the plug-in, in the web build, in the HTML page's baked frames and in exports. |
 | What a document stores | a reference (plug-in id + ease id); **the sampled table** | The table, as ADR 0081 copies a saved ease's curve into a tween: the document opens and plays the same on a computer without the plug-in, and a newer version of the plug-in never changes an old movie behind the artist's back. The id is kept beside it, for the menu. |
 | Table form | a fitted Bézier `CustomEase`; **uniform samples, linear in between** | Samples: a step is a step (a Bézier ease can't jump), any function is drawn faithfully, and evaluation is one multiply and one lerp. |
@@ -52,7 +52,7 @@ must keep the project rules: everything is a command (CLI and MCP too), time is 
    but `t`). A value that isn't finite, is beyond ±10, or misses 0 at t = 0 or 1 at t = 1 by
    more than 10⁻³ fails the load, naming the ease, the time and the value; the ends are then
    pinned exactly.
-5. **`Easing::Sampled(Arc<SampledEase>)`** in `anicraft-doc`: name, plug-in id, ease id and
+5. **`Easing::Sampled(Arc<SampledEase>)`** in `anima-doc`: name, plug-in id, ease id and
    2-1025 values, made valid however it arrives (file, command, plug-in): thinned, non-finite
    values replaced by the straight line's, clamped to ±10, ends pinned. `apply` interpolates
    linearly. Editing its points makes a custom ease through 48 of its samples (room left to add
@@ -72,10 +72,10 @@ must keep the project rules: everything is a command (CLI and MCP too), time is 
    thumbnails under its name; the menu then names the tween's ease by its plug-in name. The
    Plug-ins window gives an exporter an Export… button and says how many eases an ease plug-in
    adds.
-8. **Headless.** `anicraft-cli export <file> --format <id> --out <path> [--from --to --frame
+8. **Headless.** `anima-cli export <file> --format <id> --out <path> [--from --to --frame
    --options '<json>' --overwrite yes]` takes the built-in ids (gif, apng, webp, lottie, html,
    video, svg, png, png-sequence, sprite-sheet) and exporter plug-in ids (with `--plugins`);
-   `anicraft-cli formats` lists them. MCP reaches the same commands through `anicraft_run`.
+   `anima-cli formats` lists them. MCP reaches the same commands through `anima_run`.
 9. **Samples** (`examples/plugins`): **Plain Text Frames** (an exporter: each frame's shapes,
    positions and paints, with Detail and Every nth frame options) and **Stepped Eases** (Stepped
    2, 4, 8 and Smooth Steps 4). The guest SDK gains `exporter!`, `ease!`, `movie()` and
@@ -85,7 +85,7 @@ must keep the project rules: everything is a command (CLI and MCP too), time is 
 
 ## Consequences
 
-* Studios can add formats and eases with no AniCraft release, and hostile modules end in an
+* Studios can add formats and eases with no Ánima release, and hostile modules end in an
   error: endless loops by fuel or time (or Cancel), huge outputs at the cap before copying,
   misplaced outputs as ABI errors, NaN or unbounded eases and eases that miss their ends at
   load (tests in `crates/plugins/tests/kinds.rs` and `crates/engine/src/plugin_kinds_tests.rs`).

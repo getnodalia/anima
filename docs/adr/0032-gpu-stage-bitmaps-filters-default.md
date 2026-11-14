@@ -127,7 +127,7 @@ Past these limits, the CPU draws the tile.
 
 What changes:
 * **The app's `gpu-stage` feature is on by default** (`default = ["sound-output",
-  "gpu-stage"]`). The engine crates don't depend on `anicraft-gpu`, so headless builds (CLI,
+  "gpu-stage"]`). The engine crates don't depend on `anima-gpu`, so headless builds (CLI,
   MCP, exports) are unchanged. A CPU-only shell builds with `--no-default-features --features
   sound-output`.
 * **The preference defaults to the GPU** (Preferences › Stage › Renderer: *Graphics card
@@ -138,14 +138,14 @@ What changes:
     starts on the GPU, and a later choice of the CPU is kept.
 * **The CPU stays the oracle**, the export path (PNG, sequences, video, HTML, Lottie, SVG) and
   the fallback. The status bar says which renderer drew the stage, and why the CPU did when it
-  did. `ANICRAFT_STAGE_RENDERER=cpu|gpu` still overrides.
+  did. `ANIMA_STAGE_RENDERER=cpu|gpu` still overrides.
 * **CI's default build has no GPU.** The shell builds and tests with the feature on. The GPU
   tests try the software adapter, and skip, saying why, without one. The app on such a machine
   falls back to the CPU.
 
 ## Measured (2026-11-09, release, RTX 5090, 32 threads)
 
-`cargo run --release -p anicraft-gpu --example gpu_bench`, columns as in ADR 0029:
+`cargo run --release -p anima-gpu --example gpu_bench`, columns as in ADR 0029:
 * *Direct* is what the calling thread spends with `render_texture`.
 * *Tiled* is the stage's way: 512 px tiles in parallel, until the GPU has finished.
 * *CPU oracle* is what these frames cost before this slice: they always fell back to the CPU.

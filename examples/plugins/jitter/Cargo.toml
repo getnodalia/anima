@@ -1,6 +1,6 @@
 [package]
-name = "anicraft-plugin-jitter"
-description = "Sample AniCraft plug-in: moves, turns and scales each selected element by a random amount"
+name = "anima-plugin-jitter"
+description = "Sample Ánima plug-in: moves, turns and scales each selected element by a random amount"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -10,5 +10,5 @@ publish.workspace = true
 crate-type = ["cdylib"]
 
 [dependencies]
-anicraft-plugin-sdk.workspace = true
+anima-plugin-sdk.workspace = true
 serde_json.workspace = true

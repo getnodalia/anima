@@ -1,6 +1,6 @@
 # Drawing
 
-AniCraft's drawing tools work the way Animate's do: shapes on a layer cut into and join each
+Ánima's drawing tools work the way Animate's do: shapes on a layer cut into and join each
 other, the Selection tool bends lines, and the Paint Bucket fills what your lines enclose.
 This chapter covers every tool, the two ways of drawing, and how to colour, arrange and
 transform your artwork.
@@ -48,7 +48,7 @@ The Bone and Camera tools are covered in
 
 ## Merge drawing and drawing objects
 
-AniCraft has two ways of drawing, as Animate does.
+Ánima has two ways of drawing, as Animate does.
 
 **Merge drawing** is the default. Lines and fills you draw become part of one connected
 drawing on that layer:
@@ -161,7 +161,7 @@ brushes in the Brush menu use them.
 
 **Tilt.** Brushes can follow a pen's tilt: the tip turns with the way the pen leans (so a flat
 nib follows your hand), and paints wider as it leans, up to twice as wide lying flat. A mouse
-is never affected. Windows, macOS and Linux don't pass a pen's tilt on to AniCraft yet, so the
+is never affected. Windows, macOS and Linux don't pass a pen's tilt on to Ánima yet, so the
 **Tilt** options (**Angle** and **Width**; the Paint Brush has **Width**) stay hidden in
 Properties. They appear by themselves as soon as a pen reports its tilt. Meanwhile scripts and
 assistants can paint with tilt: `draw.brush` takes points as `[x, y, pressure, altitude,
@@ -246,7 +246,7 @@ primaries and a few gradients.
 **Export Swatches** saves them as a small swatch file (`.json`) to import into other documents.
 **Import Swatches** reads that file or a **GIMP palette** (`.gpl`, which Inkscape, Krita and
 many palette sites also use); the swatches are added after yours. Adobe's `.aco`, `.ase` and
-`.clr` swatch files are Adobe's own formats and don't open in AniCraft: export the palette
+`.clr` swatch files are Adobe's own formats and don't open in Ánima: export the palette
 as GIMP `.gpl` from a tool that has it.
 
 To recolour existing artwork, select it and change **Fill** and **Stroke** in Properties.
@@ -521,7 +521,7 @@ without snapping. Rulers, the grid and guides never show in Test Movie or in exp
 
 ## Not there yet
 
-Not in AniCraft yet: gradient and bitmap strokes; swatch folders, bitmap swatches and the
+Not in Ánima yet: gradient and bitmap strokes; swatch folders, bitmap swatches and the
 swatches inside Animate files; moving the Envelope's handles from the keyboard; reading a
 pen's tilt on Windows, macOS and Linux (the brushes' tilt settings are ready for it); bitmap
 and art brushes; and Animate's ragged, stipple and hatched line styles (drawn

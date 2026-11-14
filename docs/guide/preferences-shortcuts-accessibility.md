@@ -1,6 +1,6 @@
 # Preferences, shortcuts, accessibility and languages
 
-This chapter shows how to make AniCraft yours: its preferences, your own keyboard shortcuts, the
+This chapter shows how to make Ánima yours: its preferences, your own keyboard shortcuts, the
 command palette, working with the keyboard or a screen reader, and the interface language.
 
 On macOS, press ⌘ where this guide says Ctrl, and ⌥ where it says Alt.
@@ -8,7 +8,7 @@ On macOS, press ⌘ where this guide says Ctrl, and ⌥ where it says Alt.
 ## Preferences
 
 Open Preferences with **Edit › Preferences…** (**Ctrl+U**) on Windows and Linux. On macOS the
-window is called Settings and lives in the application menu: **AniCraft › Settings…** (**⌘,**,
+window is called Settings and lives in the application menu: **Ánima › Settings…** (**⌘,**,
 and **⌘U** works too).
 
 There is no OK button. Every change shows at once, and **Esc** closes the window. The line at the
@@ -58,7 +58,7 @@ Preferences.
   way for your computer first and the next one if it doesn't work. If the window flickers or
   goes black, choose another way: **DirectX 12**, **Vulkan** or **OpenGL** on Windows, **Metal**
   or **OpenGL** on a Mac, **Vulkan** or **OpenGL** on Linux. A change takes effect the next time
-  AniCraft starts. The note below names the start-up log to attach to a bug report.
+  Ánima starts. The note below names the start-up log to attach to a bug report.
 
 ### Timeline, Test Movie, Files and Safety
 
@@ -66,7 +66,7 @@ Preferences.
 * **Test Movie › Play Test Movie in a window of its own**: on by default. Turn it off to have the
   movie float inside the editor instead.
 * **Files › File dialogs**: use your system's open and save dialogs. Turn this off on a Linux
-  desktop without a desktop portal, and AniCraft asks for a path instead.
+  desktop without a desktop portal, and Ánima asks for a path instead.
 * **Files › Autosave** keeps a recovery copy of unsaved work. Choose how often (**Every** 30
   seconds to 10 minutes, 1 minute by default) and **Or after** a number of changes (25 by
   default; 0 means by time only). Copies are written in the background, so drawing never waits.
@@ -75,15 +75,15 @@ Preferences.
 
 ### About
 
-**About** shows AniCraft's version, whether this copy is installed or portable (see
+**About** shows Ánima's version, whether this copy is installed or portable (see
 [Portable copies](getting-started.md#portable-copies)), and every folder it keeps things in
 (preferences, autosave, logs, plug-ins, templates and the offline user guide), each with an
-**Open** button. Run from an AppImage on Linux, it also adds AniCraft to your applications menu or
+**Open** button. Run from an AppImage on Linux, it also adds Ánima to your applications menu or
 removes it again.
 
 Preferences also keep your shortcuts, onion skin options, Publish presets, recent files and
 whether the start screen shows. The start screen has its own checkbox: **Show this screen when
-AniCraft starts**.
+Ánima starts**.
 
 ## Keyboard shortcuts
 
@@ -107,12 +107,12 @@ Each action has a **Reset** button that puts back its default keys (the tooltip 
 are). **Reset all…** at the top puts every shortcut back, after asking.
 
 Changes save as you go. Only the shortcuts you changed are stored, so every action you never
-touched keeps following AniCraft's defaults when they improve in a later version. Menus, tooltips
+touched keeps following Ánima's defaults when they improve in a later version. Menus, tooltips
 and the command palette always show the keys in effect, including yours.
 
 ### When a key is already taken
 
-If the key you press belongs to another action, AniCraft says so, for example "F5 is already used
+If the key you press belongs to another action, Ánima says so, for example "F5 is already used
 by Frame". You can then:
 
 * choose **Use it for** (your action) to move the key over, so the other action loses it, or
@@ -147,7 +147,7 @@ with its current shortcut.
 
 ## Accessibility
 
-AniCraft aims to work with the keyboard alone, with a screen reader, at large sizes and in high
+Ánima aims to work with the keyboard alone, with a screen reader, at large sizes and in high
 contrast.
 
 ### Moving around with the keyboard
@@ -205,7 +205,7 @@ menu command.
 
 ### Screen readers
 
-AniCraft works with the screen reader built into your system: Narrator (or NVDA) on Windows,
+Ánima works with the screen reader built into your system: Narrator (or NVDA) on Windows,
 VoiceOver on macOS and Orca on Linux.
 
 * Every button, toggle, field, slider, menu and list row has a name. Icon buttons are named with
@@ -227,7 +227,7 @@ to reader. Tell us what you find (see [Troubleshooting and FAQ](troubleshooting-
 
 ### High contrast
 
-With **Theme › Follow system**, AniCraft switches to high contrast within a few seconds when you
+With **Theme › Follow system**, Ánima switches to high contrast within a few seconds when you
 turn on:
 
 * **Windows**: a contrast theme (Settings › Accessibility › Contrast themes).
@@ -244,8 +244,8 @@ contrast** by hand to keep that look whatever the system says.
 
 Set **Preferences › Appearance › Interface scale** up to 200 %. The stage refits, the tools column
 scrolls, and the timeline header scrolls sideways (**Shift** and the mouse wheel). To try a look
-for one session without saving it, start AniCraft from a terminal with
-`anicraft --theme high-contrast --scale 200` (or `--theme light`, `--theme dark`).
+for one session without saving it, start Ánima from a terminal with
+`anima --theme high-contrast --scale 200` (or `--theme light`, `--theme dark`).
 
 ### Not there yet
 
@@ -269,10 +269,10 @@ command line and assistant tools described in [Working headless](working-headles
 behave the same everywhere. Error messages, import reports and the text of confirmations are
 still in English for now.
 
-Today AniCraft's interface is in English only. Translations come from the Craft family's shared
-translation catalogues, which don't have an AniCraft catalogue yet; Preferences says so when your
-build has no other languages. If you would like to translate AniCraft, open an issue on
-[GitHub](https://github.com/storytold/AniCraft/issues).
+Today Ánima's interface is in English only. Translations come from the Craft family's shared
+translation catalogues, which don't have an Ánima catalogue yet; Preferences says so when your
+build has no other languages. If you would like to translate Ánima, open an issue on
+[GitHub](https://github.com/getnodalia/anima/issues).
 
-To start in a language for one run, without saving it, use `anicraft --lang <code>` (for example
+To start in a language for one run, without saving it, use `anima --lang <code>` (for example
 `--lang de`), or `--lang auto` for the system language.

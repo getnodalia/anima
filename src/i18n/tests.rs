@@ -43,7 +43,10 @@ fn shell_sources() -> Vec<(String, String)> {
 /// A file without its `#[cfg(test)] mod … {` block at the end (tests aren't interface).
 fn without_tests(src: &str) -> String {
     let lines: Vec<&str> = src.lines().collect();
-    let cut = lines.windows(2).position(|w| w.first().is_some_and(|l| l.trim() == "#[cfg(test)]") && w.get(1).is_some_and(|l| l.trim_start().starts_with("mod ") && l.trim_end().ends_with('{')));
+    let cut = lines.windows(2).position(|w| {
+        w.first().is_some_and(|l| l.trim() == "#[cfg(test)]")
+            && w.get(1).is_some_and(|l| l.trim_start().starts_with("mod ") && l.trim_end().ends_with('{'))
+    });
     match cut {
         Some(n) => lines.get(..n).unwrap_or_default().join("\n"),
         None => src.to_string(),
@@ -53,10 +56,38 @@ fn without_tests(src: &str) -> String {
 /// Code before a literal, on its line, that makes it something other than interface text:
 /// logs and console output, ids and keys, commands and their parameters, attributes.
 const NOT_UI: &[&str] = &[
-    "eprintln!(", "println!(", "print!(", "panic!(", "assert", "unreachable!(", "Id::new(", "id_salt(", "persistent_id(", "json!(", "execute(", "perform(", "invoke(", ".run(", "find_command(", "#[", "env!(", "include_str!(", "include_bytes!(", "concat!(", "var(",
-    "contains(", "starts_with(", "ends_with(", "strip_prefix(", "strip_suffix(", "matches!(", "== ", "!= ",
+    "eprintln!(",
+    "println!(",
+    "print!(",
+    "panic!(",
+    "assert",
+    "unreachable!(",
+    "Id::new(",
+    "id_salt(",
+    "persistent_id(",
+    "json!(",
+    "execute(",
+    "perform(",
+    "invoke(",
+    ".run(",
+    "find_command(",
+    "#[",
+    "env!(",
+    "include_str!(",
+    "include_bytes!(",
+    "concat!(",
+    "var(",
+    "contains(",
+    "starts_with(",
+    "ends_with(",
+    "strip_prefix(",
+    "strip_suffix(",
+    "matches!(",
+    "== ",
+    "!= ",
     // The start-up log (`startup::line`): English, like console messages, for bug reports.
-    "line(&", "write(&format!(",
+    "line(&",
+    "write(&format!(",
 ];
 
 /// Whether a prose literal outside the macros is allowed: not interface text by its context,
@@ -71,7 +102,7 @@ fn exempt(l: &Literal, lines: &[&str]) -> bool {
     if after.starts_with("=>") || after.starts_with('|') || after.starts_with("if ") {
         return true;
     }
-    NOT_UI.iter().any(|m| l.line_before.contains(m)) || l.value == "AniCraft"
+    NOT_UI.iter().any(|m| l.line_before.contains(m)) || l.value == "Ánima"
 }
 
 #[test]
@@ -105,13 +136,13 @@ fn all_keys() -> BTreeSet<Key> {
     let mut add = |s: &str| {
         keys.insert(Key::Text { context: String::new(), source: s.to_string() });
     };
-    for c in anicraft_engine::commands() {
+    for c in anima_engine::commands() {
         add(c.label);
         c.menu.split('/').filter(|p| !p.is_empty()).for_each(&mut add);
     }
     // Labels from below the shell that it translates where it draws them (`i18n::t`).
-    use anicraft_engine::doc::{self, actions};
-    use anicraft_engine::{cmds_brush::PaintMode, cmds_erase::EraseMode};
+    use anima_engine::doc::{self, actions};
+    use anima_engine::{cmds_brush::PaintMode, cmds_erase::EraseMode};
     doc::BlendMode::ALL.iter().for_each(|m| add(m.label()));
     doc::Filter::KINDS.iter().for_each(|(_, l)| add(l));
     doc::FilterSide::ALL.iter().for_each(|s| add(s.label()));
@@ -154,11 +185,11 @@ fn all_keys() -> BTreeSet<Key> {
         add(m.hint());
     }
     // The brush library (ADR 0068): built-in brushes, their hints and the pressure curves.
-    for (k, n) in anicraft_engine::brush_library::BUILTIN {
+    for (k, n) in anima_engine::brush_library::BUILTIN {
         add(n);
-        add(anicraft_engine::brush_library::builtin_hint(k));
+        add(anima_engine::brush_library::builtin_hint(k));
     }
-    anicraft_engine::geom::pressure::CURVE_PRESETS.iter().for_each(|(_, l)| add(l));
+    anima_engine::geom::pressure::CURVE_PRESETS.iter().for_each(|(_, l)| add(l));
     keys
 }
 
@@ -194,7 +225,7 @@ fn row(k: &Key) -> (String, String) {
 }
 
 const HEADER: &str = "\
-# <Language> (<locale>) interface catalog for AniCraft.
+# <Language> (<locale>) interface catalog for Ánima.
 # Columns, separated by a TAB:  context <TAB> English source text <TAB> translation
 #   context  usually empty. `@plural`, `@id` and `@msg` mean something to the apps; any other
 #            word is a label that tells apart two meanings of the same English.
@@ -209,7 +240,7 @@ const HEADER: &str = "\
 ";
 
 /// A craft-i18n locale's merged catalog, read from a checkout on disk: the base language's
-/// files, then the locale's, shared before AniCraft's.
+/// files, then the locale's, shared before Ánima's.
 fn disk_catalog(locales: &Path, code: &str) -> (Catalog, Vec<catalog::Row>) {
     let read = |c: &str, f: &str| std::fs::read_to_string(locales.join(c).join(f)).map(|t| catalog::parse(&t).0).unwrap_or_default();
     let mut cat = Catalog::default();
@@ -219,9 +250,9 @@ fn disk_catalog(locales: &Path, code: &str) -> (Catalog, Vec<catalog::Row>) {
     }
     for c in &chain {
         cat.merge(read(c, "common.tsv"));
-        cat.merge(read(c, "anicraft.tsv"));
+        cat.merge(read(c, "anima.tsv"));
     }
-    (cat, read(code, "anicraft.tsv"))
+    (cat, read(code, "anima.tsv"))
 }
 
 fn translated(cat: &Catalog, k: &Key) -> bool {
@@ -235,22 +266,27 @@ fn translated(cat: &Catalog, k: &Key) -> bool {
 #[ignore = "a tool, run by scripts/i18n-extract.sh"]
 fn extract() {
     // Writes every interface string as a craft-i18n catalog template (each row commented out,
-    // as craft-i18n's starter files are) to $ANICRAFT_I18N_OUT, or prints it. With
-    // $CRAFT_I18N_DIR, prints how much of AniCraft each craft-i18n locale already translates
-    // (its shared catalog counts) and the stale rows of AniCraft's own catalogs; with
-    // $ANICRAFT_I18N_LOCALE too, the template lists only what that locale is missing.
+    // as craft-i18n's starter files are) to $ANIMA_I18N_OUT, or prints it. With
+    // $CRAFT_I18N_DIR, prints how much of Ánima each craft-i18n locale already translates
+    // (its shared catalog counts) and the stale rows of Ánima's own catalogs; with
+    // $ANIMA_I18N_LOCALE too, the template lists only what that locale is missing.
     let keys = all_keys();
     let checkout = std::env::var_os("CRAFT_I18N_DIR").map(|d| PathBuf::from(d).join("locales"));
-    let only = std::env::var("ANICRAFT_I18N_LOCALE").ok().map(|l| l.to_ascii_lowercase());
+    let only = std::env::var("ANIMA_I18N_LOCALE").ok().map(|l| l.to_ascii_lowercase());
     let mut missing_in: Option<Catalog> = None;
     if let Some(locales) = &checkout {
-        let mut codes: Vec<String> = std::fs::read_dir(locales).map(|r| r.flatten().filter(|e| e.path().is_dir()).map(|e| e.file_name().to_string_lossy().into_owned()).collect()).unwrap_or_default();
+        let mut codes: Vec<String> = std::fs::read_dir(locales)
+            .map(|r| r.flatten().filter(|e| e.path().is_dir()).map(|e| e.file_name().to_string_lossy().into_owned()).collect())
+            .unwrap_or_default();
         codes.sort();
-        println!("locale     translated        stale  (of {} AniCraft strings; READY = offered once it has anicraft.tsv)", keys.len());
+        println!("locale     translated        stale  (of {} Ánima strings; READY = offered once it has anima.tsv)", keys.len());
         for code in &codes {
             let (cat, own) = disk_catalog(locales, code);
             let n = keys.iter().filter(|k| translated(&cat, k)).count();
-            let stale = own.iter().filter(|r| !r.context.starts_with('@') && !keys.contains(&Key::Text { context: r.context.clone(), source: r.source.clone() })).count();
+            let stale = own
+                .iter()
+                .filter(|r| !r.context.starts_with('@') && !keys.contains(&Key::Text { context: r.context.clone(), source: r.source.clone() }))
+                .count();
             let ready = if super::ready(code, READY) { "READY" } else { "" };
             println!("{code:<10} {n:>5} ({:>3} %)  {stale:>8}  {ready}", n * 100 / keys.len().max(1));
             if only.as_deref() == Some(code.as_str()) {
@@ -269,7 +305,7 @@ fn extract() {
         text.push_str(&format!("#{context}\t{source}\t\n"));
         rows += 1;
     }
-    match std::env::var_os("ANICRAFT_I18N_OUT") {
+    match std::env::var_os("ANIMA_I18N_OUT") {
         Some(out) => {
             let out = PathBuf::from(out);
             if let Some(dir) = out.parent() {
@@ -288,10 +324,18 @@ const DE_COMMON: &str = "@id\tlanguage.name\tDeutsch\n\tSave\tSpeichern\n\tOpen\
 const DE_APP: &str = "\tOpen\tDatei öffnen\n\tSaved {path}\t{path} gespeichert\n@id\tedit.undo\tRückgängig\n";
 const PT_COMMON: &str = "@id\tlanguage.name\tPortuguês\n\tSave\tGuardar\n\tOpen\tAbrir\n";
 const PT_BR_APP: &str = "@id\tlanguage.name\tPortuguês (Brasil)\n\tSave\tSalvar\n@plural\t{n} frame|{n} frames\t{n} quadro|{n} quadros\n";
-const RU_APP: &str = "@id\tlanguage.name\tРусский\n@plural\t{n} frame|{n} frames\t{n} кадр|{n} кадра|{n} кадров\n@plural\t{n} layer|{n} layers\t{n} слой|{n} слоя\n";
+const RU_APP: &str =
+    "@id\tlanguage.name\tРусский\n@plural\t{n} frame|{n} frames\t{n} кадр|{n} кадра|{n} кадров\n@plural\t{n} layer|{n} layers\t{n} слой|{n} слоя\n";
 
 fn fixture() -> Languages {
-    let embedded = [("de", DE_COMMON, DE_APP), ("pt", PT_COMMON, ""), ("pt-BR", "", PT_BR_APP), ("ru", "", RU_APP), ("ar", "\tSave\tحفظ\n", "\tOpen\tفتح\n"), ("fr", "\tSave\tEnregistrer\n", "")];
+    let embedded = [
+        ("de", DE_COMMON, DE_APP),
+        ("pt", PT_COMMON, ""),
+        ("pt-BR", "", PT_BR_APP),
+        ("ru", "", RU_APP),
+        ("ar", "\tSave\tحفظ\n", "\tOpen\tفتح\n"),
+        ("fr", "\tSave\tEnregistrer\n", ""),
+    ];
     let (l, problems) = Languages::new(&embedded, READY);
     assert!(problems.is_empty(), "{problems:?}");
     l
@@ -378,7 +422,7 @@ fn the_interface_language_changes_lookups_on_this_thread() {
     // Built without catalogs (tests don't set CRAFT_I18N_DIR): English and the pseudo-locale.
     assert_eq!(set_language("xx"), "en");
     assert_eq!(tr!("Save"), "Save");
-    assert_eq!(tr!("Saved {path}", path = "a.anicraft"), "Saved a.anicraft");
+    assert_eq!(tr!("Saved {path}", path = "a.anima"), "Saved a.anima");
     assert_eq!(trn!("{n} frame", "{n} frames", 1), "1 frame");
     assert_eq!(trn!("{n} frame", "{n} frames", 3usize), "3 frames");
     assert_eq!(trc!("menu", "Open"), "Open");
@@ -390,7 +434,7 @@ fn the_interface_language_changes_lookups_on_this_thread() {
     assert_eq!(set_language(PSEUDO), "pseudo");
     assert_eq!(tr!("Save"), "[Šàvé ~~]");
     assert!(std::ptr::eq(tr!("Save"), tr!("Save")), "made once, then cached");
-    assert_eq!(tr!("Saved {path}", path = "a.anicraft"), "[Šàvéď a.anicraft ~~]", "values are filled after the lookup, untouched");
+    assert_eq!(tr!("Saved {path}", path = "a.anima"), "[Šàvéď a.anima ~~]", "values are filled after the lookup, untouched");
     assert_eq!(trn!("{n} frame", "{n} frames", 2), "[2 fŕàméš ~~]");
     assert_eq!(t_dyn("Undo"), "[Üñďö ~~]");
     assert_eq!(t_cmd("edit.undo", "Undo"), "[Üñďö ~~]");
@@ -449,7 +493,9 @@ fn strings_in(v: &serde_json::Value, out: &mut BTreeSet<String>) {
         serde_json::Value::Object(o) => {
             for (k, x) in o {
                 match x {
-                    serde_json::Value::String(s) if matches!(k.as_str(), "name" | "text" | "label") && s.chars().filter(char::is_ascii_alphabetic).count() >= 3 => {
+                    serde_json::Value::String(s)
+                        if matches!(k.as_str(), "name" | "text" | "label") && s.chars().filter(char::is_ascii_alphabetic).count() >= 3 =>
+                    {
                         out.insert(s.clone());
                     }
                     _ => strings_in(x, out),
@@ -469,7 +515,7 @@ const EGUI_OWN: [&str; 1] = ["Close window"];
 fn pseudo_app(setup: impl FnOnce(&mut crate::app::App, &egui::Context)) -> (crate::app::App, egui::Context) {
     let ctx = egui::Context::default();
     ctx.enable_accesskit();
-    let session = anicraft_engine::Session::new(anicraft_engine::doc::sample::demo());
+    let session = anima_engine::Session::new(anima_engine::doc::sample::demo());
     let mut app = crate::app::App::with_context(&ctx, session, Some(PathBuf::from("unused.png")));
     // In the preferences (unsaved in screenshot mode), so a setup that changes them keeps it.
     app.prefs.language = PSEUDO.into();
@@ -495,7 +541,7 @@ fn plain_names(what: &str, app: &crate::app::App, nodes: Vec<(egui::accesskit::N
             // egui names its own window close button; it offers no way to name it ourselves
             // (docs/localisation.md › Not yet). The product name stays as it is in every
             // language (the macOS app menu is titled with it, ADR 0006), as the source scan allows.
-            let translated = name.chars().any(pseudo::is_accented) || EGUI_OWN.contains(&name) || name == "AniCraft";
+            let translated = name.chars().any(pseudo::is_accented) || EGUI_OWN.contains(&name) || name == "Ánima";
             let ours = scan::is_prose(name) && !doc_text.contains(name) && !doc_text.iter().any(|d| name.contains(d.as_str()));
             if ours && !translated {
                 found.insert(format!("[{what}] {:?} {name:?}", n.role()));
@@ -602,7 +648,36 @@ fn every_control_can_be_used_in_the_pseudo_locale() {
             a.run("element.set_color_effect", serde_json::json!({"style": style}));
         }));
     }
-    for panel in ["sound", "camera", "springbones", "shapebones", "shapeweights", "warp", "motion", "motionpins", "actions", "script", "prefs", "envelope", "onionmenu", "editmultiple", "edittransform", "onionsymbol", "find", "explorer", "publish", "publishreport", "publishanim", "start", "testmovie", "testmovieinside", "templates", "savetemplate", "brushlibrary", "brushcurve"] {
+    for panel in [
+        "sound",
+        "camera",
+        "springbones",
+        "shapebones",
+        "shapeweights",
+        "warp",
+        "motion",
+        "motionpins",
+        "actions",
+        "script",
+        "prefs",
+        "envelope",
+        "onionmenu",
+        "editmultiple",
+        "edittransform",
+        "onionsymbol",
+        "find",
+        "explorer",
+        "publish",
+        "publishreport",
+        "publishanim",
+        "start",
+        "testmovie",
+        "testmovieinside",
+        "templates",
+        "savetemplate",
+        "brushlibrary",
+        "brushcurve",
+    ] {
         found.extend(click_everything(panel, |a, _| a.open_panel(Some(panel))));
     }
     // Test Movie in a window of its own (ADR 0062; egui stands in for the window system here).
@@ -610,7 +685,14 @@ fn every_control_can_be_used_in_the_pseudo_locale() {
         ctx.set_embed_viewports(false);
         a.open_panel(Some("testmovie"));
     }));
-    for tool in [crate::app::Tool::Brush, crate::app::Tool::PaintBrush, crate::app::Tool::Eraser, crate::app::Tool::PaintBucket, crate::app::Tool::Pencil, crate::app::Tool::Width] {
+    for tool in [
+        crate::app::Tool::Brush,
+        crate::app::Tool::PaintBrush,
+        crate::app::Tool::Eraser,
+        crate::app::Tool::PaintBucket,
+        crate::app::Tool::Pencil,
+        crate::app::Tool::Width,
+    ] {
         found.extend(click_everything(&format!("{tool:?}"), |a, _| a.tool = tool));
     }
     assert!(found.is_empty(), "{} things in plain English after using the controls:\n{}", found.len(), found.join("\n"));
@@ -623,7 +705,7 @@ fn status_lines_for_every_result_are_translated() {
     use serde_json::json;
     let (mut app, _ctx) = pseudo_app(|_, _| {});
     let full = json!({
-        "saved": "walk.anicraft", "written": "walk.png", "seconds": 1.5, "frames": 3, "columns": 2, "rows": 2, "map": "walk.json",
+        "saved": "walk.anima", "written": "walk.png", "seconds": 1.5, "frames": 3, "columns": 2, "rows": 2, "map": "walk.json",
         "kb": 12, "layers": 2, "masks": 1, "elements": 3, "report": "Imported walk.fla.", "copied": 2, "cut": 2, "pasted": 2,
         "removed": 2, "cleared": 2, "original_newer": true, "sounds": 1, "name": "beat", "sound": 1, "log": ["Did it."],
         "installed": [{"name": "Tint", "version": "1.0"}], "failed": ["bad.wasm: not a plug-in"], "replaced": "Tint 0.9",
@@ -631,11 +713,39 @@ fn status_lines_for_every_result_are_translated() {
     });
     let bare = json!({});
     let ids = [
-        "file.new", "file.open", "file.recover", "file.discard_recovery", "file.save", "file.save_as", "file.import", "file.import_to_library",
-        "file.export_audio", "file.export_sprite_sheet", "file.export_html", "file.export_lottie", "file.export_png", "file.export_gif", "file.export_apng", "file.export_webp",
-        "sound.delete", "edit.undo", "edit.redo", "edit.delete", "layer.delete", "draw.erase_all", "scene.delete", "scene.new",
-        "timeline.clear_keyframe", "timeline.copy_frames", "timeline.cut_frames", "timeline.paste_frames", "timeline.remove_frame",
-        "plugin.run", "plugin.install", "plugin.remove", "plugin.reload",
+        "file.new",
+        "file.open",
+        "file.recover",
+        "file.discard_recovery",
+        "file.save",
+        "file.save_as",
+        "file.import",
+        "file.import_to_library",
+        "file.export_audio",
+        "file.export_sprite_sheet",
+        "file.export_html",
+        "file.export_lottie",
+        "file.export_png",
+        "file.export_gif",
+        "file.export_apng",
+        "file.export_webp",
+        "sound.delete",
+        "edit.undo",
+        "edit.redo",
+        "edit.delete",
+        "layer.delete",
+        "draw.erase_all",
+        "scene.delete",
+        "scene.new",
+        "timeline.clear_keyframe",
+        "timeline.copy_frames",
+        "timeline.cut_frames",
+        "timeline.paste_frames",
+        "timeline.remove_frame",
+        "plugin.run",
+        "plugin.install",
+        "plugin.remove",
+        "plugin.reload",
     ];
     let mut plain = Vec::new();
     for id in ids {
@@ -666,9 +776,15 @@ fn edit_multiple_frames_status_lines_are_translated() {
             _ => {}
         }
     }
-    assert!(plain.is_empty(), "status lines in plain English:
-{}", plain.join("
-"));
+    assert!(
+        plain.is_empty(),
+        "status lines in plain English:
+{}",
+        plain.join(
+            "
+"
+        )
+    );
 }
 
 #[test]
@@ -684,9 +800,9 @@ fn tool_status_lines_are_translated() {
             plain.push(format!("{what}: {:?}", s.text));
         }
     };
-    let sun = anicraft_engine::geom::Vec2::new(1000.0, 160.0);
-    let hill = anicraft_engine::geom::Vec2::new(300.0, 600.0);
-    let empty = anicraft_engine::geom::Vec2::new(-500.0, -500.0);
+    let sun = anima_engine::geom::Vec2::new(1000.0, 160.0);
+    let hill = anima_engine::geom::Vec2::new(300.0, 600.0);
+    let empty = anima_engine::geom::Vec2::new(-500.0, -500.0);
     for (p, shift) in [(sun, false), (sun, true), (hill, false), (empty, false)] {
         crate::erasertool::eyedropper(&mut app, p, shift, 1.0);
         check(&mut app, "eyedropper");
@@ -709,7 +825,7 @@ fn every_menu_item_is_translated() {
     let mut found = Vec::new();
     for top in crate::menus::TOP_MENUS {
         let (mut app, ctx) = pseudo_app(|_, _| {});
-        let cmds = anicraft_engine::commands();
+        let cmds = anima_engine::commands();
         let mut update = None;
         for _ in 0..2 {
             let mut out = ctx.run_ui(screen(), |ui| crate::menus::menu_contents(&mut app, ui, top, &cmds));
@@ -764,7 +880,21 @@ fn screen_reader_names_are_translated_too() {
     // the source guideline can't see: ones passed through variables or built at run time).
     use crate::app::Tool;
     let mut found = untranslated_names("default", |_, _| {});
-    for tool in [Tool::Rect, Tool::Star, Tool::Text, Tool::Pencil, Tool::Brush, Tool::Eraser, Tool::PaintBucket, Tool::Eyedropper, Tool::Pen, Tool::Camera, Tool::Bone, Tool::Bind, Tool::Warp] {
+    for tool in [
+        Tool::Rect,
+        Tool::Star,
+        Tool::Text,
+        Tool::Pencil,
+        Tool::Brush,
+        Tool::Eraser,
+        Tool::PaintBucket,
+        Tool::Eyedropper,
+        Tool::Pen,
+        Tool::Camera,
+        Tool::Bone,
+        Tool::Bind,
+        Tool::Warp,
+    ] {
         found.extend(untranslated_names(&format!("{tool:?} tool"), |a, _| a.tool = tool));
     }
     // Selections and states that change what Properties, the timeline and the dialogs show.
@@ -778,7 +908,7 @@ fn screen_reader_names_are_translated_too() {
     }));
     found.extend(untranslated_names("button instance", |a, _| {
         a.perform("file.new_sample", serde_json::json!({"which": "interactive"}));
-        if let Some(button) = a.s.doc.library.iter().find(|s| s.kind == anicraft_engine::doc::SymbolKind::Button).map(|s| s.id.0) {
+        if let Some(button) = a.s.doc.library.iter().find(|s| s.kind == anima_engine::doc::SymbolKind::Button).map(|s| s.id.0) {
             a.run("library.place", serde_json::json!({"symbol": button, "x": 100.0, "y": 100.0}));
         }
         crate::actions_panel::open(a, crate::actions_panel::Tab::Instance);
@@ -797,7 +927,40 @@ fn screen_reader_names_are_translated_too() {
     found.extend(untranslated_names("library item", |a, _| {
         a.library_sel = a.s.doc.library.first().map(|s| crate::app::LibraryItem::Symbol(s.id));
     }));
-    for panel in ["start", "drop", "droplibrary", "select", "motion", "motionspan", "motionpath", "motionedit", "camera", "sound", "prefs", "shortcuts", "palette", "about", "files", "licenses", "confirm", "recovery", "frames", "filters", "plugins", "actions", "script", "scriptproblems", "testmovie", "testmovieinside", "testscript", "exporthtml", "envelope", "templates", "savetemplate", "droptimeline"] {
+    for panel in [
+        "start",
+        "drop",
+        "droplibrary",
+        "select",
+        "motion",
+        "motionspan",
+        "motionpath",
+        "motionedit",
+        "camera",
+        "sound",
+        "prefs",
+        "shortcuts",
+        "palette",
+        "about",
+        "files",
+        "licenses",
+        "confirm",
+        "recovery",
+        "frames",
+        "filters",
+        "plugins",
+        "actions",
+        "script",
+        "scriptproblems",
+        "testmovie",
+        "testmovieinside",
+        "testscript",
+        "exporthtml",
+        "envelope",
+        "templates",
+        "savetemplate",
+        "droptimeline",
+    ] {
         found.extend(untranslated_names(panel, |a, _| a.open_panel(Some(panel))));
     }
     assert!(found.is_empty(), "{} screen-reader names not translated in the pseudo-locale:\n{}", found.len(), found.join("\n"));
@@ -805,9 +968,9 @@ fn screen_reader_names_are_translated_too() {
 
 #[test]
 fn the_selection_title_reads_like_the_engines_label_in_english() {
-    // panels.rs keeps a translated copy of `anicraft_engine::element_label`; in English the two
+    // panels.rs keeps a translated copy of `anima_engine::element_label`; in English the two
     // must say the same, so a change to one shows here.
-    let mut s = anicraft_engine::Session::new(anicraft_engine::doc::sample::demo());
+    let mut s = anima_engine::Session::new(anima_engine::doc::sample::demo());
     s.execute("edit.select_all", &serde_json::json!({})).ok();
     s.execute("modify.convert_to_symbol", &serde_json::json!({"name": "Clip"})).ok();
     s.execute("text.create", &serde_json::json!({"x": 10.0, "y": 10.0, "text": "A longer line of text than fits\nand a second"})).ok();
@@ -818,7 +981,7 @@ fn the_selection_title_reads_like_the_engines_label_in_english() {
         for layer in &scene.timeline.layers {
             for k in &layer.keyframes {
                 for e in &k.elements {
-                    assert_eq!(crate::panels::element_title(doc, e), anicraft_engine::element_label(doc, e));
+                    assert_eq!(crate::panels::element_title(doc, e), anima_engine::element_label(doc, e));
                     seen += 1;
                 }
             }

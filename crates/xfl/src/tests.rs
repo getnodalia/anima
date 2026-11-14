@@ -1,15 +1,15 @@
 //! Import tests on a small, self-authored XFL package.
 
 use crate::import::{XflError, import_with};
-use anicraft_doc::{ElementKind, LayerKind, LoopMode, Paint, Rgba, SymbolKind, evaluate};
+use anima_doc::{ElementKind, LayerKind, LoopMode, Paint, Rgba, SymbolKind, evaluate};
 use std::collections::HashMap;
 
 #[test]
-fn shared_zip_errors_keep_anicraft_import_wording() {
+fn shared_zip_errors_keep_anima_import_wording() {
     let entry = XflError::from(crate::zip::ZipError::Unsupported("a.xml".into(), "encryption"));
-    assert_eq!(entry.to_string(), "'a.xml' uses a zip feature AniCraft can't read (encryption)");
+    assert_eq!(entry.to_string(), "'a.xml' uses a zip feature Ánima can't read (encryption)");
     let archive = XflError::from(crate::zip::ZipError::UnsupportedArchive("split across several files"));
-    assert_eq!(archive.to_string(), "the archive uses a zip feature AniCraft can't read (split across several files)");
+    assert_eq!(archive.to_string(), "the archive uses a zip feature Ánima can't read (split across several files)");
 }
 
 const DOC: &str = r##"<DOMDocument xmlns="http://ns.adobe.com/xfl/2008/" width="640" height="360" frameRate="30" backgroundColor="#336699">
@@ -78,7 +78,7 @@ fn package() -> HashMap<&'static str, &'static str> {
     HashMap::from([("DOMDocument.xml", DOC), ("LIBRARY/Characters/Ball.xml", BALL)])
 }
 
-fn import(files: &HashMap<&'static str, &'static str>) -> Result<(anicraft_doc::Document, crate::Report), XflError> {
+fn import(files: &HashMap<&'static str, &'static str>) -> Result<(anima_doc::Document, crate::Report), XflError> {
     let read = |p: &str| -> Result<Option<Vec<u8>>, XflError> { Ok(files.get(p).map(|s| s.as_bytes().to_vec())) };
     import_with(&read)
 }
@@ -96,7 +96,7 @@ fn stage_layers_frames_and_tweens() {
     assert_eq!(ball.keyframes.len(), 2);
     assert_eq!((ball.keyframes[0].start, ball.keyframes[0].duration), (0, 10));
     assert_eq!(ball.keyframes[0].label, "start");
-    assert!(matches!(ball.keyframes[0].tween.as_ref().map(|t| t.easing.clone()), Some(anicraft_doc::Easing::Classic(e)) if e == -50.0));
+    assert!(matches!(ball.keyframes[0].tween.as_ref().map(|t| t.easing.clone()), Some(anima_doc::Easing::Classic(e)) if e == -50.0));
     assert!(doc.timeline(0).layers[1].locked);
     assert_eq!((doc.timeline(0).layers[0].height(), doc.timeline(0).layers[1].height()), (1, 2), "Layer Properties height");
     assert_eq!(doc.timeline(0).layers[2].kind, LayerKind::Guide);
@@ -112,11 +112,13 @@ fn stage_layers_frames_and_tweens() {
     assert_eq!(report.runs.get("frame scripts in ActionScript 3.0"), Some(&2));
     // The symbol's path puts it in a Library folder (ADR 0050).
     assert_eq!(report.kept.keys().collect::<Vec<_>>(), ["library folders"], "{report:?}");
-    assert_eq!(doc.entry_path(anicraft_doc::LibraryEntry::Item(anicraft_doc::LibraryItem::Symbol(doc.library[0].id))), "Characters/Ball");
+    assert_eq!(doc.entry_path(anima_doc::LibraryEntry::Item(anima_doc::LibraryItem::Symbol(doc.library[0].id))), "Characters/Ball");
     assert!(report.skipped.keys().all(|k| !k.contains("script")), "{report:?}");
     assert_eq!(ball.keyframes[1].script.as_ref().and_then(|s| s.source()).map(|s| s.text.as_str()), Some("stop();"));
     let inner = &doc.library[0].timeline.layers[0].keyframes[0];
-    assert!(matches!(inner.script.as_ref().and_then(|s| s.source()), Some(s) if s.text == "gotoAndPlay(2);" && s.language == anicraft_doc::Language::ActionScript3));
+    assert!(
+        matches!(inner.script.as_ref().and_then(|s| s.source()), Some(s) if s.text == "gotoAndPlay(2);" && s.language == anima_doc::Language::ActionScript3)
+    );
     assert!(report.summary().contains("Runs in Test Movie: 2 frame scripts in ActionScript 3.0."), "{}", report.summary());
     // Every scene comes across, in order.
     assert_eq!(doc.scenes.iter().map(|s| s.name.as_str()).collect::<Vec<_>>(), ["Scene 1", "Scene 2"]);
@@ -160,29 +162,35 @@ fn symbols_instances_and_the_tween_between_them() {
     assert_eq!((sym.name.as_str(), sym.kind), ("Ball", SymbolKind::MovieClip));
     let inst = &doc.timeline(0).layers[0].keyframes[0].elements[0];
     let ElementKind::Symbol { symbol, loop_mode, first_frame, blend, filters: entries, .. } = &inst.kind else { panic!("an instance") };
-    assert_eq!(*blend, anicraft_doc::BlendMode::HardLight, "Animate's blend mode names");
+    assert_eq!(*blend, anima_doc::BlendMode::HardLight, "Animate's blend mode names");
     // In order; the switched-off glow comes in switched off, keeping its place (ADR 0091).
     assert_eq!(entries.iter().map(|e| e.enabled).collect::<Vec<_>>(), [true, true, false, true, true, true]);
-    assert!(matches!(entries[2].filter, anicraft_doc::Filter::Glow { .. }));
-    let filters: Vec<anicraft_doc::Filter> = entries.iter().filter(|e| e.enabled).map(|e| e.filter.clone()).collect();
+    assert!(matches!(entries[2].filter, anima_doc::Filter::Glow { .. }));
+    let filters: Vec<anima_doc::Filter> = entries.iter().filter(|e| e.enabled).map(|e| e.filter.clone()).collect();
     assert_eq!(filters.len(), 5, "{filters:?}");
-    assert!(matches!(filters[0], anicraft_doc::Filter::DropShadow { distance, inner: false, .. } if distance == 8.0));
-    assert!(matches!(filters[1], anicraft_doc::Filter::Blur { blur_x, quality: 2, .. } if blur_x == 10.0));
-    use anicraft_doc::{Filter, FilterSide};
-    let Filter::Bevel { blur_x, blur_y, distance, angle, highlight_color, shadow_color, side, knockout, strength, .. } = filters[2] else { panic!("{:?}", filters[2]) };
+    assert!(matches!(filters[0], anima_doc::Filter::DropShadow { distance, inner: false, .. } if distance == 8.0));
+    assert!(matches!(filters[1], anima_doc::Filter::Blur { blur_x, quality: 2, .. } if blur_x == 10.0));
+    use anima_doc::{Filter, FilterSide};
+    let Filter::Bevel { blur_x, blur_y, distance, angle, highlight_color, shadow_color, side, knockout, strength, .. } = filters[2] else {
+        panic!("{:?}", filters[2])
+    };
     assert_eq!((blur_x, blur_y, distance, angle, side, knockout, strength), (4.0, 6.0, 3.0, 135.0, FilterSide::Full, true, 1.0));
     assert_eq!((highlight_color, shadow_color), (Rgba::hex(0xffff00).with_alpha(0.75), Rgba::BLACK.with_alpha(0.5)));
     // Ramps: ratios 0..1 or 0..255; the glow's start pinned transparent, the bevel given a
     // transparent middle (as Animate's panel keeps them).
     let Filter::GradientGlow { stops, side: FilterSide::Inner, strength, .. } = &filters[3] else { panic!("{:?}", filters[3]) };
     assert_eq!(*strength, 2.0);
-    assert_eq!(stops.iter().map(|s| (s.offset, s.color.a)).collect::<Vec<_>>(), vec![(0.0, 0.0), (1.0 / 255.0, 1.0), (128.0 / 255.0, 1.0), (1.0, 1.0)], "one byte scale for every ratio");
+    assert_eq!(
+        stops.iter().map(|s| (s.offset, s.color.a)).collect::<Vec<_>>(),
+        vec![(0.0, 0.0), (1.0 / 255.0, 1.0), (128.0 / 255.0, 1.0), (1.0, 1.0)],
+        "one byte scale for every ratio"
+    );
     let Filter::GradientBevel { stops, side: FilterSide::Inner, quality: 3, .. } = &filters[4] else { panic!("{:?}", filters[4]) };
     assert_eq!(stops.len(), 3);
     assert_eq!((stops[1].offset, stops[1].color.a), (0.5, 0.0));
     assert_eq!((*symbol, *loop_mode, *first_frame), (sym.id, LoopMode::PlayOnce, 2));
     assert_eq!(inst.transform.m, [2.0, 0.0, 0.0, 2.0, 100.0, 50.0]);
-    assert_eq!(inst.color, anicraft_doc::ColorEffect::Alpha(0.5));
+    assert_eq!(inst.color, anima_doc::ColorEffect::Alpha(0.5));
     // Half-way through the tween (eased), the ball is between its two positions.
     let dl = evaluate(&doc, 5);
     let ball = dl.items.iter().find(|i| matches!(i.fill, Some(Paint::Solid(c)) if c == Rgba::hex(0xff0000))).expect("the ball renders");
@@ -206,8 +214,14 @@ fn shapes_become_fills_and_strokes() {
 
 #[test]
 fn a_fla_archive_imports_the_same() {
-    let z = crate::zip::pack::write(&[crate::zip::pack::Raw::new("DOMDocument.xml", DOC.as_bytes(), true), crate::zip::pack::Raw::new("LIBRARY/Characters/Ball.xml", BALL.as_bytes(), true)], false);
-    let dir = std::env::temp_dir().join(format!("anicraft-xfl-test-{}", std::process::id()));
+    let z = crate::zip::pack::write(
+        &[
+            crate::zip::pack::Raw::new("DOMDocument.xml", DOC.as_bytes(), true),
+            crate::zip::pack::Raw::new("LIBRARY/Characters/Ball.xml", BALL.as_bytes(), true),
+        ],
+        false,
+    );
+    let dir = std::env::temp_dir().join(format!("anima-xfl-test-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let fla = dir.join("scene.fla");
     std::fs::write(&fla, &z).unwrap();
@@ -237,7 +251,9 @@ fn hostile_packages_fail_cleanly() {
 #[test]
 fn shape_tweens_come_across_as_shape_tweens() {
     let shape = |edges: &str| {
-        format!(r##"<DOMShape><fills><FillStyle index="1"><SolidColor color="#3366FF"/></FillStyle></fills><edges><Edge fillStyle1="1" edges="{edges}"/></edges></DOMShape>"##)
+        format!(
+            r##"<DOMShape><fills><FillStyle index="1"><SolidColor color="#3366FF"/></FillStyle></fills><edges><Edge fillStyle1="1" edges="{edges}"/></edges></DOMShape>"##
+        )
     };
     let doc = format!(
         r#"<DOMDocument width="400" height="200"><timelines><DOMTimeline name="Scene 1"><layers><DOMLayer name="Morph"><frames>
@@ -251,8 +267,8 @@ fn shape_tweens_come_across_as_shape_tweens() {
     let (d, report) = import(&HashMap::from([("DOMDocument.xml", doc)])).unwrap();
     let k = &d.timeline(0).layers[0].keyframes[0];
     let t = k.tween.clone().expect("a tween");
-    assert_eq!(t.kind, anicraft_doc::TweenKind::Shape);
-    assert!(matches!(t.easing, anicraft_doc::Easing::Classic(a) if a == 40.0));
+    assert_eq!(t.kind, anima_doc::TweenKind::Shape);
+    assert!(matches!(t.easing, anima_doc::Easing::Classic(a) if a == 40.0));
     assert!(report.skipped.keys().all(|s| !s.contains("shape tween")), "{:?}", report.skipped);
     // Halfway, the square has morphed towards the triangle.
     let mid = evaluate(&d, 5).items[0].path.bounds();
@@ -309,20 +325,20 @@ fn bitmaps_come_across_when_their_image_is_png_or_jpeg() {
     let photo = doc.bitmaps[0].id;
     // An instance is a rectangle of the image's size, placed by its matrix.
     let ElementKind::Shape(sh) = &els[0].kind else { panic!() };
-    assert_eq!(sh.fill, Some(Paint::Bitmap { bitmap: photo, repeat: false, matrix: anicraft_geom::Affine::IDENTITY }));
-    assert_eq!(sh.path.bounds(), anicraft_geom::Rect::new(0.0, 0.0, 2.0, 1.0));
+    assert_eq!(sh.fill, Some(Paint::Bitmap { bitmap: photo, repeat: false, matrix: anima_geom::Affine::IDENTITY }));
+    assert_eq!(sh.path.bounds(), anima_geom::Rect::new(0.0, 0.0, 2.0, 1.0));
     assert_eq!(els[0].transform.m, [10.0, 0.0, 0.0, 10.0, 5.0, 6.0]);
     // A bitmap fill keeps its matrix, in pixels (twips scale removed), and repeats.
     let ElementKind::Shape(fill) = &els[2].kind else { panic!() };
-    assert_eq!(fill.fill, Some(Paint::Bitmap { bitmap: photo, repeat: true, matrix: anicraft_geom::Affine { m: [2.0, 0.0, 0.0, 2.0, 100.0, 50.0] } }));
+    assert_eq!(fill.fill, Some(Paint::Bitmap { bitmap: photo, repeat: true, matrix: anima_geom::Affine { m: [2.0, 0.0, 0.0, 2.0, 100.0, 50.0] } }));
     // The renderer gets the pixels with the items.
     let list = evaluate(&doc, 0);
     assert_eq!(list.items.iter().filter(|i| i.image.is_some()).count(), 3);
     // Library folders come across (ADR 0050): the item's path places it, empty ones are kept,
     // and Allow Smoothing is read (on unless the file turns it off).
-    let path = |i| doc.entry_path(anicraft_doc::LibraryEntry::Item(anicraft_doc::LibraryItem::Bitmap(i)));
+    let path = |i| doc.entry_path(anima_doc::LibraryEntry::Item(anima_doc::LibraryItem::Bitmap(i)));
     assert_eq!((path(doc.bitmaps[0].id).as_str(), path(doc.bitmaps[1].id).as_str()), ("Art/photo.png", "packed.png"));
-    let folders: Vec<String> = doc.library_tree.folders.iter().map(|f| doc.entry_path(anicraft_doc::LibraryEntry::Folder(f.id))).collect();
+    let folders: Vec<String> = doc.library_tree.folders.iter().map(|f| doc.entry_path(anima_doc::LibraryEntry::Folder(f.id))).collect();
     assert_eq!(folders, ["Art", "Empty", "Empty/Inner"]);
     assert_eq!(report.kept.get("library folders"), Some(&1));
     assert_eq!((doc.bitmaps[0].smoothing, doc.bitmaps[1].smoothing), (true, false));
@@ -333,7 +349,9 @@ fn bitmaps_come_across_when_their_image_is_png_or_jpeg() {
 /// with `first` and `second` inside the two frames.
 fn hinted_doc(first: &str, second: &str) -> &'static str {
     let shape = |edges: &str| {
-        format!(r##"<DOMShape><fills><FillStyle index="1"><SolidColor color="#3366FF"/></FillStyle></fills><edges><Edge fillStyle1="1" edges="{edges}"/></edges></DOMShape>"##)
+        format!(
+            r##"<DOMShape><fills><FillStyle index="1"><SolidColor color="#3366FF"/></FillStyle></fills><edges><Edge fillStyle1="1" edges="{edges}"/></edges></DOMShape>"##
+        )
     };
     let doc = format!(
         r#"<DOMDocument width="400" height="200"><timelines><DOMTimeline name="Scene 1"><layers><DOMLayer name="Morph"><frames>
@@ -348,23 +366,27 @@ fn hinted_doc(first: &str, second: &str) -> &'static str {
 
 #[test]
 fn shape_hints_come_across_in_either_form() {
-    use anicraft_geom::{PathCmd, Vec2};
+    use anima_geom::{PathCmd, Vec2};
     let both_in_one = hinted_doc(r#"<shapeHints><ShapeHint index="0" startPoint="0, 0" endPoint="300, 50"/></shapeHints>"#, "");
     // One list per keyframe, matched by letter; the second point a pixel off the edge snaps on.
-    let per_key = hinted_doc(r#"<shapeHints><ShapeHint name="a" x="0" y="0"/></shapeHints>"#, r#"<shapeHints><ShapeHint name="a" x="299" y="50.5"/></shapeHints>"#);
+    let per_key = hinted_doc(
+        r#"<shapeHints><ShapeHint name="a" x="0" y="0"/></shapeHints>"#,
+        r#"<shapeHints><ShapeHint name="a" x="299" y="50.5"/></shapeHints>"#,
+    );
     for doc in [both_in_one, per_key] {
         let (d, report) = import(&HashMap::from([("DOMDocument.xml", doc)])).unwrap();
         assert!(report.skipped.keys().all(|s| !s.contains("hint")), "{:?}", report.skipped);
         let l = &d.timeline(0).layers[0];
         let k = &l.keyframes[0];
         assert_eq!(k.hints.len(), 1);
-        assert!(anicraft_doc::placed_on(&k.elements, k.hints[0].start).is_some());
-        assert!(anicraft_doc::placed_on(&l.keyframes[1].elements, k.hints[0].end).is_some(), "{:?}", k.hints[0].end);
+        assert!(anima_doc::placed_on(&k.elements, k.hints[0].start).is_some());
+        assert!(anima_doc::placed_on(&l.keyframes[1].elements, k.hints[0].end).is_some(), "{:?}", k.hints[0].end);
         // Halfway the square's corner is halfway to the triangle's tip.
         let dl = evaluate(&d, 5);
         let want = Vec2::new(0.0, 0.0).lerp(k.hints[0].end, 0.5);
         let it = &dl.items[0];
-        let hit = it.path.cmds.iter().any(|c| matches!(*c, PathCmd::MoveTo(a) | PathCmd::CubicTo(_, _, a) if it.transform.apply(a).distance(want) < 0.05));
+        let hit =
+            it.path.cmds.iter().any(|c| matches!(*c, PathCmd::MoveTo(a) | PathCmd::CubicTo(_, _, a) if it.transform.apply(a).distance(want) < 0.05));
         assert!(hit, "{want:?} {:?}", it.path.cmds);
     }
 }
@@ -386,25 +408,47 @@ fn odd_shape_hints_are_reported_not_fatal() {
 
 #[test]
 fn eases_names_and_loop_modes_the_corpus_found_missing() {
-    let frame = |attrs: &str, inner: &str| format!(r#"<DOMFrame index="0" duration="4" tweenType="motion" {attrs}>{inner}<elements><DOMSymbolInstance libraryItemName="Clip" name="my clip" loop="loop reverse"/></elements></DOMFrame><DOMFrame index="4"><elements/></DOMFrame>"#);
+    let frame = |attrs: &str, inner: &str| {
+        format!(
+            r#"<DOMFrame index="0" duration="4" tweenType="motion" {attrs}>{inner}<elements><DOMSymbolInstance libraryItemName="Clip" name="my clip" loop="loop reverse"/></elements></DOMFrame><DOMFrame index="4"><elements/></DOMFrame>"#
+        )
+    };
     let pts = |p: &[(f32, f32)]| p.iter().map(|(x, y)| format!(r#"<Point x="{x}" y="{y}"/>"#)).collect::<String>();
     let layers = [
         // Seven points: a curve of two segments, exactly.
-        frame(r#"hasCustomEase="true" acceleration="30""#, &format!(r#"<tweens><CustomEase target="all">{}</CustomEase></tweens>"#, pts(&[(0.0, 0.0), (0.2, 0.0), (0.3, 0.5), (0.5, 0.5), (0.7, 0.5), (0.8, 1.0), (1.0, 1.0)]))),
+        frame(
+            r#"hasCustomEase="true" acceleration="30""#,
+            &format!(
+                r#"<tweens><CustomEase target="all">{}</CustomEase></tweens>"#,
+                pts(&[(0.0, 0.0), (0.2, 0.0), (0.3, 0.5), (0.5, 0.5), (0.7, 0.5), (0.8, 1.0), (1.0, 1.0)])
+            ),
+        ),
         // One curve per property: each its own; the slider eases the rest.
-        frame(r#"hasCustomEase="true" useSingleEaseCurve="false" acceleration="-50""#, &format!(r#"<tweens><CustomEase target="position">{0}</CustomEase><CustomEase target="rotation">{1}</CustomEase><CustomEase target="sparkle">{0}</CustomEase></tweens>"#, pts(&[(0.0, 0.0), (0.5, 0.0), (0.5, 1.0), (1.0, 1.0)]), pts(&[(0.0, 0.0), (0.1, 0.4), (0.2, 1.2), (0.4, 1.2), (0.6, 1.2), (0.9, 1.0), (1.0, 1.0)]))),
+        frame(
+            r#"hasCustomEase="true" useSingleEaseCurve="false" acceleration="-50""#,
+            &format!(
+                r#"<tweens><CustomEase target="position">{0}</CustomEase><CustomEase target="rotation">{1}</CustomEase><CustomEase target="sparkle">{0}</CustomEase></tweens>"#,
+                pts(&[(0.0, 0.0), (0.5, 0.0), (0.5, 1.0), (1.0, 1.0)]),
+                pts(&[(0.0, 0.0), (0.1, 0.4), (0.2, 1.2), (0.4, 1.2), (0.6, 1.2), (0.9, 1.0), (1.0, 1.0)])
+            ),
+        ),
         // Said to have a custom ease, with none there; and a broken point list.
         frame(r#"hasCustomEase="true""#, ""),
-        frame(r#"hasCustomEase="true" acceleration="10""#, &format!(r#"<tweens><CustomEase target="all">{}</CustomEase></tweens>"#, pts(&[(0.0, 0.0), (0.5, 0.0), (1.0, 1.0)]))),
+        frame(
+            r#"hasCustomEase="true" acceleration="10""#,
+            &format!(r#"<tweens><CustomEase target="all">{}</CustomEase></tweens>"#, pts(&[(0.0, 0.0), (0.5, 0.0), (1.0, 1.0)])),
+        ),
     ];
     let layers: String = layers.iter().map(|f| format!(r#"<DOMLayer name="L"><frames>{f}</frames></DOMLayer>"#)).collect();
-    let doc = format!(r#"<DOMDocument><symbols><Include href="Clip.xml"/></symbols><timelines><DOMTimeline name="Scene 1"><layers>{layers}</layers></DOMTimeline></timelines></DOMDocument>"#);
+    let doc = format!(
+        r#"<DOMDocument><symbols><Include href="Clip.xml"/></symbols><timelines><DOMTimeline name="Scene 1"><layers>{layers}</layers></DOMTimeline></timelines></DOMDocument>"#
+    );
     let doc: &'static str = Box::leak(doc.into_boxed_str());
     let clip = r#"<DOMSymbolItem name="Clip"><timeline><DOMTimeline name="Clip"/></timeline></DOMSymbolItem>"#;
     let (d, report) = import(&HashMap::from([("DOMDocument.xml", doc), ("LIBRARY/Clip.xml", clip)])).unwrap();
-    use anicraft_doc::{CustomEase, EaseGroup, Easing};
+    use anima_doc::{CustomEase, EaseGroup, Easing};
     let tween = |l: usize| d.timeline(0).layers[l].keyframes[0].tween.clone().unwrap();
-    let v = |p: &[(f32, f32)]| p.iter().map(|(x, y)| anicraft_geom::Vec2::new(*x, *y)).collect::<Vec<_>>();
+    let v = |p: &[(f32, f32)]| p.iter().map(|(x, y)| anima_geom::Vec2::new(*x, *y)).collect::<Vec<_>>();
     let two = CustomEase::from_flat(&v(&[(0.0, 0.0), (0.2, 0.0), (0.3, 0.5), (0.5, 0.5), (0.7, 0.5), (0.8, 1.0), (1.0, 1.0)])).unwrap();
     assert_eq!(tween(0).easing, Easing::Custom(std::sync::Arc::new(two)), "a two-segment curve, exactly");
     assert!((tween(0).easing.apply(0.5) - 0.5).abs() < 1e-5 && tween(0).easing.apply(0.25) < 0.4);
@@ -436,14 +480,19 @@ fn scripts_linkage_and_the_document_class_are_kept_not_run() {
 trace(n);]]></script></Actionscript><elements><DOMSymbolInstance libraryItemName="Hero"><Actionscript><script><![CDATA[on (release) { play(); }]]></script></Actionscript></DOMSymbolInstance></elements></DOMFrame>
         <DOMFrame index="1"><Actionscript><script><![CDATA[   ]]></script></Actionscript><elements/></DOMFrame>
       </frames></DOMLayer></layers></DOMTimeline></timelines></DOMDocument>"#;
-    let sym = |name: &str, attrs: &str| format!(r#"<DOMSymbolItem name="{name}" {attrs}><timeline><DOMTimeline name="{name}"/></timeline></DOMSymbolItem>"#);
+    let sym = |name: &str, attrs: &str| {
+        format!(r#"<DOMSymbolItem name="{name}" {attrs}><timeline><DOMTimeline name="{name}"/></timeline></DOMSymbolItem>"#)
+    };
     let leak = |s: String| -> &'static str { Box::leak(s.into_boxed_str()) };
     let settings = r#"<flash_profiles><flash_profile name="Old" current="false"><PublishFlashProperties><ActionScriptVersion>3</ActionScriptVersion><DocumentClass>Nope</DocumentClass></PublishFlashProperties></flash_profile>
       <flash_profile name="Default" current="true"><PublishFlashProperties><ActionScriptVersion>2</ActionScriptVersion><DocumentClass> com.example.Main </DocumentClass></PublishFlashProperties></flash_profile></flash_profiles>"#;
     let files = HashMap::from([
         ("DOMDocument.xml", doc),
         ("PublishSettings.xml", settings),
-        ("LIBRARY/Hero.xml", leak(sym("Hero", r#"linkageExportForAS="true" linkageClassName="com.example.Hero" linkageBaseClass="flash.display.MovieClip""#))),
+        (
+            "LIBRARY/Hero.xml",
+            leak(sym("Hero", r#"linkageExportForAS="true" linkageClassName="com.example.Hero" linkageBaseClass="flash.display.MovieClip""#)),
+        ),
         ("LIBRARY/Old.xml", leak(sym("Old", r#"linkageExportForAS="true" linkageIdentifier="oldClip""#))),
         ("LIBRARY/Bad.xml", leak(sym("Bad", r#"linkageExportForAS="true" linkageClassName="not a class""#))),
         ("LIBRARY/Off.xml", leak(sym("Off", r#"linkageExportForAS="false" linkageClassName="Off""#))),
@@ -451,7 +500,7 @@ trace(n);]]></script></Actionscript><elements><DOMSymbolInstance libraryItemName
     let (d, report) = import(&files).unwrap();
     let s = d.timeline(0).layers[0].keyframes[0].script.as_ref().and_then(|s| s.source()).unwrap();
     assert_eq!(s.text, "var n:int = 1 < 2 ? 1 : 0; // <tags> & \"quotes\"\ntrace(n);", "verbatim");
-    assert_eq!(s.language, anicraft_doc::Language::ActionScript1or2, "the current publish profile says ActionScript 2");
+    assert_eq!(s.language, anima_doc::Language::ActionScript1or2, "the current publish profile says ActionScript 2");
     assert!(d.timeline(0).layers[0].keyframes[1].script.is_none(), "a blank script is nothing");
     assert_eq!(d.document_class, "com.example.Main");
     let linkage: Vec<Option<(&str, &str)>> = d.library.iter().map(|s| s.linkage.as_ref().map(|l| (l.class.as_str(), l.base.as_str()))).collect();
@@ -502,20 +551,24 @@ fn loose_shapes_come_in_raw_and_drawing_objects_and_groups_as_groups() {
 
 #[test]
 fn stroke_caps_joints_dashes_and_dots_come_across() {
-    use anicraft_doc::{Cap, Dash, Join, StrokeStyle};
+    use anima_doc::{Cap, Dash, Join, StrokeStyle};
     let read = |xml: &str| {
         let el = crate::xml::parse(xml.as_bytes()).unwrap();
         let mut report = crate::Report::default();
         let st = crate::import::stroke(&el, &HashMap::new(), &mut report).unwrap();
         (st, report)
     };
-    let (st, report) = read(r##"<SolidStroke weight="4" caps="none" joints="miter" miterLimit="7"><fill><SolidColor color="#112233"/></fill></SolidStroke>"##);
+    let (st, report) =
+        read(r##"<SolidStroke weight="4" caps="none" joints="miter" miterLimit="7"><fill><SolidColor color="#112233"/></fill></SolidStroke>"##);
     assert_eq!((st.width, st.color), (4.0, Rgba::hex(0x112233)));
     assert_eq!(st.style, StrokeStyle { cap: Cap::Butt, join: Join::Miter, miter_limit: 7.0, dash: None });
     assert!(report.skipped.is_empty());
     // Round caps and joints and a miter limit of 3 are the format's defaults.
     assert_eq!(read(r#"<SolidStroke weight="1"/>"#).0.style, StrokeStyle::default());
-    assert_eq!(read(r#"<SolidStroke caps="square" joints="bevel" miterLimit="1e9"/>"#).0.style, StrokeStyle { cap: Cap::Square, join: Join::Bevel, miter_limit: 100.0, dash: None });
+    assert_eq!(
+        read(r#"<SolidStroke caps="square" joints="bevel" miterLimit="1e9"/>"#).0.style,
+        StrokeStyle { cap: Cap::Square, join: Join::Bevel, miter_limit: 100.0, dash: None }
+    );
     let (dashed, _) = read(r#"<DashedStroke weight="2" dash1="8" dash2="2.5" caps="square"/>"#);
     assert_eq!(dashed.style, StrokeStyle { cap: Cap::Square, dash: Dash::dashed(8.0, 2.5), ..StrokeStyle::default() });
     // No gap draws solid.
@@ -555,7 +608,7 @@ const PUSH: &str = r##"<DOMSymbolItem name="Push" symbolType="button"><timeline>
 
 #[test]
 fn sounds_in_the_package_come_across_on_frames_and_buttons_states() {
-    let wav = anicraft_doc::audio::wav::encode(8000, 1, &[0.25; 800], anicraft_doc::audio::wav::Bits::Int16);
+    let wav = anima_doc::audio::wav::encode(8000, 1, &[0.25; 800], anima_doc::audio::wav::Bits::Int16);
     let files: HashMap<String, Vec<u8>> = HashMap::from([
         ("DOMDocument.xml".to_string(), SOUND_DOC.as_bytes().to_vec()),
         ("LIBRARY/Push.xml".to_string(), PUSH.as_bytes().to_vec()),
@@ -568,27 +621,27 @@ fn sounds_in_the_package_come_across_on_frames_and_buttons_states() {
     let (doc, report) = import_with(&read).unwrap();
     assert_eq!(doc.sounds.iter().map(|s| (s.name.as_str(), s.rate, s.frames)).collect::<Vec<_>>(), [("click.wav", 8000, 800)]);
     let click = doc.sounds[0].id;
-    let path = doc.entry_path(anicraft_doc::LibraryEntry::Item(anicraft_doc::LibraryItem::Sound(click)));
+    let path = doc.entry_path(anima_doc::LibraryEntry::Item(anima_doc::LibraryItem::Sound(click)));
     assert_eq!(path, "Sounds/click.wav", "in its Library folder");
     // The main timeline's: Start, three times.
     let music = doc.timeline(0).layers[0].keyframes[0].sound.clone().unwrap();
-    assert_eq!((music.sound, music.sync, music.repeat, music.looping), (click, anicraft_doc::SoundSync::Start, 3, false));
+    assert_eq!((music.sound, music.sync, music.repeat, music.looping), (click, anima_doc::SoundSync::Start, 3, false));
     // The button's Over and Down frames keep theirs; the Hit frame's sound isn't readable.
     let push = doc.library.iter().find(|s| s.name == "Push").unwrap();
     let on = |f: u32| push.timeline.layers[0].keyframes.iter().find(|k| k.start == f).and_then(|k| k.sound.clone());
-    assert_eq!(on(1).map(|s| (s.sound, s.sync)), Some((click, anicraft_doc::SoundSync::Event)));
-    assert_eq!(on(2).map(|s| (s.sound, s.sync)), Some((click, anicraft_doc::SoundSync::Stream)));
+    assert_eq!(on(1).map(|s| (s.sound, s.sync)), Some((click, anima_doc::SoundSync::Event)));
+    assert_eq!(on(2).map(|s| (s.sound, s.sync)), Some((click, anima_doc::SoundSync::Stream)));
     assert_eq!(on(3), None);
-    assert_eq!(on(2).map(|s| s.effect), Some(anicraft_doc::sound::SoundEffect::FadeIn), "the effect comes across (ADR 0086)");
+    assert_eq!(on(2).map(|s| s.effect), Some(anima_doc::sound::SoundEffect::FadeIn), "the effect comes across (ADR 0086)");
     // Sounds that don't come across are named, with their format (ADR 0086).
-    assert_eq!(report.names.get("sounds in formats AniCraft can't decode"), Some(&vec!["private.mp3: Animate's own sound data".to_string()]));
+    assert_eq!(report.names.get("sounds in formats Ánima can't decode"), Some(&vec!["private.mp3: Animate's own sound data".to_string()]));
     assert_eq!(report.names.get("missing sound files"), Some(&vec!["gone.wav".to_string()]));
     assert_eq!(report.skipped.get("frame sounds whose sound isn't in the package"), Some(&1));
     assert!(report.summary().contains("1 missing sound files (gone.wav)"), "{}", report.summary());
     // In the player, going over the button starts its Over sound.
-    use anicraft_doc::player::{Event, NoScripts, input, start};
+    use anima_doc::player::{Event, NoScripts, input, start};
     let s = start(&doc, &mut NoScripts);
-    let s = input(&doc, &s.state, &[Event::Move(anicraft_geom::Vec2::new(10.0, 10.0))], &mut NoScripts);
+    let s = input(&doc, &s.state, &[Event::Move(anima_geom::Vec2::new(10.0, 10.0))], &mut NoScripts);
     assert_eq!(s.sounds.iter().map(|x| x.sound.sound).collect::<Vec<_>>(), [click]);
 }
 
@@ -612,14 +665,15 @@ fn hostile_sound_files_are_bounded_and_named() {
     let doc = r#"<DOMDocument><media><DOMSoundItem name="s.wav" href="s.wav" sampleCount="99999999999999" format="44kHz 16bit Stereo"/></media>
       <timelines><DOMTimeline name="Scene 1"><layers><DOMLayer name="L"><frames><DOMFrame index="0" soundName="s.wav" soundLoop="4294967295"/></frames></DOMLayer></layers></DOMTimeline></timelines></DOMDocument>"#;
     let open = |wav: Vec<u8>| {
-        let files: HashMap<String, Vec<u8>> = HashMap::from([("DOMDocument.xml".to_string(), doc.as_bytes().to_vec()), ("LIBRARY/s.wav".to_string(), wav)]);
+        let files: HashMap<String, Vec<u8>> =
+            HashMap::from([("DOMDocument.xml".to_string(), doc.as_bytes().to_vec()), ("LIBRARY/s.wav".to_string(), wav)]);
         let read = |p: &str| -> Result<Option<Vec<u8>>, XflError> { Ok(files.get(p).cloned()) };
         import_with(&read).unwrap()
     };
-    let good = anicraft_doc::audio::wav::encode(8000, 2, &[0.5; 1600], anicraft_doc::audio::wav::Bits::Int16);
+    let good = anima_doc::audio::wav::encode(8000, 2, &[0.5; 1600], anima_doc::audio::wav::Bits::Int16);
     let (d, _) = open(good.clone());
     assert_eq!(d.sounds[0].frames, 800);
-    assert_eq!(d.timeline(0).layers[0].keyframes[0].sound.as_ref().unwrap().repeat, anicraft_doc::sound::MAX_REPEAT, "repeats bounded");
+    assert_eq!(d.timeline(0).layers[0].keyframes[0].sound.as_ref().unwrap().repeat, anima_doc::sound::MAX_REPEAT, "repeats bounded");
     // Every cut: read for what it holds, or named.
     for cut in 0..good.len() {
         let (d, r) = open(good[..cut].to_vec());
@@ -638,7 +692,7 @@ fn hostile_sound_files_are_bounded_and_named() {
     wide[32..34].copy_from_slice(&64u16.to_le_bytes());
     wide.truncate(44 + 10);
     let (d, r) = open(wide);
-    assert!(d.sounds.is_empty() && r.skipped.get("sounds in formats AniCraft can't decode") == Some(&1), "{r:?}");
+    assert!(d.sounds.is_empty() && r.skipped.get("sounds in formats Ánima can't decode") == Some(&1), "{r:?}");
 }
 
 /// ADR 0086: the report names what didn't come across, a few per kind in the summary line.

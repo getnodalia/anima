@@ -49,7 +49,7 @@ same order) and by observation. No Adobe code or asset was used.
    list, switches included; at most 200. **Applying copies the list** onto the instances,
    replacing theirs (Animate's behaviour): a preset changed or deleted later never changes
    artwork, and documents need nothing extra to open elsewhere. The file is
-   `{"format": "anicraft-filter-presets", "version": 1, "presets": [...]}`, at most 1 MB;
+   `{"format": "anima-filter-presets", "version": 1, "presets": [...]}`, at most 1 MB;
    importing skips bad entries, clamps values and numbers clashing names ("Glow 2").
 5. **Destructive tiers (ADR 0004).** Deleting a preset, saving over one, and exporting over a
    file are irreversible, so the engine asks (`"confirm": true` headless). Everything that

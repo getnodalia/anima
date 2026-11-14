@@ -15,8 +15,8 @@
 //! place (ADR 0045) points are mapped there and back, so they line up with what the stage shows.
 
 use crate::Session;
-use anicraft_doc::GuideAxis;
-use anicraft_geom::Vec2;
+use anima_doc::GuideAxis;
+use anima_geom::Vec2;
 use serde::{Deserialize, Serialize};
 
 /// How near a point must come to a guide or a grid line to snap to it (Animate's Snap
@@ -70,7 +70,7 @@ impl Accuracy {
 /// Whether the rulers, grid and guides show and snap (View › Rulers, Grid, Guides, Snapping):
 /// the editor's working preferences, kept from session to session by the editor and never in
 /// the document or its undo history (ADR 0076). How the grid and guides look, and where the
-/// guides are, is the document's (`anicraft_doc::Aids`, `Scene::guides`).
+/// guides are, is the document's (`anima_doc::Aids`, `Scene::guides`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ViewAids {
@@ -89,7 +89,17 @@ pub struct ViewAids {
 impl Default for ViewAids {
     fn default() -> Self {
         // As in Animate: guides show and snap; the rulers, grid and pixel snapping are off.
-        ViewAids { rulers: false, show_grid: false, show_guides: true, lock_guides: false, snap_grid: false, snap_guides: true, snap_pixels: false, grid_accuracy: Accuracy::Normal, guide_accuracy: Accuracy::Normal }
+        ViewAids {
+            rulers: false,
+            show_grid: false,
+            show_guides: true,
+            lock_guides: false,
+            snap_grid: false,
+            snap_guides: true,
+            snap_pixels: false,
+            grid_accuracy: Accuracy::Normal,
+            guide_accuracy: Accuracy::Normal,
+        }
     }
 }
 
@@ -153,7 +163,7 @@ impl Session {
     }
 
     /// The scene's guides (the main timeline's, also while a symbol is open).
-    pub fn guides(&self) -> &[anicraft_doc::Guide] {
+    pub fn guides(&self) -> &[anima_doc::Guide] {
         self.doc.scenes.get(self.scene).map_or(&[], |sc| &sc.guides[..])
     }
 }
@@ -223,7 +233,7 @@ pub(crate) fn resolve(s: &Session, p: Vec2, r: f32, objects: Option<&dyn ObjectT
 mod tests {
     use super::*;
     use crate::Session;
-    use anicraft_doc::{Document, Guide};
+    use anima_doc::{Document, Guide};
     use std::sync::Arc;
 
     fn session(guides: &[Guide]) -> Session {
@@ -247,7 +257,8 @@ mod tests {
     fn the_radius_follows_the_zoom() {
         // The shell asks for 10 screen pixels: 10 / zoom stage pixels.
         let s = session(&[Guide { axis: GuideAxis::Vertical, at: 100.0 }]);
-        for (zoom, off, snaps) in [(1.0, 8.0, true), (1.0, 12.0, false), (4.0, 2.0, true), (4.0, 3.0, false), (0.25, 39.0, true), (0.25, 41.0, false)] {
+        for (zoom, off, snaps) in [(1.0, 8.0, true), (1.0, 12.0, false), (4.0, 2.0, true), (4.0, 3.0, false), (0.25, 39.0, true), (0.25, 41.0, false)]
+        {
             let r = 10.0 / zoom;
             assert_eq!(resolve(&s, Vec2::new(100.0 + off, 0.0), r, None).is_some(), snaps, "zoom {zoom}, {off} px off");
         }

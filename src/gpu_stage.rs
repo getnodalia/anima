@@ -1,5 +1,5 @@
 //! The GPU stage switch (ADR 0019, ADR 0029, ADR 0032). With the `gpu-stage` feature (on by
-//! default), the stage is drawn by the wgpu renderer (`anicraft-gpu`) unless Preferences ›
+//! default), the stage is drawn by the wgpu renderer (`anima-gpu`) unless Preferences ›
 //! Stage › Renderer chooses the CPU: it starts off the UI thread (the CPU draws until it is
 //! ready), draws masks, groups, blend modes, bitmaps and filters, and the CPU oracle draws a
 //! tile it can't (nesting or bitmap counts past its limits) and everything when the GPU is
@@ -22,11 +22,11 @@
 //! count afresh. When the window's own device was lost there is nothing to retry on: the window
 //! closes to open again another way (`gpu_watch`).
 //!
-//! `ANICRAFT_STAGE_RENDERER=gpu|cpu` overrides the preference (also in `--screenshot` runs,
+//! `ANIMA_STAGE_RENDERER=gpu|cpu` overrides the preference (also in `--screenshot` runs,
 //! which otherwise use default preferences).
 
 use crate::prefs::StageRenderer;
-use anicraft_engine::render_service::{NativeImage, RenderService};
+use anima_engine::render_service::{NativeImage, RenderService};
 
 /// Where the GPU stage is.
 #[derive(Clone, Debug, PartialEq)]
@@ -36,12 +36,18 @@ pub enum State {
     Off,
     Starting,
     /// Drawing, on this adapter; `direct` when straight into the window's textures.
-    Running { adapter: String, direct: bool },
+    Running {
+        adapter: String,
+        direct: bool,
+    },
     /// Could not start; the CPU draws. The reason, for Preferences.
     Failed(String),
     /// Stopped working mid-session (ADR 0092); the CPU draws. Why, and when the GPU is tried
     /// again (app time, seconds; `None`: not again this session).
-    Stopped { why: String, retry_at: Option<f64> },
+    Stopped {
+        why: String,
+        retry_at: Option<f64>,
+    },
 }
 
 /// What happened to the GPU stage this frame, for the status bar.
@@ -118,7 +124,7 @@ pub const AVAILABLE: bool = cfg!(gpu_stage);
 
 /// The renderer the user asked for, after the environment override.
 pub fn wanted(pref: StageRenderer) -> StageRenderer {
-    match std::env::var("ANICRAFT_STAGE_RENDERER").ok().map(|v| v.to_ascii_lowercase()).as_deref() {
+    match std::env::var("ANIMA_STAGE_RENDERER").ok().map(|v| v.to_ascii_lowercase()).as_deref() {
         Some("gpu") => StageRenderer::Gpu,
         Some("cpu") => StageRenderer::Cpu,
         _ => pref,
@@ -187,8 +193,13 @@ impl GpuStage {
 /// The status bar's words for a notice.
 pub fn notice_text(n: &Notice) -> String {
     match n {
-        Notice::Stopped { retry_in: Some(s) } => tr!("The graphics card stopped drawing the stage, so the CPU draws it now; AniCraft tries the graphics card again in {seconds} s.", seconds = s.round() as u32),
-        Notice::Stopped { retry_in: None } => tr!("The graphics card stopped drawing the stage, so the CPU draws it for the rest of this session.").into(),
+        Notice::Stopped { retry_in: Some(s) } => tr!(
+            "The graphics card stopped drawing the stage, so the CPU draws it now; Ánima tries the graphics card again in {seconds} s.",
+            seconds = s.round() as u32
+        ),
+        Notice::Stopped { retry_in: None } => {
+            tr!("The graphics card stopped drawing the stage, so the CPU draws it for the rest of this session.").into()
+        }
         Notice::Back => tr!("The graphics card draws the stage again.").into(),
     }
 }
@@ -196,8 +207,8 @@ pub fn notice_text(n: &Notice) -> String {
 #[cfg(gpu_stage)]
 mod imp {
     use super::{NativeTile, Notice, Retry, State};
-    use anicraft_engine::render_service::{NativeImage, Raster, Rasterizer, RenderService};
-    use anicraft_gpu::{GpuError, GpuRenderer, GpuTexture, Output};
+    use anima_engine::render_service::{NativeImage, Raster, Rasterizer, RenderService};
+    use anima_gpu::{GpuError, GpuRenderer, GpuTexture, Output};
     use eframe::egui_wgpu::{RenderState, Renderer};
     use std::sync::{Arc, mpsc};
 
@@ -359,7 +370,7 @@ mod imp {
                 let c = ctx.clone();
                 let window = self.window.clone();
                 let starter = self.starter.clone();
-                let spawned = std::thread::Builder::new().name("anicraft-gpu-start".into()).spawn(move || {
+                let spawned = std::thread::Builder::new().name("anima-gpu-start".into()).spawn(move || {
                     let _ = tx.send(starter(window));
                     c.request_repaint();
                 });
@@ -415,7 +426,7 @@ mod imp {
     fn retry_line(retry_at: Option<f64>, now: f64) -> String {
         match retry_at {
             Some(t) => format!("trying the GPU again in {:.0} s", t - now), // i18n-exempt: log text
-            None => "not trying the GPU again this session".into(), // i18n-exempt: log text
+            None => "not trying the GPU again this session".into(),         // i18n-exempt: log text
         }
     }
 
@@ -424,8 +435,8 @@ mod imp {
     #[cfg(test)]
     mod tests {
         use super::*;
-        use anicraft_engine::doc::sample;
-        use anicraft_engine::render_service::DEFAULT_CACHE_BYTES;
+        use anima_engine::doc::sample;
+        use anima_engine::render_service::DEFAULT_CACHE_BYTES;
         use std::sync::Mutex;
         use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
@@ -454,7 +465,7 @@ mod imp {
                     if let Some(e) = self.broken() {
                         return Err(format!("GPU error: {e}"));
                     }
-                    let (p, st) = anicraft_engine::render::render(dl, view).map_err(|e| e.to_string())?;
+                    let (p, st) = anima_engine::render::render(dl, view).map_err(|e| e.to_string())?;
                     Ok((Raster::Premul8(p.to_premul_rgba8()), st))
                 })
             }
@@ -509,7 +520,7 @@ mod imp {
 
         fn draws_on_gpu(svc: &RenderService) -> bool {
             let doc = sample::demo();
-            let view = anicraft_engine::render::View::stage(&doc, 0.25);
+            let view = anima_engine::render::View::stage(&doc, 0.25);
             // A new document state each time, so no cached picture answers.
             static STATE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
             let state = STATE.fetch_add(1, Ordering::SeqCst);
@@ -555,7 +566,11 @@ mod imp {
             START_FAILS.store(true, Ordering::SeqCst);
             assert!(settle(&mut m, &svc, &ctx, 22.0, (1024, 600)).is_empty());
             assert_eq!(STARTS.load(Ordering::SeqCst), 3, "the resize brought it forward");
-            assert!(matches!(&m.state, State::Stopped { retry_at: Some(t), .. } if (*t - (22.0 + super::super::RETRY_SECS[2])).abs() < 1e-9), "{:?}", m.state);
+            assert!(
+                matches!(&m.state, State::Stopped { retry_at: Some(t), .. } if (*t - (22.0 + super::super::RETRY_SECS[2])).abs() < 1e-9),
+                "{:?}",
+                m.state
+            );
             assert!(!svc.has_rasterizer());
         }
 

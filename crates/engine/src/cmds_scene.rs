@@ -3,7 +3,7 @@
 
 use crate::params::*;
 use crate::{CommandSpec, EngineError, Result, Session};
-use anicraft_doc::{Element, ElementId, Keyframe, Layer, LayerId, MAX_SCENES, Scene, Timeline};
+use anima_doc::{Element, ElementId, Keyframe, Layer, LayerId, MAX_SCENES, Scene, Timeline};
 use serde_json::{Value, json};
 use std::sync::Arc;
 
@@ -26,7 +26,10 @@ pub fn specs() -> Vec<CommandSpec> {
 pub(crate) fn target_scene(s: &Session, p: &Value) -> Result<usize> {
     match opt_u64(p, "scene")? {
         None => Ok(s.scene),
-        Some(i) => usize::try_from(i).ok().filter(|i| *i < s.doc.scenes.len()).ok_or_else(|| EngineError::Param(format!("there is no scene {} (the movie has {})", i + 1, s.doc.scenes.len()))),
+        Some(i) => usize::try_from(i)
+            .ok()
+            .filter(|i| *i < s.doc.scenes.len())
+            .ok_or_else(|| EngineError::Param(format!("there is no scene {} (the movie has {})", i + 1, s.doc.scenes.len()))),
     }
 }
 

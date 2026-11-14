@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Builds the web editor into web/ (ADR 0036, docs/web.md): index.html, anicraft.js,
-# anicraft_bg.wasm and the page icon. Everything in web/ is generated (git-ignored); serve the
+# Builds the web editor into web/ (ADR 0036, docs/web.md): index.html, anima.js,
+# anima_bg.wasm and the page icon. Everything in web/ is generated (git-ignored); serve the
 # folder with any static web server.
 #
 # Needs the wasm32-unknown-unknown target and the wasm-bindgen CLI at the version Cargo.lock
@@ -33,22 +33,22 @@ if command -v rustup >/dev/null && ! rustup target list --installed | grep -qx w
   exit 1
 fi
 
-cargo build -p anicraft --bin anicraft --target wasm32-unknown-unknown --profile "$PROFILE"
+cargo build -p anima --bin anima --target wasm32-unknown-unknown --profile "$PROFILE"
 
 TARGET_DIR="${CARGO_TARGET_DIR:-$ROOT/target}"
 DIR="$PROFILE"
 [[ "$PROFILE" = dev ]] && DIR=debug
-WASM="$TARGET_DIR/wasm32-unknown-unknown/$DIR/anicraft.wasm"
+WASM="$TARGET_DIR/wasm32-unknown-unknown/$DIR/anima.wasm"
 OUT="$ROOT/web"
 rm -rf "$OUT"
 mkdir -p "$OUT"
-wasm-bindgen --target web --no-typescript --out-dir "$OUT" --out-name anicraft "$WASM"
+wasm-bindgen --target web --no-typescript --out-dir "$OUT" --out-name anima "$WASM"
 cp packaging/web/index.html "$OUT/index.html"
-cp assets/app-icon/hicolor/128x128/apps/ai.storyteller.anicraft.png "$OUT/anicraft.png"
+cp assets/app-icon/hicolor/128x128/apps/dev.danielmiguelt.Anima.png "$OUT/anima.png"
 # The user guide beside the editor: Help › User Guide opens guide/index.html (ADR 0069).
-cargo run -q -p anicraft-cli -- guide --out "$OUT/guide"
+cargo run -q -p anima-cli -- guide --out "$OUT/guide"
 
-BYTES="$(wc -c <"$OUT/anicraft_bg.wasm" | tr -d ' ')"
-GZIP="$(gzip -9 -c "$OUT/anicraft_bg.wasm" | wc -c | tr -d ' ')"
-echo "web/ is ready: anicraft_bg.wasm is $((BYTES / 1024)) KB ($((GZIP / 1024)) KB gzipped)."
+BYTES="$(wc -c <"$OUT/anima_bg.wasm" | tr -d ' ')"
+GZIP="$(gzip -9 -c "$OUT/anima_bg.wasm" | wc -c | tr -d ' ')"
+echo "web/ is ready: anima_bg.wasm is $((BYTES / 1024)) KB ($((GZIP / 1024)) KB gzipped)."
 echo "Serve it locally, for example: python3 -m http.server --directory web 8080  (then open http://localhost:8080)"

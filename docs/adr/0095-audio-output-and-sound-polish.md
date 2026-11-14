@@ -26,7 +26,7 @@ need when timing to sound:
 
 ## Decision
 
-**The player** (`anicraft-audio`, L0, still pure):
+**The player** (`anima-audio`, L0, still pure):
 
 * **Tails.** `Player::wrap(from)` (a loop going round) and `Player::finish()` (the playhead
   stopped by itself) move every event voice sounding at the playhead onto a second clock as a
@@ -47,7 +47,7 @@ need when timing to sound:
 real one is cpal's default device; tests use a fake that the test pulls buffers from and whose
 clock it sets, so no CI run needs a device. On open failure or a stream error other than a
 reroute, sound goes silent, the reason is said **once** (status bar notice and an
-`anicraft: sound:` line on stderr), playback carries on on the wall clock, and the next play
+`anima: sound:` line on stderr), playback carries on on the wall clock, and the next play
 tries again (at most every 2 s); a new rate re-lays the voices. A rerouted default device
 (cpal's `DeviceChanged`) just keeps playing.
 

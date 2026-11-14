@@ -16,9 +16,9 @@ mod golden;
 #[path = "../../xfl/tests/support/fla.rs"]
 mod pack;
 
-use anicraft_engine::Session;
-use anicraft_engine::doc::Document;
-use anicraft_engine::text::Fonts;
+use anima_engine::Session;
+use anima_engine::doc::Document;
+use anima_engine::text::Fonts;
 use serde_json::json;
 use std::path::{Path, PathBuf};
 
@@ -153,26 +153,31 @@ const PROBES: &[(&str, u32, f32, f32, u32)] = &[
 
 fn import(case: &str) -> Document {
     let dir = corpus().join(case);
-    let read = |p: &str| -> Result<Option<Vec<u8>>, anicraft_xfl::XflError> {
+    let read = |p: &str| -> Result<Option<Vec<u8>>, anima_xfl::XflError> {
         match std::fs::read(dir.join(p)) {
             Ok(b) => Ok(Some(b)),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
             Err(e) => Err(e.into()),
         }
     };
-    anicraft_xfl::import_with_fonts(&read, &Fonts::from_faces(Vec::new())).unwrap_or_else(|e| panic!("{case}: {e}")).0
+    anima_xfl::import_with_fonts(&read, &Fonts::from_faces(Vec::new())).unwrap_or_else(|e| panic!("{case}: {e}")).0
 }
 
 fn render(doc: &Document, frame: u32) -> (u32, u32, Vec<u8>) {
-    let pm = anicraft_render::render_frame(doc, frame, SCALE).unwrap();
+    let pm = anima_render::render_frame(doc, frame, SCALE).unwrap();
     (pm.width, pm.height, pm.to_rgba8())
 }
 
 #[test]
 fn every_package_has_golden_frames() {
-    let mut cases: Vec<String> = std::fs::read_dir(corpus()).unwrap().flatten().filter(|e| e.path().is_dir()).map(|e| e.file_name().to_string_lossy().into_owned()).collect();
+    let mut cases: Vec<String> =
+        std::fs::read_dir(corpus()).unwrap().flatten().filter(|e| e.path().is_dir()).map(|e| e.file_name().to_string_lossy().into_owned()).collect();
     cases.sort();
-    assert_eq!(cases, FRAMES.iter().map(|(c, _)| *c).collect::<Vec<_>>(), "give the new package its frames here and its report in crates/xfl/tests/corpus.rs");
+    assert_eq!(
+        cases,
+        FRAMES.iter().map(|(c, _)| *c).collect::<Vec<_>>(),
+        "give the new package its frames here and its report in crates/xfl/tests/corpus.rs"
+    );
 }
 
 #[test]
@@ -207,7 +212,10 @@ fn corpus_frames_show_what_the_files_describe() {
         let got = &rgba[i..i + 3];
         let want = [(want >> 16) as u8, (want >> 8) as u8, want as u8];
         if got.iter().zip(want).any(|(g, w)| g.abs_diff(w) > 6) {
-            wrong.push(format!("{case} frame {frame} at ({x}, {y}): #{:02X}{:02X}{:02X}, want #{:02X}{:02X}{:02X}", got[0], got[1], got[2], want[0], want[1], want[2]));
+            wrong.push(format!(
+                "{case} frame {frame} at ({x}, {y}): #{:02X}{:02X}{:02X}, want #{:02X}{:02X}{:02X}",
+                got[0], got[1], got[2], want[0], want[1], want[2]
+            ));
         }
     }
     assert!(wrong.is_empty(), "{}", wrong.join("\n"));
@@ -224,7 +232,7 @@ fn every_package_opens_with_file_open_and_round_trips_through_the_file_format() 
         let info = s.execute("file.open", &json!({"path": corpus().join(case).display().to_string()})).unwrap_or_else(|e| panic!("{case}: {e}"));
         assert!(info["imported"].is_string(), "{case}: {info}");
         assert!(s.path.is_none(), "an imported document is untitled");
-        let path = dir.join(format!("{case}.anicraft"));
+        let path = dir.join(format!("{case}.anima"));
         // A rerun saves over the last run's file, which asks first (ADR 0004).
         s.execute("file.save", &json!({"path": path.display().to_string(), "confirm": true})).unwrap();
         let mut t = Session::default();
@@ -244,7 +252,16 @@ fn raw_shapes_open_raw_merged_and_unchanged_to_the_eye() {
     for (case, frames) in FRAMES.iter().filter(|(c, _)| !matches!(*c, "text" | "textfields")) {
         let mut s = Session::default();
         let info = s.execute("file.open", &json!({"path": corpus().join(case).display().to_string()})).unwrap_or_else(|e| panic!("{case}: {e}"));
-        let raw = s.doc.scenes.iter().flat_map(|sc| sc.timeline.layers.iter()).chain(s.doc.library.iter().flat_map(|sym| sym.timeline.layers.iter())).flat_map(|l| l.keyframes.iter()).flat_map(|k| k.elements.iter()).filter(|e| matches!(&e.kind, anicraft_engine::doc::ElementKind::Shape(sh) if sh.merge)).count();
+        let raw = s
+            .doc
+            .scenes
+            .iter()
+            .flat_map(|sc| sc.timeline.layers.iter())
+            .chain(s.doc.library.iter().flat_map(|sym| sym.timeline.layers.iter()))
+            .flat_map(|l| l.keyframes.iter())
+            .flat_map(|k| k.elements.iter())
+            .filter(|e| matches!(&e.kind, anima_engine::doc::ElementKind::Shape(sh) if sh.merge))
+            .count();
         raw_total += raw;
         // (Keyframes a tween joins keep their shapes as they came.)
         merged_total += info["merged_keyframes"].as_u64().unwrap_or(0);
@@ -275,7 +292,8 @@ fn every_package_opens_from_a_fla_with_the_same_golden_frames() {
         let want = s.execute("file.open", &json!({"path": folder.display().to_string()})).unwrap_or_else(|e| panic!("{case}: {e}"));
         // Animate's own pointer file inside the folder opens it too.
         let mut x = Session::default();
-        x.execute("file.open", &json!({"path": folder.join(format!("{case}.xfl")).display().to_string()})).unwrap_or_else(|e| panic!("{case}.xfl: {e}"));
+        x.execute("file.open", &json!({"path": folder.join(format!("{case}.xfl")).display().to_string()}))
+            .unwrap_or_else(|e| panic!("{case}.xfl: {e}"));
         assert!(x.doc == s.doc, "{case}: the .xfl opens differently from its folder");
         let files = pack::package(&folder);
         for (n, v) in pack::VARIANTS.iter().enumerate() {
@@ -290,7 +308,7 @@ fn every_package_opens_from_a_fla_with_the_same_golden_frames() {
         // The goldens (imported without fonts, as they were made), rendered from the .fla in
         // its most unusual layout.
         let fla = pack::pack(&files, &pack::VARIANTS[pack::VARIANTS.len() - 1]);
-        let (doc, _) = anicraft_xfl::import_fla_with_fonts(&fla, &Fonts::from_faces(Vec::new())).unwrap_or_else(|e| panic!("{case}: {e}"));
+        let (doc, _) = anima_xfl::import_fla_with_fonts(&fla, &Fonts::from_faces(Vec::new())).unwrap_or_else(|e| panic!("{case}: {e}"));
         for &f in *frames {
             let (w, h, rgba) = render(&doc, f);
             let golden = corpus().join(case).join("golden").join(format!("frame-{f:03}.png"));
@@ -300,9 +318,16 @@ fn every_package_opens_from_a_fla_with_the_same_golden_frames() {
             checked += 1;
         }
     }
-    assert!(failures.is_empty(), "{} of {checked} .fla frames differ from their goldens:
-{}", failures.len(), failures.join("
-"));
+    assert!(
+        failures.is_empty(),
+        "{} of {checked} .fla frames differ from their goldens:
+{}",
+        failures.len(),
+        failures.join(
+            "
+"
+        )
+    );
 }
 
 /// #226: each package as a `.fla` opens as the same document through every way in: File › Open,
@@ -311,7 +336,7 @@ fn every_package_opens_from_a_fla_with_the_same_golden_frames() {
 /// `file.open`), an upper-case extension, and a file a web browser hands over (`vfs`).
 #[test]
 fn every_entry_point_opens_the_corpus_as_a_fla() {
-    use anicraft_engine::cmds_drop::{DropAction, DropKind, DropTarget, kind_of, route};
+    use anima_engine::cmds_drop::{DropAction, DropKind, DropTarget, kind_of, route};
     let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join("xfl-corpus-entry-points");
     std::fs::create_dir_all(&dir).unwrap();
     for (case, _) in FRAMES {
@@ -347,8 +372,8 @@ fn every_entry_point_opens_the_corpus_as_a_fla() {
         // In a browser the file arrives in memory, on the thread that opens it (ADR 0036).
         let (name, data, want) = (format!("{case}.fla"), bytes.clone(), s.doc.clone());
         std::thread::spawn(move || {
-            anicraft_engine::vfs::use_memory();
-            anicraft_engine::vfs::put(Path::new(&name), data).unwrap();
+            anima_engine::vfs::use_memory();
+            anima_engine::vfs::put(Path::new(&name), data).unwrap();
             let mut w = Session::default();
             w.execute("file.open", &json!({"path": name})).unwrap_or_else(|e| panic!("{name} in a browser: {e}"));
             assert!(w.doc == want, "{name}: opens differently in a browser");
@@ -365,9 +390,13 @@ fn file_open_names_the_sounds_and_videos_that_did_not_come_across() {
     let mut s = Session::default();
     let got = s.execute("file.open", &json!({"path": corpus().join("sounds").display().to_string()})).unwrap();
     assert_eq!(got["named"]["missing sound files"], json!(["lost.wav"]));
-    assert!(got["report"].as_str().unwrap().contains("2 sounds in formats AniCraft can't decode (theme.aif: AIFF; Sounds/loop: Animate's own sound data)"), "{}", got["report"]);
+    assert!(
+        got["report"].as_str().unwrap().contains("2 sounds in formats Ánima can't decode (theme.aif: AIFF; Sounds/loop: Animate's own sound data)"),
+        "{}",
+        got["report"]
+    );
     assert_eq!(s.doc.sounds.len(), 3);
     assert!(s.doc.sounds.iter().all(|x| x.decoded().is_some_and(|d| d.pcm.frames() > 0)), "waveforms ready to draw");
     let got = s.execute("file.open", &json!({"path": corpus().join("video").display().to_string(), "confirm": true})).unwrap();
-    assert_eq!(got["named"]["videos AniCraft can't play"], json!(["intro.flv: FLV, On2 VP6, 4.5 s", "gone.mp4: its file is missing, 1.0 s"]));
+    assert_eq!(got["named"]["videos Ánima can't play"], json!(["intro.flv: FLV, On2 VP6, 4.5 s", "gone.mp4: its file is missing, 1.0 s"]));
 }

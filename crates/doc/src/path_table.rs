@@ -8,7 +8,7 @@
 //! Outside those scopes, paths serialize inline, so documents embedded in other JSON still work.
 
 use crate::{Document, ElementKind};
-use anicraft_geom::Path;
+use anima_geom::Path;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -107,7 +107,9 @@ pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Arc<Path>, D::Erro
     match Repr::deserialize(d)? {
         Repr::Inline(p) => Ok(Arc::new(p)),
         Repr::Ref(i) => CTX.with(|c| match &*c.borrow() {
-            Some(Ctx::Read { paths }) => paths.get(i as usize).cloned().ok_or_else(|| serde::de::Error::custom(format!("path reference {i} is out of range"))),
+            Some(Ctx::Read { paths }) => {
+                paths.get(i as usize).cloned().ok_or_else(|| serde::de::Error::custom(format!("path reference {i} is out of range")))
+            }
             _ => Err(serde::de::Error::custom("path reference outside a path table")),
         }),
     }

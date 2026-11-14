@@ -1,11 +1,11 @@
 //! Star Field: scatters stars of varied size, angle and brightness over the stage, on a new
 //! layer by default. A generator: it needs no selection. The seed makes it repeatable.
 
-use anicraft_plugin_sdk::{self as ac, Rng};
+use anima_plugin_sdk::{self as ac, Rng};
 use serde_json::{Value, json};
 
 const MANIFEST: &str = r##"{
-  "id": "org.anicraft.star-field",
+  "id": "org.anima.star-field",
   "name": "Star Field",
   "version": "1.0.0",
   "kind": "command",

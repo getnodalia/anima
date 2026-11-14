@@ -6,7 +6,7 @@ use crate::Pcm;
 use std::sync::Arc;
 
 /// How a voice relates to the timeline (Animate's sync modes reduce to these two once the
-/// timeline is laid out; see `anicraft_doc::sound`).
+/// timeline is laid out; see `anima_doc::sound`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VoiceKind {
     /// Starts when its keyframe is reached and plays on its own: playback that starts after

@@ -93,7 +93,7 @@ tool allowed to drag from a shape's bone end onto an instance. It is its own ADR
 
 ## Consequences
 
-* Files without slides or springs are written exactly as before; an older AniCraft ignores the
+* Files without slides or springs are written exactly as before; an older Ánima ignores the
   new fields and plays the keyed poses without slides or springs (the file holds the keyed
   poses, and each keyframe's elements as posed).
 * Evaluating a sprung armature costs a replay of up to six seconds of its motion per frame;

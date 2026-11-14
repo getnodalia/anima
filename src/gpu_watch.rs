@@ -10,7 +10,7 @@
 //!
 //! Each frame the app reads the news ([`take_news`], [`tick`]):
 //! * **an error** the driver reported: unsaved work is autosaved at once and the status bar says
-//!   AniCraft carried on (once a minute at most); the log has the details;
+//!   Ánima carried on (once a minute at most); the log has the details;
 //! * **the device lost**, or the surface failing for [`STUCK_SECS`] on end: nothing can draw on
 //!   this device again (eframe can't make a new one), so the work is autosaved one last time,
 //!   the startup record ([`crate::startup::lost_mid_session`]) makes the next starts try another
@@ -72,7 +72,7 @@ pub fn record_error(text: &str) {
         h.errors
     });
     if n <= LOG_FIRST || n.is_multiple_of(LOG_EVERY) {
-        crate::startup::line(&format!("graphics error {n} (AniCraft carried on): {}", text.trim()));
+        crate::startup::line(&format!("graphics error {n} (Ánima carried on): {}", text.trim()));
     }
 }
 
@@ -150,11 +150,14 @@ pub fn on_surface_status(status: &eframe::wgpu::CurrentSurfaceTexture) -> eframe
     let recreate = matches!(action, eframe::egui_wgpu::SurfaceErrorAction::RecreateSurface);
     // The first of a run, and each new surface: a failing surface would otherwise log a line a frame.
     if (s == Surface::Validation && in_a_row <= 1) || recreate {
-        crate::startup::line(&format!("the window's surface: {s:?}, {} ({in_a_row} in a row)", match action {
-            eframe::egui_wgpu::SurfaceErrorAction::Reconfigure => "reconfiguring it", // i18n-exempt: log text
-            eframe::egui_wgpu::SurfaceErrorAction::RecreateSurface => "making it anew", // i18n-exempt: log text
-            eframe::egui_wgpu::SurfaceErrorAction::SkipFrame => "skipping the frame", // i18n-exempt: log text
-        }));
+        crate::startup::line(&format!(
+            "the window's surface: {s:?}, {} ({in_a_row} in a row)",
+            match action {
+                eframe::egui_wgpu::SurfaceErrorAction::Reconfigure => "reconfiguring it", // i18n-exempt: log text
+                eframe::egui_wgpu::SurfaceErrorAction::RecreateSurface => "making it anew", // i18n-exempt: log text
+                eframe::egui_wgpu::SurfaceErrorAction::SkipFrame => "skipping the frame", // i18n-exempt: log text
+            }
+        ));
     }
     if in_a_row >= RECREATE_AFTER {
         with(|h| h.in_a_row = 0);
@@ -231,7 +234,7 @@ pub fn tick(app: &mut crate::app::App, ctx: &egui::Context) {
         ctx.request_repaint_after(Duration::from_millis(500));
     }
     if news.error.is_some() && news.gone.is_none() && app.shot.is_none() && notice_due(ctx.input(|i| i.time)) {
-        app.status_err(tr!("The graphics driver reported a problem; AniCraft carried on and autosaved your work (the details are in anicraft.log)."));
+        app.status_err(tr!("The graphics driver reported a problem; Ánima carried on and autosaved your work (the details are in anima.log)."));
     }
     let Some(why) = news.gone else { return };
     crate::startup::line(&format!("closing the window to open it again another way ({why})"));

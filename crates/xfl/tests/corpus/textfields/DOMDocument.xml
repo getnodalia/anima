@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AniCraft XFL corpus: text fields (ADR 0066). A dynamic score field with a border, an input
+<!-- Ánima XFL corpus: text fields (ADR 0066). A dynamic score field with a border, an input
      field for a name with a maximum length, a multiline input field, a password field that
      keeps an ActionScript 2.0 variable name, and a frame script that sets the score and reads
      the name. Fields keep their boxes, borders and instance names; the golden render imports

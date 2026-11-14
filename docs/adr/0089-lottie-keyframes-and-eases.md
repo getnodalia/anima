@@ -9,11 +9,11 @@
 
 Lottie export was frame-accurate: every frame was evaluated, artwork that persisted became one
 shape layer with its outline baked into stage space, and whatever changed was written as a hold
-key at every frame where it changed. Any player showed AniCraft's frames exactly, but a tween
+key at every frame where it changed. Any player showed Ánima's frames exactly, but a tween
 became a full outline per frame (the demo was 53 kB for two seconds), and players that draw
 between frames (60 Hz screens) showed the motion stepping at the movie's frame rate. Lottie has
 its own keyframes, eased by one cubic Bézier per key pair (`o`/`i` handles, the public Lottie
-format description), and AniCraft's eases (ADR 0081) are, for most presets, exactly such cubics
+format description), and Ánima's eases (ADR 0081) are, for most presets, exactly such cubics
 or a few of them.
 
 ## Decision

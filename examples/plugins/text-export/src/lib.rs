@@ -1,15 +1,15 @@
 //! Plain Text Frames: an exporter plug-in. It writes the movie as a small, readable text file,
 //! one block per frame: the shapes on it, where they are and how they are painted, and with
 //! Detail › Paths their outlines as SVG path data. Handy for diffing animations in version
-//! control, and a template for any export format: AniCraft hands it evaluated frames and
+//! control, and a template for any export format: Ánima hands it evaluated frames and
 //! writes the bytes it returns.
 
-use anicraft_plugin_sdk as ac;
+use anima_plugin_sdk as ac;
 use serde_json::Value;
 use std::fmt::Write as _;
 
 const MANIFEST: &str = r#"{
-  "id": "org.anicraft.text-export",
+  "id": "org.anima.text-export",
   "name": "Plain Text Frames",
   "version": "1.0.0",
   "kind": "exporter",

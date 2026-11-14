@@ -2,8 +2,8 @@
 
 use crate::Session;
 use crate::brush_library::BUILTIN;
-use anicraft_doc::{ElementKind, Shape};
-use anicraft_geom::Affine;
+use anima_doc::{ElementKind, Shape};
+use anima_geom::Affine;
 use serde_json::{Value, json};
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -11,7 +11,7 @@ fn run(s: &mut Session, id: &str, p: Value) -> Value {
 }
 
 fn blank() -> Session {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.object_drawing", json!({"on": true}));
     s
 }
@@ -78,7 +78,7 @@ fn every_preset_paints_within_its_area_bounds() {
         // Dots 2.2 sizes apart, each a quarter π of size²: π / 8.8 = 0.357 of length × size.
         ("dotted", 0.33, 0.38),
         ("charcoal", 0.38, 0.52), // a 60 % oval with the paper grain through it
-        ("spatter", 0.4, 0.65),  // dabs 0.6 sizes apart, 60–100 % of the size, thrown aside
+        ("spatter", 0.4, 0.65),   // dabs 0.6 sizes apart, 60–100 % of the size, thrown aside
     ];
     assert_eq!(bounds.len(), BUILTIN.len(), "every built-in has bounds");
     for (key, lo, hi) in bounds {
@@ -90,7 +90,7 @@ fn every_preset_paints_within_its_area_bounds() {
     }
     // Dots are separate loops; chalk's edge is ragged (many more anchors than a plain stroke).
     let (dots, _) = painted("dotted", json!({}));
-    let loops = dots.path.cmds.iter().filter(|c| matches!(c, anicraft_geom::PathCmd::MoveTo(_))).count();
+    let loops = dots.path.cmds.iter().filter(|c| matches!(c, anima_geom::PathCmd::MoveTo(_))).count();
     let want = (wave_length() / (8.0 * 2.2)).floor() as usize + 1;
     assert!(loops.abs_diff(want) <= 2, "{loops} dots, about {want}");
     let (chalk, _) = painted("chalk", json!({}));
@@ -137,27 +137,27 @@ fn pressure_can_set_the_opacity() {
     let pts: Vec<[f32; 3]> = (0..=10).map(|i| [i as f32 * 10.0, 50.0, 0.4]).collect();
     let mut s = blank();
     run(&mut s, "draw.brush", json!({"points": pts, "pressure_opacity": true, "color": "#ff0000"}));
-    let Some(anicraft_doc::Paint::Solid(c)) = shapes(&s)[0].fill else { panic!("solid") };
+    let Some(anima_doc::Paint::Solid(c)) = shapes(&s)[0].fill else { panic!("solid") };
     assert!((c.a - 0.4).abs() < 1e-3, "{}", c.a);
     // A mouse (no pressure) paints opaque.
     run(&mut s, "draw.brush", json!({"points": [[0, 100], [100, 100]], "pressure_opacity": true}));
-    let Some(anicraft_doc::Paint::Solid(c)) = shapes(&s)[1].fill else { panic!("solid") };
+    let Some(anima_doc::Paint::Solid(c)) = shapes(&s)[1].fill else { panic!("solid") };
     assert_eq!(c.a, 1.0);
 }
 
 #[test]
 fn the_paint_brush_draws_a_width_profiled_stroke() {
     let mut s = blank();
-    s.style.stroke = anicraft_doc::Rgba::hex(0x123456);
+    s.style.stroke = anima_doc::Rgba::hex(0x123456);
     let r = run(&mut s, "draw.brush", json!({"points": wave(), "size": 16, "as_stroke": true, "taper_end": 30}));
     assert_eq!(r["kind"], "paint_brush");
     let sh = &shapes(&s)[0];
     assert!(sh.fill.is_none(), "a line, not a fill");
     let st = sh.stroke.as_ref().unwrap();
-    assert_eq!((st.width, st.color), (16.0, anicraft_doc::Rgba::hex(0x123456)), "the brush's size in the stroke colour");
+    assert_eq!((st.width, st.color), (16.0, anima_doc::Rgba::hex(0x123456)), "the brush's size in the stroke colour");
     let prof = st.profile.as_ref().expect("pressure and a taper make a profile");
     let n = prof.points().len();
-    assert!((3..=anicraft_doc::MAX_WIDTH_POINTS).contains(&n), "{n} width points");
+    assert!((3..=anima_doc::MAX_WIDTH_POINTS).contains(&n), "{n} width points");
     assert_eq!(r["width_points"], n);
     // Thin at the light start, full in the middle, tapered to a point at the end.
     let (l0, _) = prof.at(0.0);
@@ -189,7 +189,11 @@ fn user_brushes_are_saved_listed_renamed_and_deleted() {
     assert_eq!((v["name"].as_str(), v["replaced"].as_bool()), (Some("Wet Ink"), Some(false)));
     let list = run(&mut s, "brush.preset_list", json!({}));
     let mine = &list["presets"][BUILTIN.len()];
-    assert_eq!((mine["name"].as_str(), mine["builtin"].as_bool(), mine["size"].as_f64(), mine["taper_end"].as_f64()), (Some("Wet Ink"), Some(false), Some(9.0), Some(18.0)), "from the ink pen, size changed");
+    assert_eq!(
+        (mine["name"].as_str(), mine["builtin"].as_bool(), mine["size"].as_f64(), mine["taper_end"].as_f64()),
+        (Some("Wet Ink"), Some(false), Some(9.0), Some(18.0)),
+        "from the ink pen, size changed"
+    );
     // Painting with it by name equals painting with its settings.
     run(&mut s, "draw.brush", json!({"points": wave(), "preset": "wet ink"}));
     let mut t = blank();
@@ -211,7 +215,7 @@ fn user_brushes_are_saved_listed_renamed_and_deleted() {
     assert!(s.brushes.is_empty());
     // They survive New and Open.
     run(&mut s, "brush.preset_save", json!({"name": "Keep"}));
-    s.replace_document(anicraft_doc::Document::default(), None);
+    s.replace_document(anima_doc::Document::default(), None);
     assert_eq!(s.brushes.user().len(), 1);
 }
 
@@ -225,7 +229,7 @@ fn brush_sets_export_and_import_as_json() {
     let v = run(&mut s, "brush.preset_export", json!({"path": "set.json"}));
     assert_eq!(v["brushes"], 2);
     let text = crate::vfs::read_to_string(std::path::Path::new("set.json")).unwrap();
-    assert!(text.contains("\"format\": \"anicraft-brushes\"") && text.contains("\"Grit\""));
+    assert!(text.contains("\"format\": \"anima-brushes\"") && text.contains("\"Grit\""));
     // Exporting over the file asks first.
     assert!(s.confirmation("brush.preset_export", &json!({"path": "set.json"})).is_some_and(|c| c.irreversible));
     // Another computer: the set comes in whole; names already there get a number.
@@ -258,17 +262,17 @@ fn previews_are_drawn_by_the_renderer() {
     for (key, _) in BUILTIN {
         let b = crate::brush_library::builtin(key).unwrap();
         for as_stroke in [false, true] {
-            let px = crate::cmds_brush::preview(&b, as_stroke, 160, 48, 2.0, anicraft_doc::Rgba::hex(0x000000)).unwrap();
+            let px = crate::cmds_brush::preview(&b, as_stroke, 160, 48, 2.0, anima_doc::Rgba::hex(0x000000)).unwrap();
             let rgba = px.to_premul_rgba8();
             let inked = rgba.chunks(4).filter(|p| p[3] > 128).count();
             assert!(inked > 60, "{key} as_stroke {as_stroke}: {inked} pixels");
             assert!(rgba.chunks(4).filter(|p| p[3] == 0).count() > inked, "{key}: mostly transparent");
         }
     }
-    assert!(crate::cmds_brush::preview(&crate::brush_library::BrushPreset::default(), false, 2, 2, 1.0, anicraft_doc::Rgba::hex(0)).is_err());
+    assert!(crate::cmds_brush::preview(&crate::brush_library::BrushPreset::default(), false, 2, 2, 1.0, anima_doc::Rgba::hex(0)).is_err());
 }
 
-/// Measured numbers for ADR 0068: `cargo test --release -p anicraft-engine preset_timings -- --ignored --nocapture`.
+/// Measured numbers for ADR 0068: `cargo test --release -p anima-engine preset_timings -- --ignored --nocapture`.
 #[test]
 #[ignore]
 fn preset_timings() {
@@ -290,7 +294,7 @@ fn preset_timings() {
     let b = crate::brush_library::builtin("chalk").unwrap();
     let t = std::time::Instant::now();
     for _ in 0..10 {
-        crate::cmds_brush::preview(&b, false, 300, 80, 2.0, anicraft_doc::Rgba::hex(0)).unwrap();
+        crate::cmds_brush::preview(&b, false, 300, 80, 2.0, anima_doc::Rgba::hex(0)).unwrap();
     }
     eprintln!("chalk preview 300x80: {:.2} ms each", t.elapsed().as_secs_f64() * 100.0);
 }

@@ -3,7 +3,7 @@
 //! and paste, property groups, and the file round trip.
 
 use super::*;
-use anicraft_doc::{CustomEase, EaseGroup, Easing, Property, TweenKind};
+use anima_doc::{CustomEase, EaseGroup, Easing, Property, TweenKind};
 use serde_json::json;
 
 pub(crate) fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -31,7 +31,7 @@ pub(crate) fn x_at(s: &mut Session, f: u32) -> f32 {
     s.visible_elements().first().map(|e| e.transform.translation().x - 5.0).unwrap_or(f32::NAN)
 }
 
-fn tween(s: &Session) -> anicraft_doc::Tween {
+fn tween(s: &Session) -> anima_doc::Tween {
     s.active_layer().and_then(|l| l.keyframes.first()).and_then(|k| k.tween.clone()).expect("a tween")
 }
 
@@ -70,7 +70,7 @@ fn point_edits_shape_a_custom_ease_and_a_drag_is_one_undo_step() {
     s.end_gesture();
     assert_eq!(s.history_len(), steps + 1);
     let c = tween(&s).easing.custom().cloned().unwrap();
-    assert_eq!(c.points()[1].at, anicraft_geom::Vec2::new(1.0, 1.5), "x stops at the end; y overshoots");
+    assert_eq!(c.points()[1].at, anima_geom::Vec2::new(1.0, 1.5), "x stops at the end; y overshoots");
     assert!(x_at(&mut s, 9) > 100.0, "overshoots past the second keyframe");
     // Corner, smooth, handles, delete; the ends can't move or go.
     run(&mut s, "ease.move_point", json!({"index": 1, "x": 0.4, "y": 1.2, "frame": 0}));
@@ -208,7 +208,11 @@ fn classic_tweens_ease_property_groups_separately() {
 #[test]
 fn eases_survive_the_file_round_trip() {
     let mut s = tweened();
-    run(&mut s, "timeline.set_easing", json!({"easing": {"custom": [[0, 0], [0.2, 1.4], [0.3, 1.4], [0.4, 1.4], [0.6, 0.8], [0.8, 1], [1, 1]]}, "frame": 0}));
+    run(
+        &mut s,
+        "timeline.set_easing",
+        json!({"easing": {"custom": [[0, 0], [0.2, 1.4], [0.3, 1.4], [0.4, 1.4], [0.6, 0.8], [0.8, 1], [1, 1]]}, "frame": 0}),
+    );
     run(&mut s, "timeline.set_easing", json!({"easing": "ElasticOut", "group": "rotation", "frame": 0}));
     run(&mut s, "ease.save", json!({"name": "Wave", "frame": 0}));
     run(&mut s, "ease.save", json!({"name": "Classic 40", "easing": {"classic": 40}}));
@@ -223,9 +227,10 @@ fn eases_survive_the_file_round_trip() {
     let old = text.replace("\"eases\":", "\"ignored_eases\":");
     assert!(format::from_json(&old).expect("older file").eases.is_empty());
     // A hostile curve in a file is repaired on load, never refused: reversed, out of range.
-    let bad = r#"{"Custom": {"points": [{"at": {"x": 2, "y": 99}}, {"at": {"x": 0.5, "y": -40}, "in": {"x": 5, "y": 0}}, {"at": {"x": -1, "y": 0}}]}}"#;
+    let bad =
+        r#"{"Custom": {"points": [{"at": {"x": 2, "y": 99}}, {"at": {"x": 0.5, "y": -40}, "in": {"x": 5, "y": 0}}, {"at": {"x": -1, "y": 0}}]}}"#;
     let e: Easing = serde_json::from_str(bad).unwrap();
     let c = e.custom().unwrap();
-    assert_eq!((c.points().len(), c.points()[1].at.y, c.points()[1].h_in.x), (3, -anicraft_doc::MAX_EASE_Y, 0.0));
+    assert_eq!((c.points().len(), c.points()[1].at.y, c.points()[1].h_in.x), (3, -anima_doc::MAX_EASE_Y, 0.0));
     let _ = CustomEase::linear();
 }

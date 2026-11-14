@@ -117,7 +117,7 @@ widgets, and no keyboard navigation of its menu bar.
    Rejected: a D-Bus crate for Linux (another dependency tree for one value; `zbus` is in the
    tree only async, under AccessKit), and a native API on each system (each needs `unsafe`).
 
-6. **Light themes are not followed.** AniCraft has one standard palette (dark, as Animate's
+6. **Light themes are not followed.** Ánima has one standard palette (dark, as Animate's
    default). The system's light/dark setting has nothing to map to until a light palette
    exists. Windows' white contrast themes get our black high-contrast palette.
 

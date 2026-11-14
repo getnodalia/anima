@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AniCraft XFL corpus: colour effects (ADR 0056). Every style of Properties' Style menu on a
+<!-- Ánima XFL corpus: colour effects (ADR 0056). Every style of Properties' Style menu on a
      chip (None, Brightness, Tint, Advanced with a negative multiplier and offsets, Alpha), a
      brightness inside a tint (nested effects compose exactly), a classic tween from a tint to
      Advanced (a style change: it travels in the advanced space) and one from brightness -100 %

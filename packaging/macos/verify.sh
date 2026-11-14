@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Check the macOS release artifacts exactly as users download them:
 #
-#   $DIST/anicraft-<version>-macos-<arch>.dmg       signed, notarized, ticket stapled
-#   $DIST/anicraft-cli-<version>-macos-<arch>.zip   unpacked here; the binary inside must be
+#   $DIST/anima-<version>-macos-<arch>.dmg       signed, notarized, ticket stapled
+#   $DIST/anima-cli-<version>-macos-<arch>.zip   unpacked here; the binary inside must be
 #                                                    Developer ID signed with the hardened runtime,
 #                                                    timestamped and notarized
 #
@@ -37,8 +37,8 @@ case "$ARCH" in
   *) echo "unknown --arch $ARCH" >&2; exit 2 ;;
 esac
 
-DMG="$DIST/anicraft-$VERSION-macos-$ARCH.dmg"
-CLI_ZIP="$DIST/anicraft-cli-$VERSION-macos-$ARCH.zip"
+DMG="$DIST/anima-$VERSION-macos-$ARCH.dmg"
+CLI_ZIP="$DIST/anima-cli-$VERSION-macos-$ARCH.zip"
 IDENTITY="${MACOS_SIGN_IDENTITY:--}"
 STRICT=0
 if [[ "$IDENTITY" != "-" ]] && [[ -n "${APPLE_ID:-}" ]] && [[ -n "${APPLE_PASSWORD:-}" ]] && [[ -n "${APPLE_TEAM_ID:-}" ]]; then
@@ -88,15 +88,15 @@ for f in "$DMG" "$CLI_ZIP"; do
   fi
 done
 
-WORK="$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/anicraft-verify.XXXXXX")"
+WORK="$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/anima-verify.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
 
 # ---- CLI zip -----------------------------------------------------------------------------------
 echo "==> $(basename "$CLI_ZIP")"
 ditto -x -k "$CLI_ZIP" "$WORK/cli"
-CLI="$WORK/cli/anicraft-cli-$VERSION-macos-$ARCH/anicraft-cli"
+CLI="$WORK/cli/anima-cli-$VERSION-macos-$ARCH/anima-cli"
 if [[ ! -x "$CLI" ]]; then
-  echo "error: $(basename "$CLI_ZIP") has no executable anicraft-cli-$VERSION-macos-$ARCH/anicraft-cli" >&2
+  echo "error: $(basename "$CLI_ZIP") has no executable anima-cli-$VERSION-macos-$ARCH/anima-cli" >&2
   exit 1
 fi
 
@@ -104,7 +104,7 @@ archs="$(lipo -archs "$CLI")"
 for a in $WANT_ARCHS; do
   case " $archs " in
     *" $a "*) ;;
-    *) echo "error: anicraft-cli lacks $a (has: $archs)" >&2; exit 1 ;;
+    *) echo "error: anima-cli lacks $a (has: $archs)" >&2; exit 1 ;;
   esac
 done
 
@@ -114,22 +114,22 @@ details="$(codesign -d --verbose=2 "$CLI" 2>&1)"
 printf '%s\n' "$details" | grep -E '^(Identifier|Format|CodeDirectory|Authority|Timestamp|TeamIdentifier)[= ]' || true
 
 printf '%s\n' "$details" | grep -Eq '^CodeDirectory .*flags=0x[0-9a-f]+\([^)]*runtime' \
-  || fail "anicraft-cli is not signed with the hardened runtime"
+  || fail "anima-cli is not signed with the hardened runtime"
 printf '%s\n' "$details" | grep -q '^Authority=Developer ID Application:' \
-  || fail "anicraft-cli is not signed with a Developer ID Application identity"
+  || fail "anima-cli is not signed with a Developer ID Application identity"
 printf '%s\n' "$details" | grep -q '^Timestamp=' \
-  || fail "anicraft-cli signature has no secure timestamp"
+  || fail "anima-cli signature has no secure timestamp"
 if [[ -n "${APPLE_TEAM_ID:-}" ]]; then
   printf '%s\n' "$details" | grep -qx "TeamIdentifier=$APPLE_TEAM_ID" \
-    || fail "anicraft-cli is signed by a different team"
+    || fail "anima-cli is signed by a different team"
 fi
 if gk="$(assess --assess --type install -vv "$CLI")"; then
   printf '%s\n' "$gk"
   printf '%s\n' "$gk" | grep -q 'source=Notarized Developer ID' \
-    || fail "Gatekeeper accepts anicraft-cli but not as notarized"
+    || fail "Gatekeeper accepts anima-cli but not as notarized"
 else
   printf '%s\n' "$gk"
-  fail "Gatekeeper rejects anicraft-cli (not notarized?)"
+  fail "Gatekeeper rejects anima-cli (not notarized?)"
 fi
 "$CLI" --version
 

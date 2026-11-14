@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AniCraft XFL corpus: interactive (ADR 0013 tier 2: ActionScript 3.0 in the subset runs).
+<!-- Ánima XFL corpus: interactive (ADR 0013 tier 2: ActionScript 3.0 in the subset runs).
      The main timeline stops on its first frame and wires a button and a movie clip with mouse
      listeners: named and inline listener functions, `currentTarget`, a call to the script's
      own function and a call that reaches outside the movie (ignored). The last frame traces

@@ -12,10 +12,10 @@
 use crate::app::{App, Drag, Tool};
 use crate::pathtools::Xf;
 use crate::theme::T;
-use anicraft_engine::doc::width::{nearest_on_stroke, stroke_walks};
-use anicraft_engine::doc::{ElementId, ElementKind, Stroke};
-use anicraft_engine::geom::walk::PathWalk;
-use anicraft_engine::geom::{Affine, Vec2};
+use anima_engine::doc::width::{nearest_on_stroke, stroke_walks};
+use anima_engine::doc::{ElementId, ElementKind, Stroke};
+use anima_engine::geom::walk::PathWalk;
+use anima_engine::geom::{Affine, Vec2};
 use egui::{Color32, Key, Modifiers, Pos2, Rect, Stroke as Line, StrokeKind, vec2};
 use serde_json::json;
 
@@ -55,7 +55,7 @@ impl Target {
         let w = self.walks.get(sub)?;
         let s = t * w.length();
         let c = w.at(s);
-        let n = anicraft_engine::doc::width::left_normal(w.tangent(s));
+        let n = anima_engine::doc::width::left_normal(w.tangent(s));
         let hw = self.hw();
         Some((c, n, c + n * (l * hw), c - n * (r * hw)))
     }
@@ -190,7 +190,7 @@ pub fn drag_to(app: &mut App, d: Drag, at: Vec2, alt: bool, zoom: f32) {
             if hw <= 0.0 {
                 return;
             }
-            let f = ((local - c).dot(n) * f32::from(side) / hw).clamp(0.0, anicraft_engine::doc::MAX_WIDTH_FACTOR);
+            let f = ((local - c).dot(n) * f32::from(side) / hw).clamp(0.0, anima_engine::doc::MAX_WIDTH_FACTOR);
             let (l0, r0) = start;
             // Both sides move together (keeping their difference); Alt moves just this one.
             let (l, r) = match (side > 0, alt) {
@@ -342,17 +342,21 @@ mod tests {
     const XF: Xf = Xf { origin: Pos2::ZERO, zoom: 1.0 };
 
     fn widths(app: &App) -> Vec<f32> {
-        app.s.visible_elements().iter().filter_map(|e| match &e.kind {
-            ElementKind::Shape(sh) => sh.stroke.as_ref().map(|st| st.profile.as_ref().map_or(1.0, |p| p.at(0.5).0)),
-            _ => None,
-        }).collect()
+        app.s
+            .visible_elements()
+            .iter()
+            .filter_map(|e| match &e.kind {
+                ElementKind::Shape(sh) => sh.stroke.as_ref().map(|st| st.profile.as_ref().map_or(1.0, |p| p.at(0.5).0)),
+                _ => None,
+            })
+            .collect()
     }
 
     /// #250: a Pencil squiggle in merge drawing, then a drag on it with the Width tool widens it.
     #[test]
     fn a_drag_on_a_pencil_stroke_widens_it() {
         let ctx = egui::Context::default();
-        let session = anicraft_engine::Session::new(anicraft_engine::doc::Document::default());
+        let session = anima_engine::Session::new(anima_engine::doc::Document::default());
         let mut app = App::with_context(&ctx, session, Some(std::path::PathBuf::from("unused.png")));
         app.view.zoom = 1.0;
         app.s.style.object_drawing = false;

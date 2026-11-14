@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AniCraft XFL corpus: masks. A mask at the top of the scene, a mask inside a folder (with a
+<!-- Ánima XFL corpus: masks. A mask at the top of the scene, a mask inside a folder (with a
      layer in the folder it doesn't mask), a mask inside a symbol, and a mask's artwork that
      must never draw. parentLayerIndex counts every layer in the list, folders too.
      Self-authored. -->

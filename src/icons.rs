@@ -6,8 +6,8 @@
 //! interface scale and cost nothing in build size. Only icons the app uses are embedded; add a
 //! file to `assets/icons/` and a variant here to use another.
 
-use anicraft_engine::geom::svg::parse_path_data;
-use anicraft_engine::geom::{Affine, Path, Vec2};
+use anima_engine::geom::svg::parse_path_data;
+use anima_engine::geom::{Affine, Path, Vec2};
 use egui::{Color32, Pos2, Rect, Stroke, pos2};
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -182,21 +182,21 @@ impl Icon {
             // A hollow arrowhead, mirrored to point like a cursor: the subselection arrow.
             Icon::Subselect => ("navigation", true),
             Icon::Transform => ("scaling", false),
-            // A stroke swelling and tapering, with a width point across it (AniCraft original).
-            Icon::Width => ("anicraft-width", false),
-            // A box of gradient bands with a turning knob on its corner (AniCraft original).
-            Icon::GradientTransform => ("anicraft-gradient-transform", false),
+            // A stroke swelling and tapering, with a width point across it (Ánima original).
+            Icon::Width => ("anima-width", false),
+            // A box of gradient bands with a turning knob on its corner (Ánima original).
+            Icon::GradientTransform => ("anima-gradient-transform", false),
             Icon::Pen => ("pen-tool", false),
             Icon::Pencil => ("pencil", false),
-            // A round brush: handle, ferrule and a painted tip (AniCraft original, on Lucide's grid).
-            Icon::Brush => ("anicraft-brush", false),
+            // A round brush: handle, ferrule and a painted tip (Ánima original, on Lucide's grid).
+            Icon::Brush => ("anima-brush", false),
             // The brush over a swelling and thinning line: the Paint Brush draws strokes
-            // (AniCraft original, on Lucide's grid).
-            Icon::PaintBrush => ("anicraft-paint-brush", false),
-            // A block eraser on its edge, its sleeve marked off (AniCraft original).
-            Icon::Eraser => ("anicraft-eraser", false),
-            // A dropper: bulb, collar, glass tube and a drop (AniCraft original).
-            Icon::Eyedropper => ("anicraft-eyedropper", false),
+            // (Ánima original, on Lucide's grid).
+            Icon::PaintBrush => ("anima-paint-brush", false),
+            // A block eraser on its edge, its sleeve marked off (Ánima original).
+            Icon::Eraser => ("anima-eraser", false),
+            // A dropper: bulb, collar, glass tube and a drop (Ánima original).
+            Icon::Eyedropper => ("anima-eyedropper", false),
             Icon::Rect => ("rectangle-horizontal", false),
             Icon::Oval => ("circle", false),
             Icon::PolyStar => ("pentagon", false),
@@ -226,61 +226,61 @@ impl Icon {
             Icon::Type => ("type", false),
             Icon::Sound => ("volume-2", false),
             // The speaker crossed out (a muted layer).
-            Icon::SoundOff => ("anicraft-sound-off", false),
-            // Lucide's object-align icons aren't in the local set; these are AniCraft originals
+            Icon::SoundOff => ("anima-sound-off", false),
+            // Lucide's object-align icons aren't in the local set; these are Ánima originals
             // drawn on the same 24 grid with the same 2-unit round strokes.
-            Icon::AlignLeft => ("anicraft-align-left", false),
-            Icon::AlignHCenter => ("anicraft-align-hcenter", false),
-            Icon::AlignRight => ("anicraft-align-right", false),
-            Icon::AlignTop => ("anicraft-align-top", false),
-            Icon::AlignVCenter => ("anicraft-align-vcenter", false),
-            Icon::AlignBottom => ("anicraft-align-bottom", false),
-            Icon::DistributeH => ("anicraft-distribute-h", false),
-            Icon::DistributeV => ("anicraft-distribute-v", false),
+            Icon::AlignLeft => ("anima-align-left", false),
+            Icon::AlignHCenter => ("anima-align-hcenter", false),
+            Icon::AlignRight => ("anima-align-right", false),
+            Icon::AlignTop => ("anima-align-top", false),
+            Icon::AlignVCenter => ("anima-align-vcenter", false),
+            Icon::AlignBottom => ("anima-align-bottom", false),
+            Icon::DistributeH => ("anima-distribute-h", false),
+            Icon::DistributeV => ("anima-distribute-v", false),
             // Layer types: a stencil (mask) and the area inside it (masked).
-            Icon::Mask => ("anicraft-mask", false),
-            Icon::Masked => ("anicraft-masked", false),
+            Icon::Mask => ("anima-mask", false),
+            Icon::Masked => ("anima-masked", false),
             Icon::Folder => ("folder", false),
-            // A film camera with its two reels (AniCraft original, on Lucide's grid).
-            Icon::Camera => ("anicraft-camera", false),
-            // A horseshoe magnet, poles up (AniCraft original, on Lucide's grid): Snap to Objects.
-            Icon::Magnet => ("anicraft-magnet", false),
-            // A bone: a wedge from its joint to its end (AniCraft original, on Lucide's grid).
-            Icon::Bone => ("anicraft-bone", false),
-            // A bone whose end is tied to two points (AniCraft original, on Lucide's grid): Bind.
-            Icon::Bind => ("anicraft-bind", false),
-            // A mesh bent around a pin (AniCraft original, on Lucide's grid): Asset Warp.
-            Icon::Warp => ("anicraft-warp", false),
-            // Frames stacked one behind the other, all edited at once (AniCraft original, on
+            // A film camera with its two reels (Ánima original, on Lucide's grid).
+            Icon::Camera => ("anima-camera", false),
+            // A horseshoe magnet, poles up (Ánima original, on Lucide's grid): Snap to Objects.
+            Icon::Magnet => ("anima-magnet", false),
+            // A bone: a wedge from its joint to its end (Ánima original, on Lucide's grid).
+            Icon::Bone => ("anima-bone", false),
+            // A bone whose end is tied to two points (Ánima original, on Lucide's grid): Bind.
+            Icon::Bind => ("anima-bind", false),
+            // A mesh bent around a pin (Ánima original, on Lucide's grid): Asset Warp.
+            Icon::Warp => ("anima-warp", false),
+            // Frames stacked one behind the other, all edited at once (Ánima original, on
             // Lucide's grid): Edit Multiple Frames.
-            Icon::EditMultiple => ("anicraft-edit-multiple", false),
+            Icon::EditMultiple => ("anima-edit-multiple", false),
             Icon::FolderOpen => ("folder-open", false),
-            // A layer: a row with a keyframe and its span (AniCraft original, on Lucide's grid).
-            Icon::Layer => ("anicraft-layer", false),
+            // A layer: a row with a keyframe and its span (Ánima original, on Lucide's grid).
+            Icon::Layer => ("anima-layer", false),
             // Insert Frame / Keyframe / Blank Keyframe: the timeline's own marks (a frame cell, a
-            // filled keyframe dot, a hollow blank-keyframe dot), each with a plus (AniCraft
+            // filled keyframe dot, a hollow blank-keyframe dot), each with a plus (Ánima
             // originals, on Lucide's grid).
-            Icon::InsertFrame => ("anicraft-insert-frame", false),
-            Icon::InsertKeyframe => ("anicraft-insert-keyframe", false),
-            Icon::InsertBlankKeyframe => ("anicraft-insert-blank-keyframe", false),
-            // The stage with crop marks at its corners (AniCraft original, on Lucide's grid):
+            Icon::InsertFrame => ("anima-insert-frame", false),
+            Icon::InsertKeyframe => ("anima-insert-keyframe", false),
+            Icon::InsertBlankKeyframe => ("anima-insert-blank-keyframe", false),
+            // The stage with crop marks at its corners (Ánima original, on Lucide's grid):
             // Clip Content Outside the Stage.
-            Icon::ClipStage => ("anicraft-clip-stage", false),
+            Icon::ClipStage => ("anima-clip-stage", false),
             // New layer, Delete, Duplicate and a panel's options menu.
             Icon::Plus => ("plus", false),
             Icon::Trash => ("trash", false),
             Icon::Copy => ("copy", false),
             Icon::Ellipsis => ("ellipsis", false),
-            // The panels, as icons in a dock collapsed to icons (ADR 0087; AniCraft originals,
+            // The panels, as icons in a dock collapsed to icons (ADR 0087; Ánima originals,
             // on Lucide's grid): sliders, swatches, books, a tree, a clock turning back, a
             // console, code.
-            Icon::PanelProperties => ("anicraft-panel-properties", false),
-            Icon::PanelSwatches => ("anicraft-panel-swatches", false),
-            Icon::PanelLibrary => ("anicraft-panel-library", false),
-            Icon::PanelExplorer => ("anicraft-panel-explorer", false),
-            Icon::PanelHistory => ("anicraft-panel-history", false),
-            Icon::PanelOutput => ("anicraft-panel-output", false),
-            Icon::PanelActions => ("anicraft-panel-actions", false),
+            Icon::PanelProperties => ("anima-panel-properties", false),
+            Icon::PanelSwatches => ("anima-panel-swatches", false),
+            Icon::PanelLibrary => ("anima-panel-library", false),
+            Icon::PanelExplorer => ("anima-panel-explorer", false),
+            Icon::PanelHistory => ("anima-panel-history", false),
+            Icon::PanelOutput => ("anima-panel-output", false),
+            Icon::PanelActions => ("anima-panel-actions", false),
         }
     }
 }
@@ -309,8 +309,8 @@ static FILES: &[(&str, &str)] = &[
     ("image", include_str!("../assets/icons/image.svg")),
     ("type", include_str!("../assets/icons/type.svg")),
     ("volume-2", include_str!("../assets/icons/volume-2.svg")),
-    ("anicraft-sound-off", include_str!("../assets/icons/anicraft-sound-off.svg")),
-    ("anicraft-magnet", include_str!("../assets/icons/anicraft-magnet.svg")),
+    ("anima-sound-off", include_str!("../assets/icons/anima-sound-off.svg")),
+    ("anima-magnet", include_str!("../assets/icons/anima-magnet.svg")),
     ("play", include_str!("../assets/icons/play.svg")),
     ("pause", include_str!("../assets/icons/pause.svg")),
     ("rotate-cw", include_str!("../assets/icons/rotate-cw.svg")),
@@ -319,45 +319,45 @@ static FILES: &[(&str, &str)] = &[
     ("eye-off", include_str!("../assets/icons/eye-off.svg")),
     ("lock", include_str!("../assets/icons/lock.svg")),
     ("lock-open", include_str!("../assets/icons/lock-open.svg")),
-    ("anicraft-align-left", include_str!("../assets/icons/anicraft-align-left.svg")),
-    ("anicraft-align-hcenter", include_str!("../assets/icons/anicraft-align-hcenter.svg")),
-    ("anicraft-align-right", include_str!("../assets/icons/anicraft-align-right.svg")),
-    ("anicraft-align-top", include_str!("../assets/icons/anicraft-align-top.svg")),
-    ("anicraft-align-vcenter", include_str!("../assets/icons/anicraft-align-vcenter.svg")),
-    ("anicraft-align-bottom", include_str!("../assets/icons/anicraft-align-bottom.svg")),
-    ("anicraft-distribute-h", include_str!("../assets/icons/anicraft-distribute-h.svg")),
-    ("anicraft-distribute-v", include_str!("../assets/icons/anicraft-distribute-v.svg")),
-    ("anicraft-mask", include_str!("../assets/icons/anicraft-mask.svg")),
-    ("anicraft-width", include_str!("../assets/icons/anicraft-width.svg")),
-    ("anicraft-gradient-transform", include_str!("../assets/icons/anicraft-gradient-transform.svg")),
-    ("anicraft-brush", include_str!("../assets/icons/anicraft-brush.svg")),
-    ("anicraft-eraser", include_str!("../assets/icons/anicraft-eraser.svg")),
-    ("anicraft-paint-brush", include_str!("../assets/icons/anicraft-paint-brush.svg")),
-    ("anicraft-eyedropper", include_str!("../assets/icons/anicraft-eyedropper.svg")),
-    ("anicraft-masked", include_str!("../assets/icons/anicraft-masked.svg")),
-    ("anicraft-layer", include_str!("../assets/icons/anicraft-layer.svg")),
-    ("anicraft-insert-frame", include_str!("../assets/icons/anicraft-insert-frame.svg")),
-    ("anicraft-insert-keyframe", include_str!("../assets/icons/anicraft-insert-keyframe.svg")),
-    ("anicraft-insert-blank-keyframe", include_str!("../assets/icons/anicraft-insert-blank-keyframe.svg")),
-    ("anicraft-clip-stage", include_str!("../assets/icons/anicraft-clip-stage.svg")),
-    ("anicraft-camera", include_str!("../assets/icons/anicraft-camera.svg")),
-    ("anicraft-bone", include_str!("../assets/icons/anicraft-bone.svg")),
-    ("anicraft-bind", include_str!("../assets/icons/anicraft-bind.svg")),
-    ("anicraft-warp", include_str!("../assets/icons/anicraft-warp.svg")),
-    ("anicraft-edit-multiple", include_str!("../assets/icons/anicraft-edit-multiple.svg")),
+    ("anima-align-left", include_str!("../assets/icons/anima-align-left.svg")),
+    ("anima-align-hcenter", include_str!("../assets/icons/anima-align-hcenter.svg")),
+    ("anima-align-right", include_str!("../assets/icons/anima-align-right.svg")),
+    ("anima-align-top", include_str!("../assets/icons/anima-align-top.svg")),
+    ("anima-align-vcenter", include_str!("../assets/icons/anima-align-vcenter.svg")),
+    ("anima-align-bottom", include_str!("../assets/icons/anima-align-bottom.svg")),
+    ("anima-distribute-h", include_str!("../assets/icons/anima-distribute-h.svg")),
+    ("anima-distribute-v", include_str!("../assets/icons/anima-distribute-v.svg")),
+    ("anima-mask", include_str!("../assets/icons/anima-mask.svg")),
+    ("anima-width", include_str!("../assets/icons/anima-width.svg")),
+    ("anima-gradient-transform", include_str!("../assets/icons/anima-gradient-transform.svg")),
+    ("anima-brush", include_str!("../assets/icons/anima-brush.svg")),
+    ("anima-eraser", include_str!("../assets/icons/anima-eraser.svg")),
+    ("anima-paint-brush", include_str!("../assets/icons/anima-paint-brush.svg")),
+    ("anima-eyedropper", include_str!("../assets/icons/anima-eyedropper.svg")),
+    ("anima-masked", include_str!("../assets/icons/anima-masked.svg")),
+    ("anima-layer", include_str!("../assets/icons/anima-layer.svg")),
+    ("anima-insert-frame", include_str!("../assets/icons/anima-insert-frame.svg")),
+    ("anima-insert-keyframe", include_str!("../assets/icons/anima-insert-keyframe.svg")),
+    ("anima-insert-blank-keyframe", include_str!("../assets/icons/anima-insert-blank-keyframe.svg")),
+    ("anima-clip-stage", include_str!("../assets/icons/anima-clip-stage.svg")),
+    ("anima-camera", include_str!("../assets/icons/anima-camera.svg")),
+    ("anima-bone", include_str!("../assets/icons/anima-bone.svg")),
+    ("anima-bind", include_str!("../assets/icons/anima-bind.svg")),
+    ("anima-warp", include_str!("../assets/icons/anima-warp.svg")),
+    ("anima-edit-multiple", include_str!("../assets/icons/anima-edit-multiple.svg")),
     ("folder", include_str!("../assets/icons/folder.svg")),
     ("folder-open", include_str!("../assets/icons/folder-open.svg")),
     ("plus", include_str!("../assets/icons/plus.svg")),
     ("trash", include_str!("../assets/icons/trash.svg")),
     ("copy", include_str!("../assets/icons/copy.svg")),
     ("ellipsis", include_str!("../assets/icons/ellipsis.svg")),
-    ("anicraft-panel-properties", include_str!("../assets/icons/anicraft-panel-properties.svg")),
-    ("anicraft-panel-swatches", include_str!("../assets/icons/anicraft-panel-swatches.svg")),
-    ("anicraft-panel-library", include_str!("../assets/icons/anicraft-panel-library.svg")),
-    ("anicraft-panel-explorer", include_str!("../assets/icons/anicraft-panel-explorer.svg")),
-    ("anicraft-panel-history", include_str!("../assets/icons/anicraft-panel-history.svg")),
-    ("anicraft-panel-output", include_str!("../assets/icons/anicraft-panel-output.svg")),
-    ("anicraft-panel-actions", include_str!("../assets/icons/anicraft-panel-actions.svg")),
+    ("anima-panel-properties", include_str!("../assets/icons/anima-panel-properties.svg")),
+    ("anima-panel-swatches", include_str!("../assets/icons/anima-panel-swatches.svg")),
+    ("anima-panel-library", include_str!("../assets/icons/anima-panel-library.svg")),
+    ("anima-panel-explorer", include_str!("../assets/icons/anima-panel-explorer.svg")),
+    ("anima-panel-history", include_str!("../assets/icons/anima-panel-history.svg")),
+    ("anima-panel-output", include_str!("../assets/icons/anima-panel-output.svg")),
+    ("anima-panel-actions", include_str!("../assets/icons/anima-panel-actions.svg")),
 ];
 
 /// The value of attribute `name` in an element's tag text.
@@ -402,7 +402,9 @@ pub fn parse_svg(src: &str) -> Vec<Path> {
             "path" => attr(tag, "d").and_then(|d| parse_path_data(d).ok()),
             "circle" => Some(Path::ellipse(num(tag, "cx"), num(tag, "cy"), num(tag, "r"), num(tag, "r"))),
             "ellipse" => Some(Path::ellipse(num(tag, "cx"), num(tag, "cy"), num(tag, "rx"), num(tag, "ry"))),
-            "rect" => Some(Path::rounded_rect(num(tag, "x"), num(tag, "y"), num(tag, "width"), num(tag, "height"), num(tag, "rx").max(num(tag, "ry")))),
+            "rect" => {
+                Some(Path::rounded_rect(num(tag, "x"), num(tag, "y"), num(tag, "width"), num(tag, "height"), num(tag, "rx").max(num(tag, "ry"))))
+            }
             "line" => Some(Path::line(Vec2::new(num(tag, "x1"), num(tag, "y1")), Vec2::new(num(tag, "x2"), num(tag, "y2")))),
             "polyline" => points(tag, false),
             "polygon" => points(tag, true),
@@ -430,11 +432,7 @@ pub fn paint(p: &egui::Painter, rect: Rect, icon: Icon, color: Color32) {
     let s = rect.width().min(rect.height()) / 24.0;
     let snap = |v: f32| (v * ppp).round() / ppp;
     let (ox, oy) = (snap(rect.center().x - 12.0 * s), snap(rect.center().y - 12.0 * s));
-    let m = if flip {
-        Affine::translate(ox + 24.0 * s, oy).mul(&Affine::scale(-s, s))
-    } else {
-        Affine::translate(ox, oy).mul(&Affine::scale(s, s))
-    };
+    let m = if flip { Affine::translate(ox + 24.0 * s, oy).mul(&Affine::scale(-s, s)) } else { Affine::translate(ox, oy).mul(&Affine::scale(s, s)) };
     // Lucide draws 2-unit strokes on its 24 grid; a touch lighter reads better at UI sizes.
     let w = ((1.75 * s * ppp).round().max(1.0)) / ppp;
     let stroke = Stroke::new(w, color);

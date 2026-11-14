@@ -1,49 +1,49 @@
-//! AniCraft headless front end: argument parsing, the JSON-lines `serve` loop and the MCP
+//! Ánima headless front end: argument parsing, the JSON-lines `serve` loop and the MCP
 //! server (`mcp`). Every operation goes through the engine's command registry.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 pub mod mcp;
 
-use anicraft_engine::{Session, commands, format};
+use anima_engine::{Session, commands, format};
 use serde_json::{Value, json};
 use std::io::{BufRead, Write};
 use std::path::PathBuf;
 use std::time::Instant;
 
 pub const USAGE: &str = "\
-AniCraft CLI — headless animation engine
+Ánima CLI — headless animation engine
 
 USAGE:
-  anicraft-cli info <file|--sample>
-  anicraft-cli render <file|--sample> --out <frame.png> [--frame N] [--scale S]
-  anicraft-cli render-seq <file|--sample> --out-dir <dir> [--from A] [--to B] [--scale S]
-  anicraft-cli gif <file|--sample> --out <anim.gif> [--from A] [--to B] [--scale S] [--overwrite yes]
-  anicraft-cli apng|webp <file|--sample> --out <anim.png|anim.webp> [--from A] [--to B] [--scale S]
+  anima-cli info <file|--sample>
+  anima-cli render <file|--sample> --out <frame.png> [--frame N] [--scale S]
+  anima-cli render-seq <file|--sample> --out-dir <dir> [--from A] [--to B] [--scale S]
+  anima-cli gif <file|--sample> --out <anim.gif> [--from A] [--to B] [--scale S] [--overwrite yes]
+  anima-cli apng|webp <file|--sample> --out <anim.png|anim.webp> [--from A] [--to B] [--scale S]
                          [--loop forever|N] [--background yes] [--overwrite yes]
                                          full colour with real transparency (WebP: lossless)
-  anicraft-cli export <file|--sample> --format <id> --out <path> [--from A] [--to B] [--frame N]
+  anima-cli export <file|--sample> --format <id> --out <path> [--from A] [--to B] [--frame N]
                       [--options '<json>'] [--overwrite yes]
                                          any export format: the built-in ones (gif, apng, webp,
                                          lottie, html, video, svg, png, png-sequence, sprite-sheet)
                                          and exporter plug-ins (by id, with --plugins); --options
                                          are the plug-in's options, or a built-in's extra params
-  anicraft-cli formats                   lists every export format, plug-ins included (JSON)
-  anicraft-cli commands
-  anicraft-cli run <file|--sample> <script.json> [--save <out.anicraft>]
-  anicraft-cli exec <file|--sample> <command.id> [<json-params>] [--save <out.anicraft>]
-  anicraft-cli new --out <file.anicraft> [--width W] [--height H] [--fps F]
-  anicraft-cli guide --out <folder>      writes the user guide as HTML pages (open index.html)
-  anicraft-cli bench [--layers N] [--shapes N] [--frames N]   performance probe (use --release)
-  anicraft-cli bench --check yes         the default scenario against the budgets in
+  anima-cli formats                   lists every export format, plug-ins included (JSON)
+  anima-cli commands
+  anima-cli run <file|--sample> <script.json> [--save <out.anima>]
+  anima-cli exec <file|--sample> <command.id> [<json-params>] [--save <out.anima>]
+  anima-cli new --out <file.anima> [--width W] [--height H] [--fps F]
+  anima-cli guide --out <folder>      writes the user guide as HTML pages (open index.html)
+  anima-cli bench [--layers N] [--shapes N] [--frames N]   performance probe (use --release)
+  anima-cli bench --check yes         the default scenario against the budgets in
                                          docs/performance.md; fails when one is missed
-  anicraft-cli serve [file|--sample]     JSON-lines on stdin/stdout:
+  anima-cli serve [file|--sample]     JSON-lines on stdin/stdout:
         {\"id\":1,\"cmd\":\"draw.rect\",\"params\":{\"x\":10,\"y\":10,\"w\":50,\"h\":50}}
-  anicraft-cli mcp [file|--sample]       Model Context Protocol server on stdin/stdout,
+  anima-cli mcp [file|--sample]       Model Context Protocol server on stdin/stdout,
                                          for AI assistants (see docs/mcp.md)
-  anicraft-cli --version
+  anima-cli --version
 
   --plugins <folder>   loads the WebAssembly plug-ins in a folder first (also the
-                       ANICRAFT_PLUGINS environment variable); see docs/plugins.md.
+                       ANIMA_PLUGINS environment variable); see docs/plugins.md.
                        Without it, headless runs use no plug-ins, so they are repeatable.
 
 Frames on the command line are 1-based, as in the timeline.";
@@ -83,9 +83,9 @@ impl Args {
 pub fn open_session(src: Option<&str>) -> Result<Session, String> {
     match src {
         None => Ok(Session::default()),
-        Some("--sample") => Ok(Session::new(anicraft_doc::sample::demo())),
+        Some("--sample") => Ok(Session::new(anima_doc::sample::demo())),
         // An Animate document imports as File › Open does (#226), untitled.
-        Some(p) if anicraft_engine::is_animate(std::path::Path::new(p)) => {
+        Some(p) if anima_engine::is_animate(std::path::Path::new(p)) => {
             let mut s = Session::default();
             s.execute("file.open", &serde_json::json!({"path": p})).map_err(|e| e.to_string())?;
             Ok(s)
@@ -99,10 +99,10 @@ pub fn open_session(src: Option<&str>) -> Result<Session, String> {
     }
 }
 
-/// [`open_session`], with the plug-ins of `--plugins <folder>` (or `ANICRAFT_PLUGINS`) loaded.
+/// [`open_session`], with the plug-ins of `--plugins <folder>` (or `ANIMA_PLUGINS`) loaded.
 pub fn session(a: &Args, src: Option<&str>) -> Result<Session, String> {
     let mut s = open_session(src)?;
-    let folder = a.flag("plugins").map(str::to_string).or_else(|| std::env::var("ANICRAFT_PLUGINS").ok().filter(|v| !v.trim().is_empty()));
+    let folder = a.flag("plugins").map(str::to_string).or_else(|| std::env::var("ANIMA_PLUGINS").ok().filter(|v| !v.trim().is_empty()));
     if let Some(folder) = folder {
         let r = exec(&mut s, "plugin.reload", &json!({"folder": folder}))?;
         for f in r["failed"].as_array().into_iter().flatten() {
@@ -132,7 +132,7 @@ pub fn run(argv: &[String]) -> Result<String, String> {
     match cmd.as_str() {
         "help" | "--help" | "-h" => Ok(USAGE.to_string()),
         // The release packaging smoke-tests every build with this (packaging/, ADR 0026).
-        "version" | "--version" | "-V" => Ok(format!("anicraft-cli {}", env!("CARGO_PKG_VERSION"))),
+        "version" | "--version" | "-V" => Ok(format!("anima-cli {}", env!("CARGO_PKG_VERSION"))),
         "commands" => {
             let list: Vec<Value> = commands().iter().map(|c| c.to_json()).collect();
             serde_json::to_string_pretty(&list).map_err(|e| e.to_string())
@@ -140,7 +140,7 @@ pub fn run(argv: &[String]) -> Result<String, String> {
         // The user guide as the static HTML book Help › User Guide opens (ADR 0069).
         "guide" => {
             let out = a.flag("out").ok_or("guide needs --out <folder>")?;
-            let n = anicraft_guide::write_site(std::path::Path::new(out)).map_err(|e| format!("{out}: {e}"))?;
+            let n = anima_guide::write_site(std::path::Path::new(out)).map_err(|e| format!("{out}: {e}"))?;
             Ok(format!("wrote {n} files of the user guide to {out}; open {out}/index.html"))
         }
         "info" => {
@@ -208,7 +208,7 @@ pub fn run(argv: &[String]) -> Result<String, String> {
         "export" => export(&a, src),
         "new" => {
             let mut s = Session::default();
-            let out = a.flag("out").ok_or("new needs --out <file.anicraft>")?;
+            let out = a.flag("out").ok_or("new needs --out <file.anima>")?;
             let mut p = json!({});
             for k in ["width", "height"] {
                 if let Some(v) = a.num::<u32>(k)? {
@@ -239,7 +239,8 @@ pub fn run(argv: &[String]) -> Result<String, String> {
             let script = a.positional.get(1).ok_or("run needs a script.json")?;
             let text = std::fs::read_to_string(script).map_err(|e| format!("{script}: {e}"))?;
             // Windows editors often save UTF-8 with a byte-order mark; JSON parsers reject it.
-            let steps: Vec<Value> = serde_json::from_str(text.trim_start_matches('\u{feff}')).map_err(|e| format!("{script}: expected a JSON array of {{cmd, params}}: {e}"))?;
+            let steps: Vec<Value> = serde_json::from_str(text.trim_start_matches('\u{feff}'))
+                .map_err(|e| format!("{script}: expected a JSON array of {{cmd, params}}: {e}"))?;
             let mut results = Vec::new();
             for (i, step) in steps.iter().enumerate() {
                 let id = step.get("cmd").and_then(Value::as_str).ok_or_else(|| format!("step {}: missing \"cmd\"", i + 1))?;
@@ -274,7 +275,7 @@ pub fn run(argv: &[String]) -> Result<String, String> {
 /// through `file.export_plugin` (ADR 0088).
 fn export(a: &Args, src: Option<&str>) -> Result<String, String> {
     let mut s = session(a, Some(src.ok_or("export needs a file or --sample")?))?;
-    let id = a.flag("format").ok_or("export needs --format <id> (anicraft-cli formats lists them)")?;
+    let id = a.flag("format").ok_or("export needs --format <id> (anima-cli formats lists them)")?;
     let out = a.flag("out").ok_or("export needs --out <path>")?;
     let list = exec(&mut s, "file.export_formats", &json!({}))?;
     let formats = list["formats"].as_array().cloned().unwrap_or_default();
@@ -347,9 +348,9 @@ pub const TIME_BUDGETS: &[(&str, &str, f64)] = &[
 /// One crash-recovery autosave of `doc` as the app does it: an `Autosaver` in a scratch
 /// recovery folder, timing what the editing thread pays (the hand-off) apart from the
 /// background serialize + atomic write (temp file, flush to disk, rename).
-fn bench_autosave(doc: &anicraft_doc::Document) -> Value {
-    use anicraft_engine::recovery::{Autosaver, Outcome, SessionLock};
-    let dir = std::env::temp_dir().join(format!("anicraft-bench-recovery-{}", std::process::id()));
+fn bench_autosave(doc: &anima_doc::Document) -> Value {
+    use anima_engine::recovery::{Autosaver, Outcome, SessionLock};
+    let dir = std::env::temp_dir().join(format!("anima-bench-recovery-{}", std::process::id()));
     let Ok(mut saver) = SessionLock::acquire(&dir).and_then(Autosaver::start) else { return json!({"error": "no scratch folder"}) };
     let t = Instant::now();
     saver.write(doc.clone(), None);
@@ -395,21 +396,21 @@ pub fn check_budgets(out: &Value) -> (Vec<Value>, Vec<String>) {
 }
 
 /// Performance probe on a generated stress document. Run in release for meaningful numbers:
-/// `cargo run --release -p anicraft-cli -- bench`. With `--check yes`, the default scenario
+/// `cargo run --release -p anima-cli -- bench`. With `--check yes`, the default scenario
 /// is compared with [`TIME_BUDGETS`] and a missed budget is an error.
 pub fn bench(a: &Args) -> Result<String, String> {
     let check = a.flag("check").is_some_and(|v| v == "yes" || v == "true");
     if check {
         if cfg!(debug_assertions) {
-            return Err("bench --check needs a release build: cargo run --release -p anicraft-cli -- bench --check yes".into());
+            return Err("bench --check needs a release build: cargo run --release -p anima-cli -- bench --check yes".into());
         }
         if ["layers", "shapes", "frames"].iter().any(|k| a.flag(k).is_some()) {
             return Err("the budgets are for the default scenario; leave out --layers, --shapes and --frames with --check".into());
         }
     }
-    use anicraft_doc::{evaluate, sample};
-    use anicraft_engine::history::document_bytes;
-    use anicraft_render::{View, render};
+    use anima_doc::{evaluate, sample};
+    use anima_engine::history::document_bytes;
+    use anima_render::{View, render};
 
     let layers = a.num::<u32>("layers")?.unwrap_or(50);
     let shapes = a.num::<u32>("shapes")?.unwrap_or(200);
@@ -438,7 +439,7 @@ pub fn bench(a: &Args) -> Result<String, String> {
         }
     });
     // 400% zoom on the stage centre: most shapes are off-screen and culled.
-    let zoomed = View { transform: anicraft_geom::Affine::translate(-2880.0, -1620.0).mul(&anicraft_geom::Affine::scale(4.0, 4.0)), ..view };
+    let zoomed = View { transform: anima_geom::Affine::translate(-2880.0, -1620.0).mul(&anima_geom::Affine::scale(4.0, 4.0)), ..view };
     let mut culled = 0;
     let zoom_ms = avg_ms(12, |i| {
         if let Ok((_, st)) = render(&evaluate(&doc, (i * 20) % frames.max(1)), &zoomed) {
@@ -465,7 +466,7 @@ pub fn bench(a: &Args) -> Result<String, String> {
         let _ = s.undo();
     });
     let hit_us = avg_ms(500, |i| {
-        let _ = s.hit_test(anicraft_geom::Vec2::new((i * 37 % 1920) as f32, (i * 53 % 1080) as f32), 2.0);
+        let _ = s.hit_test(anima_geom::Vec2::new((i * 37 % 1920) as f32, (i * 53 % 1080) as f32), 2.0);
     }) * 1000.0;
 
     let out = json!({
@@ -487,11 +488,7 @@ pub fn bench(a: &Args) -> Result<String, String> {
     }
     let (rows, missed) = check_budgets(&out);
     let report = serde_json::to_string_pretty(&json!({"measured": out, "budgets": rows})).map_err(|e| e.to_string())?;
-    if missed.is_empty() {
-        Ok(report)
-    } else {
-        Err(format!("{report}\n\nover budget: {}", missed.join("; ")))
-    }
+    if missed.is_empty() { Ok(report) } else { Err(format!("{report}\n\nover budget: {}", missed.join("; "))) }
 }
 
 /// Answers one JSON request.
@@ -519,7 +516,7 @@ pub fn handle_request(s: &mut Session, line: &str) -> Value {
 
 /// JSON-lines loop: one request per line, one response per line. Ends on EOF or `{"cmd":"quit"}`.
 pub fn serve<R: BufRead, W: Write>(s: &mut Session, input: R, out: &mut W) -> std::io::Result<()> {
-    writeln!(out, "{}", json!({"ready": true, "app": "AniCraft", "version": env!("CARGO_PKG_VERSION")}))?;
+    writeln!(out, "{}", json!({"ready": true, "app": "Ánima", "version": env!("CARGO_PKG_VERSION")}))?;
     out.flush()?;
     for line in input.lines() {
         let line = line?;
@@ -542,7 +539,7 @@ mod tests {
     use super::*;
 
     /// #226: `info`, `render` and the other subcommands take an Animate document as File › Open
-    /// does (an import, untitled), not only `.anicraft` files.
+    /// does (an import, untitled), not only `.anima` files.
     #[test]
     fn subcommands_open_animate_documents() {
         let xfl = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../xfl/tests/corpus/shapes/shapes.xfl");
@@ -571,16 +568,17 @@ mod tests {
     #[test]
     fn version_names_the_workspace_version() {
         for flag in ["--version", "-V", "version"] {
-            assert_eq!(run(&[flag.to_string()]).unwrap(), format!("anicraft-cli {}", env!("CARGO_PKG_VERSION")));
+            assert_eq!(run(&[flag.to_string()]).unwrap(), format!("anima-cli {}", env!("CARGO_PKG_VERSION")));
         }
     }
 
     #[test]
     fn render_sample_to_png() {
-        let dir = std::env::temp_dir().join(format!("anicraft-cli-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("anima-cli-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let out = dir.join("f.png");
-        let argv: Vec<String> = ["render", "--sample", "--frame", "12", "--scale", "0.25", "--out", out.to_str().unwrap()].iter().map(|s| s.to_string()).collect();
+        let argv: Vec<String> =
+            ["render", "--sample", "--frame", "12", "--scale", "0.25", "--out", out.to_str().unwrap()].iter().map(|s| s.to_string()).collect();
         run(&argv).unwrap();
         let bytes = std::fs::read(&out).unwrap();
         assert_eq!(&bytes[1..4], b"PNG");
@@ -592,8 +590,8 @@ mod tests {
     /// build. (Timing budgets are `bench --check yes`, on a known machine.)
     #[test]
     fn machine_independent_budgets() {
-        use anicraft_doc::{evaluate, sample};
-        use anicraft_engine::history::document_bytes;
+        use anima_doc::{evaluate, sample};
+        use anima_engine::history::document_bytes;
         // 20 layers × 500 shapes × 120 frames: 100k element instances.
         let doc = sample::stress(20, 500, 120);
         let instances: usize = doc.timeline(0).layers.iter().flat_map(|l| l.keyframes.iter()).map(|k| k.elements.len()).sum();
@@ -622,9 +620,10 @@ mod tests {
 
         // At 400% zoom on the stage centre, off-screen shapes are culled: at most 1/8 drawn.
         let dl = evaluate(&small, 5);
-        let view = anicraft_render::View::stage(&small, 1.0);
-        let zoomed = anicraft_render::View { transform: anicraft_geom::Affine::translate(-2880.0, -1620.0).mul(&anicraft_geom::Affine::scale(4.0, 4.0)), ..view };
-        let (_, st) = anicraft_render::render(&dl, &zoomed).unwrap();
+        let view = anima_render::View::stage(&small, 1.0);
+        let zoomed =
+            anima_render::View { transform: anima_geom::Affine::translate(-2880.0, -1620.0).mul(&anima_geom::Affine::scale(4.0, 4.0)), ..view };
+        let (_, st) = anima_render::render(&dl, &zoomed).unwrap();
         assert!(st.items >= 1000 && st.drawn * 8 <= st.items, "{} of {} shapes drawn at 400%", st.drawn, st.items);
     }
 
@@ -646,7 +645,7 @@ mod tests {
 
     #[test]
     fn plugins_folder_flag() {
-        let dir = std::env::temp_dir().join(format!("anicraft-cli-plugins-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("anima-cli-plugins-{}", std::process::id()));
         let argv: Vec<String> = ["--sample", "--plugins", dir.to_str().unwrap()].iter().map(|s| s.to_string()).collect();
         let a = Args::parse(&argv).unwrap();
         let s = session(&a, Some("--sample")).unwrap();
@@ -657,7 +656,7 @@ mod tests {
 
     #[test]
     fn export_any_format_built_in_or_plugin() {
-        let dir = std::env::temp_dir().join(format!("anicraft-cli-export-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("anima-cli-export-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join("plugins")).unwrap();
         let argv = |v: &[&str]| -> Vec<String> { v.iter().map(|s| s.to_string()).collect() };
@@ -687,13 +686,42 @@ mod tests {
         let listed = run(&argv(&["formats", "--plugins", plugins.to_str().unwrap()])).unwrap();
         assert!(listed.contains("org.test.count") && listed.contains("\"gif\""));
         let out = dir.join("movie.txt");
-        let v = run(&argv(&["export", "--sample", "--format", "org.test.count", "--from", "2", "--to", "5", "--out", out.to_str().unwrap(), "--plugins", plugins.to_str().unwrap()])).unwrap();
+        let v = run(&argv(&[
+            "export",
+            "--sample",
+            "--format",
+            "org.test.count",
+            "--from",
+            "2",
+            "--to",
+            "5",
+            "--out",
+            out.to_str().unwrap(),
+            "--plugins",
+            plugins.to_str().unwrap(),
+        ]))
+        .unwrap();
         assert!(v.contains("\"frames\":4"), "{v}");
         let movie: Value = serde_json::from_slice(&std::fs::read(&out).unwrap()).unwrap();
         assert_eq!((movie["result"]["from"].as_u64(), movie["result"]["frames"].as_u64()), (Some(1), Some(4)));
         // Replacing it needs --overwrite yes; unknown formats name the known ones.
-        assert!(run(&argv(&["export", "--sample", "--format", "org.test.count", "--out", out.to_str().unwrap(), "--plugins", plugins.to_str().unwrap()])).is_err());
-        run(&argv(&["export", "--sample", "--format", "org.test.count", "--out", out.to_str().unwrap(), "--plugins", plugins.to_str().unwrap(), "--overwrite", "yes"])).unwrap();
+        assert!(
+            run(&argv(&["export", "--sample", "--format", "org.test.count", "--out", out.to_str().unwrap(), "--plugins", plugins.to_str().unwrap()]))
+                .is_err()
+        );
+        run(&argv(&[
+            "export",
+            "--sample",
+            "--format",
+            "org.test.count",
+            "--out",
+            out.to_str().unwrap(),
+            "--plugins",
+            plugins.to_str().unwrap(),
+            "--overwrite",
+            "yes",
+        ]))
+        .unwrap();
         let err = run(&argv(&["export", "--sample", "--format", "org.test.count", "--out", out.to_str().unwrap()])).unwrap_err();
         assert!(err.contains("lottie") && err.contains("--plugins"), "{err}");
         let _ = std::fs::remove_dir_all(&dir);

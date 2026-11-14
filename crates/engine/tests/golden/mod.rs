@@ -43,7 +43,7 @@ fn write(path: &Path, width: u32, height: u32, rgba: &[u8]) {
     if let Some(dir) = path.parent() {
         std::fs::create_dir_all(dir).unwrap();
     }
-    std::fs::write(path, anicraft_render::encode_png(width, height, rgba).unwrap()).unwrap();
+    std::fs::write(path, anima_render::encode_png(width, height, rgba).unwrap()).unwrap();
 }
 
 /// Checks `rgba` (`width` × `height`, straight alpha) against the golden at `golden`, or writes

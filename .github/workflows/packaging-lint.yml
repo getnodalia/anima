@@ -67,7 +67,7 @@ jobs:
             & (Join-Path $tools 'wix.exe') extension add -g "WixToolset.$extension.wixext/5.0.2"
             if ($LASTEXITCODE -ne 0) { throw "WiX extension $extension installation failed." }
           }
-      # Compiles anicraft.wxs for x64, x86 and arm64 with placeholder payloads and checks the
+      # Compiles anima.wxs for x64, x86 and arm64 with placeholder payloads and checks the
       # compiled scope, folder, upgrade and registration rules (packaging/windows/INSTALLATION.md).
       - name: Build and check non-executable installer fixtures
         shell: pwsh

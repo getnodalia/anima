@@ -7,8 +7,8 @@ oracle; its output must stay bit-identical).
 ## How to measure
 
 ```sh
-cargo run --release -p anicraft-cli -- bench                      # 50 layers × 200 shapes × 240 frames
-cargo run --release -p anicraft-cli -- bench --layers 200 --shapes 500 --frames 600
+cargo run --release -p anima-cli -- bench                      # 50 layers × 200 shapes × 240 frames
+cargo run --release -p anima-cli -- bench --layers 200 --shapes 500 --frames 600
 ```
 
 `bench` builds a deterministic stress document (`doc::sample::stress`) and reports file size,
@@ -60,7 +60,7 @@ and after.
 **Onion skin ±5 at 1080p (2026-11-10, ADR 0047).** Through the stage's tiled path (40 tiles
 of 256 px, one scene evaluation per frame, tiles in parallel), release build, 32 threads, best
 of frames 12, 30 and 48:
-`cargo test --release -p anicraft-engine onion_timings -- --ignored --nocapture`.
+`cargo test --release -p anima-engine onion_timings -- --ignored --nocapture`.
 
 | Scene | Off | ±5 tinted, fading | ±5 outlines | Keyframes only ±5 | Edit Multiple Frames ±5 |
 |---|---|---|---|---|---|
@@ -103,7 +103,7 @@ edges each, deflated, and 24 noisy 1024 × 512 PNGs, stored; 54.6 MB, 425 files,
 inflated), five runs each:
 
 ```sh
-cargo test --release -p anicraft-xfl --test fla -- --ignored --nocapture
+cargo test --release -p anima-xfl --test fla -- --ignored --nocapture
 ```
 
 | Step | CRC-32 byte by byte | CRC-32 by slicing by 8 |
@@ -117,7 +117,7 @@ is parsing and building the document.
 
 ### GPU stage (M3, ADR 0019)
 
-`cargo run --release -p anicraft-gpu --example gpu_bench` (2026-11-09, RTX 5090 over Vulkan,
+`cargo run --release -p anima-gpu --example gpu_bench` (2026-11-09, RTX 5090 over Vulkan,
 32 threads). GPU ms is the whole call: preparing the fills (shared with the oracle), binning,
 upload, the compute pass and the readback. Parity is mean / max difference from the oracle per
 8-bit channel.
@@ -180,7 +180,7 @@ once per image and cached (256 MB budget), so after the first frame they cost no
 
 ### GPU stage, fourth slice: binning on the GPU, hairlines (M3, ADR 0048)
 
-`cargo run --release -p anicraft-gpu --example gpu_bench` (2026-11-10, RTX 5090 over Vulkan,
+`cargo run --release -p anima-gpu --example gpu_bench` (2026-11-10, RTX 5090 over Vulkan,
 32 threads, a machine shared with other builds: best of three runs). *Direct* is the calling
 thread's time with `render_texture`, *tiled* the stage's way (512 px tiles in parallel until
 the GPU has finished).
@@ -221,7 +221,7 @@ frames 12, 30 and 48) with hairlines: onion ±5 outlines **17.1 ms** against 14.
 * **Budgets that don't depend on the machine** (undo memory, snapshot sharing, file size,
   culling) are a test (`machine_independent_budgets` in `crates/cli`), so the CI gate fails
   any PR that breaks them.
-* **Timing budgets** are `cargo run --release -p anicraft-cli -- bench --check yes`. It
+* **Timing budgets** are `cargo run --release -p anima-cli -- bench --check yes`. It
   prints every measurement next to its budget and fails when one is missed. Shared CI
   runners vary too much in speed and core count to gate on time, so this runs on a known
   machine before a release and after performance work. A dedicated benchmark runner would
@@ -233,7 +233,7 @@ frames 12, 30 and 48) with hairlines: onion ±5 outlines **17.1 ms** against 14.
 ## Animated PNG and WebP (2026-11-11, ADR 0063)
 
 The sample, all 48 frames, release build, Windows 10, 32 threads
-(`cargo test --release -p anicraft-engine anim::tests::sizes -- --ignored --nocapture`).
+(`cargo test --release -p anima-engine anim::tests::sizes -- --ignored --nocapture`).
 Times include rendering every frame.
 
 | Export | 1280 × 720 | Time | 640 × 360 | Time |
@@ -250,7 +250,7 @@ faster than GIF, whose LZW coding runs on one thread.
 
 ## Sound (2026-11-09, ADR 0020)
 
-Release build, Windows 10, one 120-second 48 kHz stereo sine, through `anicraft-cli run`
+Release build, Windows 10, one 120-second 48 kHz stereo sine, through `anima-cli run`
 (times include starting the CLI and loading the sample):
 
 | Step | Time |

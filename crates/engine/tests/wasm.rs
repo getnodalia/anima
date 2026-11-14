@@ -3,16 +3,16 @@
 //!
 //! ```sh
 //! CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER=wasm-bindgen-test-runner \
-//!     cargo test -p anicraft-engine --target wasm32-unknown-unknown --test wasm
+//!     cargo test -p anima-engine --target wasm32-unknown-unknown --test wasm
 //! ```
 //!
 //! A build can't catch what traps at run time (a clock or thread call that compiles but isn't
 //! there); these do. Natively this file is empty.
 #![cfg(target_arch = "wasm32")]
 
-use anicraft_engine::plugins::{Host, Limits, Plugin};
-use anicraft_engine::render_service::RenderService;
-use anicraft_engine::{Session, vfs};
+use anima_engine::plugins::{Host, Limits, Plugin};
+use anima_engine::render_service::RenderService;
+use anima_engine::{Session, vfs};
 use serde_json::{Map, Value, json};
 use std::path::Path;
 use wasm_bindgen_test::wasm_bindgen_test;
@@ -24,13 +24,13 @@ fn names() -> Vec<String> {
 #[wasm_bindgen_test]
 fn saves_opens_and_exports_through_memory() {
     assert!(vfs::in_memory(), "the browser has no disk: files live in memory");
-    let mut s = Session::new(anicraft_engine::doc::sample::demo());
-    s.execute("file.save", &json!({"path": "walk.anicraft"})).unwrap();
+    let mut s = Session::new(anima_engine::doc::sample::demo());
+    s.execute("file.save", &json!({"path": "walk.anima"})).unwrap();
     let saved = vfs::take_written();
     assert_eq!(saved.len(), 1);
-    vfs::put(Path::new("walk.anicraft"), saved[0].1.clone()).unwrap();
+    vfs::put(Path::new("walk.anima"), saved[0].1.clone()).unwrap();
     let mut t = Session::default();
-    t.execute("file.open", &json!({"path": "walk.anicraft"})).unwrap();
+    t.execute("file.open", &json!({"path": "walk.anima"})).unwrap();
     assert_eq!(t.frame_count(), s.frame_count());
     // Parallel renders (rayon on the one thread), timing (web clock), encoders.
     s.execute("file.export_png", &json!({"path": "f.png"})).unwrap();
@@ -43,9 +43,9 @@ fn saves_opens_and_exports_through_memory() {
 
 #[wasm_bindgen_test]
 fn the_stage_renders_without_a_thread() {
-    let s = Session::new(anicraft_engine::doc::sample::demo());
+    let s = Session::new(anima_engine::doc::sample::demo());
     let svc = RenderService::new(64 << 20, None);
-    let view = anicraft_engine::render::View::stage(&s.doc, 0.5);
+    let view = anima_engine::render::View::stage(&s.doc, 0.5);
     // No worker thread can start, so a request renders right away.
     let img = svc.request(svc.job(s.state, &s.doc, 3, view, None)).expect("rendered on this thread");
     assert!(img.error.is_none() && img.width > 0 && img.rgba_premul.iter().any(|&b| b != 0));

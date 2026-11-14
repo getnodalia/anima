@@ -2,7 +2,7 @@
 //! a scaled instance renders.
 
 use crate::Session;
-use anicraft_doc::{ScaleGrid, SymbolId};
+use anima_doc::{ScaleGrid, SymbolId};
 use serde_json::{Value, json};
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -19,7 +19,7 @@ fn err(s: &mut Session, id: &str, p: Value) -> String {
 /// A 100 × 40 rounded drawing object turned into a symbol (its space runs from (−50, −20) to
 /// (50, 20)), its instance selected.
 fn panel() -> (Session, SymbolId) {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.rect", json!({"x": 100, "y": 100, "w": 100, "h": 40, "radius": 10, "fill": "#3366cc", "stroke": "#000000", "stroke_width": 2}));
     let v = run(&mut s, "modify.convert_to_symbol", json!({"name": "Panel"}));
     (s, SymbolId(v["symbol"].as_u64().unwrap()))
@@ -154,9 +154,9 @@ fn a_scaled_instance_renders_with_unscaled_corners() {
     // The CPU renderer (the oracle) draws the sliced instance: at 3× wide its top-left corner
     // pixels match the unscaled instance's, while plain scaling stretches them.
     let (mut s, _) = panel();
-    s.doc.stage = anicraft_doc::Stage { width: 400, height: 200, ..s.doc.stage };
+    s.doc.stage = anima_doc::Stage { width: 400, height: 200, ..s.doc.stage };
     let corner = |s: &Session| {
-        let img = anicraft_render::render_frame(&s.doc, 0, 1.0).unwrap();
+        let img = anima_render::render_frame(&s.doc, 0, 1.0).unwrap();
         // The instance's top-left corner is at (100, 100): the 12 × 12 pixels there.
         (0..12u32).flat_map(|y| (0..12u32).map(move |x| (x, y))).map(|(x, y)| format!("{:?}", img.pixel(100 + x, 100 + y))).collect::<Vec<_>>()
     };

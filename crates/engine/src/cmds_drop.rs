@@ -10,7 +10,7 @@
 
 use crate::params::*;
 use crate::{CommandSpec, EngineError, Result, Session};
-use anicraft_doc::{FolderId, LibraryEntry, LibraryItem};
+use anima_doc::{FolderId, LibraryEntry, LibraryItem};
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 
@@ -20,7 +20,7 @@ pub const MAX_DROPPED: usize = 64;
 /// What a dropped file is, by its name (and, for an XFL folder, what is inside it).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DropKind {
-    /// `.anicraft`, `.fla`, `.xfl` (or an XFL folder): opens as the document.
+    /// `.anima`, `.fla`, `.xfl` (or an XFL folder): opens as the document.
     Document,
     /// `.svg`.
     Drawing,
@@ -64,7 +64,7 @@ pub fn kind_of(path: &Path) -> DropKind {
     }
     let ext = path.extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase);
     match ext.as_deref() {
-        Some("anicraft") => DropKind::Document,
+        Some("anima") => DropKind::Document,
         Some("svg") => DropKind::Drawing,
         Some("png" | "jpg" | "jpeg") => DropKind::Image,
         _ if crate::cmds_sound::is_sound(path) => DropKind::Sound,
@@ -72,8 +72,9 @@ pub fn kind_of(path: &Path) -> DropKind {
     }
 }
 
-/// The message for a file AniCraft can't take.
-pub const UNSUPPORTED: &str = "AniCraft opens .anicraft, .fla and .xfl documents, and imports SVG drawings, PNG and JPEG images, and WAV, Ogg and MP3 sounds";
+/// The message for a file Ánima can't take.
+pub const UNSUPPORTED: &str =
+    "Ánima opens .anima, .fla and .xfl documents, and imports SVG drawings, PNG and JPEG images, and WAV, Ogg and MP3 sounds";
 
 /// What dropping a file of `kind` on `target` does.
 pub fn route(kind: DropKind, target: DropTarget) -> DropAction {
@@ -107,7 +108,9 @@ fn paths(p: &Value) -> Result<Vec<PathBuf>> {
     let list: Vec<PathBuf> = match (p.get("paths"), opt_str(p, "path")?) {
         (Some(v), None) => {
             let a = v.as_array().ok_or_else(|| EngineError::Param("param 'paths' must be a list of file paths".into()))?;
-            a.iter().map(|x| x.as_str().map(PathBuf::from).ok_or_else(|| EngineError::Param("param 'paths' must be a list of file paths".into()))).collect::<Result<_>>()?
+            a.iter()
+                .map(|x| x.as_str().map(PathBuf::from).ok_or_else(|| EngineError::Param("param 'paths' must be a list of file paths".into())))
+                .collect::<Result<_>>()?
         }
         (None, Some(one)) => vec![PathBuf::from(one)],
         _ => return Err(EngineError::Param("name the files with 'paths' (or one with 'path')".into())),
@@ -159,9 +162,9 @@ fn drop(s: &mut Session, p: &Value) -> Result<Value> {
         if target == DropTarget::Library {
             let v = crate::cmds_sound::import_to_library(s, &json!({"path": path}))?;
             let item = match (v["bitmap"].as_u64(), v["sound"].as_u64(), v["symbol"].as_u64()) {
-                (Some(b), _, _) => LibraryItem::Bitmap(anicraft_doc::BitmapId(b)),
-                (None, Some(snd), _) => LibraryItem::Sound(anicraft_doc::SoundId(snd)),
-                (None, None, Some(sym)) => LibraryItem::Symbol(anicraft_doc::SymbolId(sym)),
+                (Some(b), _, _) => LibraryItem::Bitmap(anima_doc::BitmapId(b)),
+                (None, Some(snd), _) => LibraryItem::Sound(anima_doc::SoundId(snd)),
+                (None, None, Some(sym)) => LibraryItem::Symbol(anima_doc::SymbolId(sym)),
                 _ => return Err(EngineError::State(format!("{path} added nothing to the Library"))),
             };
             if let Some(folder) = folder {
@@ -200,7 +203,7 @@ fn drop(s: &mut Session, p: &Value) -> Result<Value> {
                 place["y"] = json!(y);
                 let placed = crate::cmds_draw::place(s, &place)?;
                 if let Some(list) = placed["elements"].as_array() {
-                    elements.extend(list.iter().filter_map(Value::as_u64).map(anicraft_doc::ElementId));
+                    elements.extend(list.iter().filter_map(Value::as_u64).map(anima_doc::ElementId));
                 }
             }
         }
@@ -213,7 +216,8 @@ fn drop(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// A drop on a layer's frame in the timeline (ADR 0065).
 fn onto_timeline(s: &mut Session, p: &Value, files: &[PathBuf], x: f32, y: f32) -> Result<Value> {
-    let layer = anicraft_doc::LayerId(opt_u64(p, "layer")?.ok_or_else(|| EngineError::Param("a drop on the timeline names its 'layer' (an id)".into()))?);
+    let layer =
+        anima_doc::LayerId(opt_u64(p, "layer")?.ok_or_else(|| EngineError::Param("a drop on the timeline names its 'layer' (an id)".into()))?);
     let frame = opt_u32(p, "frame")?.ok_or_else(|| EngineError::Param("a drop on the timeline names its 'frame' (from 0)".into()))?;
     if frame > crate::MAX_FRAME {
         return Err(EngineError::Param(format!("'frame' must be at most {}", crate::MAX_FRAME)));
@@ -221,9 +225,9 @@ fn onto_timeline(s: &mut Session, p: &Value, files: &[PathBuf], x: f32, y: f32) 
     let tl = s.timeline();
     let l = tl.layer(layer).ok_or_else(|| EngineError::State(format!("no layer with id {} here", layer.0)))?;
     let refuse = match l.kind {
-        anicraft_doc::LayerKind::Folder => Some("is a folder: drop on one of its layers"),
-        anicraft_doc::LayerKind::Camera => Some("is the camera layer: drop on a layer below it"),
-        anicraft_doc::LayerKind::Armature => Some("holds an armature, posed by its bones: drop on another layer"),
+        anima_doc::LayerKind::Folder => Some("is a folder: drop on one of its layers"),
+        anima_doc::LayerKind::Camera => Some("is the camera layer: drop on a layer below it"),
+        anima_doc::LayerKind::Armature => Some("holds an armature, posed by its bones: drop on another layer"),
         _ if l.locked || tl.locked_by_folder(layer) => Some("is locked: unlock it to drop onto it"),
         _ => None,
     };
@@ -243,7 +247,9 @@ fn onto_timeline(s: &mut Session, p: &Value, files: &[PathBuf], x: f32, y: f32) 
         crate::cmds_timeline::insert_keyframe_at(s.layer_mut(Some(layer))?, frame, true)?;
     }
     let (mut elements, mut items) = (Vec::new(), Vec::new());
-    let placed_ids = |v: &Value| -> Vec<anicraft_doc::ElementId> { v["elements"].as_array().into_iter().flatten().filter_map(Value::as_u64).map(anicraft_doc::ElementId).collect() };
+    let placed_ids = |v: &Value| -> Vec<anima_doc::ElementId> {
+        v["elements"].as_array().into_iter().flatten().filter_map(Value::as_u64).map(anima_doc::ElementId).collect()
+    };
     for f in files {
         let path = f.display().to_string();
         let nothing = || EngineError::State(format!("{path} added nothing to the Library"));
@@ -278,5 +284,7 @@ fn onto_timeline(s: &mut Session, p: &Value, files: &[PathBuf], x: f32, y: f32) 
     if !elements.is_empty() {
         s.select_only(elements.iter().copied());
     }
-    Ok(json!({"elements": elements.iter().map(|e| e.0).collect::<Vec<_>>(), "items": items, "layers": 0, "files": files.len(), "layer": layer.0, "frame": frame, "keyframe_made": made}))
+    Ok(
+        json!({"elements": elements.iter().map(|e| e.0).collect::<Vec<_>>(), "items": items, "layers": 0, "files": files.len(), "layer": layer.0, "frame": frame, "keyframe_made": made}),
+    )
 }

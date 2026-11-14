@@ -3,12 +3,12 @@
 //! A symbol with a [`ScaleGrid`] is drawn so that scaling an instance keeps the corners outside
 //! its guides unscaled: the instance's transform is decomposed (`T · R · Skew · S`), and instead
 //! of `S` the symbol's own shapes go through the 9-slice map of its box scaled by `S`
-//! ([`anicraft_geom::slice`]); translation, rotation and skew apply after. Strokes keep their
+//! ([`anima_geom::slice`]); translation, rotation and skew apply after. Strokes keep their
 //! width. Nested symbols, text and bitmap fills inside scale normally, as in Animate.
 
 use crate::{Document, ElementKind, LayerKind, ScaleGrid, Symbol};
-use anicraft_geom::slice::{Axis, Slice9};
-use anicraft_geom::{Affine, Rect};
+use anima_geom::slice::{Axis, Slice9};
+use anima_geom::{Affine, Rect};
 
 /// How a sliced instance's shapes are drawn (see the module docs).
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -61,7 +61,7 @@ pub(crate) fn slicing(doc: &Document, sym: &Symbol, transform: &Affine) -> Optio
     map_for(&grid, &b, sx, sy).map(|map| {
         // `transform` is T·R·K·S; S = scale(sx, ±sy). Keep a flip in `post` (sliced magnitudes).
         let flip = if d.sy < 0.0 { -1.0 } else { 1.0 };
-        let rest = anicraft_geom::Decomposed { sx: 1.0, sy: flip, ..d }.compose();
+        let rest = anima_geom::Decomposed { sx: 1.0, sy: flip, ..d }.compose();
         Slicing { map, post: rest, scale: Affine::scale(sx, sy) }
     })
 }

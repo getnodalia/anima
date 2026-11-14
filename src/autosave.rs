@@ -16,10 +16,10 @@ use crate::prefs::Prefs;
 use crate::theme::{T, Type, text};
 #[cfg(target_arch = "wasm32")]
 use crate::web::BrowserSaver as Autosaver;
-use anicraft_engine::recovery::{self, Entry, Outcome};
+use anima_engine::StateId;
+use anima_engine::recovery::{self, Entry, Outcome};
 #[cfg(not(target_arch = "wasm32"))]
-use anicraft_engine::recovery::{Autosaver, SessionLock};
-use anicraft_engine::StateId;
+use anima_engine::recovery::{Autosaver, SessionLock};
 use serde_json::json;
 use std::path::PathBuf;
 
@@ -60,7 +60,7 @@ pub fn due(unsaved_for: f64, changes: u64, in_gesture: bool, p: &Prefs) -> bool 
 
 impl Recovery {
     /// Starts this session's autosave and finds what earlier sessions left behind. Screenshot
-    /// runs leave the real folder alone unless `ANICRAFT_RECOVERY_DIR` names one.
+    /// runs leave the real folder alone unless `ANIMA_RECOVERY_DIR` names one.
     pub fn start(shot_mode: bool) -> (Recovery, Option<String>) {
         let mut r = Recovery::default();
         #[cfg(target_arch = "wasm32")]
@@ -80,7 +80,9 @@ impl Recovery {
             if shot_mode && !crate::platform::recovery_dir_overridden() {
                 return (r, None);
             }
-            let Some(dir) = crate::platform::recovery_dir() else { return (r, Some(tr!("Autosave is off: this system has no settings folder").into())) };
+            let Some(dir) = crate::platform::recovery_dir() else {
+                return (r, Some(tr!("Autosave is off: this system has no settings folder").into()));
+            };
             recovery::prune(&dir);
             r.found = recovery::scan(&dir, None);
             r.show = !r.found.is_empty();
@@ -138,7 +140,7 @@ impl Recovery {
     /// Writes a copy of unsaved work now, without waiting for the interval (the graphics driver
     /// reported trouble, ADR 0092: the next thing may be the window going). Whether one was
     /// started; nothing to do when the newest copy already holds this state.
-    pub fn write_now(&mut self, s: &anicraft_engine::Session) -> bool {
+    pub fn write_now(&mut self, s: &anima_engine::Session) -> bool {
         let Some(saver) = &mut self.saver else { return false };
         if !s.is_dirty() || self.written == Some(s.state) {
             return false;
@@ -153,7 +155,7 @@ impl Recovery {
 
     /// Ends the session: a clean exit removes this session's copy; anything else (unsaved work
     /// the user didn't decide about) is written one last time for the next start.
-    pub fn finish(&mut self, s: &anicraft_engine::Session, clean: bool) {
+    pub fn finish(&mut self, s: &anima_engine::Session, clean: bool) {
         if let Some(saver) = self.saver.take() {
             let keep = !clean && s.is_dirty();
             saver.finish(keep.then(|| (s.doc.clone(), s.path.clone())));
@@ -214,9 +216,13 @@ fn restore(app: &mut App, id: String) {
             app.recovery.discarded(&id);
             return;
         };
-        let name = meta.original.as_deref().and_then(std::path::Path::file_name).map_or_else(|| "Untitled.anicraft".to_string(), |n| n.to_string_lossy().into_owned()); // i18n-exempt: a file name
+        let name = meta
+            .original
+            .as_deref()
+            .and_then(std::path::Path::file_name)
+            .map_or_else(|| "Untitled.anima".to_string(), |n| n.to_string_lossy().into_owned()); // i18n-exempt: a file name
         let path = std::path::Path::new(RESTORED_DIR).join(&id).join(&name);
-        match anicraft_engine::vfs::put(&path, json.into_bytes()) {
+        match anima_engine::vfs::put(&path, json.into_bytes()) {
             Ok(()) => app.request("file.open", json!({"path": path.display().to_string(), "unsaved": true, "untitled": meta.original.is_none()})),
             Err(e) => app.status_err(tr!("Could not restore {name}: {error}", name = name, error = e)),
         }
@@ -260,7 +266,7 @@ pub fn tick(app: &mut App, ctx: &egui::Context) {
             }
             Outcome::Failed { error, .. } => {
                 if !app.recovery.failed {
-                    app.status_err(tr!("Autosave failed: {error}. Save your work to be safe; AniCraft will keep trying.", error = error));
+                    app.status_err(tr!("Autosave failed: {error}. Save your work to be safe; Ánima will keep trying.", error = error));
                 }
                 app.recovery.failed = true;
                 app.recovery.written = None;
@@ -330,12 +336,23 @@ pub fn sample_entries() -> Vec<Entry> {
     let entry = |session: &str, name: &str, original: Option<&str>, age: u64, frames: u32, scenes: usize| Entry {
         session: session.into(),
         document: PathBuf::new(),
-        meta: recovery::RecoveryMeta { name: name.into(), original: original.map(PathBuf::from), saved_at: now.saturating_sub(age), frames, scenes, ..Default::default() },
+        meta: recovery::RecoveryMeta {
+            name: name.into(),
+            original: original.map(PathBuf::from),
+            saved_at: now.saturating_sub(age),
+            frames,
+            scenes,
+            ..Default::default()
+        },
         bytes: 0,
     };
-    let walk = if crate::platform::OS == crate::platform::Os::Windows { "C:\\Users\\you\\Documents\\walk-cycle.anicraft" } else { "/home/you/Documents/walk-cycle.anicraft" };
+    let walk = if crate::platform::OS == crate::platform::Os::Windows {
+        "C:\\Users\\you\\Documents\\walk-cycle.anima"
+    } else {
+        "/home/you/Documents/walk-cycle.anima"
+    };
     // i18n-exempt: document names, as the engine records them
-    vec![entry("sample-1", "walk-cycle.anicraft", Some(walk), 240, 48, 2), entry("sample-2", "Untitled", None, 3 * 3600, 120, 1)]
+    vec![entry("sample-1", "walk-cycle.anima", Some(walk), 240, 48, 2), entry("sample-2", "Untitled", None, 3 * 3600, 120, 1)]
 }
 
 enum Act {
@@ -371,8 +388,8 @@ pub fn window(app: &mut App, ctx: &egui::Context) {
         .show(ctx, |ui| {
             ui.set_width(520.0);
             let lead = trn!(
-                "AniCraft didn't close properly last time. This document had changes that weren't saved:",
-                "AniCraft didn't close properly last time. These documents had changes that weren't saved:",
+                "Ánima didn't close properly last time. This document had changes that weren't saved:",
+                "Ánima didn't close properly last time. These documents had changes that weren't saved:",
                 n
             );
             ui.label(text(Type::Body, lead).color(T.text_dim));
@@ -385,7 +402,13 @@ pub fn window(app: &mut App, ctx: &egui::Context) {
                             ui.label(text(Type::Body, e.meta.name.clone()).strong());
                             let when = ago(now.saturating_sub(e.meta.saved_at));
                             let detail = if e.meta.scenes > 1 {
-                                trn!("Autosaved {when} · {n} frame · {scenes} scenes", "Autosaved {when} · {n} frames · {scenes} scenes", e.meta.frames, when = when, scenes = e.meta.scenes)
+                                trn!(
+                                    "Autosaved {when} · {n} frame · {scenes} scenes",
+                                    "Autosaved {when} · {n} frames · {scenes} scenes",
+                                    e.meta.frames,
+                                    when = when,
+                                    scenes = e.meta.scenes
+                                )
                             } else {
                                 trn!("Autosaved {when} · {n} frame", "Autosaved {when} · {n} frames", e.meta.frames, when = when)
                             };
@@ -399,12 +422,19 @@ pub fn window(app: &mut App, ctx: &egui::Context) {
                                 }
                             }
                             if e.original_is_newer() {
-                                ui.label(text(Type::Caption, tr!("The file was saved after this copy, so it opens as a new document and Save asks for a name.")).color(T.error));
+                                ui.label(
+                                    text(
+                                        Type::Caption,
+                                        tr!("The file was saved after this copy, so it opens as a new document and Save asks for a name."),
+                                    )
+                                    .color(T.error),
+                                );
                             }
                         });
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                             if confirm.as_deref() == Some(e.session.as_str()) {
-                                let discard = egui::Button::new(text(Type::Body, tr!("Discard")).color(T.on_fill).strong()).fill(T.danger).min_size(btn);
+                                let discard =
+                                    egui::Button::new(text(Type::Body, tr!("Discard")).color(T.on_fill).strong()).fill(T.danger).min_size(btn);
                                 if ui.add(discard).clicked() {
                                     act = Some(Act::Discard(e.session.clone()));
                                 }
@@ -412,11 +442,22 @@ pub fn window(app: &mut App, ctx: &egui::Context) {
                                     act = Some(Act::KeepIt);
                                 }
                             } else {
-                                let restore = egui::Button::new(text(Type::Body, tr!("Restore")).color(T.on_fill).strong()).fill(T.accent).min_size(btn);
-                                if ui.add(restore).named(&tr!("Restore {name}", name = e.meta.name)).on_hover_text(tr!("Open it as unsaved work")).clicked() {
+                                let restore =
+                                    egui::Button::new(text(Type::Body, tr!("Restore")).color(T.on_fill).strong()).fill(T.accent).min_size(btn);
+                                if ui
+                                    .add(restore)
+                                    .named(&tr!("Restore {name}", name = e.meta.name))
+                                    .on_hover_text(tr!("Open it as unsaved work"))
+                                    .clicked()
+                                {
                                     act = Some(Act::Restore(e.session.clone()));
                                 }
-                                if ui.add(egui::Button::new(tr!("Discard…")).min_size(btn)).named(&tr!("Discard {name}…", name = e.meta.name)).on_hover_text(tr!("Delete this autosaved copy")).clicked() {
+                                if ui
+                                    .add(egui::Button::new(tr!("Discard…")).min_size(btn))
+                                    .named(&tr!("Discard {name}…", name = e.meta.name))
+                                    .on_hover_text(tr!("Delete this autosaved copy"))
+                                    .clicked()
+                                {
                                     act = Some(Act::AskDiscard(e.session.clone()));
                                 }
                             }
@@ -477,11 +518,11 @@ mod tests {
     #[test]
     fn restored_browser_copies_are_recognized() {
         let open = |path: &str| json!({"path": path, "unsaved": true});
-        assert_eq!(restored_session("file.open", &open("recovered/web-1a-2b/walk.anicraft")).as_deref(), Some("web-1a-2b"));
-        assert_eq!(restored_session("file.open", &json!({"path": "recovered/web-1/walk.anicraft"})), None, "an ordinary open");
-        assert_eq!(restored_session("file.open", &open("walk.anicraft")), None);
+        assert_eq!(restored_session("file.open", &open("recovered/web-1a-2b/walk.anima")).as_deref(), Some("web-1a-2b"));
+        assert_eq!(restored_session("file.open", &json!({"path": "recovered/web-1/walk.anima"})), None, "an ordinary open");
+        assert_eq!(restored_session("file.open", &open("walk.anima")), None);
         assert_eq!(restored_session("file.open", &open("recovered/../x/y")), None);
-        assert_eq!(restored_session("file.save", &open("recovered/web-1/walk.anicraft")), None);
+        assert_eq!(restored_session("file.save", &open("recovered/web-1/walk.anima")), None);
     }
 
     #[test]

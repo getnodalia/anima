@@ -15,8 +15,8 @@
 //! and a failure degrades (no storage: autosave is off and says so; no picker: nothing opens).
 
 use crate::platform::Picked;
-use anicraft_engine::doc::Document;
-use anicraft_engine::recovery::{Entry, Outcome, RecoveryMeta, WriteStats};
+use anima_engine::doc::Document;
+use anima_engine::recovery::{Entry, Outcome, RecoveryMeta, WriteStats};
 use std::cell::{Cell, RefCell};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -24,15 +24,15 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
 
 /// Where the preferences are kept.
-pub const PREFS_KEY: &str = "anicraft.prefs";
+pub const PREFS_KEY: &str = "anima.prefs";
 /// Recovery copies: `<prefix><session>.doc` (the document) and `.meta` (its description).
-const RECOVERY_PREFIX: &str = "anicraft.recovery.";
+const RECOVERY_PREFIX: &str = "anima.recovery.";
 /// Each open tab's Web Lock: this prefix and its session id.
-const LOCK_PREFIX: &str = "anicraft-session-";
+const LOCK_PREFIX: &str = "anima-session-";
 /// The page's canvas and loading message (packaging/web/index.html).
-const CANVAS_ID: &str = "anicraft_canvas";
-const LOADING_ID: &str = "anicraft_loading";
-const PICKER_ID: &str = "anicraft_file_input";
+const CANVAS_ID: &str = "anima_canvas";
+const LOADING_ID: &str = "anima_loading";
+const PICKER_ID: &str = "anima_file_input";
 /// Largest file taken from the picker (the engine's own limits are lower for most kinds).
 const MAX_PICK_BYTES: f64 = 512.0 * 1024.0 * 1024.0;
 
@@ -71,7 +71,7 @@ pub fn start() {
                 web_sys::console::error_1(&JsValue::from_str(&e));
                 if let Some(el) = element(LOADING_ID) {
                     // i18n-exempt: the page's own loading text, before the interface (and its language) starts
-                    el.set_text_content(Some(&format!("AniCraft could not start in this browser: {e}")));
+                    el.set_text_content(Some(&format!("Ánima could not start in this browser: {e}")));
                 }
             }
         }
@@ -80,10 +80,13 @@ pub fn start() {
 
 async fn run() -> Result<(), String> {
     // i18n-exempt: for the console and the page's loading text, before the interface starts
-    let canvas = element(CANVAS_ID).ok_or("the page has no canvas for AniCraft")?.dyn_into::<web_sys::HtmlCanvasElement>().map_err(|_| "the AniCraft element is not a canvas")?;
+    let canvas = element(CANVAS_ID)
+        .ok_or("the page has no canvas for Ánima")?
+        .dyn_into::<web_sys::HtmlCanvasElement>()
+        .map_err(|_| "the Ánima element is not a canvas")?;
     // Text needs a face to lay out with, and a page can't see the computer's fonts.
-    anicraft_engine::text::Fonts::register(fonts());
-    let session = anicraft_engine::Session::new(anicraft_engine::doc::sample::demo());
+    anima_engine::text::Fonts::register(fonts());
+    let session = anima_engine::Session::new(anima_engine::doc::sample::demo());
     track_drags(&canvas);
     eframe::WebRunner::new()
         .start(
@@ -107,7 +110,8 @@ async fn run() -> Result<(), String> {
 fn fonts() -> Vec<Arc<[u8]>> {
     let mut faces = crate::theme::embedded_fonts();
     if faces.is_empty()
-        && let Some(f) = egui::FontDefinitions::default().font_data.get("Ubuntu-Light") // i18n-exempt: a font key
+        && let Some(f) = egui::FontDefinitions::default().font_data.get("Ubuntu-Light")
+    // i18n-exempt: a font key
     {
         faces.push(Arc::from(f.font.as_ref()));
     }
@@ -311,7 +315,8 @@ pub fn storage_get(key: &str) -> Option<String> {
 
 pub fn storage_set(key: &str, value: &str) -> Result<(), String> {
     let s = storage().ok_or(tr!("this browser keeps no storage for the site (private browsing?)"))?;
-    s.set_item(key, value).map_err(|_| tr!("the browser's storage for this site is full (documents with large images or sounds may not fit)").to_string())
+    s.set_item(key, value)
+        .map_err(|_| tr!("the browser's storage for this site is full (documents with large images or sounds may not fit)").to_string())
 }
 
 fn storage_remove(key: &str) {
@@ -364,14 +369,17 @@ impl BrowserSaver {
         let tag = self.next_tag;
         let meta = RecoveryMeta::describe(&self.id, &doc, original);
         let t = web_time::Instant::now();
-        let outcome = match anicraft_engine::format::to_json(&doc) {
+        let outcome = match anima_engine::format::to_json(&doc) {
             Ok(json) => {
                 let serialize_ms = t.elapsed().as_secs_f64() * 1000.0;
                 let t = web_time::Instant::now();
                 // The description last: a description always has its whole document.
                 let meta_json = serde_json::to_string(&meta).unwrap_or_default();
                 match storage_set(&doc_key(&self.id), &json).and_then(|()| storage_set(&meta_key(&self.id), &meta_json)) {
-                    Ok(()) => Outcome::Written { tag, stats: WriteStats { bytes: json.len() as u64, serialize_ms, write_ms: t.elapsed().as_secs_f64() * 1000.0 } },
+                    Ok(()) => Outcome::Written {
+                        tag,
+                        stats: WriteStats { bytes: json.len() as u64, serialize_ms, write_ms: t.elapsed().as_secs_f64() * 1000.0 },
+                    },
                     Err(error) => Outcome::Failed { tag, error },
                 }
             }
@@ -425,7 +433,8 @@ fn hold_lock(id: &str) {
 /// Web Locks every other session counts as closed (its copy is offered; restoring is a copy).
 pub fn refresh_live() {
     LIVE.with(|l| *l.borrow_mut() = None);
-    let query = locks().and_then(|locks| method(&locks, "query").and_then(|q| q.call0(&locks).ok())).and_then(|p| p.dyn_into::<js_sys::Promise>().ok());
+    let query =
+        locks().and_then(|locks| method(&locks, "query").and_then(|q| q.call0(&locks).ok())).and_then(|p| p.dyn_into::<js_sys::Promise>().ok());
     let Some(query) = query else {
         LIVE.with(|l| *l.borrow_mut() = Some(Vec::new()));
         return;
@@ -455,7 +464,7 @@ pub fn scan(own: Option<&str>) -> Option<Vec<Entry>> {
     let mut found: Vec<Entry> = storage_keys()
         .iter()
         .filter_map(|k| k.strip_prefix(RECOVERY_PREFIX)?.strip_suffix(".meta"))
-        .filter(|id| anicraft_engine::recovery::valid_id(id) && Some(*id) != own && !live.iter().any(|l| l == id))
+        .filter(|id| anima_engine::recovery::valid_id(id) && Some(*id) != own && !live.iter().any(|l| l == id))
         .filter_map(|id| {
             let meta = serde_json::from_str::<RecoveryMeta>(&storage_get(&meta_key(id))?).ok()?;
             let bytes = storage_get(&doc_key(id))?.len() as u64;

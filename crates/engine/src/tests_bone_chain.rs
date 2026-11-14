@@ -5,8 +5,8 @@
 
 use super::*;
 use crate::tests_bone::{ARM, HAND, ROOT, three_bars};
-use anicraft_doc::armature;
-use anicraft_geom::Vec2;
+use anima_doc::armature;
+use anima_geom::Vec2;
 use serde_json::json;
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -34,7 +34,12 @@ fn drawn_by_hand() -> (Session, u64, u64) {
 fn a_bone_from_an_instance_on_a_chain_starts_at_its_joint() {
     let (mut s, _, _) = drawn_by_hand();
     let bs = bones(&mut s);
-    assert!(pt(&bs[1]["head"]).distance(pt(&bs[0]["tail"])) < 1e-3, "the second bone starts where the first ends: {} vs {}", bs[1]["head"], bs[0]["tail"]);
+    assert!(
+        pt(&bs[1]["head"]).distance(pt(&bs[0]["tail"])) < 1e-3,
+        "the second bone starts where the first ends: {} vs {}",
+        bs[1]["head"],
+        bs[0]["tail"]
+    );
     // A root's bones still start where they were drawn (a torso's shoulders and hips).
     let mut s = three_bars();
     run(&mut s, "bone.add", json!({"from": ROOT, "to": ARM, "head": [150, 100]}));
@@ -79,11 +84,11 @@ fn grabbing_a_bone_along_its_length_moves_from_where_it_was_grabbed() {
         let arm = l.armature.clone().unwrap();
         (l, arm)
     };
-    let (_, els) = anicraft_doc::evaluate_layer_elements(&l, 0).unwrap();
+    let (_, els) = anima_doc::evaluate_layer_elements(&l, 0).unwrap();
     let pose = armature::pose_at(&l, 0).unwrap_or_default();
     // Pressed a quarter of the way along the first bone, near the shoulder.
     let press = Vec2::new(175.0, 100.0);
-    let local = armature::grab_point(&arm, &els, &pose, anicraft_doc::BoneId(b1), press).unwrap();
+    let local = armature::grab_point(&arm, &els, &pose, anima_doc::BoneId(b1), press).unwrap();
     let v = run(&mut s, "bone.solve", json!({"bone": b1, "x": press.x, "y": press.y, "local": [local.x, local.y]}));
     assert!(v["error"].as_f64().unwrap() < 0.05, "{v}");
     let bs = bones(&mut s);
@@ -93,5 +98,5 @@ fn grabbing_a_bone_along_its_length_moves_from_where_it_was_grabbed() {
     let a = bones(&mut s)[0]["angle"].as_f64().unwrap();
     assert!((a - 5.0f64.atan2(25.0).to_degrees()).abs() < 0.5, "{a}°");
     // The bone's end, by contrast, would have been pulled 75 px onto the pointer.
-    assert!(armature::grab_point(&arm, &els, &pose, anicraft_doc::BoneId(999), press).is_none());
+    assert!(armature::grab_point(&arm, &els, &pose, anima_doc::BoneId(999), press).is_none());
 }

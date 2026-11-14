@@ -8,14 +8,17 @@
 //! * a convex region that contains the item cuts nothing and is dropped; a region that misses
 //!   it hides it (it is left out);
 //! * one region left is the item's mask; several are intersected exactly when all but one are
-//!   convex polygons (`anicraft_geom::clip`), else one is kept and the report counts it;
+//!   convex polygons (`anima_geom::clip`), else one is kept and the report counts it;
 //! * consecutive items with the same mask share one masked layer under one mask layer.
 
-use crate::{Builder, ImportedElement, ImportedLayer, ImportedMask, Item, PaintSpec, Report, Style, declarations, get, hidden, length, local, name_of, paint_spec, transform};
-use anicraft_doc::{ElementKind, MaskMode, Paint, Rgba, Shape, Stroke};
-use anicraft_geom::clip::{clip_convex, convex_polygon};
-use anicraft_geom::{Affine, FillRule, Path, Rect, Vec2};
-use anicraft_xml::Element as X;
+use crate::{
+    Builder, ImportedElement, ImportedLayer, ImportedMask, Item, PaintSpec, Report, Style, declarations, get, hidden, length, local, name_of,
+    paint_spec, transform,
+};
+use anima_doc::{ElementKind, MaskMode, Paint, Rgba, Shape, Stroke};
+use anima_geom::clip::{clip_convex, convex_polygon};
+use anima_geom::{Affine, FillRule, Path, Rect, Vec2};
+use anima_xml::Element as X;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -93,7 +96,16 @@ impl Region {
     /// paints: unstroked shapes are cut in their own space; stroked shapes, text and symbols
     /// reaching outside are kept whole (reported).
     fn intersect(&self, other: &Region, report: &mut Report) -> Rc<Region> {
-        let Some(poly) = &other.convex else { return Rc::new(Region { key: self.key.clone(), name: self.name.clone(), parts: self.parts.clone(), convex: self.convex.clone(), bounds: self.bounds, mode: self.mode }) };
+        let Some(poly) = &other.convex else {
+            return Rc::new(Region {
+                key: self.key.clone(),
+                name: self.name.clone(),
+                parts: self.parts.clone(),
+                convex: self.convex.clone(),
+                bounds: self.bounds,
+                mode: self.mode,
+            });
+        };
         if self.mode.is_soft() {
             let mut parts = Vec::with_capacity(self.parts.len());
             for p in &self.parts {
@@ -270,7 +282,7 @@ impl<'a> Builder<'a> {
     fn clip_child(&mut self, c: &'a X, base: &Affine, style: &Style, parts: &mut Vec<ImportedElement>, uses: usize) {
         let name = local(&c.name);
         let d = declarations(c);
-        if name == anicraft_xml::TEXT_NODE || get(&d, "display") == Some("none") || hidden(&d) {
+        if name == anima_xml::TEXT_NODE || get(&d, "display") == Some("none") || hidden(&d) {
             return;
         }
         if get(&d, "clip-path").is_some_and(|v| v != "none") {
@@ -459,6 +471,11 @@ impl<'a> Builder<'a> {
                 _ => runs.push((region, vec![it.el])),
             }
         }
-        runs.into_iter().map(|(r, elements)| ImportedLayer { mask: r.map(|r| ImportedMask { name: r.name.clone(), elements: r.parts.clone(), mode: r.mode }), elements }).collect()
+        runs.into_iter()
+            .map(|(r, elements)| ImportedLayer {
+                mask: r.map(|r| ImportedMask { name: r.name.clone(), elements: r.parts.clone(), mode: r.mode }),
+                elements,
+            })
+            .collect()
     }
 }

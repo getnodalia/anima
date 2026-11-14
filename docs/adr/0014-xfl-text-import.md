@@ -6,9 +6,9 @@
 ## Context
 
 Animate documents are full of text: titles, captions, speech bubbles, credits, score
-counters. The XFL importer reported every text field as skipped. AniCraft now has a text
+counters. The XFL importer reported every text field as skipped. Ánima now has a text
 engine (ADR 0012): `ElementKind::Text(TextBlock)`, one style per block, laid out by
-`anicraft-text` and stored as outlines.
+`anima-text` and stored as outlines.
 
 An XFL text field (`DOMStaticText`, `DOMDynamicText`, `DOMInputText`) has a matrix, a box
 (`width`, `height`, optional `left`/`top`), `autoExpand` for auto-size versus fixed width, and
@@ -18,14 +18,14 @@ as `_sans`), size, fill colour and alpha, alignment, letter spacing, line spacin
 and indent. Lines end with a carriage return (`&#xD;`). This structure comes from public
 descriptions of XFL and from self-authored files only.
 
-AniCraft's block has one style, but a field may have runs with different styles.
+Ánima's block has one style, but a field may have runs with different styles.
 
 ## Decision
 
 1. **A field becomes one text block per run of consecutive lines that share a style.** Runs
    are split into lines at line breaks; each line takes one style; consecutive lines with the
    same style make one block, and the blocks stack downwards, each starting where the line
-   after the previous block would (`lines × line_height`, which `anicraft-text` now reports).
+   after the previous block would (`lines × line_height`, which `anima-text` now reports).
    This keeps the most common mixed case exact: a big title line over smaller body lines,
    each block editable as text. A **line** that mixes styles (one bold word in a sentence)
    takes the style of most of its visible characters, and the report counts it. Splitting
@@ -43,7 +43,7 @@ AniCraft's block has one style, but a field may have runs with different styles.
    come from the face (and `bold`/`italic` attributes when present). A family that isn't
    installed falls back as the text engine does (ADR 0012), the block records the family
    actually used, and the report names the missing families and the fallback: "Fonts not on
-   this computer, drawn in Arial: Futura." The lookup lives in `anicraft-text`
+   this computer, drawn in Arial: Futura." The lookup lives in `anima-text`
    (`Fonts::find_face`, `guess_family`), so other importers can use it.
 4. **Dynamic and input text come across as static text**, keeping their instance name on the
    element, and are counted in the report. They become fields with scripting (M6).

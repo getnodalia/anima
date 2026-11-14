@@ -4,7 +4,7 @@
 
 use crate::Session;
 use crate::onion::{Markers, OnionSkin};
-use anicraft_doc::{ElementId, LayerId, Rgba};
+use anima_doc::{ElementId, LayerId, Rgba};
 use serde_json::{Value, json};
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -12,7 +12,11 @@ fn run(s: &mut Session, id: &str, p: Value) -> Value {
 }
 
 fn rect(s: &mut Session, x: f32) -> ElementId {
-    ElementId(run(s, "draw.rect", json!({"x": x, "y": 10, "w": 20, "h": 20, "fill": "#000000", "stroke": null, "object": true}))["element"].as_u64().unwrap())
+    ElementId(
+        run(s, "draw.rect", json!({"x": x, "y": 10, "w": 20, "h": 20, "fill": "#000000", "stroke": null, "object": true}))["element"]
+            .as_u64()
+            .unwrap(),
+    )
 }
 
 /// Two layers, each a square that moves 40 px right on frames 0, 2 and 4: `top` starts at x 0,
@@ -36,7 +40,7 @@ fn two_walks() -> (Session, LayerId, LayerId) {
     (s, top, bottom)
 }
 
-fn layer(s: &Session, id: LayerId) -> &anicraft_doc::Layer {
+fn layer(s: &Session, id: LayerId) -> &anima_doc::Layer {
     s.timeline().layer(id).unwrap()
 }
 
@@ -102,19 +106,19 @@ fn outlines_use_the_layer_colour_on_the_stage_only() {
     let orange = Rgba::hex(0xff8800);
     assert_eq!(layer(&s, l).color, orange);
     // The stage: hairlines in the layer's colour.
-    let stage = anicraft_doc::evaluate_scene(&s.doc, 0, 0);
+    let stage = anima_doc::evaluate_scene(&s.doc, 0, 0);
     assert!(stage.items.iter().all(|i| i.outline == Some(orange)));
     assert!(s.display_list().items.iter().all(|i| i.outline == Some(orange)));
     // The movie (every export), and the player, draw the artwork as it is.
-    let movie = anicraft_doc::evaluate(&s.doc, 0);
+    let movie = anima_doc::evaluate(&s.doc, 0);
     assert!(!movie.items.is_empty() && movie.items.iter().all(|i| i.outline.is_none()));
-    let player = anicraft_doc::evaluate_player(&s.doc, &anicraft_doc::player::PlayerState::default());
+    let player = anima_doc::evaluate_player(&s.doc, &anima_doc::player::PlayerState::default());
     assert!(player.items.iter().all(|i| i.outline.is_none()));
     let svg = crate::cmds_file::frame_svg(&s.doc, 0);
     assert!(!svg.to_ascii_lowercase().contains("ff8800"), "no outline colour in an SVG export");
     let png = |s: &Session| {
-        let view = anicraft_render::View { transform: anicraft_geom::Affine::IDENTITY, width: 40, height: 40, background: Some(Rgba::WHITE) };
-        anicraft_render::render(&anicraft_doc::evaluate(&s.doc, 0), &view).unwrap().0.to_rgba8()
+        let view = anima_render::View { transform: anima_geom::Affine::IDENTITY, width: 40, height: 40, background: Some(Rgba::WHITE) };
+        anima_render::render(&anima_doc::evaluate(&s.doc, 0), &view).unwrap().0.to_rgba8()
     };
     let outlined = png(&s);
     run(&mut s, "layer.toggle_outline", json!({}));
@@ -123,9 +127,9 @@ fn outlines_use_the_layer_colour_on_the_stage_only() {
     run(&mut s, "layer.toggle_outline", json!({}));
     run(&mut s, "edit.select_all", json!({}));
     run(&mut s, "modify.convert_to_symbol", json!({"name": "Box"}));
-    let stage = anicraft_doc::evaluate_scene(&s.doc, 0, 0);
+    let stage = anima_doc::evaluate_scene(&s.doc, 0, 0);
     assert!(!stage.items.is_empty() && stage.items.iter().all(|i| i.outline == Some(orange)));
-    assert!(anicraft_doc::evaluate(&s.doc, 0).items.iter().all(|i| i.outline.is_none()));
+    assert!(anima_doc::evaluate(&s.doc, 0).items.iter().all(|i| i.outline.is_none()));
     // A colour is opaque, and a bad one is refused.
     run(&mut s, "layer.set_color", json!({"color": "#00ff0080"}));
     assert_eq!(layer(&s, l).color.a, 1.0);
@@ -153,8 +157,15 @@ fn layer_height_is_100_200_or_300_percent() {
 fn layer_properties_set_everything_as_one_step_or_nothing() {
     let (mut s, top, bottom) = two_walks();
     let undo = s.history.undo_len();
-    let r = run(&mut s, "layer.set_properties", json!({"layer": bottom.0, "name": "Sky", "color": "#123456", "outline": true, "height": 200, "locked": true, "visible": false, "onion": false, "type": "guide"}));
-    assert_eq!(r, json!({"layer": bottom.0, "name": "Sky", "type": "guide", "mask": null, "color": "#123456", "outline": true, "height": 200, "visible": false, "locked": true, "onion": false}));
+    let r = run(
+        &mut s,
+        "layer.set_properties",
+        json!({"layer": bottom.0, "name": "Sky", "color": "#123456", "outline": true, "height": 200, "locked": true, "visible": false, "onion": false, "type": "guide"}),
+    );
+    assert_eq!(
+        r,
+        json!({"layer": bottom.0, "name": "Sky", "type": "guide", "mask": null, "color": "#123456", "outline": true, "height": 200, "visible": false, "locked": true, "onion": false})
+    );
     assert_eq!(s.history.undo_len(), undo + 1, "one undo step");
     assert_eq!(run(&mut s, "layer.properties", json!({"layer": bottom.0})), r);
     // The same type again changes nothing (a masked layer stays masked by the same mask).
@@ -165,7 +176,14 @@ fn layer_properties_set_everything_as_one_step_or_nothing() {
     let back = run(&mut s, "layer.properties", json!({"layer": bottom.0}));
     assert_eq!((back["name"].as_str(), back["type"].as_str(), back["height"].as_u64()), (Some("Layer 1"), Some("normal"), Some(100)));
     // A bad value anywhere changes nothing.
-    for bad in [json!({"name": "  "}), json!({"name": "X", "height": 250}), json!({"name": "X", "color": "red"}), json!({"name": "X", "type": "masked"}), json!({"name": "X", "type": "banana"}), json!({"name": "X", "locked": 1})] {
+    for bad in [
+        json!({"name": "  "}),
+        json!({"name": "X", "height": 250}),
+        json!({"name": "X", "color": "red"}),
+        json!({"name": "X", "type": "masked"}),
+        json!({"name": "X", "type": "banana"}),
+        json!({"name": "X", "locked": 1}),
+    ] {
         let mut p = bad.clone();
         p["layer"] = json!(top.0);
         assert!(s.execute("layer.set_properties", &p).is_err(), "{bad}");
@@ -184,7 +202,7 @@ fn a_mask_layer_takes_a_mask_type() {
     // Made a mask and soft in one step; then by itself.
     let r = run(&mut s, "layer.set_properties", json!({"layer": top.0, "type": "mask", "mask": "luminance"}));
     assert_eq!((r["type"].as_str(), r["mask"].as_str()), (Some("mask"), Some("luminance")));
-    assert_eq!(layer(&s, top).mask_mode, anicraft_doc::MaskMode::Luminance);
+    assert_eq!(layer(&s, top).mask_mode, anima_doc::MaskMode::Luminance);
     assert_eq!(run(&mut s, "layer.set_mask", json!({"layer": top.0, "mask": "alpha"}))["mask"], "alpha");
     assert!(s.execute("layer.set_mask", &json!({"layer": top.0, "mask": "soft"})).is_err());
     assert!(s.execute("layer.set_mask", &json!({"layer": top.0})).is_err());
@@ -192,11 +210,11 @@ fn a_mask_layer_takes_a_mask_type() {
     // The stage shows it at once: the masked square at its edge (art opaque → fully shown).
     run(&mut s, "layer.set_properties", json!({"layer": bottom.0, "type": "masked"}));
     let dl = s.display_list();
-    assert_eq!(dl.clip_mode(0), anicraft_doc::MaskMode::Alpha);
+    assert_eq!(dl.clip_mode(0), anima_doc::MaskMode::Alpha);
     // Undo goes back to luminance, then to coverage.
     run(&mut s, "edit.undo", json!({}));
     run(&mut s, "edit.undo", json!({}));
-    assert_eq!(layer(&s, top).mask_mode, anicraft_doc::MaskMode::Luminance);
+    assert_eq!(layer(&s, top).mask_mode, anima_doc::MaskMode::Luminance);
 }
 
 #[test]
@@ -224,10 +242,10 @@ fn onion_and_height_are_saved_and_older_files_open_with_the_defaults() {
     assert!(by_id(top).get("name").is_some());
     assert_eq!((by_id(top).get("onion"), by_id(top).get("height")), (Some(&json!(false)), None));
     assert_eq!((by_id(bottom).get("onion"), by_id(bottom).get("height")), (None, Some(&json!(2))));
-    let old: anicraft_doc::Layer = serde_json::from_value(json!({"id": 7, "name": "Old"})).unwrap();
+    let old: anima_doc::Layer = serde_json::from_value(json!({"id": 7, "name": "Old"})).unwrap();
     assert!(old.onion && old.height() == 1);
     // A height out of range in a file reads as the nearest one.
-    let tall: anicraft_doc::Layer = serde_json::from_value(json!({"id": 7, "name": "Tall", "height": 200})).unwrap();
+    let tall: anima_doc::Layer = serde_json::from_value(json!({"id": 7, "name": "Tall", "height": 200})).unwrap();
     assert_eq!(tall.height(), 3);
 }
 
@@ -265,9 +283,10 @@ fn onion_skin_inside_a_symbol_shows_the_parent_timeline_frames_dimmed() {
     assert_eq!(parent.frame, 2);
     let skin = OnionSkin { markers: Markers::Relative { before: 2, after: 2 }, keyframes_only: true, ..OnionSkin::default() };
     let dl = crate::render_service::display_list_inside(&pic.doc, pic.frame, &front, &skin);
-    let left = |i: &anicraft_doc::DisplayItem| i.path.bounds().transformed(&i.transform).min.x;
+    let left = |i: &anima_doc::DisplayItem| i.path.bounds().transformed(&i.transform).min.x;
     // The walker on the scene: frame 2 (x 40) dimmed, frames 0 and 4 (x 0, 80) tinted and fainter.
-    let mut walk: Vec<(f32, f32, bool)> = dl.items.iter().filter(|i| left(i) < 150.0).map(|i| (left(i), dl.effective_alpha(i), i.color.changes_colour())).collect();
+    let mut walk: Vec<(f32, f32, bool)> =
+        dl.items.iter().filter(|i| left(i) < 150.0).map(|i| (left(i), dl.effective_alpha(i), i.color.changes_colour())).collect();
     walk.sort_by(|a, b| a.0.total_cmp(&b.0));
     assert_eq!(walk.iter().map(|w| w.0).collect::<Vec<_>>(), vec![0.0, 40.0, 80.0], "the parent's onion frames around its frame 2");
     let dim = parent.dim;

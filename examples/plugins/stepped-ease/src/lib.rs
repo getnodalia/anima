@@ -1,12 +1,12 @@
 //! Stepped Eases: an ease plug-in. Tweens that move in steps, as stop-motion and limited
 //! animation do (on twos, on fours), with a smooth variant that eases each step. Each ease is
-//! a pure function of time; AniCraft samples it once when the plug-in loads, and a tween that
+//! a pure function of time; Ánima samples it once when the plug-in loads, and a tween that
 //! uses one keeps the curve, so the movie plays the same without the plug-in.
 
-use anicraft_plugin_sdk as ac;
+use anima_plugin_sdk as ac;
 
 const MANIFEST: &str = r#"{
-  "id": "org.anicraft.stepped-ease",
+  "id": "org.anima.stepped-ease",
   "name": "Stepped Eases",
   "version": "1.0.0",
   "kind": "ease",

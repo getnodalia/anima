@@ -230,16 +230,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "anicraft"
+name = "anima"
 version = "0.2.1"
 dependencies = [
- "anicraft-audio",
- "anicraft-doc",
- "anicraft-engine",
- "anicraft-geom",
- "anicraft-gpu",
- "anicraft-guide",
- "anicraft-render",
+ "anima-audio",
+ "anima-doc",
+ "anima-engine",
+ "anima-geom",
+ "anima-gpu",
+ "anima-guide",
+ "anima-render",
  "cpal",
  "craft-update",
  "eframe",
@@ -261,7 +261,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "anicraft-actions"
+name = "anima-actions"
 version = "0.2.1"
 dependencies = [
  "serde",
@@ -269,48 +269,48 @@ dependencies = [
 ]
 
 [[package]]
-name = "anicraft-audio"
+name = "anima-audio"
 version = "0.2.1"
 dependencies = [
  "craft-audio",
 ]
 
 [[package]]
-name = "anicraft-cli"
+name = "anima-cli"
 version = "0.2.1"
 dependencies = [
- "anicraft-doc",
- "anicraft-engine",
- "anicraft-geom",
- "anicraft-guide",
- "anicraft-render",
+ "anima-doc",
+ "anima-engine",
+ "anima-geom",
+ "anima-guide",
+ "anima-render",
  "serde_json",
  "wat",
 ]
 
 [[package]]
-name = "anicraft-doc"
+name = "anima-doc"
 version = "0.2.1"
 dependencies = [
- "anicraft-actions",
- "anicraft-audio",
- "anicraft-geom",
+ "anima-actions",
+ "anima-audio",
+ "anima-geom",
  "craft-image-codecs",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "anicraft-engine"
+name = "anima-engine"
 version = "0.2.1"
 dependencies = [
- "anicraft-doc",
- "anicraft-geom",
- "anicraft-plugins",
- "anicraft-render",
- "anicraft-svg",
- "anicraft-text",
- "anicraft-xfl",
+ "anima-doc",
+ "anima-geom",
+ "anima-plugins",
+ "anima-render",
+ "anima-svg",
+ "anima-text",
+ "anima-xfl",
  "craft-anicraft-format",
  "craft-gif",
  "craft-image-codecs",
@@ -327,7 +327,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "anicraft-geom"
+name = "anima-geom"
 version = "0.2.1"
 dependencies = [
  "serde",
@@ -335,12 +335,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "anicraft-gpu"
+name = "anima-gpu"
 version = "0.2.1"
 dependencies = [
- "anicraft-doc",
- "anicraft-geom",
- "anicraft-render",
+ "anima-doc",
+ "anima-geom",
+ "anima-render",
  "bytemuck",
  "naga",
  "pollster 1.0.1",
@@ -351,14 +351,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "anicraft-guide"
+name = "anima-guide"
 version = "0.2.1"
 dependencies = [
  "pulldown-cmark",
 ]
 
 [[package]]
-name = "anicraft-plugins"
+name = "anima-plugins"
 version = "0.2.1"
 dependencies = [
  "serde",
@@ -369,11 +369,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "anicraft-render"
+name = "anima-render"
 version = "0.2.1"
 dependencies = [
- "anicraft-doc",
- "anicraft-geom",
+ "anima-doc",
+ "anima-geom",
  "boa_engine",
  "craft-image-codecs",
  "rayon",
@@ -382,34 +382,34 @@ dependencies = [
 ]
 
 [[package]]
-name = "anicraft-svg"
+name = "anima-svg"
 version = "0.2.1"
 dependencies = [
- "anicraft-doc",
- "anicraft-geom",
- "anicraft-text",
- "anicraft-xml",
+ "anima-doc",
+ "anima-geom",
+ "anima-text",
+ "anima-xml",
  "thiserror 2.0.21",
 ]
 
 [[package]]
-name = "anicraft-text"
+name = "anima-text"
 version = "0.2.1"
 dependencies = [
- "anicraft-geom",
+ "anima-geom",
  "fontdb",
  "harfrust",
  "skrifa",
 ]
 
 [[package]]
-name = "anicraft-xfl"
+name = "anima-xfl"
 version = "0.2.1"
 dependencies = [
- "anicraft-doc",
- "anicraft-geom",
- "anicraft-text",
- "anicraft-xml",
+ "anima-doc",
+ "anima-geom",
+ "anima-text",
+ "anima-xml",
  "craft-image-codecs",
  "craft-xfl",
  "miniz_oxide 0.8.9",
@@ -417,7 +417,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "anicraft-xml"
+name = "anima-xml"
 version = "0.2.1"
 dependencies = [
  "craft-xml",
@@ -1197,7 +1197,7 @@ dependencies = [
 [[package]]
 name = "craft-anicraft-format"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
+source = "git+https://github.com/getnodalia/foundation/tree/vendor/craft-libs/main?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
 dependencies = [
  "serde",
  "serde_json",
@@ -1206,7 +1206,7 @@ dependencies = [
 [[package]]
 name = "craft-audio"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
+source = "git+https://github.com/getnodalia/foundation/tree/vendor/craft-libs/main?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
 dependencies = [
  "craft-media",
  "log",
@@ -1217,7 +1217,7 @@ dependencies = [
 [[package]]
 name = "craft-gif"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
+source = "git+https://github.com/getnodalia/foundation/tree/vendor/craft-libs/main?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
 dependencies = [
  "gif",
 ]
@@ -1225,7 +1225,7 @@ dependencies = [
 [[package]]
 name = "craft-image-codecs"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
+source = "git+https://github.com/getnodalia/foundation/tree/vendor/craft-libs/main?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
 dependencies = [
  "craft-jpeg",
  "craft-metadata",
@@ -1248,7 +1248,7 @@ dependencies = [
 [[package]]
 name = "craft-jpeg"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
+source = "git+https://github.com/getnodalia/foundation/tree/vendor/craft-libs/main?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
 dependencies = [
  "thiserror 2.0.21",
 ]
@@ -1256,7 +1256,7 @@ dependencies = [
 [[package]]
 name = "craft-media"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
+source = "git+https://github.com/getnodalia/foundation/tree/vendor/craft-libs/main?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
 dependencies = [
  "thiserror 2.0.21",
 ]
@@ -1264,7 +1264,7 @@ dependencies = [
 [[package]]
 name = "craft-metadata"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
+source = "git+https://github.com/getnodalia/foundation/tree/vendor/craft-libs/main?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
 dependencies = [
  "brotli-decompressor",
  "chrono",
@@ -1276,7 +1276,7 @@ dependencies = [
 [[package]]
 name = "craft-tiff"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
+source = "git+https://github.com/getnodalia/foundation/tree/vendor/craft-libs/main?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
 dependencies = [
  "serde",
  "thiserror 2.0.21",
@@ -1285,7 +1285,7 @@ dependencies = [
 [[package]]
 name = "craft-update"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=6ac2a6a34ae83fc0f0bfb25a569ba6388b72266a#6ac2a6a34ae83fc0f0bfb25a569ba6388b72266a"
+source = "git+https://github.com/getnodalia/foundation/tree/vendor/craft-libs/main?rev=6ac2a6a34ae83fc0f0bfb25a569ba6388b72266a#6ac2a6a34ae83fc0f0bfb25a569ba6388b72266a"
 dependencies = [
  "chrono",
  "dunce",
@@ -1310,7 +1310,7 @@ dependencies = [
 [[package]]
 name = "craft-webp"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
+source = "git+https://github.com/getnodalia/foundation/tree/vendor/craft-libs/main?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
 dependencies = [
  "thiserror 2.0.21",
 ]
@@ -1318,7 +1318,7 @@ dependencies = [
 [[package]]
 name = "craft-xfl"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
+source = "git+https://github.com/getnodalia/foundation/tree/vendor/craft-libs/main?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
 dependencies = [
  "miniz_oxide 0.8.9",
  "thiserror 2.0.21",
@@ -1327,7 +1327,7 @@ dependencies = [
 [[package]]
 name = "craft-xml"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
+source = "git+https://github.com/getnodalia/foundation/tree/vendor/craft-libs/main?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
 dependencies = [
  "quick-xml 0.41.0",
  "thiserror 2.0.21",

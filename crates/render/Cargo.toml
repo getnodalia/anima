@@ -1,6 +1,6 @@
 [package]
-name = "anicraft-render"
-description = "AniCraft L2: deterministic CPU oracle renderer (analytic coverage rasterizer, paints, compositor, PNG)"
+name = "anima-render"
+description = "Ánima L2: deterministic CPU oracle renderer (analytic coverage rasterizer, paints, compositor, PNG)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,8 +8,8 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
-anicraft-geom.workspace = true
-anicraft-doc.workspace = true
+anima-geom.workspace = true
+anima-doc.workspace = true
 rayon.workspace = true
 craft-image-codecs.workspace = true
 thiserror.workspace = true
