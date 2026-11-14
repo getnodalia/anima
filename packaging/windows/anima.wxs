@@ -77,7 +77,7 @@
             <Verb Id="open" Command="Open" TargetFile="AnimaExe" Argument="&quot;%1&quot;" />
           </Extension>
           <!-- Documents saved before Ánima had its own name: the same format. rebrand: keep -->
-          <Extension Id="anicraft" ContentType="application/x-anima"><!-- rebrand: keep -->
+          <Extension Id="anicraft" ContentType="application/x-anicraft"><!-- rebrand: keep -->
             <Verb Id="open" Command="Open" TargetFile="AnimaExe" Argument="&quot;%1&quot;" />
           </Extension>
         </ProgId>

@@ -8,11 +8,13 @@ Engineering rules for every Nodalia repository: [getnodalia/foundation](https://
 [release](https://github.com/getnodalia/foundation/blob/main/standards/release.md),
 [NDL](https://github.com/getnodalia/foundation/blob/main/standards/ndl.md)).
 
+## What this is
+
 Ánima is an open-source, native, clean-room 2D animation studio (Adobe Animate class), written
 in **Rust only**. There is no Tauri, Electron or webview. The UI is egui/eframe. The product name
 is written **Ánima**; machine names are lowercase (`anima-*`). Read `docs/` first.
 
-## Workspace map
+## Architecture: workspace map
 
 ```text
 crates/geom     L0  Vec2, Affine (decompose/compose), Rect, Path, flattening, hit testing
@@ -152,10 +154,13 @@ a new crate needs a row here and in its `LAYERS` table.
   controls on Linux only, native ones on macOS and Windows. No GTK or libadwaita.
 * **CI** runs on standard GitHub-hosted runners only, actions pinned to a commit SHA, least
   permissions. Keep CI changes in their own pull request unless a change cannot work without them.
-* **Releases are automatic.** A pull request that sets `[workspace.package] version` to a release
-  version and adds `docs/release-notes/vX.Y.Z.md` (format in that folder's README) releases it
-  when it merges: `release-auto.yml` tags it through Foundation's `release-tag`, builds the
-  Linux, macOS (unsigned DMG) and Windows packages and publishes the release. Nobody pushes a tag.
+
+## Release
+
+A pull request that sets `[workspace.package] version` to a release
+version and adds `docs/release-notes/vX.Y.Z.md` (format in that folder's README) releases it
+when it merges: `release-auto.yml` tags it through Foundation's `release-tag`, builds the
+Linux, macOS (unsigned DMG) and Windows packages and publishes the release. Nobody pushes a tag.
 
 ## Build hygiene (disk first, then time; `docs/development.md` › Build footprint)
 
@@ -166,7 +171,7 @@ a new crate needs a row here and in its `LAYERS` table.
   locally if you need a debugger.
 * After profile or feature changes, run `cargo clean` once (with the app closed).
 
-## Before you finish
+## Build and test (before you finish)
 
 ```sh
 cargo test
