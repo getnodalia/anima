@@ -5,14 +5,14 @@
 
 ## Context
 
-Artists coming to AniCraft have their work in Animate documents: `.fla` files (a zip archive)
+Artists coming to Ánima have their work in Animate documents: `.fla` files (a zip archive)
 or `.xfl` packages (the same content as a folder). Opening them is the first interchange
 priority. The format is an XML package: `DOMDocument.xml` (stage, scenes, layers, frames,
 elements) and `LIBRARY/*.xml` (symbols), with shape geometry encoded as edge strings.
 
 ## Decision
 
-1. **A separate crate, `anicraft-xfl`**, between `doc` and `engine`. It depends only on `doc`,
+1. **A separate crate, `anima-xfl`**, between `doc` and `engine`. It depends only on `doc`,
    `geom` and `miniz_oxide` (already in the tree through `png`), so the parser is isolated,
    fuzzable and testable on its own, and the engine just calls it.
 2. **Own XML and zip readers.** No XML or zip crate is available offline, and XFL needs little:
@@ -26,7 +26,7 @@ elements) and `LIBRARY/*.xml` (symbols), with shape geometry encoded as edge str
 4. **One entry point: `file.open`.** It detects `.fla`, `.xfl` and XFL folders, so menus, the
    palette, the command line and agents all import the same way, and it inherits the
    unsaved-work confirmation. **An imported document is untitled**: Save asks for a new
-   `.anicraft` name and can never write over the Animate file.
+   `.anima` name and can never write over the Animate file.
 5. **Report, don't guess.** Anything not yet mapped (bitmaps, text, sound, masks, motion
    tweens with property curves, shape tweens, filters, extra scenes) is counted and shown in
    the status bar after opening ("Imported. Not yet supported: 2 bitmaps, 1 text field.").
@@ -42,8 +42,8 @@ own timelines, nested to any depth.
 
 ## Consequences
 
-* Imported documents render and animate in AniCraft immediately and can be edited with every
-  tool, then saved as `.anicraft`.
+* Imported documents render and animate in Ánima immediately and can be edited with every
+  tool, then saved as `.anima`.
 * Text fields come across as text blocks (ADR 0014: one block per run of same-style lines,
   missing fonts named in the report).
 * Next slices: bitmaps (needs bitmap fills, M5), masks (M2), motion tweens, shape

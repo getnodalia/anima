@@ -15,7 +15,7 @@ ADR 0042 left these out of its slice:
 * a default shortcut for Snap to Objects;
 * Subselection (and, from ADR 0041, the Selection tool) inside symbols.
 
-The last one needed more than the raw tools: AniCraft had no way to edit a symbol's timeline at
+The last one needed more than the raw tools: Ánima had no way to edit a symbol's timeline at
 all. In Animate a double-click on an instance opens the symbol **in place**: the rest of the
 stage dims, the timeline shows the symbol's layers, every tool works inside it, and the edit bar
 says where you are (`Scene 1 › Badge`).
@@ -27,7 +27,7 @@ nothing was copied.
 
 1. **Points are positions, as in ADR 0042.** A shared point is stored once in each raw shape
    that has it, so each command finds every copy near the position (within 1.5 × `SNAP`) and
-   changes them alike. The pure parts are in `anicraft_geom::raw`: a path as subpaths of
+   changes them alike. The pure parts are in `anima_geom::raw`: a path as subpaths of
    segments (`subpaths`, `from_subpaths`), the edges leaving a point (`edges_at`,
    `distinct_edges`), and the edits below.
 
@@ -93,7 +93,7 @@ nothing was copied.
      **every command works on its timeline** (`Session::timeline`; the 86 places that read
      the scene's timeline now read this): the active layer, the playhead and the selection are
      its, positions are in its space, the display list (picking, bounds, snapping) is its
-     timeline evaluated alone (`anicraft_doc::evaluate_timeline`). So merge drawing, the
+     timeline evaluated alone (`anima_doc::evaluate_timeline`). So merge drawing, the
      Selection tool, Subselection, raw points, the Paint Bucket and the rest behave inside a
      symbol exactly as on the stage: they are the same commands.
    * `symbol.edit {id?, symbol?}` (Edit › Edit Symbols, **Ctrl+E**, a **double-click** on an

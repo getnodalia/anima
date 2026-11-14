@@ -2,8 +2,8 @@
 
 use crate::import::{Report, XflError, import_with, import_with_fonts};
 use crate::text::GUTTER;
-use anicraft_doc::{Document, Element, ElementKind, LineType, Paint, Rgba, TextAlign, TextBlock, TextKind, evaluate};
-use anicraft_text::Fonts;
+use anima_doc::{Document, Element, ElementKind, LineType, Paint, Rgba, TextAlign, TextBlock, TextKind, evaluate};
+use anima_text::Fonts;
 use std::sync::Arc;
 
 /// The computer's fonts and an installed family, or `None` (and the test passes) on a computer
@@ -16,7 +16,9 @@ fn fonts() -> Option<(&'static Fonts, String)> {
 
 /// A document with these elements on its one frame.
 fn doc_with(elements: &str) -> String {
-    format!(r#"<DOMDocument width="550" height="400"><timelines><DOMTimeline name="Scene 1"><layers><DOMLayer name="Text"><frames><DOMFrame index="0"><elements>{elements}</elements></DOMFrame></frames></DOMLayer></layers></DOMTimeline></timelines></DOMDocument>"#)
+    format!(
+        r#"<DOMDocument width="550" height="400"><timelines><DOMTimeline name="Scene 1"><layers><DOMLayer name="Text"><frames><DOMFrame index="0"><elements>{elements}</elements></DOMFrame></frames></DOMLayer></layers></DOMTimeline></timelines></DOMDocument>"#
+    )
 }
 
 fn import_doc(xml: &str, fonts: &Fonts) -> (Document, Report) {
@@ -25,7 +27,11 @@ fn import_doc(xml: &str, fonts: &Fonts) -> (Document, Report) {
 }
 
 fn texts(doc: &Document) -> Vec<(Arc<Element>, Arc<TextBlock>)> {
-    doc.timeline(0).layers[0].keyframes[0].elements.iter().filter_map(|e| if let ElementKind::Text(t) = &e.kind { Some((e.clone(), t.clone())) } else { None }).collect()
+    doc.timeline(0).layers[0].keyframes[0]
+        .elements
+        .iter()
+        .filter_map(|e| if let ElementKind::Text(t) = &e.kind { Some((e.clone(), t.clone())) } else { None })
+        .collect()
 }
 
 fn run(chars: &str, attrs: &str) -> String {
@@ -49,7 +55,7 @@ fn static_text_keeps_its_style_matrix_and_lines() {
     // The matrix places the field; its text sits inside the gutter.
     assert_eq!(el.transform.m, [2.0, 0.0, 0.0, 2.0, 100.0 + 2.0 * GUTTER, 50.0 + 2.0 * GUTTER]);
     // Two lines, laid out by the text engine and stored as outlines.
-    let one = fonts.layout("Hello", &anicraft_text::Style { family: family.clone(), size: 24.0, line_spacing: 4.0, ..Default::default() }).unwrap();
+    let one = fonts.layout("Hello", &anima_text::Style { family: family.clone(), size: 24.0, line_spacing: 4.0, ..Default::default() }).unwrap();
     assert!(b.box_height > one.height + one.line_height - 0.5, "{} vs {}", b.box_height, one.height);
     assert!(!b.outline.cmds.is_empty());
     assert!(report.skipped.is_empty() && report.missing_fonts.is_empty(), "{report:?}");
@@ -64,7 +70,9 @@ fn static_text_keeps_its_style_matrix_and_lines() {
 fn fixed_width_fields_wrap_and_auto_size_ones_do_not() {
     let Some((fonts, family)) = fonts() else { return };
     let words = "one two three four five six seven eight nine ten";
-    let field = |extra: &str| format!(r#"<DOMStaticText {extra} width="90"><textRuns>{}</textRuns></DOMStaticText>"#, run(words, &format!(r#"face="{family}" size="14""#)));
+    let field = |extra: &str| {
+        format!(r#"<DOMStaticText {extra} width="90"><textRuns>{}</textRuns></DOMStaticText>"#, run(words, &format!(r#"face="{family}" size="14""#)))
+    };
     let (doc, _) = import_doc(&doc_with(&(field("") + &field(r#"autoExpand="true""#))), fonts);
     let t = texts(&doc);
     assert_eq!(t[0].1.width, Some(90.0), "fixed width");
@@ -81,7 +89,15 @@ fn runs_in_different_styles_become_blocks_stacked_line_by_line() {
     let body = format!(r##"face="{family}" size="12" fillColor="#445566""##);
     // A title line, two body lines (the second continues in a separate run of the same style),
     // then a line that mixes both styles: most of its characters are body text.
-    let runs = [run("Title&#xD;", &title), run("line one&#xD;line ", &body), run("two&#xD;", &body), run("Big", &title), run(" and mostly small", &body), run("&#xD;&#xD;", &body)].concat();
+    let runs = [
+        run("Title&#xD;", &title),
+        run("line one&#xD;line ", &body),
+        run("two&#xD;", &body),
+        run("Big", &title),
+        run(" and mostly small", &body),
+        run("&#xD;&#xD;", &body),
+    ]
+    .concat();
     let field = format!(r#"<DOMStaticText autoExpand="true"><matrix><Matrix tx="10" ty="20"/></matrix><textRuns>{runs}</textRuns></DOMStaticText>"#);
     let (doc, report) = import_doc(&doc_with(&field), fonts);
     let t = texts(&doc);
@@ -89,7 +105,7 @@ fn runs_in_different_styles_become_blocks_stacked_line_by_line() {
     assert_eq!(blocks, [("Title", 30.0, true), ("line one\nline two\nBig and mostly small", 12.0, false)], "trailing empty lines are dropped");
     assert_eq!(t[1].1.color, Rgba::hex(0x445566));
     // The body starts where the title's next line would.
-    let title_layout = fonts.layout("Title", &anicraft_text::Style { family: family.clone(), size: 30.0, bold: true, ..Default::default() }).unwrap();
+    let title_layout = fonts.layout("Title", &anima_text::Style { family: family.clone(), size: 30.0, bold: true, ..Default::default() }).unwrap();
     let (y0, y1) = (t[0].0.transform.translation().y, t[1].0.transform.translation().y);
     assert!((y0 - (20.0 + GUTTER)).abs() < 1e-4);
     assert!((y1 - y0 - title_layout.line_height).abs() < 1e-3, "{y0} → {y1}, line height {}", title_layout.line_height);
@@ -102,7 +118,8 @@ fn centred_auto_size_blocks_centre_on_each_other() {
     let Some((fonts, family)) = fonts() else { return };
     let a = format!(r#"face="{family}" size="40" alignment="center""#);
     let b = format!(r#"face="{family}" size="12" alignment="center""#);
-    let field = format!(r#"<DOMStaticText autoExpand="true"><textRuns>{}{}</textRuns></DOMStaticText>"#, run("WIDE HEADLINE&#xD;", &a), run("small", &b));
+    let field =
+        format!(r#"<DOMStaticText autoExpand="true"><textRuns>{}{}</textRuns></DOMStaticText>"#, run("WIDE HEADLINE&#xD;", &a), run("small", &b));
     let (doc, _) = import_doc(&doc_with(&field), fonts);
     let t = texts(&doc);
     let centre = |i: usize| t[i].0.transform.translation().x + t[i].1.box_width * 0.5;
@@ -145,7 +162,7 @@ fn dynamic_and_input_text_become_fields_with_their_names() {
     // The box is the field's; the text sits in the gutter, the element at the field's matrix.
     let (score, sb) = &t[0];
     assert_eq!((sb.box_width, sb.box_height), (100.0, 22.0));
-    assert_eq!(score.transform.translation(), anicraft_geom::Vec2::new(10.0, 20.0));
+    assert_eq!(score.transform.translation(), anima_geom::Vec2::new(10.0, 20.0));
     assert!(sb.outline.bounds().min.x >= GUTTER - 0.5, "{:?}", sb.outline.bounds());
     let f = sb.field.as_ref().unwrap();
     assert!(f.border && f.background && !f.selectable);
@@ -153,11 +170,20 @@ fn dynamic_and_input_text_become_fields_with_their_names() {
     assert_eq!((f.lines, f.max_chars, f.variable.as_str()), (LineType::Password, 8, "_root.pw"));
     assert_eq!(t[1].1.text, "type here", "the value is kept; it is drawn as stars");
     let n = &t[2].1;
-    assert_eq!((n.text.as_str(), n.field.as_ref().map(|f| f.lines), n.box_height), ("", Some(LineType::Multiline), 60.0), "an empty input field is kept");
+    assert_eq!(
+        (n.text.as_str(), n.field.as_ref().map(|f| f.lines), n.box_height),
+        ("", Some(LineType::Multiline), 60.0),
+        "an empty input field is kept"
+    );
     assert_eq!(report.runs.get("dynamic text fields"), Some(&1));
     assert_eq!(report.runs.get("input text fields"), Some(&2));
     assert_eq!(report.kept.get("text field variables (ActionScript 1.0 and 2.0)"), Some(&1));
-    for (what, n) in [("justified text (drawn left-aligned)", 1), ("vertical text (drawn horizontal)", 1), ("first-line indents", 1), ("superscript and subscript (drawn on the line)", 1)] {
+    for (what, n) in [
+        ("justified text (drawn left-aligned)", 1),
+        ("vertical text (drawn horizontal)", 1),
+        ("first-line indents", 1),
+        ("superscript and subscript (drawn on the line)", 1),
+    ] {
         assert_eq!(report.skipped.get(what), Some(&n), "{what}: {report:?}");
     }
     assert!(report.missing_fonts.is_empty(), "no face asks for the default family");
@@ -174,8 +200,13 @@ fn without_fonts_text_is_reported_not_guessed() {
     assert!(texts(&doc).is_empty());
     assert_eq!(report.skipped.get("text fields (no fonts on this computer)"), Some(&1));
     // Empty fields and fields without runs make nothing and report nothing.
-    let (doc, report) = import_doc(&doc_with(r#"<DOMStaticText/><DOMStaticText><textRuns>
-      <DOMTextRun><characters>   </characters></DOMTextRun></textRuns></DOMStaticText>"#), &none);
+    let (doc, report) = import_doc(
+        &doc_with(
+            r#"<DOMStaticText/><DOMStaticText><textRuns>
+      <DOMTextRun><characters>   </characters></DOMTextRun></textRuns></DOMStaticText>"#,
+        ),
+        &none,
+    );
     assert!(texts(&doc).is_empty() && report.skipped.is_empty(), "{report:?}");
 }
 
@@ -195,7 +226,7 @@ fn hostile_text_fields_import_without_panicking() {
     let (doc, report) = import_doc(&doc_with(&field), fonts);
     let t = texts(&doc);
     assert!(!t.is_empty());
-    assert!(t.iter().all(|(_, b)| b.text.chars().count() <= anicraft_text::MAX_CHARS && b.size.is_finite()));
+    assert!(t.iter().all(|(_, b)| b.text.chars().count() <= anima_text::MAX_CHARS && b.size.is_finite()));
     assert!(t.iter().any(|(_, b)| b.text.chars().count() > 99_000 && !b.outline.cmds.is_empty()), "the long field is laid out, cut to the limit");
     assert!(report.skipped.contains_key("text cut to 100,000 characters per field"), "{report:?}");
     assert!(start.elapsed().as_secs() < 30, "bounded work: {:?}", start.elapsed());

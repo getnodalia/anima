@@ -53,7 +53,11 @@ pub fn exists(path: &Path) -> bool {
 /// A short, stable key for a path (64-bit FNV-1a of its normalised text, as hex): the name its
 /// thumbnail is kept under.
 pub fn thumb_key(path: &Path) -> String {
-    let text = if cfg!(any(windows, target_os = "macos")) { path.to_string_lossy().replace('\\', "/").to_lowercase() } else { path.to_string_lossy().into_owned() };
+    let text = if cfg!(any(windows, target_os = "macos")) {
+        path.to_string_lossy().replace('\\', "/").to_lowercase()
+    } else {
+        path.to_string_lossy().into_owned()
+    };
     let mut h: u64 = 0xcbf2_9ce4_8422_2325;
     for b in text.bytes() {
         h ^= u64::from(b);
@@ -68,7 +72,7 @@ pub const THUMB_H: u32 = 135;
 
 /// The document's first frame as a small PNG that fits [`THUMB_W`] × [`THUMB_H`] (the start
 /// screen's picture of a recent file), rendered by the CPU oracle.
-pub fn thumbnail_png(doc: &anicraft_doc::Document) -> Result<Vec<u8>> {
+pub fn thumbnail_png(doc: &anima_doc::Document) -> Result<Vec<u8>> {
     let (w, h) = (doc.stage.width.max(1) as f32, doc.stage.height.max(1) as f32);
     let scale = (THUMB_W as f32 / w).min(THUMB_H as f32 / h).min(1.0);
     crate::cmds_file::render_png(doc, 0, scale)
@@ -204,7 +208,15 @@ pub fn specs() -> Vec<CommandSpec> {
             mutates: false,
             run: pin,
         },
-        CommandSpec { id: "prefs.recent_remove", label: "Remove from Recent Files", menu: "", shortcut: None, params: "{index? | path?}", mutates: false, run: remove },
+        CommandSpec {
+            id: "prefs.recent_remove",
+            label: "Remove from Recent Files",
+            menu: "",
+            shortcut: None,
+            params: "{index? | path?}",
+            mutates: false,
+            run: remove,
+        },
         CommandSpec {
             id: "prefs.recent_clear",
             label: "Clear Recent Files",
@@ -220,7 +232,11 @@ pub fn specs() -> Vec<CommandSpec> {
 /// The entry `index` or `path` names.
 fn which(s: &Session, p: &Value) -> Result<PathBuf> {
     match (opt_u64(p, "index")?, opt_str(p, "path")?) {
-        (Some(i), None) => usize::try_from(i).ok().and_then(|i| s.recent.entries().get(i)).map(|e| e.path.clone()).ok_or_else(|| EngineError::Param(format!("no recent file {i}; file.recent_list has {}", s.recent.len()))),
+        (Some(i), None) => usize::try_from(i)
+            .ok()
+            .and_then(|i| s.recent.entries().get(i))
+            .map(|e| e.path.clone())
+            .ok_or_else(|| EngineError::Param(format!("no recent file {i}; file.recent_list has {}", s.recent.len()))),
         (None, Some(path)) if !path.trim().is_empty() => Ok(PathBuf::from(path)),
         (None, Some(_)) => Err(EngineError::Param("param 'path' must name a file".into())),
         _ => Err(EngineError::Param("name the file with 'index' or 'path' (one of them)".into())),
@@ -282,16 +298,16 @@ mod tests {
     fn most_recent_first_ten_at_most_never_twice() {
         let mut r = RecentFiles::default();
         for i in 0..14 {
-            assert!(r.add(Path::new(&format!("f{i}.anicraft"))));
+            assert!(r.add(Path::new(&format!("f{i}.anima"))));
         }
         assert_eq!(r.len(), MAX_RECENT);
-        assert_eq!(paths(&r).first().map(String::as_str), Some("f13.anicraft"));
-        assert_eq!(paths(&r).last().map(String::as_str), Some("f4.anicraft"), "the oldest drop off");
+        assert_eq!(paths(&r).first().map(String::as_str), Some("f13.anima"));
+        assert_eq!(paths(&r).last().map(String::as_str), Some("f4.anima"), "the oldest drop off");
         // Opening one again moves it to the top, without a second entry.
-        assert!(r.add(Path::new("f8.anicraft")));
-        assert_eq!(paths(&r)[..2], ["f8.anicraft", "f13.anicraft"]);
+        assert!(r.add(Path::new("f8.anima")));
+        assert_eq!(paths(&r)[..2], ["f8.anima", "f13.anima"]);
         assert_eq!(r.len(), MAX_RECENT);
-        assert!(!r.add(Path::new("f8.anicraft")), "already the most recent");
+        assert!(!r.add(Path::new("f8.anima")), "already the most recent");
         assert!(!r.add(Path::new("")), "no empty paths");
     }
 
@@ -343,15 +359,15 @@ mod tests {
 
     #[test]
     fn thumbnail_keys_are_stable_and_distinct() {
-        assert_eq!(thumb_key(Path::new("a/b.anicraft")), thumb_key(Path::new("a/b.anicraft")));
-        assert_ne!(thumb_key(Path::new("a/b.anicraft")), thumb_key(Path::new("a/c.anicraft")));
+        assert_eq!(thumb_key(Path::new("a/b.anima")), thumb_key(Path::new("a/b.anima")));
+        assert_ne!(thumb_key(Path::new("a/b.anima")), thumb_key(Path::new("a/c.anima")));
         assert_eq!(thumb_key(Path::new("x")).len(), 16);
     }
 
     #[test]
     fn thumbnails_fit_the_start_screen() {
         let t = std::time::Instant::now();
-        let png = thumbnail_png(&anicraft_doc::sample::demo()).unwrap();
+        let png = thumbnail_png(&anima_doc::sample::demo()).unwrap();
         eprintln!("thumbnail of the sample: {:.2} ms, {} bytes", t.elapsed().as_secs_f64() * 1000.0, png.len());
         let img = image_size(&png);
         assert!(img.0 <= THUMB_W && img.1 <= THUMB_H && img.0 > 0 && img.1 > 0, "{img:?}");

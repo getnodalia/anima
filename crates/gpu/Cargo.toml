@@ -1,6 +1,6 @@
 [package]
-name = "anicraft-gpu"
-description = "AniCraft L3: wgpu stage renderer (tile-binned analytic coverage), checked against the CPU oracle"
+name = "anima-gpu"
+description = "Ánima L3: wgpu stage renderer (tile-binned analytic coverage), checked against the CPU oracle"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,9 +8,9 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
-anicraft-geom.workspace = true
-anicraft-doc.workspace = true
-anicraft-render.workspace = true
+anima-geom.workspace = true
+anima-doc.workspace = true
+anima-render.workspace = true
 # The same wgpu the shell's egui-wgpu already builds (one wgpu in the tree, ADR 0019).
 wgpu.workspace = true
 # Blocks on wgpu's adapter/device futures (already in the tree through eframe).

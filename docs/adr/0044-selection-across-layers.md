@@ -20,7 +20,7 @@ nothing was copied.
 ## Decision
 
 1. **The selection is a set of `(layer, element)` pairs at the playhead**
-   (`anicraft_engine::Selection`, `crates/engine/src/selection.rs`). It keeps selection order
+   (`anima_engine::Selection`, `crates/engine/src/selection.rs`). It keeps selection order
    and a hash set for membership, and is saved in every undo snapshot as before. Element ids
    stay unique within a document, so commands keep their `ids` params and results; the pairs make
    the layer explicit instead of implied by the active layer.

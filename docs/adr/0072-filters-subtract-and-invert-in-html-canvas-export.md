@@ -16,7 +16,7 @@ acceptable:
 * **CSS `filter` on the context** (`ctx.filter = "blur(4px) drop-shadow(…)"`): a Gaussian, not
   our box passes; no inner shadow or glow, knockout, hide object, bevel, gradient ramps or
   colour matrix of ours; support and results vary between browsers. The page would differ
-  from AniCraft and from browser to browser.
+  from Ánima and from browser to browser.
 * **`shadowBlur`**: one shadow, Gaussian-ish, outer only, again browser-defined.
 
 Subtract and Invert have no `globalCompositeOperation` at all.
@@ -152,7 +152,7 @@ page always carries the player that reads it, so old pages keep playing.
 
 * **9-slice scaling** in the page (ADR 0055): a sliced instance's shapes depend on its scale at
   each frame and on scripts that set it, so the page would need the slicing itself (a port of
-  `anicraft_geom::slice` with the symbol's box and guides), not baked data. Still reported.
+  `anima_geom::slice` with the symbol's box and guides), not baked data. Still reported.
 * Keeping a filtered group's pixels when it only moves (a key without its translation, and the
   result drawn where it now is): moving filtered symbols are filtered every frame.
 * Filtering in a worker or with WebGL for very large filtered groups.

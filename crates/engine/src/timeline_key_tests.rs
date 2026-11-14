@@ -1,7 +1,7 @@
 //! F5, F6 and F7 as the keys work in the editor (user reports #242 and #254).
 
 use super::*;
-use anicraft_doc::{Keyframe, LayerId};
+use anima_doc::{Keyframe, LayerId};
 use serde_json::json;
 use std::sync::Arc;
 

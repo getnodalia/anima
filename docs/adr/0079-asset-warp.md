@@ -98,7 +98,7 @@ a 960 × 480 px bent bitmap with a 48-cell mesh takes 7.9 ms against 3.9 ms flat
 
 ## Consequences
 
-* Files without warps are written exactly as before. An older AniCraft reading a newer file
+* Files without warps are written exactly as before. An older Ánima reading a newer file
   ignores `warp` and shows each keyframe's bent outline (a bitmap unbent inside it); pin poses
   hold instead of tweening.
 * A warp with no extent or too many points is dropped on load (the shape keeps what it shows);

@@ -90,7 +90,7 @@ shortcuts, the command palette, the shortcut editor). The rest was not there:
   message. New custom-painted controls go through `a11y::control`.
 * Single-letter shortcuts now work while a button or checkbox has keyboard focus. Text fields
   are unaffected.
-* `anicraft --theme high-contrast --scale 200` previews either for one run (screenshots,
+* `anima --theme high-contrast --scale 200` previews either for one run (screenshots,
   checks) without saving preferences.
 * Not in this slice (`docs/accessibility.md` › Known gaps): elements on the stage and single
   frames are not exposed one by one; the OS high-contrast setting is not followed automatically;

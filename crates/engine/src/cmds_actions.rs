@@ -2,26 +2,66 @@
 //! button and movie clip instances, instance names, and Test Movie.
 //!
 //! `actions.set / clear / list` edit and list what keyframes and instances do; the player
-//! (`anicraft_doc::player`) runs it. `instance.set_name` gives instances the names actions
+//! (`anima_doc::player`) runs it. `instance.set_name` gives instances the names actions
 //! address. `control.test_movie` plays the movie headless with the player (the app opens the
 //! Test Movie window instead) and reports what it wrote and where it ended.
 
 use crate::params::*;
 use crate::player::{Movie, ScriptRunner, parse_events, state_view};
 use crate::{CommandSpec, EngineError, Result, Session};
-use anicraft_doc::actions::{self, Action, ButtonEvent, EventHandler, FrameScript, PluginScript};
-use anicraft_doc::{Element, ElementId, ElementKind, Keyframe, LayerId, LayerKind, SymbolId, SymbolKind, Timeline};
+use anima_doc::actions::{self, Action, ButtonEvent, EventHandler, FrameScript, PluginScript};
+use anima_doc::{Element, ElementId, ElementKind, Keyframe, LayerId, LayerKind, SymbolId, SymbolKind, Timeline};
 use serde_json::{Value, json};
 use std::sync::Arc;
 
 pub fn specs() -> Vec<CommandSpec> {
     let c = |id, label, menu, shortcut, params, mutates, run| CommandSpec { id, label, menu, shortcut, params, mutates, run };
     vec![
-        c("control.test_movie", "Test Movie", "Control", Some("Ctrl+Enter"), "{frames?: steps to play (default 10 s of frames, at most 10,000), events?: [{tick, type: move|down|up|click|leave, x, y} or {tick, type: key_down|key_up|key, key: code|letter|LEFT…}], seed?: Math.random()'s seed (default 0)} plays the movie with its actions and frame scripts from the first frame; returns the output, the sounds it started ({tick, sound, name, sync, gain}; buttons' as the pointer changes their state) and where it ended (the app opens the Test Movie window)", false, test_movie as crate::RunFn),
-        c("actions.set", "Set Actions", "", None, "{actions: [{op: stop|play|goto_and_play|goto_and_stop|next_frame|prev_frame|next_scene|prev_scene|trace|set_property, target?, frame?, scene?, message?, property?, value?}] | plugin: id, entry?, symbol?: id (a movie clip's timeline), layer?, frame?} sets what the keyframe at the frame runs; or {element, event: click|press|release|over|out, actions} sets an instance's event handler. An empty list clears it", true, set),
-        c("actions.clear", "Clear Actions", "", None, "{symbol?, layer?, frame?} clears the keyframe's actions; {element, event?} clears an instance's handlers (one event, or all)", true, clear),
-        c("actions.list", "List Actions", "", None, "{} every keyframe with actions or a frame script and every instance with event handlers, in every scene and symbol", false, list),
-        c("instance.set_name", "Instance Name", "", None, "{element?: id (default: the selected instance), name: letters, digits, _ or $, not starting with a digit; \"\" clears} names a movie clip or button instance, or a dynamic or input text field, for actions and scripts", true, set_name),
+        c(
+            "control.test_movie",
+            "Test Movie",
+            "Control",
+            Some("Ctrl+Enter"),
+            "{frames?: steps to play (default 10 s of frames, at most 10,000), events?: [{tick, type: move|down|up|click|leave, x, y} or {tick, type: key_down|key_up|key, key: code|letter|LEFT…}], seed?: Math.random()'s seed (default 0)} plays the movie with its actions and frame scripts from the first frame; returns the output, the sounds it started ({tick, sound, name, sync, gain}; buttons' as the pointer changes their state) and where it ended (the app opens the Test Movie window)",
+            false,
+            test_movie as crate::RunFn,
+        ),
+        c(
+            "actions.set",
+            "Set Actions",
+            "",
+            None,
+            "{actions: [{op: stop|play|goto_and_play|goto_and_stop|next_frame|prev_frame|next_scene|prev_scene|trace|set_property, target?, frame?, scene?, message?, property?, value?}] | plugin: id, entry?, symbol?: id (a movie clip's timeline), layer?, frame?} sets what the keyframe at the frame runs; or {element, event: click|press|release|over|out, actions} sets an instance's event handler. An empty list clears it",
+            true,
+            set,
+        ),
+        c(
+            "actions.clear",
+            "Clear Actions",
+            "",
+            None,
+            "{symbol?, layer?, frame?} clears the keyframe's actions; {element, event?} clears an instance's handlers (one event, or all)",
+            true,
+            clear,
+        ),
+        c(
+            "actions.list",
+            "List Actions",
+            "",
+            None,
+            "{} every keyframe with actions or a frame script and every instance with event handlers, in every scene and symbol",
+            false,
+            list,
+        ),
+        c(
+            "instance.set_name",
+            "Instance Name",
+            "",
+            None,
+            "{element?: id (default: the selected instance), name: letters, digits, _ or $, not starting with a digit; \"\" clears} names a movie clip or button instance, or a dynamic or input text field, for actions and scripts",
+            true,
+            set_name,
+        ),
     ]
 }
 
@@ -41,7 +81,10 @@ fn timeline_mut(s: &mut Session, symbol: Option<SymbolId>, scope: Scope) -> Resu
         Some(id) => {
             let sym = s.doc.library.iter_mut().find(|x| x.id == id).ok_or_else(|| EngineError::State(format!("no symbol with id {}", id.0)))?;
             if scope == Scope::Runs && sym.kind != SymbolKind::MovieClip {
-                return Err(EngineError::State(format!("“{}” is not a movie clip: only the main timeline and movie clips run frame actions", sym.name)));
+                return Err(EngineError::State(format!(
+                    "“{}” is not a movie clip: only the main timeline and movie clips run frame actions",
+                    sym.name
+                )));
             }
             Ok(&mut Arc::make_mut(sym).timeline)
         }
@@ -67,13 +110,24 @@ pub(crate) fn keyframe_in<'a>(s: &'a mut Session, p: &Value, scope: Scope) -> Re
     let lid = match (layer_param, symbol) {
         (Some(l), _) => l,
         (None, None) => active,
-        (None, Some(_)) => tl.layers.iter().find(|l| l.kind != LayerKind::Folder).map(|l| l.id).ok_or_else(|| EngineError::State("the symbol has no layers".into()))?,
+        (None, Some(_)) => tl
+            .layers
+            .iter()
+            .find(|l| l.kind != LayerKind::Folder)
+            .map(|l| l.id)
+            .ok_or_else(|| EngineError::State("the symbol has no layers".into()))?,
     };
     let layer = tl.layer_mut(lid).ok_or_else(|| EngineError::State(format!("no layer with id {}", lid.0)))?;
     if layer.kind == LayerKind::Folder || (scope == Scope::Runs && layer.kind == LayerKind::Guide) {
-        return Err(EngineError::State(format!("'{}' is a {} layer: its frames don't run actions", layer.name, if layer.kind == LayerKind::Folder { "folder" } else { "guide" })));
+        return Err(EngineError::State(format!(
+            "'{}' is a {} layer: its frames don't run actions",
+            layer.name,
+            if layer.kind == LayerKind::Folder { "folder" } else { "guide" }
+        )));
     }
-    let i = layer.keyframe_index_at(frame).ok_or_else(|| EngineError::State(format!("frame {} is empty on '{}': add a keyframe first (F6 or F7)", frame + 1, layer.name)))?;
+    let i = layer
+        .keyframe_index_at(frame)
+        .ok_or_else(|| EngineError::State(format!("frame {} is empty on '{}': add a keyframe first (F6 or F7)", frame + 1, layer.name)))?;
     let k = layer.keyframe_mut(i).ok_or_else(|| EngineError::State("keyframe vanished".into()))?;
     Ok((lid, k))
 }
@@ -101,7 +155,11 @@ fn instance_mut<'a>(s: &'a mut Session, p: &Value) -> Result<&'a mut Element> {
     let layer = s.layer_mut(Some(layer))?;
     let i = layer.keyframe_index_at(frame).ok_or_else(|| EngineError::State(format!("frame {} is empty on this layer", frame + 1)))?;
     let k = layer.keyframe_mut(i).ok_or_else(|| EngineError::State("keyframe vanished".into()))?;
-    let e = k.elements.iter_mut().find(|e| e.id == id).ok_or_else(|| EngineError::State(format!("no element {} on the active layer at frame {}", id.0, frame + 1)))?;
+    let e = k
+        .elements
+        .iter_mut()
+        .find(|e| e.id == id)
+        .ok_or_else(|| EngineError::State(format!("no element {} on the active layer at frame {}", id.0, frame + 1)))?;
     Ok(Arc::make_mut(e))
 }
 
@@ -143,7 +201,8 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn set_handler(s: &mut Session, p: &Value) -> Result<Value> {
-    let event = ButtonEvent::from_key(str_req(p, "event")?).ok_or_else(|| EngineError::Param("param 'event' must be click, press, release, over or out".into()))?;
+    let event = ButtonEvent::from_key(str_req(p, "event")?)
+        .ok_or_else(|| EngineError::Param("param 'event' must be click, press, release, over or out".into()))?;
     let list = parse_actions(p)?;
     let e = instance_mut(s, p)?.clone();
     interactive_kind(s, &e)?;
@@ -166,7 +225,9 @@ fn set_handler(s: &mut Session, p: &Value) -> Result<Value> {
 fn clear(s: &mut Session, p: &Value) -> Result<Value> {
     if p.get("element").is_some() {
         let event = match opt_str(p, "event")? {
-            Some(k) => Some(ButtonEvent::from_key(k).ok_or_else(|| EngineError::Param("param 'event' must be click, press, release, over or out".into()))?),
+            Some(k) => {
+                Some(ButtonEvent::from_key(k).ok_or_else(|| EngineError::Param("param 'event' must be click, press, release, over or out".into()))?)
+            }
             None => None,
         };
         let el = instance_mut(s, p)?;
@@ -187,7 +248,13 @@ fn clear(s: &mut Session, p: &Value) -> Result<Value> {
 fn list(s: &mut Session, _: &Value) -> Result<Value> {
     let mut frames = Vec::new();
     let mut instances = Vec::new();
-    let timelines = s.doc.scenes.iter().enumerate().map(|(i, sc)| (json!({"scene": i}), sc.name.as_str(), &sc.timeline)).chain(s.doc.library.iter().map(|sym| (json!({"symbol": sym.id.0}), sym.name.as_str(), &sym.timeline)));
+    let timelines = s
+        .doc
+        .scenes
+        .iter()
+        .enumerate()
+        .map(|(i, sc)| (json!({"scene": i}), sc.name.as_str(), &sc.timeline))
+        .chain(s.doc.library.iter().map(|sym| (json!({"symbol": sym.id.0}), sym.name.as_str(), &sym.timeline)));
     for (at, name, tl) in timelines {
         for l in &tl.layers {
             for k in &l.keyframes {
@@ -229,13 +296,18 @@ fn merge(v: &mut Value, extra: &Value) {
 fn set_name(s: &mut Session, p: &Value) -> Result<Value> {
     let name = str_req(p, "name")?.trim().to_string();
     if !name.is_empty() && !actions::valid_instance_name(&name) {
-        return Err(EngineError::Param(format!("“{name}” can't be an instance name: use letters, digits, _ or $ (no spaces), not starting with a digit, at most {} characters", actions::MAX_NAME_CHARS)));
+        return Err(EngineError::Param(format!(
+            "“{name}” can't be an instance name: use letters, digits, _ or $ (no spaces), not starting with a digit, at most {} characters",
+            actions::MAX_NAME_CHARS
+        )));
     }
     let e = instance_mut(s, p)?.clone();
     // Dynamic and input text fields take names too (ADR 0066); static text has none.
     match &e.kind {
         ElementKind::Text(t) if t.field.is_some() => {}
-        ElementKind::Text(_) => return Err(EngineError::State("static text has no instance name: make it dynamic or input text first (Properties › Text type)".into())),
+        ElementKind::Text(_) => {
+            return Err(EngineError::State("static text has no instance name: make it dynamic or input text first (Properties › Text type)".into()));
+        }
         _ => {
             interactive_kind(s, &e)?;
         }
@@ -254,7 +326,7 @@ const MAX_TEST_SOUNDS: usize = 10_000;
 fn test_movie(s: &mut Session, p: &Value) -> Result<Value> {
     let fps = s.doc.stage.fps.max(1.0);
     let frames = opt_u32(p, "frames")?.unwrap_or((fps * 10.0) as u32).min(MAX_TEST_STEPS);
-    let mut timed: Vec<(u64, Vec<anicraft_doc::player::Event>)> = Vec::new();
+    let mut timed: Vec<(u64, Vec<anima_doc::player::Event>)> = Vec::new();
     match p.get("events") {
         None | Some(Value::Null) => {}
         Some(Value::Array(list)) => {
@@ -262,19 +334,22 @@ fn test_movie(s: &mut Session, p: &Value) -> Result<Value> {
                 return Err(EngineError::Param(format!("at most {MAX_TEST_EVENTS} events")));
             }
             for (i, e) in list.iter().enumerate() {
-                let tick = e.get("tick").and_then(Value::as_u64).ok_or_else(|| EngineError::Param(format!("event {}: needs a \"tick\" (the step it happens in, from 1)", i + 1)))?;
+                let tick = e
+                    .get("tick")
+                    .and_then(Value::as_u64)
+                    .ok_or_else(|| EngineError::Param(format!("event {}: needs a \"tick\" (the step it happens in, from 1)", i + 1)))?;
                 timed.push((tick, parse_events(e).map_err(|m| EngineError::Param(format!("event {}: {m}", i + 1)))?));
             }
         }
         Some(_) => return Err(EngineError::Param("param 'events' must be a list".into())),
     }
-    let seed = opt_u64(p, "seed")?.unwrap_or(anicraft_doc::player::DEFAULT_SEED);
+    let seed = opt_u64(p, "seed")?.unwrap_or(anima_doc::player::DEFAULT_SEED);
     let mut runner = ScriptRunner::new(&s.plugins);
     let mut movie = Movie::start_seeded(&s.doc, seed, &mut runner);
     // The sounds the movie started (buttons' under the pointer too, ADR 0057), in order.
     let mut sounds: Vec<Value> = Vec::new();
     let mut more = 0usize;
-    let mut heard = |movie: &mut Movie, doc: &anicraft_doc::Document| {
+    let mut heard = |movie: &mut Movie, doc: &anima_doc::Document| {
         for (tick, st) in movie.take_sounds() {
             if sounds.len() >= MAX_TEST_SOUNDS {
                 more += 1;
@@ -290,7 +365,7 @@ fn test_movie(s: &mut Session, p: &Value) -> Result<Value> {
         movie.step(&s.doc, &events, &mut runner);
         heard(&mut movie, &s.doc);
     }
-    let nodes = anicraft_doc::player::tree(&s.doc, &movie.state);
+    let nodes = anima_doc::player::tree(&s.doc, &movie.state);
     Ok(json!({
         "steps": frames,
         "output": movie.output.iter().map(|(t, l)| json!({"tick": t, "line": l})).collect::<Vec<_>>(),

@@ -7,10 +7,10 @@ use crate::cmds_draw::{MAX_EXTENT, add_shape, object_param};
 use crate::merge::{self, Order};
 use crate::params::*;
 use crate::{CommandSpec, EngineError, Result, Session};
-use anicraft_doc::{ColorEffect, Element, ElementId, ElementKind, MAX_WIDTH_POINTS, Paint, Rgba, Shape, Stroke, WidthPoint, WidthProfile};
-use anicraft_geom::planar;
-use anicraft_geom::brush::{MAX_SAMPLES, Sample, Tilt, Tip, TipShape, centre_stroke, outline_shaped};
-use anicraft_geom::{Affine, FillRule, Path, PathCmd, Vec2};
+use anima_doc::{ColorEffect, Element, ElementId, ElementKind, MAX_WIDTH_POINTS, Paint, Rgba, Shape, Stroke, WidthPoint, WidthProfile};
+use anima_geom::brush::{MAX_SAMPLES, Sample, Tilt, Tip, TipShape, centre_stroke, outline_shaped};
+use anima_geom::planar;
+use anima_geom::{Affine, FillRule, Path, PathCmd, Vec2};
 use serde_json::{Value, json};
 use std::sync::Arc;
 
@@ -25,11 +25,29 @@ pub fn specs() -> Vec<CommandSpec> {
             draw_brush as crate::RunFn,
         ),
         c("brush.preset_list", "Brush Presets", "{} the built-in brushes and yours, with their settings", false, preset_list),
-        c("brush.preset_save", "Save Brush", "{name, from? (a preset to start from; default: the plain brush), size?, shape?, angle?, roundness?, smoothing?, curve?, pressure_size?, pressure_opacity?, taper_start?, taper_end?, spacing?, jitter?, texture?, scatter?, tilt_angle?, tilt_width? (as draw.brush)} saves a brush of your own (replacing yours of that name; kept in your preferences)", false, preset_save),
+        c(
+            "brush.preset_save",
+            "Save Brush",
+            "{name, from? (a preset to start from; default: the plain brush), size?, shape?, angle?, roundness?, smoothing?, curve?, pressure_size?, pressure_opacity?, taper_start?, taper_end?, spacing?, jitter?, texture?, scatter?, tilt_angle?, tilt_width? (as draw.brush)} saves a brush of your own (replacing yours of that name; kept in your preferences)",
+            false,
+            preset_save,
+        ),
         c("brush.preset_rename", "Rename Brush", "{name, to}", false, preset_rename),
         c("brush.preset_delete", "Delete Brush", "{name} deletes a brush of your own (asks first: it can't be undone)", false, preset_delete),
-        c("brush.preset_export", "Export Brushes", "{path, names? (default: all yours)} writes your brushes to a brush set file (JSON)", false, preset_export),
-        c("brush.preset_import", "Import Brushes", "{path} adds the brushes in a brush set file to yours (a name you have already gets a number)", false, preset_import),
+        c(
+            "brush.preset_export",
+            "Export Brushes",
+            "{path, names? (default: all yours)} writes your brushes to a brush set file (JSON)",
+            false,
+            preset_export,
+        ),
+        c(
+            "brush.preset_import",
+            "Import Brushes",
+            "{path} adds the brushes in a brush set file to yours (a name you have already gets a number)",
+            false,
+            preset_import,
+        ),
     ]
 }
 
@@ -76,7 +94,9 @@ impl PaintMode {
             PaintMode::Fills => "Paints over fills and empty areas, leaving lines alone.",
             PaintMode::Behind => "Paints only empty areas, behind the lines and fills on the layer.",
             PaintMode::Selection => "Paints only inside the selected fills, leaving lines alone.",
-            PaintMode::Inside => "Paints only inside the fill where the stroke starts, leaving lines alone. Started on empty stage, it paints only the empty area there.",
+            PaintMode::Inside => {
+                "Paints only inside the fill where the stroke starts, leaving lines alone. Started on empty stage, it paints only the empty area there."
+            }
         }
     }
     fn order(self) -> Order {
@@ -119,7 +139,11 @@ fn paint_region(s: &mut Session, mode: PaintMode, start: Vec2, object: bool) -> 
         let here = s.layer;
         let picked: Vec<(Path, FillRule)> = els.iter().filter(|e| s.selection.contains(here, e.id)).filter_map(|e| filled(e)).collect();
         if picked.is_empty() {
-            return Ok(Region::Nowhere(if s.selection.on(here).is_empty() { "select the fills to paint inside first" } else { "the selection has no fills to paint inside" }));
+            return Ok(Region::Nowhere(if s.selection.on(here).is_empty() {
+                "select the fills to paint inside first"
+            } else {
+                "the selection has no fills to paint inside"
+            }));
         }
         let refs: Vec<(&Path, FillRule)> = picked.iter().map(|(p, r)| (p, *r)).collect();
         return Ok(Region::Clip(planar::union(&refs).ok_or_else(too_much)?));
@@ -183,9 +207,12 @@ pub(crate) fn ranged(p: &Value, key: &str, range: std::ops::RangeInclusive<f32>,
 /// The stroke's samples, refused when they reach too far.
 pub(crate) fn bounded_samples(p: &Value) -> Result<Vec<Sample>> {
     let pts = samples(p)?;
-    let mut bounds = anicraft_geom::Rect::EMPTY;
+    let mut bounds = anima_geom::Rect::EMPTY;
     pts.iter().for_each(|x| bounds.include(x.at));
-    if bounds.width() > MAX_EXTENT || bounds.height() > MAX_EXTENT || bounds.min.x.abs().max(bounds.max.x.abs()).max(bounds.min.y.abs()).max(bounds.max.y.abs()) > MAX_EXTENT {
+    if bounds.width() > MAX_EXTENT
+        || bounds.height() > MAX_EXTENT
+        || bounds.min.x.abs().max(bounds.max.x.abs()).max(bounds.min.y.abs()).max(bounds.max.y.abs()) > MAX_EXTENT
+    {
         return Err(EngineError::Param("the stroke is too large".into()));
     }
     Ok(pts)
@@ -233,7 +260,8 @@ fn draw_brush(s: &mut Session, p: &Value) -> Result<Value> {
     let as_stroke = opt_bool(p, "as_stroke")?.unwrap_or(false);
     let unit = ranged(p, "unit", 0.001..=1000.0, 1.0)?;
     let mode_key = opt_str(p, "mode")?.unwrap_or("normal");
-    let mode = PaintMode::from_key(mode_key).ok_or_else(|| EngineError::Param(format!("unknown paint mode '{mode_key}' (normal, fills, behind, selection or inside)")))?;
+    let mode = PaintMode::from_key(mode_key)
+        .ok_or_else(|| EngineError::Param(format!("unknown paint mode '{mode_key}' (normal, fills, behind, selection or inside)")))?;
     let color = opt_color(p, "color")?.unwrap_or(if as_stroke { s.style.stroke } else { s.style.fill });
     let color = Rgba { a: color.a * pressure_opacity(&b, &pts), ..color };
     let object = object_param(s, p)?;
@@ -293,7 +321,9 @@ fn draw_brush(s: &mut Session, p: &Value) -> Result<Value> {
     // A gradient or bitmap in the fill swatch paints too, locked or fitted (ADR 0074), unless a
     // colour was given or pressure sets the opacity.
     let fill = match &s.style.fill_paint {
-        Some(_) if p.get("color").is_none_or(Value::is_null) && color.a >= 1.0 => s.style.fill_paint_for(&Affine::translate(-c.x, -c.y), &local.bounds()),
+        Some(_) if p.get("color").is_none_or(Value::is_null) && color.a >= 1.0 => {
+            s.style.fill_paint_for(&Affine::translate(-c.x, -c.y), &local.bounds())
+        }
         _ => Paint::Solid(color),
     };
     let id = ElementId(s.doc.alloc_id());
@@ -302,7 +332,14 @@ fn draw_brush(s: &mut Session, p: &Value) -> Result<Value> {
         name: String::new(),
         transform: Affine::translate(c.x, c.y),
         color: ColorEffect::default(),
-        kind: ElementKind::Shape(Shape { path: Arc::new(local), fill: Some(fill), stroke: None, fill_rule: FillRule::EvenOdd, merge: !object, warp: None }),
+        kind: ElementKind::Shape(Shape {
+            path: Arc::new(local),
+            fill: Some(fill),
+            stroke: None,
+            fill_rule: FillRule::EvenOdd,
+            merge: !object,
+            warp: None,
+        }),
     };
     if s.editable_keyframe()?.elements.len() >= 100_000 {
         return Err(EngineError::State("too many elements on this keyframe".into()));
@@ -519,23 +556,28 @@ pub fn preview_points(w: f32, h: f32) -> Vec<[f32; 3]> {
 /// A brush's stroke preview, drawn by the CPU renderer on a transparent `w` × `h` image (in
 /// pixels; `scale` pixels per point): the preview stroke in `color`, the brush's size kept
 /// where it fits (between 2 and 40 % of the height). `as_stroke` previews the Paint Brush.
-pub fn preview(preset: &BrushPreset, as_stroke: bool, w: u32, h: u32, scale: f32, color: Rgba) -> Result<anicraft_render::Pixmap> {
+pub fn preview(preset: &BrushPreset, as_stroke: bool, w: u32, h: u32, scale: f32, color: Rgba) -> Result<anima_render::Pixmap> {
     let scale = if scale.is_finite() { scale.clamp(0.25, 8.0) } else { 1.0 };
     let (pw, ph) = (w as f32 / scale, h as f32 / scale);
     if !(pw >= 8.0 && ph >= 8.0 && w <= 4096 && h <= 4096) {
         return Err(EngineError::Param("a brush preview is 8 to 4096 pixels across".into()));
     }
-    let mut doc = anicraft_doc::Document::default();
+    let mut doc = anima_doc::Document::default();
     doc.stage.width = pw.ceil() as u32;
     doc.stage.height = ph.ceil() as u32;
     let mut scratch = Session::new(doc);
     let mut params = BrushPreset { size: preset.size.clamp(2.0, (ph * 0.4).max(2.0)), ..preset.clone() }.params();
     params["points"] = json!(preview_points(pw, ph));
-    params["color"] = json!(format!("#{:02x}{:02x}{:02x}", (color.r.clamp(0.0, 1.0) * 255.0).round() as u8, (color.g.clamp(0.0, 1.0) * 255.0).round() as u8, (color.b.clamp(0.0, 1.0) * 255.0).round() as u8));
+    params["color"] = json!(format!(
+        "#{:02x}{:02x}{:02x}",
+        (color.r.clamp(0.0, 1.0) * 255.0).round() as u8,
+        (color.g.clamp(0.0, 1.0) * 255.0).round() as u8,
+        (color.b.clamp(0.0, 1.0) * 255.0).round() as u8
+    ));
     params["object"] = json!(true);
     params["as_stroke"] = json!(as_stroke);
     scratch.execute("draw.brush", &params)?;
-    let dl = anicraft_doc::evaluate(&scratch.doc, 0);
-    let view = anicraft_render::View { transform: Affine::scale(scale, scale), width: w, height: h, background: None };
-    Ok(anicraft_render::render(&dl, &view)?.0)
+    let dl = anima_doc::evaluate(&scratch.doc, 0);
+    let view = anima_render::View { transform: Affine::scale(scale, scale), width: w, height: h, background: None };
+    Ok(anima_render::render(&dl, &view)?.0)
 }

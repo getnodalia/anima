@@ -4,7 +4,7 @@
 //! One running editor is one *recovery session* with an id (`SessionLock`). Its files in the
 //! recovery folder are:
 //!
-//! * `<id>.anicraft`: the document, an ordinary `.anicraft` file (it opens like any other);
+//! * `<id>.anima`: the document, an ordinary `.anima` file (it opens like any other);
 //! * `<id>.json`: what it is ([`RecoveryMeta`]: original path, name, when, which version);
 //! * `<id>.lock`: held with an exclusive OS file lock while the session runs. The OS drops
 //!   the lock when the process dies, however it dies, so "locked" means "alive" and an
@@ -19,7 +19,7 @@
 //! the persistent document (an `Arc` clone, O(1)) and never waits for serialization or disk.
 
 use crate::{EngineError, Result, format};
-use anicraft_doc::Document;
+use anima_doc::Document;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::fs::{File, OpenOptions};
@@ -50,7 +50,7 @@ pub struct RecoveryMeta {
     pub name: String,
     /// Seconds since 1970 (UTC) when it was written.
     pub saved_at: u64,
-    /// The AniCraft version that wrote it.
+    /// The Ánima version that wrote it.
     pub app: String,
     /// Movie frames and scenes, for the restore list.
     pub frames: u32,
@@ -73,7 +73,7 @@ impl RecoveryMeta {
     }
 }
 
-/// "walk.anicraft" for a saved document, "Untitled" otherwise.
+/// "walk.anima" for a saved document, "Untitled" otherwise.
 pub fn display_name(original: Option<&Path>) -> String {
     original.and_then(Path::file_name).map_or_else(|| "Untitled".to_string(), |n| n.to_string_lossy().into_owned())
 }
@@ -86,7 +86,7 @@ pub fn now_secs() -> u64 {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Entry {
     pub session: String,
-    /// The `.anicraft` copy.
+    /// The `.anima` copy.
     pub document: PathBuf,
     pub meta: RecoveryMeta,
     pub bytes: u64,
@@ -133,7 +133,7 @@ fn file(dir: &Path, id: &str, ext: &str) -> PathBuf {
 
 /// The recovery copy of session `id` in `dir`.
 pub fn document_path(dir: &Path, id: &str) -> PathBuf {
-    file(dir, id, "anicraft")
+    file(dir, id, "anima")
 }
 
 /// Writes `bytes` to `path` atomically: a temp file beside it, flushed to disk, renamed over it.
@@ -202,7 +202,7 @@ pub fn write(dir: &Path, id: &str, doc: &Document, meta: &RecoveryMeta) -> Resul
 pub fn clear(dir: &Path, id: &str) -> Result<usize> {
     check_id(id)?;
     let mut n = 0;
-    for ext in ["anicraft", "json", "anicraft.tmp", "json.tmp"] {
+    for ext in ["anima", "json", "anima.tmp", "json.tmp"] {
         if std::fs::remove_file(file(dir, id, ext)).is_ok() {
             n += 1;
         }
@@ -246,7 +246,7 @@ pub fn scan(dir: &Path, own: Option<&str>) -> Vec<Entry> {
         .flatten()
         .filter_map(|e| {
             let name = e.file_name();
-            let id = name.to_str()?.strip_suffix(".anicraft")?.to_string();
+            let id = name.to_str()?.strip_suffix(".anima")?.to_string();
             // Ours only: a session's lock or description sits beside its copy (a document the
             // user saved into this folder has neither).
             let ours = file(dir, &id, "lock").is_file() || file(dir, &id, "json").is_file();
@@ -266,11 +266,15 @@ pub fn scan(dir: &Path, own: Option<&str>) -> Vec<Entry> {
 pub fn find(dir: &Path, id: &str) -> Result<Entry> {
     check_id(id)?;
     if is_live(dir, id) {
-        return Err(EngineError::State("that document is open in another AniCraft window; it is still being autosaved there".into()));
+        return Err(EngineError::State("that document is open in another Ánima window; it is still being autosaved there".into()));
     }
     let document = document_path(dir, id);
     let ours = file(dir, id, "lock").is_file() || file(dir, id, "json").is_file();
-    let bytes = std::fs::metadata(&document).ok().filter(|m| ours && m.is_file()).ok_or_else(|| EngineError::State(format!("no autosaved document '{id}' in {}", dir.display())))?.len();
+    let bytes = std::fs::metadata(&document)
+        .ok()
+        .filter(|m| ours && m.is_file())
+        .ok_or_else(|| EngineError::State(format!("no autosaved document '{id}' in {}", dir.display())))?
+        .len();
     Ok(Entry { session: id.to_string(), document, meta: read_meta(dir, id), bytes })
 }
 
@@ -388,7 +392,7 @@ impl Autosaver {
         let (done_tx, done) = std::sync::mpsc::channel();
         let dir = lock.dir.clone();
         let id = lock.id.clone();
-        let thread = std::thread::Builder::new().name("anicraft-autosave".into()).spawn(move || worker(&dir, &id, &rx, &done_tx))?;
+        let thread = std::thread::Builder::new().name("anima-autosave".into()).spawn(move || worker(&dir, &id, &rx, &done_tx))?;
         Ok(Autosaver { lock: Some(lock), tx: Some(tx), done, thread: Some(thread), next_tag: 0 })
     }
 
@@ -495,10 +499,10 @@ fn worker(dir: &Path, id: &str, rx: &Receiver<Job>, done: &Sender<Outcome>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anicraft_doc::sample;
+    use anima_doc::sample;
 
     fn tmp(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("anicraft-recovery-{name}-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("anima-recovery-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         d
     }
@@ -519,7 +523,7 @@ mod tests {
     fn write_is_atomic_and_round_trips() {
         let dir = tmp("write");
         let doc = sample::demo();
-        let meta = RecoveryMeta::describe("s1", &doc, Some(Path::new("/work/walk.anicraft")));
+        let meta = RecoveryMeta::describe("s1", &doc, Some(Path::new("/work/walk.anima")));
         let st = write(&dir, "s1", &doc, &meta).unwrap();
         assert!(st.bytes > 0);
         // No temp files survive a write.
@@ -527,10 +531,10 @@ mod tests {
         assert!(names.iter().all(|n| !n.ends_with(".tmp")), "{names:?}");
         let (back, m) = load(&dir, "s1").unwrap();
         assert_eq!(back, doc);
-        assert_eq!(m.name, "walk.anicraft");
-        assert_eq!(m.original.as_deref(), Some(Path::new("/work/walk.anicraft")));
+        assert_eq!(m.name, "walk.anima");
+        assert_eq!(m.original.as_deref(), Some(Path::new("/work/walk.anima")));
         // A crash mid-write (a temp file left half-written) keeps the previous copy intact.
-        std::fs::write(dir.join("s1.anicraft.tmp"), b"{\"format\":\"anica").unwrap();
+        std::fs::write(dir.join("s1.anima.tmp"), b"{\"format\":\"anica").unwrap();
         assert_eq!(load(&dir, "s1").unwrap().0, doc);
         assert_eq!(scan(&dir, None).len(), 1, "temp files are not entries");
         // The next write replaces both.
@@ -546,7 +550,7 @@ mod tests {
         let dir = tmp("own");
         std::fs::create_dir_all(&dir).unwrap();
         // A user who saved their document inside the recovery folder under a session-like name.
-        let theirs = dir.join("mine.anicraft");
+        let theirs = dir.join("mine.anima");
         std::fs::write(&theirs, b"precious").unwrap();
         let meta = RecoveryMeta::describe("mine", &Document::default(), Some(&theirs));
         assert!(write(&dir, "mine", &Document::default(), &meta).is_err());
@@ -595,20 +599,20 @@ mod tests {
     #[test]
     fn garbage_in_the_folder_is_ignored_or_reported() {
         let dir = tmp("garbage");
-        std::fs::create_dir_all(dir.join("folder.anicraft")).unwrap();
-        std::fs::write(dir.join("bad id.anicraft"), b"x").unwrap();
-        std::fs::write(dir.join("broken.anicraft"), b"not json").unwrap();
+        std::fs::create_dir_all(dir.join("folder.anima")).unwrap();
+        std::fs::write(dir.join("bad id.anima"), b"x").unwrap();
+        std::fs::write(dir.join("broken.anima"), b"not json").unwrap();
         std::fs::write(dir.join("broken.json"), b"{{{").unwrap();
         // A user's own document saved into the folder is not a recovery copy, and is never
         // discarded as one.
-        std::fs::write(dir.join("mine.anicraft"), b"precious").unwrap();
+        std::fs::write(dir.join("mine.anima"), b"precious").unwrap();
         assert!(discard(&dir, "mine").is_err());
-        assert_eq!(std::fs::read(dir.join("mine.anicraft")).unwrap(), b"precious");
+        assert_eq!(std::fs::read(dir.join("mine.anima")).unwrap(), b"precious");
         let found = scan(&dir, None);
         assert_eq!(found.len(), 1, "{found:?}");
         assert_eq!(found[0].meta.name, "Untitled");
         assert!(load(&dir, "broken").is_err(), "a corrupt copy is an error, not a panic");
-        assert!(scan(Path::new("/no/such/folder/anicraft"), None).is_empty());
+        assert!(scan(Path::new("/no/such/folder/anima"), None).is_empty());
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -642,11 +646,11 @@ mod tests {
         let a = Autosaver::start(SessionLock::acquire(&dir).unwrap()).unwrap();
         let mut doc = sample::demo();
         doc.stage.width = 640;
-        let out = a.finish(Some((doc.clone(), Some(PathBuf::from("/w/a.anicraft")))));
+        let out = a.finish(Some((doc.clone(), Some(PathBuf::from("/w/a.anima")))));
         assert!(out.iter().any(|o| matches!(o, Outcome::Written { .. })), "{out:?}");
         let found = scan(&dir, None);
         assert_eq!(found.len(), 1);
-        assert_eq!(found[0].meta.name, "a.anicraft");
+        assert_eq!(found[0].meta.name, "a.anima");
         assert_eq!(load(&dir, &found[0].session).unwrap().0.stage.width, 640);
         let _ = std::fs::remove_dir_all(&dir);
     }

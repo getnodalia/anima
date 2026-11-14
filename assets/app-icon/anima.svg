@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Ánima</title>
+  <!-- Ánima app icon: a ball's arc through three keyframes, onion-skinned, over its tween span on
+       the timeline. Original artwork for Ánima, MIT OR Apache-2.0 (assets/app-icon/LICENSE.txt). -->
+  <defs>
+    <clipPath id="tile"><rect width="512" height="512" rx="112"/></clipPath>
+    <linearGradient id="field" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6b4ce8"/>
+      <stop offset="1" stop-color="#5034c6"/>
+    </linearGradient>
+  </defs>
+  <g clip-path="url(#tile)">
+    <rect width="512" height="512" fill="url(#field)"/>
+    <!-- Colloid's rims: a light edge on top, a darker one below. -->
+    <rect width="512" height="8" fill="#fff" opacity=".15"/>
+    <rect y="504" width="512" height="8" fill="#000" opacity=".2"/>
+    <!-- The motion path, one dot per in-between frame. -->
+    <path d="M128 304 Q256 4 384 304" fill="none" stroke="#fff" stroke-width="13" stroke-linecap="round" stroke-dasharray="0 30" stroke-dashoffset="-6" opacity=".6"/>
+    <!-- Onion skins: the earlier keyframes, paler the further back. -->
+    <ellipse cx="128" cy="304" rx="50" ry="40" transform="rotate(-67 128 304)" fill="#8f76f0"/>
+    <circle cx="256" cy="154" r="52" fill="#b4a4f7"/>
+    <!-- The ball now, squashed as it lands. -->
+    <ellipse cx="384" cy="318" rx="76" ry="58" fill="#ff7a59"/>
+    <ellipse cx="356" cy="294" rx="26" ry="15" transform="rotate(-16 356 294)" fill="#fff" opacity=".45"/>
+    <!-- Its timeline: the tween span, a keyframe under each pose. -->
+    <rect x="72" y="414" width="368" height="44" rx="22" fill="#2a1a78" opacity=".6"/>
+    <rect x="128" y="430" width="256" height="12" rx="6" fill="#b4a4f7"/>
+    <path d="M128 416l20 20-20 20-20-20z" fill="#8f76f0"/>
+    <path d="M256 416l20 20-20 20-20-20z" fill="#e4dcff"/>
+    <path d="M384 416l20 20-20 20-20-20z" fill="#ff7a59"/>
+  </g>
+</svg>

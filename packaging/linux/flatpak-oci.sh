@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Build anicraft as an OCI container layout and push it to GitHub Container Registry (GHCR)
+# Build anima as an OCI container layout and push it to GitHub Container Registry (GHCR)
 # for consumption by Flatpak OCI clients (flatpak-oci-specs).
 #
 # Usage:
 #   packaging/linux/flatpak-oci.sh [--push] [TARBALL]
 #
 # Environment variables:
-#   REGISTRY       Target registry image (default: ghcr.io/storytold/anicraft)
+#   REGISTRY       Target registry image (default: ghcr.io/getnodalia/anima)
 #   TAG            Target image tag (default: $VERSION-$ARCH, also tags stable-$ARCH)
 #   GITHUB_TOKEN   Token for GHCR authentication when --push is used
 set -euo pipefail
@@ -32,7 +32,7 @@ case "$ARCH" in
   *) echo "unsupported architecture $ARCH" >&2; exit 2 ;;
 esac
 
-BASENAME="anicraft-$VERSION-linux-$ARCH"
+BASENAME="anima-$VERSION-linux-$ARCH"
 OUT_OCI="$DIST/$BASENAME-oci"
 
 echo "==> Building Flatpak OCI layout for $BASENAME"
@@ -40,7 +40,7 @@ echo "==> Building Flatpak OCI layout for $BASENAME"
 
 [[ -d "$OUT_OCI" ]] || { echo "error: $OUT_OCI layout not generated" >&2; exit 1; }
 
-REGISTRY="${REGISTRY:-ghcr.io/storytold/anicraft}"
+REGISTRY="${REGISTRY:-ghcr.io/getnodalia/anima}"
 TAG="${TAG:-$VERSION-$ARCH}"
 
 echo "==> OCI layout ready at $OUT_OCI (Target: $REGISTRY:$TAG)"
@@ -50,7 +50,7 @@ if [[ "$PUSH" = 1 ]]; then
 
   AUTH_ARGS=()
   if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    AUTH_ARGS=(--dest-creds "${GITHUB_ACTOR:-storytold}:$GITHUB_TOKEN")
+    AUTH_ARGS=(--dest-creds "${GITHUB_ACTOR:-getnodalia}:$GITHUB_TOKEN")
   fi
 
   echo "==> Pushing to $REGISTRY:$TAG"

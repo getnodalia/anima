@@ -6,7 +6,7 @@ Status: accepted (M1, first slice)
 
 Animate users rely on rulers, a grid and guides every day: to place artwork on a layout, line up
 characters with a horizon, keep a safe area, or work on a tile grid. The user guide listed them
-as missing. AniCraft already snapped to artwork (Snap to Objects, ADR 0041, 0042, 0045), but
+as missing. Ánima already snapped to artwork (Snap to Objects, ADR 0041, 0042, 0045), but
 that snapping lived in three places (`raw.move_point`, `element.translate`, `draw.snap`), each
 gated on one switch.
 

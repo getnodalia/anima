@@ -70,7 +70,7 @@ becomes the bottleneck, the next step is narrowing the macOS leg to platform-sen
 plus a `full-ci` label (craft-common-actions' `changed-paths.yml`), not dropping it.
 
 The macOS leg found one real failure on its first run: the macOS app menu is titled
-"AniCraft", and the pseudo-locale screen-reader tests (ADR 0040) flagged the product name as
+"Ánima", and the pseudo-locale screen-reader tests (ADR 0040) flagged the product name as
 untranslated in 50 states. The tests now treat the product name as the source scan already
 does. Windows found nothing; clippy was clean on both. The 19 GPU parity tests passed on both
 legs (5.7 s on macOS, 29.9 s on Windows). GNU `timeout` is missing on macOS, so the gate

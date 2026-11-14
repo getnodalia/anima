@@ -6,7 +6,7 @@
 
 ## Context
 
-AniCraft had classic and shape tweens: a keyframe interpolates into the next keyframe with one
+Ánima had classic and shape tweens: a keyframe interpolates into the next keyframe with one
 ease. Animate's *motion tween* works differently, and artists coming from Animate expect it: the
 tween belongs to one keyframe span and one object in it, each property (position, scale,
 rotation, skew, colour effect) has its own curve with *property keyframes* anywhere in the span,

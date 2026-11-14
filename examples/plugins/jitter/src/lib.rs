@@ -2,11 +2,11 @@
 //! about its own centre, for a hand-placed look. A selection transform: it needs a selection,
 //! and leaves the same elements selected.
 
-use anicraft_plugin_sdk::{self as ac, Rng};
+use anima_plugin_sdk::{self as ac, Rng};
 use serde_json::{Value, json};
 
 const MANIFEST: &str = r##"{
-  "id": "org.anicraft.jitter",
+  "id": "org.anima.jitter",
   "name": "Jitter Selection",
   "version": "1.0.0",
   "kind": "command",

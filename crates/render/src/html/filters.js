@@ -1,4 +1,4 @@
-// AniCraft HTML canvas player: filters and per-pixel blending (ADR 0072).
+// Ánima HTML canvas player: filters and per-pixel blending (ADR 0072).
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //
 // A port of crates/render/src/filters.rs (the CPU renderer, the oracle) and of its `blend` for
@@ -9,7 +9,7 @@
 // own blur over the pixels, not CSS `filter`, so every browser shows the same result; the tests
 // run it in a JavaScript engine against the oracle. Nothing here touches the page.
 "use strict";
-var AniCraftFilters = (function () {
+var AnimaFilters = (function () {
   const f32 = Math.fround;
   // Steps in a gradient filter's ramp table (filters.rs `RAMP_STEPS`).
   const RAMP_STEPS = 256;

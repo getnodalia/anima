@@ -27,7 +27,7 @@
 
 use crate::skin::{self, Skin};
 use crate::{Element, ElementId, Keyframe, Layer};
-use anicraft_geom::{Affine, Vec2};
+use anima_geom::{Affine, Vec2};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -103,7 +103,8 @@ impl Spring {
 
     /// Both values finite and within 0…1; `None` when they aren't numbers.
     pub fn sanitized(self) -> Option<Spring> {
-        (self.strength.is_finite() && self.damping.is_finite()).then(|| Spring { strength: self.strength.clamp(0.0, 1.0), damping: self.damping.clamp(0.0, 1.0) })
+        (self.strength.is_finite() && self.damping.is_finite())
+            .then(|| Spring { strength: self.strength.clamp(0.0, 1.0), damping: self.damping.clamp(0.0, 1.0) })
     }
 }
 
@@ -176,7 +177,13 @@ impl Bone {
     }
 
     fn is_sane(&self) -> bool {
-        self.parent != self.child && self.head.x.is_finite() && self.head.y.is_finite() && self.tail.x.is_finite() && self.tail.y.is_finite() && self.rest.is_finite() && self.rest.inverse().is_some()
+        self.parent != self.child
+            && self.head.x.is_finite()
+            && self.head.y.is_finite()
+            && self.tail.x.is_finite()
+            && self.tail.y.is_finite()
+            && self.rest.is_finite()
+            && self.rest.inverse().is_some()
     }
 }
 
@@ -423,7 +430,7 @@ impl Pose {
                 .iter()
                 .map(|b| {
                     let s = b.allow_slide(self.slide(b.id).lerp(o.slide(b.id), t));
-                    JointAngle { bone: b.id, angle: b.allow(anicraft_geom::lerp(self.angle(b.id), o.angle(b.id), t)), x: s.x, y: s.y }
+                    JointAngle { bone: b.id, angle: b.allow(anima_geom::lerp(self.angle(b.id), o.angle(b.id), t)), x: s.x, y: s.y }
                 })
                 .collect(),
         )
@@ -570,7 +577,8 @@ pub struct BoneAt {
 /// what [`crate::evaluate_layer_elements`] gives on an armature layer).
 pub fn bones_at(arm: &Armature, elements: &[Arc<Element>], pose: &Pose) -> Vec<BoneAt> {
     // A shape armature's joint nodes are no elements: forward kinematics places them.
-    let world: HashMap<ElementId, Affine> = if arm.skin.is_some() { place(arm, elements, pose) } else { elements.iter().map(|e| (e.id, e.transform)).collect() };
+    let world: HashMap<ElementId, Affine> =
+        if arm.skin.is_some() { place(arm, elements, pose) } else { elements.iter().map(|e| (e.id, e.transform)).collect() };
     arm.bones
         .iter()
         .filter_map(|b| {

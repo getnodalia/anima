@@ -1,7 +1,8 @@
 # Packaging
 
-How AniCraft is built into installers (ADR 0026). The family's shared release workflow
-(`storytold/craft-common-actions`) runs these scripts; `docs/release.md` describes a release.
+How Ánima is built into installers (ADR 0026). The release workflows
+(`.github/workflows/release-linux.yml`, `release-macos.yml`, `release-windows.yml`, started by
+`release-auto.yml`) run these scripts; `docs/release-notes/README.md` describes a release.
 
 | Path | What |
 |---|---|
@@ -9,16 +10,16 @@ How AniCraft is built into installers (ADR 0026). The family's shared release wo
 | `check-icons.sh` | The icons every package names exist |
 | `check-store-readiness.sh` | Store metadata checks: Flatpak manifests, AppStream, desktop entry, winget/MSIX (ADR 0094) |
 | `windows/` | MSI (WiX v5), portable zip, symbols zip; install policy checks ([README](windows/README.md)) |
-| `macos/` | Universal `AniCraft.app` on a DMG, CLI zip, signing and notarization |
+| `macos/` | Universal `Anima.app` on a DMG, CLI zip, signing and notarization |
 | `linux/` | AppImage, deb, rpm, tar.gz; Flatpak manifests; desktop entry, metainfo, MIME types |
 | `web/` | The web build's zip |
 
 ## Portable copies (ADR 0094)
 
-The Windows zip and the Linux tar.gz contain a file named `anicraft-portable` at their top. A
+The Windows zip and the Linux tar.gz contain a file named `anima-portable` at their top. A
 copy with that marker keeps preferences, autosave, logs, plug-ins, templates, thumbnails and the
 offline guide in a `data/` folder beside the marker instead of the user's settings folder. The
-app looks for the marker next to the program, above `bin/`, next to `AniCraft.app` (macOS) and
+app looks for the marker next to the program, above `bin/`, next to `Anima.app` (macOS) and
 next to the `.AppImage`. Installed packages (MSI, DMG, deb, rpm, Flatpak, Arch) never ship it.
 Preferences › About shows which kind of copy is running and its folders.
 
@@ -31,7 +32,7 @@ from this folder into `$XDG_DATA_HOME` (`~/.local/share`), never into system fol
 Preferences › About removes them (`desktop.remove`). Headless:
 
 ```sh
-anicraft-cli exec --sample desktop.integrate '{"appimage": "/home/me/Apps/AniCraft.AppImage", "data_home": "/home/me/.local/share"}'
+anima-cli exec --sample desktop.integrate '{"appimage": "/home/me/Apps/Ánima.AppImage", "data_home": "/home/me/.local/share"}'
 ```
 
 ## Store readiness

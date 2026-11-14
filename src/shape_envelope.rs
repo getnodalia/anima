@@ -8,8 +8,8 @@
 use crate::app::{App, Drag, Tool};
 use crate::pathtools::Xf;
 use crate::theme::T;
-use anicraft_engine::geom::envelope::{BOUNDARY, CORNERS, Mesh, coons_interior};
-use anicraft_engine::geom::{Rect, Vec2};
+use anima_engine::geom::envelope::{BOUNDARY, CORNERS, Mesh, coons_interior};
+use anima_engine::geom::{Rect, Vec2};
 use egui::{Color32, Pos2, Stroke, StrokeKind, vec2};
 use serde_json::json;
 
@@ -142,7 +142,7 @@ pub fn draw_overlay(app: &App, painter: &egui::Painter, xf: Xf, pointer: Option<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anicraft_engine::geom::envelope::rest_mesh;
+    use anima_engine::geom::envelope::rest_mesh;
 
     /// A corner drags its two tangents along; a tangent moves alone; the inside follows.
     #[test]

@@ -3,7 +3,7 @@
 //! On the desktop this is the operating system's file system: every function here is the
 //! `std::fs` call it names, with nothing in between. In the browser (`wasm32`) there is no file
 //! system, so commands read and write an in-memory store instead. The web shell puts the file
-//! the user picked into it before a command runs (`file.open {"path": "walk.anicraft"}`) and
+//! the user picked into it before a command runs (`file.open {"path": "walk.anima"}`) and
 //! hands what the command wrote to the browser as downloads afterwards ([`take_written`]).
 //! Commands keep taking paths, so one implementation serves the editor, the CLI, MCP and the
 //! web build.
@@ -79,7 +79,10 @@ impl MemFs {
         let old = self.files.get(&k).map_or(0, |f| f.data.len() as u64);
         let total = self.bytes - old + data.len() as u64;
         if total > MAX_MEMORY_BYTES {
-            return Err(io::Error::new(io::ErrorKind::OutOfMemory, format!("{} does not fit in memory ({} MB at most)", path.display(), MAX_MEMORY_BYTES >> 20)));
+            return Err(io::Error::new(
+                io::ErrorKind::OutOfMemory,
+                format!("{} does not fit in memory ({} MB at most)", path.display(), MAX_MEMORY_BYTES >> 20),
+            ));
         }
         if self.is_dir(path) {
             return Err(unsupported("a folder has that name"));
@@ -311,8 +314,8 @@ mod tests {
     #[test]
     fn files_round_trip_and_folders_follow_their_files() {
         let mut m = MemFs::default();
-        m.put(Path::new("in/walk.anicraft"), b"{}".to_vec()).unwrap();
-        assert!(m.is_file(Path::new("in/walk.anicraft")) && m.is_dir(Path::new("in")) && !m.is_dir(Path::new("in/walk.anicraft")));
+        m.put(Path::new("in/walk.anima"), b"{}".to_vec()).unwrap();
+        assert!(m.is_file(Path::new("in/walk.anima")) && m.is_dir(Path::new("in")) && !m.is_dir(Path::new("in/walk.anima")));
         assert!(!m.is_dir(Path::new("i")), "a prefix of a name is not a folder");
         m.write(Path::new("out/frame_0001.png"), vec![1, 2, 3]).unwrap();
         m.write(Path::new("out/frame_0002.png.tmp"), vec![4]).unwrap();
@@ -323,8 +326,11 @@ mod tests {
         assert!(m.write(Path::new("in"), vec![]).is_err(), "a folder's name is taken");
         assert_eq!(m.read(Path::new("nope")).unwrap_err().kind(), io::ErrorKind::NotFound);
         let out = m.take_written();
-        assert_eq!(out.iter().map(|(p, _)| p.clone()).collect::<Vec<_>>(), vec![PathBuf::from("out").join("frame_0001.png"), PathBuf::from("out").join("frame_0002.png")]);
-        assert_eq!((m.bytes(), m.is_file(Path::new("in/walk.anicraft"))), (0, false), "emptied, the picked file too");
+        assert_eq!(
+            out.iter().map(|(p, _)| p.clone()).collect::<Vec<_>>(),
+            vec![PathBuf::from("out").join("frame_0001.png"), PathBuf::from("out").join("frame_0002.png")]
+        );
+        assert_eq!((m.bytes(), m.is_file(Path::new("in/walk.anima"))), (0, false), "emptied, the picked file too");
     }
 
     #[test]

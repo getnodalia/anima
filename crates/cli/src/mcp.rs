@@ -1,4 +1,4 @@
-//! `anicraft-cli mcp`: a Model Context Protocol server on stdin/stdout.
+//! `anima-cli mcp`: a Model Context Protocol server on stdin/stdout.
 //!
 //! The transport is MCP's stdio transport: JSON-RPC 2.0 messages, one per line. AI assistants
 //! (any MCP client) get a handful of tools over the engine's command registry rather than one
@@ -7,7 +7,7 @@
 //! and the confirmation tiers (ADR 0004: `"confirm": true` before irreversible loss) apply to
 //! an assistant exactly as to the app.
 
-use anicraft_engine::{Session, commands};
+use anima_engine::{Session, commands};
 use serde_json::{Value, json};
 use std::io::{BufRead, Write};
 
@@ -17,30 +17,30 @@ const PROTOCOLS: &[&str] = &["2025-06-18", "2025-03-26", "2024-11-05"];
 /// Longest edge of a frame picture, in pixels (keeps replies small).
 const MAX_PICTURE_EDGE: f32 = 2048.0;
 
-/// Most steps in one `anicraft_run_script` call.
+/// Most steps in one `anima_run_script` call.
 const MAX_STEPS: usize = 10_000;
 
-const INSTRUCTIONS: &str = "AniCraft is a 2D animation studio. Every edit is a command: call \
-anicraft_commands to find one (filter by words such as 'tween' or 'export'), then anicraft_run \
-with its id and params, or anicraft_run_script for several in order. Frames in params are \
-0-based. Commands act on the current scene, layer, frame and selection, which anicraft_document \
-reports. Use anicraft_render to see a frame. Edits can be undone with edit.undo. Commands that \
+const INSTRUCTIONS: &str = "Ánima is a 2D animation studio. Every edit is a command: call \
+anima_commands to find one (filter by words such as 'tween' or 'export'), then anima_run \
+with its id and params, or anima_run_script for several in order. Frames in params are \
+0-based. Commands act on the current scene, layer, frame and selection, which anima_document \
+reports. Use anima_render to see a frame. Edits can be undone with edit.undo. Commands that \
 would lose work or replace a file refuse until params include \"confirm\": true; ask the person \
 before confirming.";
 
 fn tools() -> Value {
     json!([
         {
-            "name": "anicraft_commands",
-            "title": "List AniCraft commands",
-            "description": "Lists the commands anicraft_run accepts: id, label, menu, shortcut, a summary of their params, and whether they change the document. Optionally only those whose id or label contains `filter`.",
+            "name": "anima_commands",
+            "title": "List Ánima commands",
+            "description": "Lists the commands anima_run accepts: id, label, menu, shortcut, a summary of their params, and whether they change the document. Optionally only those whose id or label contains `filter`.",
             "inputSchema": {"type": "object", "properties": {"filter": {"type": "string", "description": "Words to look for in the id or label, e.g. \"tween\" or \"export\"."}}},
             "annotations": {"readOnlyHint": true, "openWorldHint": false}
         },
         {
-            "name": "anicraft_run",
-            "title": "Run an AniCraft command",
-            "description": "Runs one command (see anicraft_commands) with its params and returns its result, plus the document revision and current frame. Commands that would lose work or replace a file need \"confirm\": true in params.",
+            "name": "anima_run",
+            "title": "Run an Ánima command",
+            "description": "Runs one command (see anima_commands) with its params and returns its result, plus the document revision and current frame. Commands that would lose work or replace a file need \"confirm\": true in params.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -52,8 +52,8 @@ fn tools() -> Value {
             "annotations": {"readOnlyHint": false, "destructiveHint": true, "idempotentHint": false, "openWorldHint": false}
         },
         {
-            "name": "anicraft_run_script",
-            "title": "Run several AniCraft commands",
+            "name": "anima_run_script",
+            "title": "Run several Ánima commands",
             "description": "Runs commands in order and returns each result. Stops at the first error and says which step failed; the steps before it stay done (undo them with edit.undo).",
             "inputSchema": {
                 "type": "object",
@@ -68,14 +68,14 @@ fn tools() -> Value {
             "annotations": {"readOnlyHint": false, "destructiveHint": true, "idempotentHint": false, "openWorldHint": false}
         },
         {
-            "name": "anicraft_document",
+            "name": "anima_document",
             "title": "Describe the document",
             "description": "The open document: stage size and frame rate, scenes, the current scene's layers and keyframes, library symbols, and the current scene, frame, layer and selection.",
             "inputSchema": {"type": "object", "properties": {}},
             "annotations": {"readOnlyHint": true, "openWorldHint": false}
         },
         {
-            "name": "anicraft_render",
+            "name": "anima_render",
             "title": "Look at a frame",
             "description": "A frame of the current scene as a PNG picture, exactly as exported. `frame` is 0-based (default: the current frame); `scale` defaults to 0.5 of the stage size.",
             "inputSchema": {
@@ -112,7 +112,7 @@ fn call_tool(s: &mut Session, name: &str, args: &Value) -> Result<Value, String>
         s.execute(id, &params).map_err(|e| format!("{id}: {e}"))
     };
     Ok(match name {
-        "anicraft_commands" => {
+        "anima_commands" => {
             let filter = args.get("filter").and_then(Value::as_str).unwrap_or("").to_lowercase();
             let words: Vec<&str> = filter.split_whitespace().collect();
             let list: Vec<Value> = commands()
@@ -125,11 +125,11 @@ fn call_tool(s: &mut Session, name: &str, args: &Value) -> Result<Value, String>
                 .collect();
             text_result(&Value::Array(list), false)
         }
-        "anicraft_run" => match run(s, args) {
+        "anima_run" => match run(s, args) {
             Ok(v) => text_result(&json!({"result": v, "revision": s.revision, "frame": s.frame, "scene": s.scene}), false),
             Err(e) => text_result(&Value::String(e), true),
         },
-        "anicraft_run_script" => {
+        "anima_run_script" => {
             let steps = args.get("steps").and_then(Value::as_array).ok_or("\"steps\" must be an array")?;
             if steps.len() > MAX_STEPS {
                 return Err(format!("at most {MAX_STEPS} steps per call"));
@@ -143,14 +143,21 @@ fn call_tool(s: &mut Session, name: &str, args: &Value) -> Result<Value, String>
             }
             text_result(&json!({"results": results, "revision": s.revision, "frame": s.frame}), false)
         }
-        "anicraft_document" => text_result(&s.info(), false),
-        "anicraft_render" => {
+        "anima_document" => text_result(&s.info(), false),
+        "anima_render" => {
             let frame = match args.get("frame") {
                 None | Some(Value::Null) => s.frame,
                 Some(v) => v.as_u64().and_then(|f| u32::try_from(f).ok()).ok_or("\"frame\" must be a whole number from 0")?,
             };
             if frame >= s.frame_count() {
-                return Ok(text_result(&Value::String(format!("frame {frame} is past the end: the scene has {} frames (0 to {})", s.frame_count(), s.frame_count().saturating_sub(1))), true));
+                return Ok(text_result(
+                    &Value::String(format!(
+                        "frame {frame} is past the end: the scene has {} frames (0 to {})",
+                        s.frame_count(),
+                        s.frame_count().saturating_sub(1)
+                    )),
+                    true,
+                ));
             }
             let stage = s.doc.stage;
             let largest = stage.width.max(stage.height).max(1) as f32;
@@ -160,10 +167,10 @@ fn call_tool(s: &mut Session, name: &str, args: &Value) -> Result<Value, String>
             };
             let scale = scale.min(MAX_PICTURE_EDGE / largest);
             let movie_frame = s.doc.scene_start(s.scene).saturating_add(frame);
-            let png = anicraft_render::render_frame(&s.doc, movie_frame, scale).and_then(|p| p.encode_png()).map_err(|e| e.to_string())?;
+            let png = anima_render::render_frame(&s.doc, movie_frame, scale).and_then(|p| p.encode_png()).map_err(|e| e.to_string())?;
             json!({
                 "content": [
-                    {"type": "image", "data": anicraft_doc::base64_encode(&png), "mimeType": "image/png"},
+                    {"type": "image", "data": anima_doc::base64_encode(&png), "mimeType": "image/png"},
                     {"type": "text", "text": format!("Frame {frame} of scene {} at {:.0}% ({}Ã—{} stage).", s.scene, scale * 100.0, stage.width, stage.height)}
                 ],
                 "isError": false
@@ -197,7 +204,7 @@ pub fn handle(s: &mut Session, line: &str) -> Option<Value> {
             json!({
                 "protocolVersion": version,
                 "capabilities": {"tools": {"listChanged": false}},
-                "serverInfo": {"name": "anicraft", "title": "AniCraft", "version": env!("CARGO_PKG_VERSION")},
+                "serverInfo": {"name": "anima", "title": "Ánima", "version": env!("CARGO_PKG_VERSION")},
                 "instructions": INSTRUCTIONS
             })
         }
@@ -251,15 +258,21 @@ mod tests {
     #[test]
     fn handshake_lists_tools_and_ignores_notifications() {
         let mut s = Session::default();
-        let init = call(&mut s, 1, "initialize", json!({"protocolVersion": "2025-03-26", "capabilities": {}, "clientInfo": {"name": "t", "version": "1"}}));
+        let init =
+            call(&mut s, 1, "initialize", json!({"protocolVersion": "2025-03-26", "capabilities": {}, "clientInfo": {"name": "t", "version": "1"}}));
         assert_eq!(init["result"]["protocolVersion"], "2025-03-26", "a version we speak is echoed");
-        assert_eq!(init["result"]["serverInfo"]["name"], "anicraft");
+        assert_eq!(init["result"]["serverInfo"]["name"], "anima");
         let newer = call(&mut s, 2, "initialize", json!({"protocolVersion": "2099-01-01"}));
         assert_eq!(newer["result"]["protocolVersion"], PROTOCOLS[0], "otherwise our newest");
         assert!(handle(&mut s, r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#).is_none());
         assert_eq!(call(&mut s, 3, "ping", json!({}))["result"], json!({}));
-        let names: Vec<String> = call(&mut s, 4, "tools/list", json!({}))["result"]["tools"].as_array().unwrap().iter().map(|t| t["name"].as_str().unwrap().to_string()).collect();
-        assert_eq!(names, ["anicraft_commands", "anicraft_run", "anicraft_run_script", "anicraft_document", "anicraft_render"]);
+        let names: Vec<String> = call(&mut s, 4, "tools/list", json!({}))["result"]["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|t| t["name"].as_str().unwrap().to_string())
+            .collect();
+        assert_eq!(names, ["anima_commands", "anima_run", "anima_run_script", "anima_document", "anima_render"]);
         // Protocol errors carry JSON-RPC codes.
         assert_eq!(call(&mut s, 5, "nope", json!({}))["error"]["code"], -32601);
         assert_eq!(handle(&mut s, "{oops").unwrap()["error"]["code"], -32700);
@@ -269,39 +282,43 @@ mod tests {
     #[test]
     fn tools_drive_the_engine() {
         let mut s = Session::default();
-        let found = text(&tool(&mut s, "anicraft_commands", json!({"filter": "shape tween"})));
+        let found = text(&tool(&mut s, "anima_commands", json!({"filter": "shape tween"})));
         assert!(found.as_array().unwrap().iter().any(|c| c["id"] == "timeline.create_shape_tween"), "{found}");
-        let r = tool(&mut s, "anicraft_run", json!({"command": "draw.rect", "params": {"x": 10, "y": 10, "w": 50, "h": 40, "fill": "#ff0000"}}));
+        let r = tool(&mut s, "anima_run", json!({"command": "draw.rect", "params": {"x": 10, "y": 10, "w": 50, "h": 40, "fill": "#ff0000"}}));
         assert_eq!(r["isError"], false);
         assert_eq!(s.visible_elements().len(), 1);
         // A failing command is a tool result the assistant can read, not a protocol error.
-        let bad = tool(&mut s, "anicraft_run", json!({"command": "draw.rect", "params": {"x": "left"}}));
+        let bad = tool(&mut s, "anima_run", json!({"command": "draw.rect", "params": {"x": "left"}}));
         assert_eq!(bad["isError"], true);
         assert!(bad["content"][0]["text"].as_str().unwrap().starts_with("draw.rect:"));
         // Scripts run in order and stop at the first failure.
-        let script = tool(&mut s, "anicraft_run_script", json!({"steps": [
-            {"command": "draw.ellipse", "params": {"x": 100, "y": 10, "w": 30, "h": 30}},
-            {"command": "no.such"},
-            {"command": "draw.ellipse", "params": {"x": 200, "y": 10, "w": 30, "h": 30}}
-        ]}));
+        let script = tool(
+            &mut s,
+            "anima_run_script",
+            json!({"steps": [
+                {"command": "draw.ellipse", "params": {"x": 100, "y": 10, "w": 30, "h": 30}},
+                {"command": "no.such"},
+                {"command": "draw.ellipse", "params": {"x": 200, "y": 10, "w": 30, "h": 30}}
+            ]}),
+        );
         assert_eq!(script["isError"], true);
         assert_eq!(text(&script)["failed_step"], 2);
         assert_eq!(s.visible_elements().len(), 2, "the step before the failure stays done");
         // Confirmation tiers apply: discarding unsaved work needs "confirm".
-        assert_eq!(tool(&mut s, "anicraft_run", json!({"command": "file.new"}))["isError"], true);
-        let doc = text(&tool(&mut s, "anicraft_document", json!({})));
+        assert_eq!(tool(&mut s, "anima_run", json!({"command": "file.new"}))["isError"], true);
+        let doc = text(&tool(&mut s, "anima_document", json!({})));
         assert_eq!(doc["stage"]["width"], s.doc.stage.width);
     }
 
     #[test]
     fn render_returns_a_png_picture() {
-        let mut s = Session::new(anicraft_doc::sample::demo());
-        let r = tool(&mut s, "anicraft_render", json!({"frame": 3, "scale": 0.25}));
+        let mut s = Session::new(anima_doc::sample::demo());
+        let r = tool(&mut s, "anima_render", json!({"frame": 3, "scale": 0.25}));
         assert_eq!(r["content"][0]["type"], "image");
         assert_eq!(r["content"][0]["mimeType"], "image/png");
         assert!(r["content"][0]["data"].as_str().unwrap().starts_with("iVBORw0KGgo"), "base64 of the PNG signature");
-        assert_eq!(tool(&mut s, "anicraft_render", json!({"frame": 1_000_000}))["isError"], true);
-        assert_eq!(call(&mut s, 7, "tools/call", json!({"name": "anicraft_render", "arguments": {"scale": -1}}))["error"]["code"], -32602);
+        assert_eq!(tool(&mut s, "anima_render", json!({"frame": 1_000_000}))["isError"], true);
+        assert_eq!(call(&mut s, 7, "tools/call", json!({"name": "anima_render", "arguments": {"scale": -1}}))["error"]["code"], -32602);
     }
 
     #[test]

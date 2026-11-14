@@ -3,12 +3,12 @@
 //!
 //! Everything here is pure data and pure functions, like the rest of the player: the same field,
 //! look and keys always give the same text, caret and selection. Laying text out needs the
-//! fonts, which live a layer above (`anicraft-text`), so the player asks its host for a
+//! fonts, which live a layer above (`anima-text`), so the player asks its host for a
 //! [`FieldLook`] whenever a field's text changes and keeps it in the state; drawing a state then
 //! needs nothing else.
 
 use crate::{FIELD_GUTTER, LineType, MAX_FIELD_CHARS, TextBlock, TextField, TextKind};
-use anicraft_geom::{Path, Vec2};
+use anima_geom::{Path, Vec2};
 use std::sync::Arc;
 
 /// One laid-out line's characters and caret places (indices count `char`s of the shown text).

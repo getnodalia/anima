@@ -47,7 +47,7 @@ hand from the public descriptions of the format.
      rendered by the CPU oracle at half size (160 × 90) and compared with committed PNGs in
      the package's `golden/` folder, plus probes that check hand-worked colours at chosen
      points, so a golden that drifted from what the file describes can't be accepted quietly.
-     Each package also opens with `file.open` and round-trips through `.anicraft`.
+     Each package also opens with `file.open` and round-trips through `.anima`.
 3. **Goldens live in the engine's tests, the corpus in the xfl crate.** The renderer and the
    importer are both L2, and a crate may not depend on its own layer (dev-dependencies
    included, `src/architecture_tests.rs`). The engine (L3) already depends on both and is
@@ -81,7 +81,7 @@ hand from the public descriptions of the format.
      per-property curves keep the slider's ease and are reported (since ADR 0081 they import
      exactly, as custom eases and property-group eases);
    * reverse loop modes play forward and are reported;
-   * what AniCraft draws the nearest way is now reported instead of silently changed: caps and
+   * what Ánima draws the nearest way is now reported instead of silently changed: caps and
      joins other than round (drawn as they are since ADR 0046), gradient and bitmap strokes, repeating and reflecting gradients,
      focal points, elliptical radial gradients, linear-RGB gradients, and extra tween spins.
 

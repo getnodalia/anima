@@ -7,9 +7,9 @@
 
 use crate::params::*;
 use crate::{CommandSpec, EngineError, Result, Session};
-use anicraft_doc::width::{nearest_on_stroke, stroke_walks};
-use anicraft_doc::{Element, ElementId, ElementKind, MAX_WIDTH_FACTOR, Shape, WidthPoint, WidthProfile};
-use anicraft_geom::Vec2;
+use anima_doc::width::{nearest_on_stroke, stroke_walks};
+use anima_doc::{Element, ElementId, ElementKind, MAX_WIDTH_FACTOR, Shape, WidthPoint, WidthProfile};
+use anima_geom::Vec2;
 use serde_json::{Value, json};
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -34,7 +34,15 @@ pub fn specs() -> Vec<CommandSpec> {
             set_width_point,
         ),
         c("stroke.delete_width_point", "Delete Width Point", "", None, "{id, index}", true, delete_width_point),
-        c("stroke.width_at", "Width at Point", "", None, "{x, y, id? (default: the topmost stroke there on the active layer), slop?}", false, width_at),
+        c(
+            "stroke.width_at",
+            "Width at Point",
+            "",
+            None,
+            "{x, y, id? (default: the topmost stroke there on the active layer), slop?}",
+            false,
+            width_at,
+        ),
     ]
 }
 
@@ -47,11 +55,17 @@ pub(crate) fn id_param(p: &Value) -> Result<Option<ElementId>> {
 
 /// The shape element `id` as it shows at the playhead on the active layer.
 pub(crate) fn visible_shape(s: &Session, id: ElementId) -> Result<std::sync::Arc<Element>> {
-    let el = s.visible_elements().into_iter().find(|e| e.id == id).ok_or_else(|| EngineError::State(format!("element {} is not on the active layer at this frame", id.0)))?;
+    let el = s
+        .visible_elements()
+        .into_iter()
+        .find(|e| e.id == id)
+        .ok_or_else(|| EngineError::State(format!("element {} is not on the active layer at this frame", id.0)))?;
     match &el.kind {
         ElementKind::Shape(sh) if sh.stroke.is_some() => Ok(el),
         ElementKind::Shape(_) => Err(EngineError::State("this shape has no stroke (give it one in Properties or with the Ink Bottle)".into())),
-        ElementKind::Symbol { .. } | ElementKind::Text(_) | ElementKind::Camera | ElementKind::Group { .. } => Err(EngineError::State("only shapes have strokes (break it apart with Ctrl+B to edit its lines)".into())),
+        ElementKind::Symbol { .. } | ElementKind::Text(_) | ElementKind::Camera | ElementKind::Group { .. } => {
+            Err(EngineError::State("only shapes have strokes (break it apart with Ctrl+B to edit its lines)".into()))
+        }
     }
 }
 
@@ -62,7 +76,9 @@ pub(crate) fn shape_mut(s: &mut Session, id: ElementId) -> Result<&mut Shape> {
     let el = kf.elements_mut_where(|e| e == id).into_iter().next().ok_or_else(|| EngineError::State(format!("no element {}", id.0)))?;
     match &mut el.kind {
         ElementKind::Shape(sh) => Ok(sh),
-        ElementKind::Symbol { .. } | ElementKind::Text(_) | ElementKind::Camera | ElementKind::Group { .. } => Err(EngineError::State("only shapes have strokes".into())),
+        ElementKind::Symbol { .. } | ElementKind::Text(_) | ElementKind::Camera | ElementKind::Group { .. } => {
+            Err(EngineError::State("only shapes have strokes".into()))
+        }
     }
 }
 
@@ -104,7 +120,9 @@ fn set_profile(s: &mut Session, p: &Value) -> Result<Value> {
             st.profile = profile.clone();
         }
     }
-    Ok(json!({"changed": stroked.len(), "profile": profile.as_ref().and_then(WidthProfile::preset).map_or(if profile.is_some() { "custom" } else { "uniform" }, |pr| pr.key())}))
+    Ok(
+        json!({"changed": stroked.len(), "profile": profile.as_ref().and_then(WidthProfile::preset).map_or(if profile.is_some() { "custom" } else { "uniform" }, |pr| pr.key())}),
+    )
 }
 
 fn set_width_point(s: &mut Session, p: &Value) -> Result<Value> {
@@ -138,8 +156,8 @@ fn set_width_point(s: &mut Session, p: &Value) -> Result<Value> {
             let w = WidthPoint::new(t, both.or(left).unwrap_or(l), both.or(right).unwrap_or(r));
             match &current {
                 Some(pr) => {
-                    if pr.points().len() >= anicraft_doc::MAX_WIDTH_POINTS && pr.index_at(t).is_none() {
-                        return Err(EngineError::State(format!("a stroke keeps at most {} width points", anicraft_doc::MAX_WIDTH_POINTS)));
+                    if pr.points().len() >= anima_doc::MAX_WIDTH_POINTS && pr.index_at(t).is_none() {
+                        return Err(EngineError::State(format!("a stroke keeps at most {} width points", anima_doc::MAX_WIDTH_POINTS)));
                     }
                     pr.with_point(w)
                 }
@@ -155,7 +173,9 @@ fn set_width_point(s: &mut Session, p: &Value) -> Result<Value> {
         _ => None,
     };
     Ok(match at {
-        Some((i, q)) => json!({"index": i, "t": q.t, "left": q.left, "right": q.right, "points": st.profile.as_ref().map_or(0, |p| p.points().len())}),
+        Some((i, q)) => {
+            json!({"index": i, "t": q.t, "left": q.left, "right": q.right, "points": st.profile.as_ref().map_or(0, |p| p.points().len())})
+        }
         None => json!({"index": null, "points": 0}),
     })
 }
@@ -182,7 +202,9 @@ fn width_at(s: &mut Session, p: &Value) -> Result<Value> {
         let st = sh.stroke.as_ref()?;
         let (l, r) = st.profile.as_ref().map_or((1.0, 1.0), |pr| pr.at(t));
         let point = st.profile.as_ref().and_then(|pr| pr.points().iter().position(|q| (q.t - t).abs() < 0.01));
-        Some(json!({"element": el.id.0, "t": t, "distance": d, "side": if side > 0.0 { "left" } else { "right" }, "left": l, "right": r, "width": st.width, "point": point}))
+        Some(
+            json!({"element": el.id.0, "t": t, "distance": d, "side": if side > 0.0 { "left" } else { "right" }, "left": l, "right": r, "width": st.width, "point": point}),
+        )
     };
     if let Some(id) = id_param(p)? {
         let el = visible_shape(s, id)?;
@@ -212,7 +234,7 @@ fn width_at(s: &mut Session, p: &Value) -> Result<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anicraft_doc::ProfilePreset;
+    use anima_doc::ProfilePreset;
 
     fn line(s: &mut Session) -> u64 {
         let v = s.execute("draw.line", &json!({"x0": 100, "y0": 100, "x1": 300, "y1": 100, "stroke_width": 10})).unwrap();
@@ -240,12 +262,14 @@ mod tests {
         assert!(profile(&s, id).is_none());
         s.undo().unwrap();
         assert_eq!(profile(&s, id).unwrap().points().len(), 2);
-        // The .anicraft file keeps it; older files (no profile) still load as uniform.
+        // The .anima file keeps it; older files (no profile) still load as uniform.
         let text = crate::format::to_json(&s.doc).unwrap();
         assert!(text.contains("\"profile\""));
         let back = crate::format::from_json(&text).unwrap();
         assert_eq!(back, s.doc);
-        for bad in [json!({"profile": "wobbly"}), json!({"profile": [[2, 1, 1]]}), json!({"profile": [[0.5, 99, 1]]}), json!({"profile": 5}), json!({})] {
+        for bad in
+            [json!({"profile": "wobbly"}), json!({"profile": [[2, 1, 1]]}), json!({"profile": [[0.5, 99, 1]]}), json!({"profile": 5}), json!({})]
+        {
             assert!(s.execute("stroke.set_profile", &bad).is_err(), "{bad}");
         }
     }
@@ -275,7 +299,13 @@ mod tests {
         // Deleting the last one leaves a uniform stroke.
         s.execute("stroke.delete_width_point", &json!({"id": id, "index": 0})).unwrap();
         assert!(profile(&s, id).is_none());
-        for bad in [json!({"id": id, "index": 5}), json!({"id": id}), json!({"id": id, "t": 2}), json!({"id": 999, "t": 0.5}), json!({"id": id, "t": 0.5, "left": -1})] {
+        for bad in [
+            json!({"id": id, "index": 5}),
+            json!({"id": id}),
+            json!({"id": id, "t": 2}),
+            json!({"id": 999, "t": 0.5}),
+            json!({"id": id, "t": 0.5, "left": -1}),
+        ] {
             assert!(s.execute("stroke.set_width_point", &bad).is_err(), "{bad}");
         }
         assert!(s.execute("stroke.delete_width_point", &json!({"id": id, "index": 0})).is_err());

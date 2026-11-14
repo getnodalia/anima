@@ -14,9 +14,9 @@
 use crate::app::{App, Drag, Tool};
 use crate::pathtools::Xf;
 use crate::theme::{T, to_color32};
-use anicraft_engine::doc::armature::{self, BoneAt};
-use anicraft_engine::doc::{BoneId, Element, ElementId, ElementKind, Layer, LayerId, LayerKind, evaluate_layer_elements, evaluate_shown};
-use anicraft_engine::geom::Vec2;
+use anima_engine::doc::armature::{self, BoneAt};
+use anima_engine::doc::{BoneId, Element, ElementId, ElementKind, Layer, LayerId, LayerKind, evaluate_layer_elements, evaluate_shown};
+use anima_engine::geom::Vec2;
 use egui::{Color32, Key, Modifiers, Pos2, Stroke, pos2};
 use serde_json::json;
 
@@ -49,8 +49,13 @@ pub fn shown(app: &App) -> Vec<Shown> {
             // As the stage draws the armature: swung by its springs (ADR 0084).
             let fps = app.s.doc.stage.fps;
             let (_, els) = evaluate_shown(l, app.s.frame, None, fps)?;
-            let pose = anicraft_engine::doc::spring::sprung_pose(l, app.s.frame, fps).unwrap_or_default();
-            Some(Shown { layer: l.id, color: to_color32(l.color), locked: l.locked || tl.locked_by_folder(l.id), bones: armature::bones_at(arm, &els, &pose) })
+            let pose = anima_engine::doc::spring::sprung_pose(l, app.s.frame, fps).unwrap_or_default();
+            Some(Shown {
+                layer: l.id,
+                color: to_color32(l.color),
+                locked: l.locked || tl.locked_by_folder(l.id),
+                bones: armature::bones_at(arm, &els, &pose),
+            })
         })
         .collect()
 }
@@ -136,7 +141,9 @@ pub fn select(app: &mut App, layer: LayerId, bone: Option<BoneId>) {
     if bone.is_some() && app.s.layer != layer {
         app.run("layer.select", json!({"layer": layer.0}));
     }
-    let child = bone.and_then(|b| app.s.timeline().layer(layer).and_then(|l| l.armature.as_ref()).filter(|a| a.skin.is_none()).and_then(|a| a.bone(b)).map(|b| b.child));
+    let child = bone.and_then(|b| {
+        app.s.timeline().layer(layer).and_then(|l| l.armature.as_ref()).filter(|a| a.skin.is_none()).and_then(|a| a.bone(b)).map(|b| b.child)
+    });
     if let Some(child) = child {
         app.run("element.select", json!({"ids": [child.0], "layer": layer.0}));
     }
@@ -234,15 +241,13 @@ pub fn select_drag_start(app: &mut App, xf: Xf, press: Pos2) -> Option<Drag> {
             let (_, els) = evaluate_layer_elements(l, app.s.frame)?;
             let pose = armature::pose_at(l, app.s.frame).unwrap_or_default();
             let from_root = arm.bone(id).is_some_and(|b| arm.bone_into(b.parent).is_none());
-            let at_head = armature::bones_at(arm, &els, &pose).iter().find(|b| b.id == id).is_some_and(|b| xf.to_screen(b.head).distance(press) <= GRAB_END);
-            if from_root && at_head {
-                (layer, None, None)
-            } else {
-                (layer, Some(id), armature::grab_point(arm, &els, &pose, id, sp))
-            }
+            let at_head =
+                armature::bones_at(arm, &els, &pose).iter().find(|b| b.id == id).is_some_and(|b| xf.to_screen(b.head).distance(press) <= GRAB_END);
+            if from_root && at_head { (layer, None, None) } else { (layer, Some(id), armature::grab_point(arm, &els, &pose, id, sp)) }
         }
         None => {
-            let (layer, el) = item_at(app, sp, 3.0 / xf.zoom.max(1e-3), None, rig_target).filter(|(l, _)| tl.layer(*l).is_some_and(|l| l.kind == LayerKind::Armature))?;
+            let (layer, el) = item_at(app, sp, 3.0 / xf.zoom.max(1e-3), None, rig_target)
+                .filter(|(l, _)| tl.layer(*l).is_some_and(|l| l.kind == LayerKind::Armature))?;
             let l = tl.layer(layer)?;
             let into = l.armature.as_ref().and_then(|a| a.bone_into(el)).map(|b| b.id);
             // The point grabbed, in the instance's own space: it follows the pointer.

@@ -2,8 +2,8 @@
 //! snapping and the marquee.
 
 use crate::Session;
-use anicraft_doc::{Element, ElementKind};
-use anicraft_geom::{Affine, Vec2};
+use anima_doc::{Element, ElementKind};
+use anima_geom::{Affine, Vec2};
 use serde_json::{Value, json};
 use std::sync::Arc;
 
@@ -13,7 +13,7 @@ fn run(s: &mut Session, id: &str, p: Value) -> Value {
 
 /// A blank document drawing raw shapes, with a 100 × 80 rectangle (fill and outline) at the origin.
 fn rect_session() -> Session {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.object_drawing", json!({"on": false}));
     run(&mut s, "draw.rect", json!({"x": 0, "y": 0, "w": 100, "h": 80, "fill": "#ff0000", "stroke": "#000000"}));
     run(&mut s, "edit.deselect", json!({}));
@@ -33,7 +33,7 @@ fn count(s: &Session) -> (usize, usize) {
     (r.iter().filter(|e| is_fill(e)).count(), r.iter().filter(|e| !is_fill(e)).count())
 }
 
-fn polylines(e: &Element) -> Vec<anicraft_geom::Polyline> {
+fn polylines(e: &Element) -> Vec<anima_geom::Polyline> {
     match &e.kind {
         ElementKind::Shape(sh) => sh.path.flatten(&e.transform, 0.01),
         _ => Vec::new(),
@@ -114,7 +114,11 @@ fn a_straight_segment_stays_straight_until_it_is_dragged() {
     let mut s = rect_session();
     run(&mut s, "path.bend_segment", json!({"x": 50, "y": 0, "dx": 0, "dy": -30}));
     // The other three sides are still lines.
-    let lines = raw(&s).iter().filter(|e| !is_fill(e)).filter(|e| matches!(&e.kind, ElementKind::Shape(sh) if sh.path.cmds.iter().all(|c| !matches!(c, anicraft_geom::PathCmd::CubicTo(..))))).count();
+    let lines = raw(&s)
+        .iter()
+        .filter(|e| !is_fill(e))
+        .filter(|e| matches!(&e.kind, ElementKind::Shape(sh) if sh.path.cmds.iter().all(|c| !matches!(c, anima_geom::PathCmd::CubicTo(..)))))
+        .count();
     assert_eq!(lines, 3);
 }
 
@@ -137,7 +141,7 @@ fn a_drag_in_steps_bends_like_one_move_and_merges_at_the_end() {
 
 #[test]
 fn bending_an_object_bends_only_it() {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.rect", json!({"x": 0, "y": 0, "w": 100, "h": 80, "fill": "#ff0000", "stroke": null}));
     run(&mut s, "draw.rect", json!({"x": 0, "y": 0, "w": 100, "h": 80, "fill": "#00ff00", "stroke": null}));
     let r = run(&mut s, "path.bend_segment", json!({"x": 0, "y": 40, "dx": -20, "dy": 0}));
@@ -145,7 +149,10 @@ fn bending_an_object_bends_only_it() {
     assert_eq!(r["changed"].as_array().map(Vec::len), Some(1), "objects don't share edges");
     // The closing edge of an object's outline can be bent too.
     let areas: Vec<f32> = s.visible_elements().iter().map(|e| area(e)).collect();
-    assert!(areas.iter().any(|a| (a - 8000.0).abs() < 0.5) && areas.iter().any(|a| (a - (8000.0 + 80.0 * (40.0 / 0.75) / 4.0)).abs() < 2.0), "{areas:?}");
+    assert!(
+        areas.iter().any(|a| (a - 8000.0).abs() < 0.5) && areas.iter().any(|a| (a - (8000.0 + 80.0 * (40.0 / 0.75) / 4.0)).abs() < 2.0),
+        "{areas:?}"
+    );
 }
 
 // ----- shared points ------------------------------------------------------------------------------
@@ -438,16 +445,16 @@ fn raw_edits_never_panic_on_odd_input() {
     ] {
         let _ = s.execute(id, &p);
     }
-    let _ = anicraft_render::render_frame(&s.doc, 0, 0.1);
+    let _ = anima_render::render_frame(&s.doc, 0, 0.1);
     let _ = Affine::IDENTITY;
 }
 
 /// Per-frame cost of the Selection tool's drags on a busy raw drawing (run by hand:
-/// `cargo test -p anicraft-engine raw_drag_timings -- --ignored --nocapture`).
+/// `cargo test -p anima-engine raw_drag_timings -- --ignored --nocapture`).
 #[test]
 #[ignore]
 fn raw_drag_timings() {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.object_drawing", json!({"on": false}));
     // 12 × 12 outlined squares, and lines across every row: 144 fills, ~1,000 stroke pieces.
     for i in 0..12 {

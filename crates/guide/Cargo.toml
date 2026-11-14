@@ -1,6 +1,6 @@
 [package]
-name = "anicraft-guide"
-description = "AniCraft L0: the user guide (docs/guide) as a static HTML book, with its link checks"
+name = "anima-guide"
+description = "Ánima L0: the user guide (docs/guide) as a static HTML book, with its link checks"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

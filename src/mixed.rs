@@ -5,7 +5,7 @@
 //! it edits (Blending only movie clips and buttons, Looping only graphics, Fill only shapes), so
 //! a shape beside a movie clip never makes Blending mixed. Pure, so every row is tested here.
 
-use anicraft_engine::doc::{ColorEffect, Document, Element, ElementKind, Paint, Shape, SymbolKind};
+use anima_engine::doc::{ColorEffect, Document, Element, ElementKind, Paint, Shape, SymbolKind};
 use std::sync::Arc;
 
 /// The rows whose values differ across the selection.
@@ -53,20 +53,23 @@ fn color_mixed(all: &[Arc<Element>]) -> ColorMixed {
     let seen: Vec<ColorEffect> = all.iter().map(|e| e.color.to_style(style)).collect();
     let mut m = ColorMixed { style: differ(all.iter().map(|e| e.color.style())), ..ColorMixed::default() };
     match style {
-        anicraft_engine::doc::ColorStyle::None => {}
-        anicraft_engine::doc::ColorStyle::Alpha => m.alpha = differ_f32(seen.iter().map(ColorEffect::alpha)),
-        anicraft_engine::doc::ColorStyle::Brightness => {
+        anima_engine::doc::ColorStyle::None => {}
+        anima_engine::doc::ColorStyle::Alpha => m.alpha = differ_f32(seen.iter().map(ColorEffect::alpha)),
+        anima_engine::doc::ColorStyle::Brightness => {
             m.brightness = differ_f32(seen.iter().map(|f| if let ColorEffect::Brightness(b) = f { *b } else { 0.0 }));
         }
-        anicraft_engine::doc::ColorStyle::Tint => {
-            let tints: Vec<_> = seen.iter().filter_map(|f| if let ColorEffect::Tint { color, amount } = f { Some((*color, *amount)) } else { None }).collect();
+        anima_engine::doc::ColorStyle::Tint => {
+            let tints: Vec<_> =
+                seen.iter().filter_map(|f| if let ColorEffect::Tint { color, amount } = f { Some((*color, *amount)) } else { None }).collect();
             m.tint = differ(tints.iter().map(|t| t.0.to_hex()));
             m.tint_amount = differ_f32(tints.iter().map(|t| t.1));
         }
-        anicraft_engine::doc::ColorStyle::Advanced => {
+        anima_engine::doc::ColorStyle::Advanced => {
             let ts: Vec<_> = seen.iter().map(ColorEffect::transform).collect();
             for (i, slot) in m.advanced.iter_mut().enumerate() {
-                *slot = differ_f32(ts.iter().map(|t| if i < 4 { t.mul.get(i).copied().unwrap_or(1.0) } else { t.add.get(i - 4).copied().unwrap_or(0.0) }));
+                *slot = differ_f32(
+                    ts.iter().map(|t| if i < 4 { t.mul.get(i).copied().unwrap_or(1.0) } else { t.add.get(i - 4).copied().unwrap_or(0.0) }),
+                );
             }
         }
     }
@@ -153,8 +156,8 @@ pub fn of(doc: &Document, all: &[Arc<Element>]) -> Mixed {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anicraft_engine::Session;
-    use anicraft_engine::doc::sample;
+    use anima_engine::Session;
+    use anima_engine::doc::sample;
     use serde_json::json;
 
     fn run(s: &mut Session, id: &str, p: serde_json::Value) -> serde_json::Value {
@@ -190,8 +193,16 @@ mod tests {
         let g = id(&run(&mut s, "library.place", json!({"symbol": star, "x": 300, "y": 100})));
         run(&mut s, "symbol.set_kind", json!({"symbol": ball, "kind": "movie_clip"}));
         run(&mut s, "symbol.set_kind", json!({"symbol": star, "kind": "graphic"}));
-        let r1 = id(&run(&mut s, "draw.rect", json!({"x": 10, "y": 300, "w": 20, "h": 20, "fill": "#ff0000", "stroke": "#000000", "stroke_width": 2, "object": true})));
-        let r2 = id(&run(&mut s, "draw.rect", json!({"x": 60, "y": 300, "w": 20, "h": 20, "fill": "#ff0000", "stroke": "#000000", "stroke_width": 2, "object": true})));
+        let r1 = id(&run(
+            &mut s,
+            "draw.rect",
+            json!({"x": 10, "y": 300, "w": 20, "h": 20, "fill": "#ff0000", "stroke": "#000000", "stroke_width": 2, "object": true}),
+        ));
+        let r2 = id(&run(
+            &mut s,
+            "draw.rect",
+            json!({"x": 60, "y": 300, "w": 20, "h": 20, "fill": "#ff0000", "stroke": "#000000", "stroke_width": 2, "object": true}),
+        ));
         (s, [a, b, g], [r1, r2])
     }
 
@@ -328,9 +339,9 @@ mod tests {
         // Two placed bitmaps of different images.
         let mut ids = Vec::new();
         for (n, w) in [("a.png", 2), ("b.png", 3)] {
-            let b = anicraft_engine::doc::BitmapId(s.doc.alloc_id());
-            let png = anicraft_engine::render::encode_png(w, 2, &[0, 0, 255, 255].repeat(w as usize * 2)).unwrap();
-            s.doc.bitmaps.push(Arc::new(anicraft_engine::doc::Bitmap::from_png(b, n, png).unwrap()));
+            let b = anima_engine::doc::BitmapId(s.doc.alloc_id());
+            let png = anima_engine::render::encode_png(w, 2, &[0, 0, 255, 255].repeat(w as usize * 2)).unwrap();
+            s.doc.bitmaps.push(Arc::new(anima_engine::doc::Bitmap::from_png(b, n, png).unwrap()));
             ids.push((b, id(&run(&mut s, "library.place", json!({"bitmap": b.0})))));
         }
         select(&mut s, &[ids[0].1, ids[1].1]);

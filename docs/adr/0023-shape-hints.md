@@ -6,7 +6,7 @@
 
 ## Context
 
-Shape tweens morph any outline into any other (`anicraft_geom::morph`): subpaths pair by size,
+Shape tweens morph any outline into any other (`anima_geom::morph`): subpaths pair by size,
 segments are subdivided to equal counts and closed outlines start at the best-matching anchor.
 That is a good guess, not the artist's intent: a square into a circle may turn as it morphs,
 and a letter into another letter often folds. Animate gives artists *shape hints*: lettered
@@ -27,7 +27,7 @@ literature on polygon and Bézier blending. Nothing was copied.
    its keyframe, within `HINT_TOLERANCE` (0.5 px). A new hint sits at the centre of the shapes'
    bounds on both keyframes, so it is unplaced until dragged onto an edge; an edit that moves
    the edge away unplaces it again, with no stale flag to keep in sync. Commands snap points to
-   the nearest edge (`anicraft_geom::morph::nearest_point`: coarse samples per cubic, a short
+   the nearest edge (`anima_geom::morph::nearest_point`: coarse samples per cubic, a short
    ternary search, then Newton steps on `(B − p)·B′`, since squared distance is too flat at its
    minimum for f32).
 3. **The morph uses a hint only when it is placed on the same shape element on both keyframes**
@@ -63,7 +63,7 @@ literature on polygon and Bézier blending. Nothing was copied.
 7. **Destructive tiers (ADR 0004)**: removing one or all hints is a routine, undoable edit:
    no confirmation, a status hint names the undo shortcut.
 8. **Stage** (`src/shape_hints.rs`): on the first frame of either keyframe, with the selection
-   tools, the active layer's hints show as 16-point lettered dots in AniCraft's own colours:
+   tools, the active layer's hints show as 16-point lettered dots in Ánima's own colours:
    rose (`hint_unplaced`) while not on an edge, amber (`hint_start`, the shape tween's colour)
    once placed on the first keyframe, mint (`hint_end`) once placed on the last (brighter in
    the high-contrast palette); ink letters meet 4.5:1 on all three in both palettes (tested). Dragging one moves it live (each pointer move runs
@@ -87,4 +87,4 @@ literature on polygon and Bézier blending. Nothing was copied.
   4, 119 µs with all 26; a 2,000-segment outline stays bounded (`MAX_SEGS`).
 * Not yet: View › Show Shape Hints (they always show on the keyframes), hints inside symbols
   edited in place, hints on text, hints that also steer strokes separately from fills, and
-  XFL export (AniCraft doesn't write XFL).
+  XFL export (Ánima doesn't write XFL).

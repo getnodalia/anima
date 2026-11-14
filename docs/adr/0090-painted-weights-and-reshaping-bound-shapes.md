@@ -24,7 +24,7 @@ code. Nothing was copied.
 1. **The binding stays where ADR 0071 put it.** `Skin.points` is still one `Binding` per anchor:
    up to four `[bone, weight]` pairs summing to 1, and the `manual` flag. Painting only changes
    the numbers, so **the file format is unchanged**: older files open as they are, and an older
-   AniCraft opens newer files. The new code is pure functions in `anicraft_doc::weights`, with
+   Ánima opens newer files. The new code is pure functions in `anima_doc::weights`, with
    no state and nothing in `evaluate`. The posed outline is still ADR 0071's linear blend
    skinning, from the weights as they are.
 2. **The brush** (`weights::paint`). A dab at a stage point reaches every point within its

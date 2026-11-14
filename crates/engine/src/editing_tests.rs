@@ -1,8 +1,8 @@
 //! Editing a symbol's timeline in place, with raw drawings inside it (ADR 0045).
 
 use crate::Session;
-use anicraft_doc::{Element, ElementId, ElementKind, SymbolId};
-use anicraft_geom::Vec2;
+use anima_doc::{Element, ElementId, ElementKind, SymbolId};
+use anima_geom::Vec2;
 use serde_json::{Value, json};
 use std::sync::Arc;
 
@@ -21,7 +21,7 @@ fn has(points: &[Vec2], p: (f32, f32)) -> bool {
 /// A raw outlined rectangle (100 × 80) turned into a symbol, its instance moved to stand at
 /// (250, 140): the symbol's space runs from (−50, −40) to (50, 40).
 fn boxed() -> (Session, ElementId, SymbolId) {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.object_drawing", json!({"on": false}));
     run(&mut s, "draw.rect", json!({"x": 0, "y": 0, "w": 100, "h": 80, "fill": "#ff0000", "stroke": "#000000"}));
     let v = run(&mut s, "modify.convert_to_symbol", json!({"name": "Box"}));
@@ -108,9 +108,9 @@ fn opening_from_the_library_and_guards() {
 
 /// The sample's Play button open from the Library (at the stage's centre, 640 × 360): its face is
 /// 220 × 80, its Hit frame 240 × 100.
-fn open_button(hit: Option<(anicraft_doc::Rgba, f32)>) -> Session {
-    let mut s = Session::new(anicraft_doc::sample::interactive());
-    let id = s.doc.library.iter().find(|x| x.kind == anicraft_doc::SymbolKind::Button).map(|x| x.id).unwrap_or_else(|| panic!("a button"));
+fn open_button(hit: Option<(anima_doc::Rgba, f32)>) -> Session {
+    let mut s = Session::new(anima_doc::sample::interactive());
+    let id = s.doc.library.iter().find(|x| x.kind == anima_doc::SymbolKind::Button).map(|x| x.id).unwrap_or_else(|| panic!("a button"));
     run(&mut s, "symbol.edit", json!({"symbol": id.0}));
     s.hit_area = hit;
     s
@@ -118,16 +118,16 @@ fn open_button(hit: Option<(anicraft_doc::Rgba, f32)>) -> Session {
 
 #[test]
 fn an_open_button_shows_its_hit_area_over_its_other_states() {
-    let red = anicraft_doc::Rgba::new(1.0, 0.0, 0.0, 1.0);
+    let red = anima_doc::Rgba::new(1.0, 0.0, 0.0, 1.0);
     let render = |s: &Session| {
         let pic = s.stage_picture();
-        anicraft_render::render_frame(&pic.doc, pic.frame, 1.0).unwrap_or_else(|e| panic!("{e}"))
+        anima_render::render_frame(&pic.doc, pic.frame, 1.0).unwrap_or_else(|e| panic!("{e}"))
     };
     let plain = render(&open_button(None));
     let mut s = open_button(Some((red, 0.5)));
     assert_eq!(s.hit_overlay(), Some((red, 0.5)), "on the Up frame");
     let shown = render(&s);
-    let px = |p: &anicraft_render::Pixmap, x: u32, y: u32| p.pixel(x, y).unwrap_or_else(|| panic!("({x}, {y}) in the picture"));
+    let px = |p: &anima_render::Pixmap, x: u32, y: u32| p.pixel(x, y).unwrap_or_else(|| panic!("({x}, {y}) in the picture"));
     // Inside the Hit frame but outside the face (x = 640 + 115): the background, half red now.
     let (bg, over) = (px(&plain, 755, 360), px(&shown, 755, 360));
     for c in 0..3 {
@@ -150,10 +150,10 @@ fn an_open_button_shows_its_hit_area_over_its_other_states() {
     let on_hit = render(&s);
     s.hit_area = None;
     assert_eq!(on_hit.to_rgba8(), render(&s).to_rgba8());
-    assert_eq!(s.doc.library.len(), anicraft_doc::sample::interactive().library.len());
+    assert_eq!(s.doc.library.len(), anima_doc::sample::interactive().library.len());
     // Only buttons: a movie clip open shows none.
-    let mut s = Session::new(anicraft_doc::sample::interactive());
-    let clip = s.doc.library.iter().find(|x| x.kind == anicraft_doc::SymbolKind::MovieClip).map(|x| x.id).unwrap_or_else(|| panic!("a clip"));
+    let mut s = Session::new(anima_doc::sample::interactive());
+    let clip = s.doc.library.iter().find(|x| x.kind == anima_doc::SymbolKind::MovieClip).map(|x| x.id).unwrap_or_else(|| panic!("a clip"));
     run(&mut s, "symbol.edit", json!({"symbol": clip.0}));
     s.hit_area = Some((red, 0.5));
     assert_eq!(s.hit_overlay(), None);
@@ -168,7 +168,7 @@ fn the_stage_shows_the_open_symbol_in_place_over_the_dimmed_stage() {
     run(&mut s, "symbol.edit", json!({}));
     let pic = s.stage_picture();
     assert_eq!(pic.state, s.stage_picture().state, "the same picture twice");
-    let px = anicraft_render::render_frame(&pic.doc, pic.frame, 1.0).unwrap_or_else(|e| panic!("{e}"));
+    let px = anima_render::render_frame(&pic.doc, pic.frame, 1.0).unwrap_or_else(|e| panic!("{e}"));
     let at = |x: u32, y: u32| px.pixel(x, y).unwrap_or_else(|| panic!("in the picture"));
     // The symbol's fill in full red where its instance stands...
     let red = at(250, 140);

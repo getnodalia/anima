@@ -4,7 +4,7 @@ The timeline is where your animation happens: layers stack your artwork from fro
 and frames lay it out in time. This chapter covers layers, frames and keyframes, playback,
 onion skin and Edit Multiple Frames.
 
-A note on keys: AniCraft uses **Ctrl** on Windows and Linux and **⌘** (Command) on macOS, and
+A note on keys: Ánima uses **Ctrl** on Windows and Linux and **⌘** (Command) on macOS, and
 **Alt** is **⌥** (Option) on macOS. So **Ctrl+Alt+C** is **⌥⌘C** on a Mac. Every shortcut
 here is a default you can change in the shortcut editor (**F1**); see
 [Preferences, shortcuts and accessibility](preferences-shortcuts-accessibility.md).
@@ -88,7 +88,7 @@ Folders keep big timelines tidy.
 3. Click the folder's chevron to open or close it.
 
 Hiding or locking a folder hides or locks everything inside it. Folders can nest, and a folder
-moves with its contents. Deleting a folder deletes what's in it: AniCraft asks first, and undo
+moves with its contents. Deleting a folder deletes what's in it: Ánima asks first, and undo
 brings it all back.
 
 ### Special layer types
@@ -159,7 +159,7 @@ Each drag is one undo step.
 
 After you click in the timeline, plain **Ctrl+X**, **Ctrl+C** and **Ctrl+V** work on frames
 too. Pasting inserts the frames, as in Animate. Frames copied from several layers paste onto
-the layers below the one you paste into, and AniCraft creates any layers that are missing.
+the layers below the one you paste into, and Ánima creates any layers that are missing.
 Symbols travel with the frames, even into another document.
 
 ### Frame labels
@@ -226,7 +226,7 @@ Open the options from the arrow next to the onion buttons, a right-click on the 
 | **Fade by Distance** | Makes farther frames fainter. |
 | **Before** / **After** colour | Pick your own tints; **Reset** goes back to the theme's. |
 
-AniCraft remembers your choices. As in Animate, locked layers are left out of onion skin.
+Ánima remembers your choices. As in Animate, locked layers are left out of onion skin.
 
 ### Onion skin per layer
 
@@ -284,7 +284,7 @@ You can drag files from your desktop straight onto a frame:
   needed.
 
 A highlight shows the cell it will land in, and the drop is one undo step. Locked layers,
-folders and the camera layer won't take a drop, and AniCraft tells you why. See
+folders and the camera layer won't take a drop, and Ánima tells you why. See
 [Images and sound](images-and-sound.md) for more.
 
 ## Next steps

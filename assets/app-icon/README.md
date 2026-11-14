@@ -1,53 +1,53 @@
-# AniCraft app icon
+# Ánima app icon
 
-**Creature:** an engraved rabbit, AniCraft's mascot.
+**Motif:** a ball's arc through three keyframes. The earlier poses stay behind as onion skins, the
+dotted path is the in-between frames, and the ball lands squashed. Under it, the same three
+keyframes sit on a tween span in the timeline: movement, frames and interpolation in one picture.
 
-**Style:** an engraving-style portrait in the Crafting Apps template: a head-and-shoulders portrait on a
-full-bleed field, no frame or roundel, with the body running off the tile.
+**Style:** a flat, Colloid-style application tile in the Nodalia family: one colour field per app,
+bold simple shapes that still read at 16 px, a light rim on top and a darker one below, no text and
+no logo.
 
-**Palette** (exactly three colours):
+**Palette:**
 
 | Colour | Hex | Used for |
 |---|---|---|
-| Ink | `#0b0b0c` | line work and contour |
-| Paper | `#f2f1ee` | the figure (a neutral white, so the rabbit doesn't read as cream on the yellow) |
-| AniCraft colour | `#dac604` | the full-bleed field |
+| Ánima violet | `#6b4ce8` → `#5034c6` | the field, a soft top-to-bottom shade |
+| Onion skin | `#8f76f0`, `#b4a4f7` | the earlier poses, paler the further back; the tween span |
+| Ball | `#ff7a59` | the current pose and its keyframe |
+| Timeline | `#2a1a78` at 60 % | the timeline strip |
 
-**Tile:** `viewBox="0 0 512 512"`, a rounded square with `rx=112`, the same tile as every Crafting App.
-The art is clipped 6 units inside it (a concentric rounded square, `x=y=6`, `500×500`, `rx=106`), so a
-band of field colour runs round every edge where the rabbit runs off, as on the other icons. The padded files add Apple's transparent margin (tile = 824/1024 of the canvas); Windows
-and Linux use the tile edge to edge.
+**Tile:** `viewBox="0 0 512 512"`, a rounded square with `rx=112`, the artwork clipped to it.
+macOS adds Apple's transparent margin (tile = 824/1024 of the canvas); Windows uses the tile edge
+to edge. Linux puts it on the Colloid application grid, like the Nodalix icon theme around it: a
+224 px tile in a 256 px canvas, a 51.5 px corner radius and a soft shadow 5 px below.
 
-**Provenance:** the owner's original ArtCraft drawing, vectorised with `trace.py`. `anicraft.svg` is the
-canonical artwork. Licence: see `LICENSE.txt`.
+**Provenance:** original artwork drawn for Ánima as plain SVG geometry (no embedded images, no
+third-party material). Licence: see `LICENSE.txt`.
 
 ## Files
 
 | File | What | Used by |
 |---|---|---|
-| `anicraft.svg` | master vector (traced at 1600 px, about 275 KB) | source for everything below |
-| `anicraft-small.svg` | lighter vector (traced at 1000 px, about 170 KB) | `hicolor/scalable` |
-| `anicraft-1024.png` | full tile, 1024 px | docs, store listings |
-| `anicraft-padded-1024.png` | tile with Apple's margin, 1024 px | landing pages, store listings |
-| `anicraft-macos-512.png` | tile with Apple's margin, 512 px | runtime Dock icon on macOS (`src/main.rs`) |
-| `anicraft.ico` | Windows icon, 16 to 256 px | `build.rs` (embedded in `anicraft.exe`) |
-| `hicolor/<size>/apps/ai.storyteller.anicraft.png` | Linux theme icons, 16 to 512 px; the 256 one is also the runtime icon on Windows and Linux, the 128 one the mark in Help › About (`src/app.rs`) | Linux packaging, the Crafting Apps tables |
-| `hicolor/scalable/apps/ai.storyteller.anicraft.svg` | Linux scalable icon | as above |
-| `trace.py` | traces the 2000 px source drawing into the master SVG | regenerating the vectors |
+| `anima.svg` | master vector, hand-written SVG (canonical) | source for everything below |
+| `anima-1024.png` | full tile, 1024 px | docs, store listings |
+| `anima-padded-1024.png` | tile with Apple's margin, 1024 px | landing pages, store listings |
+| `anima-macos-512.png` | tile with Apple's margin, 512 px | runtime Dock icon on macOS (`src/main.rs`) |
+| `anima.ico` | Windows icon, 16 to 256 px | `build.rs` (embedded in `anima.exe`) |
+| `hicolor/scalable/apps/dev.danielmiguelt.Anima.svg` | the tile on the Colloid grid, vector | Linux packaging |
+| `hicolor/<size>/apps/dev.danielmiguelt.Anima.png` | Linux theme icons, 16 to 512 px, rendered from the grid version; the 256 one is also the runtime icon on Windows and Linux, the 128 one the mark in Help › About (`src/app.rs`) | Linux packaging, README |
 
 ## How it reaches each OS
 
-- **macOS:** the app sets the Dock / app-switcher icon at runtime (`ViewportBuilder::with_icon`).
-- **Windows:** `build.rs` embeds `anicraft.ico` with `winresource` (taskbar, Start menu, Explorer,
+- **macOS:** the app sets the Dock / app-switcher icon at runtime (`ViewportBuilder::with_icon`),
+  and `packaging/macos/package.sh` builds `Anima.icns` for the bundle from the tile.
+- **Windows:** `build.rs` embeds `anima.ico` with `winresource` (taskbar, Start menu, Explorer,
   Alt-Tab); the runtime icon covers the title bar.
-- **Linux:** the runtime icon covers the window; install `hicolor/` to `share/icons/` for launchers.
+- **Linux:** the runtime icon covers the window; the packages install `hicolor/` to
+  `share/icons/` for launchers.
 
 ## Regenerate
 
 ```sh
-# From the 2000 px source drawing (needs numpy, Pillow, SciPy and vtracer; svgo 3.3.2 shrinks the paths):
-python trace.py rabbit.webp master.svg 1600 4 1960 && npx svgo@3.3.2 -p 1 master.svg -o anicraft.svg
-python trace.py rabbit.webp small.svg 1000 4 1960 && npx svgo@3.3.2 -p 1 small.svg -o anicraft-small.svg
-# Every render (needs resvg on PATH and Python with Pillow):
-scripts/icons.sh
+scripts/icons.sh   # needs resvg or rsvg-convert, and Python with Pillow
 ```

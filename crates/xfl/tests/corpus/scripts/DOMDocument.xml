@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AniCraft XFL corpus: scripts (ADR 0013 tier 1: kept, not run). Frame scripts in
+<!-- Ánima XFL corpus: scripts (ADR 0013 tier 1: kept, not run). Frame scripts in
      ActionScript 3.0 on the main timeline's actions layer (an event listener and a function on
      the first frame, a call on a named instance on the fifth) and inside the Hero movie clip,
      which has a linkage class; the publish settings name the document class. The code uses

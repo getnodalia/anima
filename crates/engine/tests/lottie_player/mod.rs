@@ -3,15 +3,17 @@
 //! keyframed property at a frame (holds, and Bézier eases solved on their own), and turns the
 //! shape layers into a display list for the CPU oracle to draw.
 //!
-//! It plays what AniCraft writes: shape layers (paths, fills, linear and radial gradient
+//! It plays what Ánima writes: shape layers (paths, fills, linear and radial gradient
 //! fills, strokes with caps, joins and dashes, group transforms with position — whole or
 //! split — anchor, scale, rotation, skew and opacity), layer masks (added), track mattes
 //! (alpha and luma) and the solid stage layer. Group opacity fades each shape, as Lottie's
 //! shape groups do. A stroke under a stretched or skewed group would need Lottie's stretched
 //! pen, which the oracle doesn't draw: it fails the test rather than being drawn wrongly.
 
-use anicraft_engine::doc::{Cap, ColorTransform, Dash, DisplayItem, DisplayList, ElementId, GradientStop, Join, LayerId, MaskMode, Paint, Rgba, Stroke, StrokeStyle};
-use anicraft_engine::geom::{Affine, FillRule, Path, PathCmd, Vec2};
+use anima_engine::doc::{
+    Cap, ColorTransform, Dash, DisplayItem, DisplayList, ElementId, GradientStop, Join, LayerId, MaskMode, Paint, Rgba, Stroke, StrokeStyle,
+};
+use anima_engine::geom::{Affine, FillRule, Path, PathCmd, Vec2};
 use serde_json::Value;
 use std::sync::Arc;
 
@@ -197,11 +199,23 @@ fn group(g: &Value, t: f64, fade: f64, out: &mut Vec<DisplayItem>) {
             }
             "st" => {
                 let d = m.decompose();
-                assert!((d.sx.abs() - d.sy.abs()).abs() <= 1e-3 * d.sx.abs().max(1e-3) && d.skew.abs() < 1e-3, "a stroke under a stretched group: {:?}", m);
+                assert!(
+                    (d.sx.abs() - d.sy.abs()).abs() <= 1e-3 * d.sx.abs().max(1e-3) && d.skew.abs() < 1e-3,
+                    "a stroke under a stretched group: {:?}",
+                    m
+                );
                 let c = prop(&x["c"], t);
                 let o = prop(&x["o"], t)[0] / 100.0;
-                let cap = match x["lc"].as_u64() { Some(1) => Cap::Butt, Some(3) => Cap::Square, _ => Cap::Round };
-                let join = match x["lj"].as_u64() { Some(1) => Join::Miter, Some(3) => Join::Bevel, _ => Join::Round };
+                let cap = match x["lc"].as_u64() {
+                    Some(1) => Cap::Butt,
+                    Some(3) => Cap::Square,
+                    _ => Cap::Round,
+                };
+                let join = match x["lj"].as_u64() {
+                    Some(1) => Join::Miter,
+                    Some(3) => Join::Bevel,
+                    _ => Join::Round,
+                };
                 let dash = x.get("d").and_then(Value::as_array).map(|d| {
                     let lengths: Vec<f32> = d.iter().filter(|e| e["n"] != "o").map(|e| prop(&e["v"], t)[0] as f32).collect();
                     let offset = d.iter().find(|e| e["n"] == "o").map_or(0.0, |e| prop(&e["v"], t)[0] as f32);
@@ -236,7 +250,7 @@ fn layer_items(l: &Value, t: f64) -> Vec<DisplayItem> {
 }
 
 /// The animation at frame `t` as a display list (layer transforms are the identity, as
-/// AniCraft writes them).
+/// Ánima writes them).
 pub fn frame(anim: &Value, t: f64) -> DisplayList {
     let mut dl = DisplayList::default();
     let layers = anim["layers"].as_array().unwrap();

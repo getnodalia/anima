@@ -1,6 +1,6 @@
 [package]
-name = "anicraft-engine"
-description = "AniCraft L3: session, undo history, command registry and the .anicraft file format"
+name = "anima-engine"
+description = "Ánima L3: session, undo history, command registry and the .anima file format"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,13 +8,13 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
-anicraft-geom.workspace = true
-anicraft-doc.workspace = true
-anicraft-render.workspace = true
-anicraft-xfl.workspace = true
-anicraft-svg.workspace = true
-anicraft-text.workspace = true
-anicraft-plugins.workspace = true
+anima-geom.workspace = true
+anima-doc.workspace = true
+anima-render.workspace = true
+anima-xfl.workspace = true
+anima-svg.workspace = true
+anima-text.workspace = true
+anima-plugins.workspace = true
 craft-anicraft-format.workspace = true
 serde.workspace = true
 serde_json.workspace = true

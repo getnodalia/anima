@@ -1,5 +1,5 @@
-# Builds the web editor into web\ (ADR 0036, docs\web.md): index.html, anicraft.js,
-# anicraft_bg.wasm and the page icon. Everything in web\ is generated (git-ignored); serve the
+# Builds the web editor into web\ (ADR 0036, docs\web.md): index.html, anima.js,
+# anima_bg.wasm and the page icon. Everything in web\ is generated (git-ignored); serve the
 # folder with any static web server. The Windows twin of scripts/build-web.sh.
 #
 # Needs the wasm32-unknown-unknown target and the wasm-bindgen CLI at the version Cargo.lock
@@ -36,23 +36,23 @@ if (Get-Command rustup -ErrorAction SilentlyContinue) {
     }
 }
 
-& cargo build -p anicraft --bin anicraft --target wasm32-unknown-unknown --profile $CargoProfile
+& cargo build -p anima --bin anima --target wasm32-unknown-unknown --profile $CargoProfile
 if ($LASTEXITCODE -ne 0) { throw 'cargo build failed' }
 
 $TargetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $Root 'target' }
 $Dir = if ($Dev) { 'debug' } else { $CargoProfile }
-$Wasm = Join-Path $TargetDir "wasm32-unknown-unknown\$Dir\anicraft.wasm"
+$Wasm = Join-Path $TargetDir "wasm32-unknown-unknown\$Dir\anima.wasm"
 $Out = Join-Path $Root 'web'
 if (Test-Path $Out) { Remove-Item -Recurse -Force $Out }
 New-Item -ItemType Directory -Force $Out | Out-Null
-& wasm-bindgen --target web --no-typescript --out-dir $Out --out-name anicraft $Wasm
+& wasm-bindgen --target web --no-typescript --out-dir $Out --out-name anima $Wasm
 if ($LASTEXITCODE -ne 0) { throw 'wasm-bindgen failed' }
 Copy-Item (Join-Path $Root 'packaging\web\index.html') (Join-Path $Out 'index.html')
-Copy-Item (Join-Path $Root 'assets\app-icon\hicolor\128x128\apps\ai.storyteller.anicraft.png') (Join-Path $Out 'anicraft.png')
+Copy-Item (Join-Path $Root 'assets\app-icon\hicolor\128x128\apps\dev.danielmiguelt.Anima.png') (Join-Path $Out 'anima.png')
 # The user guide beside the editor: Help › User Guide opens guide/index.html (ADR 0069).
-cargo run -q -p anicraft-cli -- guide --out (Join-Path $Out 'guide')
+cargo run -q -p anima-cli -- guide --out (Join-Path $Out 'guide')
 if ($LASTEXITCODE -ne 0) { throw 'writing the user guide failed' }
 
-$Bytes = (Get-Item (Join-Path $Out 'anicraft_bg.wasm')).Length
-Write-Host ("web\ is ready: anicraft_bg.wasm is {0} KB." -f [math]::Floor($Bytes / 1024))
+$Bytes = (Get-Item (Join-Path $Out 'anima_bg.wasm')).Length
+Write-Host ("web\ is ready: anima_bg.wasm is {0} KB." -f [math]::Floor($Bytes / 1024))
 Write-Host 'Serve it locally, for example: python -m http.server --directory web 8080  (then open http://localhost:8080)'

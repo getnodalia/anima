@@ -34,10 +34,10 @@
 //! distinct image; a filtered group's layer is drawn and filtered by the GPU before the pass and
 //! copied into the paint buffer after the gradient tables, where its fill reads it.
 
-use anicraft_doc::{BlendMode, Pixels};
-use anicraft_geom::{FillRule, Vec2};
-use anicraft_render::paint::Shader;
-use anicraft_render::{Fill, NeedsFull, Scene};
+use anima_doc::{BlendMode, Pixels};
+use anima_geom::{FillRule, Vec2};
+use anima_render::paint::Shader;
+use anima_render::{Fill, NeedsFull, Scene};
 use rayon::prelude::*;
 use std::sync::Arc;
 
@@ -54,7 +54,7 @@ pub const HAIRLINE: u32 = 2;
 /// How far around a hairline segment its tiles are taken (`bin.wgsl` › `M`): a pixel centre
 /// within its reach is within `REACH` of a point of it, so the tile holding that centre holds a
 /// point within `REACH` of the segment's box; a quarter pixel more absorbs rounding.
-pub(crate) const HAIRLINE_MARGIN: f32 = anicraft_render::hairline::REACH + 0.25;
+pub(crate) const HAIRLINE_MARGIN: f32 = anima_render::hairline::REACH + 0.25;
 /// `vec4`s of paint data per fill.
 pub const PAINT_VEC4S: usize = 4;
 /// Gradient table entries (the oracle's LUT size).
@@ -99,11 +99,11 @@ pub const LEVEL_BEGIN: u32 = CTRL | 4;
 pub const LEVEL_END: u32 = CTRL | 5;
 
 /// Mask modes as the shader numbers them (`fine.wgsl` › `LEVEL_END`).
-pub fn mask_code(m: anicraft_doc::MaskMode) -> u32 {
+pub fn mask_code(m: anima_doc::MaskMode) -> u32 {
     match m {
-        anicraft_doc::MaskMode::Coverage => 0,
-        anicraft_doc::MaskMode::Alpha => 1,
-        anicraft_doc::MaskMode::Luminance => 2,
+        anima_doc::MaskMode::Coverage => 0,
+        anima_doc::MaskMode::Alpha => 1,
+        anima_doc::MaskMode::Luminance => 2,
     }
 }
 
@@ -250,7 +250,9 @@ pub fn bin_with(scene: &Scene, width: u32, height: u32, gpu: Option<&crate::gpu_
     let tiles_y = height.div_ceil(TILE);
     // On the GPU when asked and the scene can take it (no fill in a mask or a group, for now):
     // then the fills alone are the ops (no mask artwork draws).
-    let plan = gpu.filter(|_| scene.fills.iter().all(|f| f.clip.is_none() && f.group.is_none())).and_then(|lim| crate::gpu_binning::plan(&scene.fills, tiles_x, tiles_y, lim));
+    let plan = gpu
+        .filter(|_| scene.fills.iter().all(|f| f.clip.is_none() && f.group.is_none()))
+        .and_then(|lim| crate::gpu_binning::plan(&scene.fills, tiles_x, tiles_y, lim));
     let lists = match &plan {
         Some(p) => {
             ops.truncate(nf);
@@ -301,7 +303,9 @@ pub fn bin_with(scene: &Scene, width: u32, height: u32, gpu: Option<&crate::gpu_
         let layer = f.layer.and_then(|l| Some((layer_at.get(l as usize).copied().flatten()?, scene.layers.get(l as usize)?.bounds)));
         let (kind, rec) = match (&f.shader, layer) {
             // A layer's pixels at `at`, `w × h`, its top-left at (x0, y0) in surface pixels.
-            (_, Some((at, b))) => (IMAGE, [[u(at), u(b.width() as u32), u(b.height() as u32), 0.0], [u(b.x0 as u32), u(b.y0 as u32), 0.0, 0.0], [0.0; 4], [0.0; 4]]),
+            (_, Some((at, b))) => {
+                (IMAGE, [[u(at), u(b.width() as u32), u(b.height() as u32), 0.0], [u(b.x0 as u32), u(b.y0 as u32), 0.0, 0.0], [0.0; 4], [0.0; 4]])
+            }
             (_, None) if f.layer.is_some() => (SOLID, [[0.0; 4]; 4]),
             (Shader::Solid(c), _) => (SOLID, [*c, [0.0; 4], [0.0; 4], [0.0; 4]]),
             // A gradient's first vec4 holds what its colour slot doesn't need: the spread
@@ -314,7 +318,15 @@ pub fn bin_with(scene: &Scene, width: u32, height: u32, gpu: Option<&crate::gpu_
             (Shader::Radial { inv, center, inv_radius, focal, spread, lut }, _) => {
                 ramps.extend_from_slice(&lut[..]);
                 let m = inv.m;
-                (RADIAL, [[spread_code(*spread), *focal, 0.0, 0.0], [m[0], m[1], m[2], m[3]], [m[4], m[5], center.x, center.y], [0.0, 0.0, *inv_radius, 0.0]])
+                (
+                    RADIAL,
+                    [
+                        [spread_code(*spread), *focal, 0.0, 0.0],
+                        [m[0], m[1], m[2], m[3]],
+                        [m[4], m[5], center.x, center.y],
+                        [0.0, 0.0, *inv_radius, 0.0],
+                    ],
+                )
             }
             // The oracle's sample of a bitmap (crates/render/src/paint.rs › sample).
             (Shader::Bitmap { inv, pixels, repeat, fx, smooth }, _) => {
@@ -335,7 +347,15 @@ pub fn bin_with(scene: &Scene, width: u32, height: u32, gpu: Option<&crate::gpu_
                     let fx = fx.sanitized();
                     ramps.extend_from_slice(&[fx.mul, fx.add]);
                     // Bit 0: repeat; bit 1: the nearest pixel instead of bilinear (no smoothing).
-                    (BITMAP, [[u(slot as u32), u(u32::from(*repeat) | (u32::from(!*smooth) << 1)), u(pixels.width), u(pixels.height)], [m[0], m[1], m[2], m[3]], [m[4], m[5], 0.0, 0.0], [0.0; 4]])
+                    (
+                        BITMAP,
+                        [
+                            [u(slot as u32), u(u32::from(*repeat) | (u32::from(!*smooth) << 1)), u(pixels.width), u(pixels.height)],
+                            [m[0], m[1], m[2], m[3]],
+                            [m[4], m[5], 0.0, 0.0],
+                            [0.0; 4],
+                        ],
+                    )
                 }
             }
             // `prepare_scene` never hands these over; draw nothing rather than guess.
@@ -463,7 +483,7 @@ fn cpu_lists(ops: &[&Fill], tables: &Tables, tiles_x: u32, tiles_y: u32) -> List
         jobs.into_par_iter().for_each(|(d, s)| d.copy_from_slice(s));
     }
     // Tens of thousands of small buffers: free them on the pool, off the frame's path.
-    anicraft_render::drop_in_background((locals, rows));
+    anima_render::drop_in_background((locals, rows));
 
     Lists { index, geo, entries_at: entries_at as u32, ops_at: ops_at as u32, entries: total, pieces, work }
 }
@@ -588,7 +608,9 @@ fn bin_fill(f: &Fill, op: u32, tiles_x: u32, tiles_y: u32, out: &mut Local, (pie
     pieces.clear();
     if f.hairline {
         for poly in &f.polys {
-            for_segments(poly, |a, b| hairline_tiles(a, b, &range, HAIRLINE_MARGIN, |row, col| pieces.push(Piece { row, col, seg: [a.x, a.y, b.x, b.y] })));
+            for_segments(poly, |a, b| {
+                hairline_tiles(a, b, &range, HAIRLINE_MARGIN, |row, col| pieces.push(Piece { row, col, seg: [a.x, a.y, b.x, b.y] }))
+            });
         }
     } else {
         for poly in &f.polys {
@@ -682,8 +704,7 @@ pub(crate) fn top_crossing(seg: &[f32; 4], row_y0: f32) -> i32 {
 }
 
 /// A fill's tile range, in pixels and tiles.
-#[derive(Clone, Copy)]
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub(crate) struct Range {
     pub(crate) tx0: u32,
     pub(crate) ty0: u32,
@@ -972,15 +993,15 @@ fn avg_clamp(u0: f32, u1: f32) -> f32 {
 
 /// The colour a premultiplied record holds (tests).
 #[cfg(test)]
-pub(crate) fn solid_of(b: &Binned, op: usize) -> anicraft_render::paint::Premul {
+pub(crate) fn solid_of(b: &Binned, op: usize) -> anima_render::paint::Premul {
     b.paints.get(PAINT_VEC4S * op).copied().unwrap_or([0.0; 4])
 }
 
 /// How `fine.wgsl` reads a gradient's spread.
-fn spread_code(s: anicraft_doc::Spread) -> f32 {
+fn spread_code(s: anima_doc::Spread) -> f32 {
     match s {
-        anicraft_doc::Spread::Pad => 0.0,
-        anicraft_doc::Spread::Reflect => 1.0,
-        anicraft_doc::Spread::Repeat => 2.0,
+        anima_doc::Spread::Pad => 0.0,
+        anima_doc::Spread::Reflect => 1.0,
+        anima_doc::Spread::Repeat => 2.0,
     }
 }

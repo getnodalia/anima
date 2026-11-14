@@ -57,7 +57,7 @@ Nothing was copied.
    * The colour square toggles View as Outlines (as before, now with a tooltip). The colour
      chip on the row's edge opens the layer colour: twelve swatches, a hex field and More… (Layer
      Properties' full picker). It is an accessible popup.
-   * Every layer has its type's icon (normal layers get a new AniCraft icon, a row with a keyframe
+   * Every layer has its type's icon (normal layers get a new Ánima icon, a row with a keyframe
      and its span). Double-clicking the icon opens **Layer Properties**; double-clicking the name
      still renames. Also on the right-click menu (Properties…) and Modify › Timeline.
    * **Layer Height** 100 / 200 / 300 % on the right-click menu and in Layer Properties. Rows are

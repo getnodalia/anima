@@ -5,7 +5,7 @@
 
 ## Context
 
-AniCraft must handle large files: Animate projects with hundreds of layers, thousands of
+Ánima must handle large files: Animate projects with hundreds of layers, thousands of
 keyframes and hundreds of thousands of element instances once XFL import lands. Undo has to be
 exact (it is the user's safety net), memory-bounded, cheap per edit, and it must not slow down
 interactive gestures such as dragging.

@@ -69,7 +69,7 @@ and from observation; no code or assets were used.
    editor. Both have **Dock** (back to its home) and the panel's contents. In a window of its
    own the app's Ctrl/Alt shortcuts are forwarded (as Test Movie does), unless a text field
    has the keyboard. Its desktop place and size are recorded while it is open and written to
-   the preferences when AniCraft quits (never fed back into the viewport builder while open,
+   the preferences when Ánima quits (never fed back into the viewport builder while open,
    which would fight the window manager).
 6. **Workspaces** live in the preferences (`workspaces`): the current key, each workspace's
    live arrangement and the user's saved ones. Built in: **Essentials** (the old layout, with

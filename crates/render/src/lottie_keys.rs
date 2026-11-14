@@ -16,7 +16,7 @@
 //! (`h: 1`) or travels to the next key's value along the cubic Bézier from (0, 0) to (1, 1)
 //! through `o` and `i` (time across, share of the value change up).
 
-use anicraft_doc::{Document, Easing, ElementKind, Timeline};
+use anima_doc::{Document, Easing, ElementKind, Timeline};
 
 /// A cubic ease piece in the unit box: start, two handles, end (absolute points).
 pub(crate) type Seg = [(f64, f64); 4];
@@ -109,12 +109,24 @@ impl Eases {
 /// 0081's exact custom forms), and custom curves. `None` for Quart, Quint, Sine, Circ and
 /// Elastic, which no cubic draws exactly.
 pub(crate) fn segments(e: &Easing) -> Option<Vec<Seg>> {
-    use anicraft_doc::EaseFamily as F;
-    let one = |(x1, y1, x2, y2): (f32, f32, f32, f32)| vec![[(0.0, 0.0), (f64::from(x1).clamp(0.0, 1.0), f64::from(y1)), (f64::from(x2).clamp(0.0, 1.0), f64::from(y2)), (1.0, 1.0)]];
-    let pieces = |c: &anicraft_doc::CustomEase| -> Vec<Seg> { (0..c.points().len().saturating_sub(1)).filter_map(|i| c.segment(i)).map(|s| s.map(|p| (f64::from(p.x), f64::from(p.y)))).collect() };
+    use anima_doc::EaseFamily as F;
+    let one = |(x1, y1, x2, y2): (f32, f32, f32, f32)| {
+        vec![[(0.0, 0.0), (f64::from(x1).clamp(0.0, 1.0), f64::from(y1)), (f64::from(x2).clamp(0.0, 1.0), f64::from(y2)), (1.0, 1.0)]]
+    };
+    let pieces = |c: &anima_doc::CustomEase| -> Vec<Seg> {
+        (0..c.points().len().saturating_sub(1)).filter_map(|i| c.segment(i)).map(|s| s.map(|p| (f64::from(p.x), f64::from(p.y)))).collect()
+    };
     match e {
         Easing::Custom(c) => Some(pieces(c)),
-        Easing::Linear | Easing::Classic(_) | Easing::CubicBezier(..) | Easing::QuadIn | Easing::QuadOut | Easing::CubicIn | Easing::CubicOut | Easing::BackIn | Easing::BackOut => e.as_bezier().map(one),
+        Easing::Linear
+        | Easing::Classic(_)
+        | Easing::CubicBezier(..)
+        | Easing::QuadIn
+        | Easing::QuadOut
+        | Easing::CubicIn
+        | Easing::CubicOut
+        | Easing::BackIn
+        | Easing::BackOut => e.as_bezier().map(one),
         _ => match e.family() {
             Some((F::Quad | F::Cubic | F::Back | F::Bounce, _)) => Some(pieces(&e.to_custom())),
             _ => None,
@@ -401,8 +413,8 @@ pub(crate) fn fit(s: &Series<'_>, eases: &Eases) -> (Vec<Key>, bool) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anicraft_doc::CustomEase;
-    use anicraft_geom::Vec2;
+    use anima_doc::CustomEase;
+    use anima_geom::Vec2;
     use std::sync::Arc;
 
     fn series(e: &Easing, from: f64, to: f64, frames: usize, hold_after: usize) -> Vec<Vec<f64>> {
@@ -439,7 +451,14 @@ mod tests {
 
     #[test]
     fn single_cubic_presets_are_one_eased_key() {
-        for e in [Easing::Classic(-60.0), Easing::Classic(100.0), Easing::QuadIn, Easing::CubicOut, Easing::BackOut, Easing::CubicBezier(0.1, 0.8, 0.3, 1.2)] {
+        for e in [
+            Easing::Classic(-60.0),
+            Easing::Classic(100.0),
+            Easing::QuadIn,
+            Easing::CubicOut,
+            Easing::BackOut,
+            Easing::CubicBezier(0.1, 0.8, 0.3, 1.2),
+        ] {
             let v = series(&e, 10.0, -250.0, 30, 0);
             let (keys, stepped) = fit(&Series { first: 0, values: &v, tol: 2e-3 }, &eases(std::slice::from_ref(&e)));
             assert!(!stepped, "{e:?}");
@@ -450,7 +469,12 @@ mod tests {
 
     #[test]
     fn multi_piece_eases_split_into_keys_at_their_points() {
-        let custom = Easing::Custom(Arc::new(CustomEase::from_flat(&[(0.0, 0.0), (0.2, 1.4), (0.3, 1.4), (0.4, 1.4), (0.6, 0.5), (0.8, 1.0), (1.0, 1.0)].map(|(x, y)| Vec2::new(x, y))).unwrap()));
+        let custom = Easing::Custom(Arc::new(
+            CustomEase::from_flat(
+                &[(0.0, 0.0), (0.2, 1.4), (0.3, 1.4), (0.4, 1.4), (0.6, 0.5), (0.8, 1.0), (1.0, 1.0)].map(|(x, y)| Vec2::new(x, y)),
+            )
+            .unwrap(),
+        ));
         for (e, pieces) in [(custom, 2), (Easing::QuadInOut, 2), (Easing::BackInOut, 2), (Easing::BounceOut, 7)] {
             let v = series(&e, 0.0, 100.0, 40, 5);
             let (keys, stepped) = fit(&Series { first: 3, values: &v, tol: 2e-3 }, &eases(std::slice::from_ref(&e)));
@@ -503,10 +527,12 @@ mod tests {
     #[test]
     fn vectors_share_one_ease() {
         let e = Easing::Classic(-100.0);
-        let v: Vec<Vec<f64>> = (0..=12).map(|f| {
-            let y = f64::from(e.apply(f as f32 / 12.0));
-            vec![5.0 + 100.0 * y, 7.0, -3.0 * y]
-        }).collect();
+        let v: Vec<Vec<f64>> = (0..=12)
+            .map(|f| {
+                let y = f64::from(e.apply(f as f32 / 12.0));
+                vec![5.0 + 100.0 * y, 7.0, -3.0 * y]
+            })
+            .collect();
         let (keys, _) = fit(&Series { first: 0, values: &v, tol: 2e-3 }, &eases(&[e]));
         assert_eq!(keys.len(), 2);
     }

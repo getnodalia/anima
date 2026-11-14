@@ -2,8 +2,8 @@
 //! object moved on a path reshaping it, one undo step each, and the file round trip.
 
 use super::*;
-use anicraft_doc::Property;
-use anicraft_geom::Vec2;
+use anima_doc::Property;
+use anima_geom::Vec2;
 use serde_json::json;
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -35,7 +35,7 @@ fn rotation(s: &mut Session, frame: u32) -> f32 {
     s.visible_elements().first().map_or(f32::NAN, |e| e.transform.decompose().rotation.to_degrees())
 }
 
-fn motion(s: &Session) -> &anicraft_doc::MotionTween {
+fn motion(s: &Session) -> &anima_doc::MotionTween {
     s.active_layer().and_then(|l| l.keyframes.first()).and_then(|k| k.motion.as_ref()).expect("motion tween")
 }
 
@@ -161,7 +161,7 @@ fn moving_the_object_on_a_path_reshapes_the_path() {
     run(&mut s, "element.translate", json!({"dx": 0, "dy": 40}));
     assert!(pos(&mut s, 9).distance(want) < 1e-3, "{:?} vs {want:?}", pos(&mut s, 9));
     assert_eq!(keys(&s), Some(vec![0, 9, 23]), "a position key on the pinned frame");
-    assert_eq!(motion(&s).pins, vec![anicraft_doc::Pin { frame: 9, anchor: 1 }]);
+    assert_eq!(motion(&s).pins, vec![anima_doc::Pin { frame: 9, anchor: 1 }]);
     assert!(pos(&mut s, 0).distance(Vec2::new(0.0, 25.0)) < 1e-3 && pos(&mut s, 23).distance(Vec2::new(115.0, 5.0)) < 1e-3, "the ends stay");
     // A drag on the stage is a gesture: one undo step however many moves.
     let steps = s.history_len();
@@ -273,7 +273,7 @@ fn deleting_a_point_keeps_the_ends_and_the_timing() {
     assert_eq!(motion(&s).tracks, keys, "the ends didn't move, so neither did a key");
     assert!(pos(&mut s, 0).distance(Vec2::new(5.0, 5.0)) < 1e-3 && pos(&mut s, 23).distance(Vec2::new(105.0, 5.0)) < 1e-3, "the ends stay");
     // The one cubic left still leaves straight up and comes straight down, over the top.
-    let Some(anicraft_geom::PathCmd::CubicTo(c1, c2, _)) = motion(&s).path.as_ref().and_then(|p| p.cmds.get(1)).copied() else { panic!("a cubic") };
+    let Some(anima_geom::PathCmd::CubicTo(c1, c2, _)) = motion(&s).path.as_ref().and_then(|p| p.cmds.get(1)).copied() else { panic!("a cubic") };
     assert!((c1.x - 5.0).abs() < 1e-3 && c1.y < 5.0 && (c2.x - 105.0).abs() < 1e-3 && c2.y < 5.0, "{c1:?} {c2:?}");
     assert!(pos(&mut s, 12).y < -25.0, "still over the top: {:?}", pos(&mut s, 12));
     // The ends can't go; asking for an end and a middle point deletes the middle one.
@@ -335,7 +335,11 @@ fn editing_points_of_a_straight_motion_makes_its_path() {
     let mut still = Session::default();
     run(&mut still, "draw.rect", json!({"x": 0, "y": 0, "w": 10, "h": 10}));
     run(&mut still, "timeline.create_motion_tween", json!({}));
-    for (id, p) in [("motion.add_point", json!({"x": 5, "y": 5})), ("motion.delete_points", json!({"anchors": [1]})), ("motion.convert_point", json!({"anchor": 0, "smooth": true}))] {
+    for (id, p) in [
+        ("motion.add_point", json!({"x": 5, "y": 5})),
+        ("motion.delete_points", json!({"anchors": [1]})),
+        ("motion.convert_point", json!({"anchor": 0, "smooth": true})),
+    ] {
         assert!(still.execute(id, &p).is_err(), "{id}");
     }
 }

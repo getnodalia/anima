@@ -5,9 +5,9 @@
 
 use crate::params::*;
 use crate::{CommandSpec, EngineError, Result, Session};
-use anicraft_doc::{ElementId, ElementKind, Paint};
-use anicraft_geom::Rect;
-use anicraft_plugins::{Host, Manifest, ParamKind, Plugin, SelectionNeed};
+use anima_doc::{ElementId, ElementKind, Paint};
+use anima_geom::Rect;
+use anima_plugins::{Host, Manifest, ParamKind, Plugin, SelectionNeed};
 use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -15,11 +15,27 @@ use std::path::PathBuf;
 pub fn specs() -> Vec<CommandSpec> {
     let c = |id, label, menu, shortcut, params, mutates, run| CommandSpec { id, label, menu, shortcut, params, mutates, run };
     vec![
-        c("plugin.install", "Install Plug-in…", "Commands", None, "{path: a .wasm plug-in, confirm? (when it replaces an installed plug-in's file)} validates and installs it; with a plug-ins folder it is copied there", false, install as crate::RunFn),
+        c(
+            "plugin.install",
+            "Install Plug-in…",
+            "Commands",
+            None,
+            "{path: a .wasm plug-in, confirm? (when it replaces an installed plug-in's file)} validates and installs it; with a plug-ins folder it is copied there",
+            false,
+            install as crate::RunFn,
+        ),
         c("plugin.list", "Manage Plug-ins…", "Commands", None, "{} lists the installed plug-ins (the app shows them in a window)", false, list),
         c("plugin.run", "Run Plug-in", "", None, "{id, params?: {…} (see plugin.list; missing ones take their defaults)} one undo step", true, run),
         c("plugin.remove", "Remove Plug-in", "", None, "{id, confirm? (when it deletes the plug-in's file from the plug-ins folder)}", false, remove),
-        c("plugin.reload", "Reload Plug-ins", "Commands", None, "{folder? (makes it the plug-ins folder first)} re-reads every .wasm in the plug-ins folder", false, reload),
+        c(
+            "plugin.reload",
+            "Reload Plug-ins",
+            "Commands",
+            None,
+            "{folder? (makes it the plug-ins folder first)} re-reads every .wasm in the plug-ins folder",
+            false,
+            reload,
+        ),
     ]
 }
 
@@ -31,12 +47,24 @@ const MAX_ELEMENTS: usize = 10_000;
 /// a namespace this list doesn't know is refused until someone decides (a test checks that
 /// every registered namespace is known).
 pub fn plugin_may_call(id: &str) -> std::result::Result<(), &'static str> {
-    const DOCUMENT: &[&str] = &["draw", "edit", "element", "symbol", "arrange", "modify", "library", "text", "scene", "path", "paint", "timeline", "layer", "align", "doc", "motion", "sound", "stroke", "tween", "actions", "instance", "camera", "bone", "warp", "script", "raw", "frames", "find", "explorer", "ease"];
+    const DOCUMENT: &[&str] = &[
+        "draw", "edit", "element", "symbol", "arrange", "modify", "library", "text", "scene", "path", "paint", "timeline", "layer", "align", "doc",
+        "motion", "sound", "stroke", "tween", "actions", "instance", "camera", "bone", "warp", "script", "raw", "frames", "find", "explorer", "ease",
+    ];
     match id {
         "edit.undo" | "edit.redo" => Err("a plug-in run is one undo step; it can't undo or redo"),
-        "edit.cut" | "edit.copy" | "edit.paste" | "edit.paste_in_place" | "timeline.cut_frames" | "timeline.copy_frames" | "timeline.paste_frames" | "frames.cut" | "frames.copy" | "frames.paste" | "ease.copy" | "ease.paste" => {
-            Err("plug-ins don't use your clipboard")
-        }
+        "edit.cut"
+        | "edit.copy"
+        | "edit.paste"
+        | "edit.paste_in_place"
+        | "timeline.cut_frames"
+        | "timeline.copy_frames"
+        | "timeline.paste_frames"
+        | "frames.cut"
+        | "frames.copy"
+        | "frames.paste"
+        | "ease.copy"
+        | "ease.paste" => Err("plug-ins don't use your clipboard"),
         _ => match id.split('.').next().unwrap_or("") {
             "file" => Err("plug-ins can't open, save, import, export or publish files"),
             // Reading the settings is harmless; changing them changes what Publish writes where.
@@ -50,7 +78,14 @@ pub fn plugin_may_call(id: &str) -> std::result::Result<(), &'static str> {
             // Filter lists are the document's (ADR 0091); copied filters are the artist's
             // clipboard, and the presets their preferences (listing and applying one is fine).
             "filter" if matches!(id, "filter.copy" | "filter.paste") => Err("plug-ins don't use your clipboard"),
-            "filter" if matches!(id, "filter.preset_save" | "filter.preset_rename" | "filter.preset_delete" | "filter.preset_export" | "filter.preset_import") => Err("plug-ins can't change your filter presets or read and write preset files"),
+            "filter"
+                if matches!(
+                    id,
+                    "filter.preset_save" | "filter.preset_rename" | "filter.preset_delete" | "filter.preset_export" | "filter.preset_import"
+                ) =>
+            {
+                Err("plug-ins can't change your filter presets or read and write preset files")
+            }
             "filter" => Ok(()),
             // The document's swatches are document data; swatch files are files.
             "swatch" if matches!(id, "swatch.import" | "swatch.export") => Err("plug-ins can't read or write swatch files"),
@@ -77,7 +112,10 @@ impl Host for SessionHost<'_> {
     fn request(&mut self, op: &str, req: &Value) -> std::result::Result<Value, String> {
         match op {
             "command" => {
-                let id = req.get("id").and_then(Value::as_str).ok_or("a command request needs an \"id\", e.g. {\"op\":\"command\",\"id\":\"draw.rect\",\"params\":{…}}")?;
+                let id = req
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .ok_or("a command request needs an \"id\", e.g. {\"op\":\"command\",\"id\":\"draw.rect\",\"params\":{…}}")?;
                 if crate::find_command(id).is_none() {
                     return Err(format!("unknown command '{id}'"));
                 }
@@ -102,7 +140,7 @@ fn document_view(s: &Session) -> Value {
         .map(|l| json!({"id": l.id.0, "name": l.name, "kind": format!("{:?}", l.kind).to_lowercase(), "visible": l.visible, "locked": l.locked, "outline": l.outline, "onion": l.onion, "height": u32::from(l.height()) * 100, "parent": l.parent.map(|p| p.0)}))
         .collect();
     json!({
-        "abi": anicraft_plugins::ABI_VERSION,
+        "abi": anima_plugins::ABI_VERSION,
         "stage": {"width": st.width, "height": st.height, "fps": st.fps, "background": st.background.to_hex()},
         "scene": s.scene,
         "scenes": s.doc.scenes.len(),
@@ -178,7 +216,7 @@ fn elements_view(s: &Session, req: &Value) -> std::result::Result<Value, String>
     Ok(json!({"layer": s.layer.0, "frame": s.frame, "elements": out}))
 }
 
-fn param_json(name: &str, p: &anicraft_plugins::ParamSpec) -> Value {
+fn param_json(name: &str, p: &anima_plugins::ParamSpec) -> Value {
     let mut v = match &p.kind {
         ParamKind::Number { min, max, default } => json!({"type": "number", "min": min, "max": max, "default": default}),
         ParamKind::Int { min, max, default } => json!({"type": "int", "min": min, "max": max, "default": default}),
@@ -213,9 +251,9 @@ pub fn describe(s: &Session, p: &Plugin) -> Value {
     })
 }
 
-fn plugin_err(e: anicraft_plugins::Error) -> EngineError {
+fn plugin_err(e: anima_plugins::Error) -> EngineError {
     match e {
-        anicraft_plugins::Error::Params(m) => EngineError::Param(m),
+        anima_plugins::Error::Params(m) => EngineError::Param(m),
         e => EngineError::State(e.to_string()),
     }
 }
@@ -232,7 +270,7 @@ fn install(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn list(s: &mut Session, _: &Value) -> Result<Value> {
     let plugins: Vec<Value> = s.plugins.list().map(|p| describe(s, p)).collect();
-    Ok(json!({"plugins": plugins, "folder": s.plugins.folder().map(|f| f.display().to_string()), "abi": anicraft_plugins::ABI_VERSION}))
+    Ok(json!({"plugins": plugins, "folder": s.plugins.folder().map(|f| f.display().to_string()), "abi": anima_plugins::ABI_VERSION}))
 }
 
 fn run(s: &mut Session, p: &Value) -> Result<Value> {
@@ -240,10 +278,25 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
     let plugin = s.plugins.get(id).ok_or_else(|| EngineError::State(format!("no plug-in “{id}” is installed (see plugin.list)")))?;
     let m = plugin.manifest();
     match m.kind {
-        anicraft_plugins::Kind::Command => {}
-        anicraft_plugins::Kind::FrameScript => return Err(EngineError::State(format!("{} is a frame script: it runs while the movie plays, from a keyframe (Window › Actions)", m.name))),
-        anicraft_plugins::Kind::Exporter => return Err(EngineError::State(format!("{} is an export format: use File › Export, or file.export_plugin {{\"format\": \"{}\", \"path\": …}}", m.name, m.id))),
-        anicraft_plugins::Kind::Ease => return Err(EngineError::State(format!("{} adds eases: pick one in a tween's ease menu, or ease.set {{\"easing\": {{\"plugin\": \"{}\", \"ease\": …}}}}", m.name, m.id))),
+        anima_plugins::Kind::Command => {}
+        anima_plugins::Kind::FrameScript => {
+            return Err(EngineError::State(format!(
+                "{} is a frame script: it runs while the movie plays, from a keyframe (Window › Actions)",
+                m.name
+            )));
+        }
+        anima_plugins::Kind::Exporter => {
+            return Err(EngineError::State(format!(
+                "{} is an export format: use File › Export, or file.export_plugin {{\"format\": \"{}\", \"path\": …}}",
+                m.name, m.id
+            )));
+        }
+        anima_plugins::Kind::Ease => {
+            return Err(EngineError::State(format!(
+                "{} adds eases: pick one in a tween's ease menu, or ease.set {{\"easing\": {{\"plugin\": \"{}\", \"ease\": …}}}}",
+                m.name, m.id
+            )));
+        }
     }
     if m.selection == SelectionNeed::Required && s.selection.is_empty() {
         return Err(EngineError::State(format!("{} works on the selection: select some artwork first", m.name)));
@@ -252,7 +305,9 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
     let report = plugin.run(&mut SessionHost { s }, &params).map_err(plugin_err)?;
     // The undo step is named after the plug-in ("Undo Star Field").
     s.step_label = Some(m.name.clone());
-    Ok(json!({"plugin": m.id, "name": m.name, "params": params, "log": report.log, "log_dropped": report.log_dropped, "calls": report.calls, "fuel": report.fuel}))
+    Ok(
+        json!({"plugin": m.id, "name": m.name, "params": params, "log": report.log, "log_dropped": report.log_dropped, "calls": report.calls, "fuel": report.fuel}),
+    )
 }
 
 fn remove(s: &mut Session, p: &Value) -> Result<Value> {

@@ -1,9 +1,9 @@
-//! AniCraft desktop app.
+//! Ánima desktop app.
 //!
 //! ```text
-//! anicraft [file.anicraft] [--screenshot out.png] [--renderer wgpu|gl] [--open <panel>]
+//! anima [file.anima] [--screenshot out.png] [--renderer wgpu|gl] [--open <panel>]
 //!          [--theme dark|light|high-contrast] [--scale <percent>] [--lang <code>|auto|pseudo]
-//! anicraft --version
+//! anima --version
 //! ```
 //! `--screenshot` starts normally, draws ~120 frames, saves the window as PNG and exits.
 //!
@@ -12,7 +12,7 @@
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 // Release builds are Windows GUI programs, so no console window opens beside the app (the
 // packaging checks the PE subsystem, ADR 0026). Debug builds keep the console for logs; the
-// headless front end is anicraft-cli.
+// headless front end is anima-cli.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 // The browser build leaves out what only the desktop has (screenshot runs, the recovery folder,
 // window chrome, `--open` panels); that code stays compiled for it but unused (ADR 0036).
@@ -26,21 +26,14 @@ mod actions_panel;
 mod aids_dialog;
 mod app;
 mod autosave;
+mod bind_tool;
+mod bone_tool;
 mod brush_panel;
 mod brushtool;
+mod camera_tool;
 mod colour;
 mod colour_panel;
-mod envelope;
-mod find_panel;
-mod publish_panel;
-mod erasertool;
-mod bind_tool;
-mod warp_tool;
-mod bone_tool;
-mod camera_tool;
 mod convert_symbol;
-mod layer_depth;
-mod layer_props;
 mod desktop_ui;
 mod dialogs;
 mod dock;
@@ -48,22 +41,25 @@ mod dock_float;
 mod dock_ui;
 mod drop;
 mod ease_editor;
+mod envelope;
+mod erasertool;
+mod find_panel;
 mod gpu_stage;
 #[cfg(not(target_arch = "wasm32"))]
 mod gpu_watch;
 mod gradient_tool;
 mod icons;
 mod keymap;
+mod layer_depth;
+mod layer_props;
 mod library;
 mod menus;
-#[cfg(not(target_arch = "wasm32"))]
-mod updates;
 mod mixed;
 mod motion_editor;
-mod movie_explorer;
-mod panels;
 mod motion_path;
+mod movie_explorer;
 mod onion;
+mod panels;
 mod pathtools;
 mod platform;
 mod plugin_export_ui;
@@ -73,28 +69,32 @@ mod plugin_fixture_tests;
 mod plugin_ui_tests;
 mod plugins_ui;
 mod prefs;
+mod publish_panel;
 mod recent;
 mod rulers;
 mod scale_grid;
 mod shape_envelope;
-mod sound;
 mod shape_hints;
+mod sound;
 mod stage;
 mod stage_a11y;
-mod swatches_panel;
 mod start;
 mod startup;
+mod swatches_panel;
 mod templates;
 mod test_movie;
 mod theme;
 mod timeline;
+#[cfg(not(target_arch = "wasm32"))]
+mod updates;
+mod warp_tool;
 #[cfg(target_arch = "wasm32")]
 mod web;
 mod widthtool;
 mod workspaces_window;
 
 #[cfg(not(target_arch = "wasm32"))]
-use anicraft_engine::Session;
+use anima_engine::Session;
 #[cfg(not(target_arch = "wasm32"))]
 use std::path::{Path, PathBuf};
 
@@ -102,7 +102,7 @@ use std::path::{Path, PathBuf};
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug, PartialEq)]
 enum Opened {
-    /// Nothing to report (no file, or an AniCraft document).
+    /// Nothing to report (no file, or an Ánima document).
     Quiet,
     /// The import report of an Animate document.
     Imported(String),
@@ -116,7 +116,7 @@ enum Opened {
 /// to go nowhere and a double-clicked document seemed to open as the sample).
 #[cfg(not(target_arch = "wasm32"))]
 fn open_session(file: Option<&Path>) -> (Session, Opened) {
-    let Some(p) = file else { return (Session::new(anicraft_engine::doc::sample::demo()), Opened::Quiet) };
+    let Some(p) = file else { return (Session::new(anima_engine::doc::sample::demo()), Opened::Quiet) };
     let mut s = Session::default();
     match s.execute("file.open", &serde_json::json!({"path": p.display().to_string()})) {
         Ok(v) => match v.get("report").and_then(|r| r.as_str()) {
@@ -128,7 +128,7 @@ fn open_session(file: Option<&Path>) -> (Session, Opened) {
         },
         Err(e) => {
             startup::line(&format!("could not open {}: {e}; starting with the sample", p.display()));
-            (Session::new(anicraft_engine::doc::sample::demo()), Opened::Failed(crate::recent::display_name(p), e.to_string()))
+            (Session::new(anima_engine::doc::sample::demo()), Opened::Failed(crate::recent::display_name(p), e.to_string()))
         }
     }
 }
@@ -150,21 +150,23 @@ struct Look {
 #[cfg(not(target_arch = "wasm32"))]
 fn run(attempt: startup::Attempt, file: Option<&Path>, shot: Option<PathBuf>, open: Option<String>, look: Look) -> eframe::Result {
     let options = attempt.options(eframe::NativeOptions {
-        viewport: platform::viewport(egui::ViewportBuilder::default().with_title("AniCraft").with_inner_size([1600.0, 940.0]).with_min_inner_size([960.0, 600.0])),
+        viewport: platform::viewport(
+            egui::ViewportBuilder::default().with_title("Ánima").with_inner_size([1600.0, 940.0]).with_min_inner_size([960.0, 600.0]),
+        ),
         ..Default::default()
     });
     // The embedded interface font joins the text library before anything lays text out:
     // opening an Animate document from the command line lays its text out right here.
-    anicraft_engine::text::Fonts::register(theme::embedded_fonts());
+    anima_engine::text::Fonts::register(theme::embedded_fonts());
     // `--lang` before the window exists, so its first status line is in that language too.
     i18n::force(look.lang.as_deref());
     let (session, report) = open_session(file);
     let file_given = file.map(Path::to_path_buf);
     eframe::run_native(
-        "AniCraft",
+        "Anima",
         options,
         Box::new(move |cc| {
-            // A document the system hands over while AniCraft is idle wakes it (ADR 0062).
+            // A document the system hands over while Ánima is idle wakes it (ADR 0062).
             platform::wake_on_requests(&cc.egui_ctx);
             startup::log_adapter(cc.wgpu_render_state.as_ref());
             let starting_fresh = file_given.is_none() && shot.is_none();
@@ -183,7 +185,7 @@ fn run(attempt: startup::Attempt, file: Option<&Path>, shot: Option<PathBuf>, op
             a.open_panel(open.as_deref());
             match report {
                 // An imported document says what came across, as opening it from the menu does.
-                Opened::Imported(r) => a.status_ok(tr!("{report} Save to keep it as an AniCraft document.", report = r)),
+                Opened::Imported(r) => a.status_ok(tr!("{report} Save to keep it as an Ánima document.", report = r)),
                 Opened::Failed(name, e) => a.status_err(tr!("Could not open {name}: {e}", name = name, e = e)),
                 Opened::Quiet => {}
             }
@@ -200,7 +202,7 @@ fn main() {
 }
 
 /// What the command line asks for. A plain argument is the document to open: how Windows
-/// (`"%1"` in the MSI's file association) and Linux (`Exec=anicraft %f` in the desktop entry)
+/// (`"%1"` in the MSI's file association) and Linux (`Exec=anima %f` in the desktop entry)
 /// hand over a double-clicked document. macOS sends it as an Apple Event instead (ADR 0062).
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug, Default, PartialEq)]
@@ -249,7 +251,11 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<Args, String> {
                 Some(code) if i18n::known(&code) => out.look.lang = Some(code),
                 other => {
                     let offered: Vec<&str> = i18n::offered().into_iter().map(|(c, _)| c).collect();
-                    return Err(format!("--lang takes auto, pseudo or a language this build has ({}), not {}", offered.join(", "), other.as_deref().unwrap_or("nothing"))); // i18n-exempt: a console message
+                    return Err(format!(
+                        "--lang takes auto, pseudo or a language this build has ({}), not {}", // i18n-exempt: a console message
+                        offered.join(", "),
+                        other.as_deref().unwrap_or("nothing")
+                    )); // i18n-exempt: a console message
                 }
             },
             // Printed by the release packaging checks and for bug reports.
@@ -266,25 +272,18 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<Args, String> {
 /// `--help` (the console's text, in English).
 #[cfg(not(target_arch = "wasm32"))]
 // i18n-exempt: the --help console text
-const HELP: &str = "anicraft [file.anicraft|file.fla|file.xfl] [--version] [--screenshot out.png [--shot-width <px>]] [--renderer gl|wgpu|vulkan|dx12|metal] [--theme graphite|high-contrast] [--scale <percent>] [--lang <code>|auto|pseudo] [--open palette|shortcuts|lastscene|start|drop|droplibrary|select|selectzoom|about|files|confirm|transform|points|merge|rawparts|rawedit|rawsub|rawpoints|rawsnap|rulers|editguides|editgrid|symboledit|groups|combine|nineslice|nineslicedit|brush|brushing|polystar|paintinside|drawingedit|shapeenvelope|brushlibrary|brushcurve|paintbrush|eraser|erasing|erasemerge|tiltbrush|eyedropper|pen|frames|span|bucket|tlzoom|tlwide|motion|motionspan|motionpath|motionpoints|motionedit|motionpins|motionpinsspan|hints|hintsend|camera|cameraview|bones|springbones|shapebones|shapeweights|layerdepth|layerdepthview|filters|strokes|prefs|licenses|zoom|recovery|plugins|actions|script|scriptproblems|testmovie|testmovieinside|testscript|textfields|testtext|softmask|pathtext|button|testhits|exporthtml|publish|publishreport|publishanim|sound|envelope|ease|easepreset|plugineases|pluginexport|pluginexportwindow|library|librarymenu|libraryfolders|colour|layerprops|frameview|layercolour|timelinepolish|dock|dockicons|floattabs|docknarrow|workspaces|animator|designer|gradient|gradientbucket|swatches|swatchpanel]\n\
-     --renderer   the window's graphics (also ANICRAFT_RENDERER); default automatic, falling back to OpenGL\n\
+const HELP: &str = "anima [file.anima|file.fla|file.xfl] [--version] [--screenshot out.png [--shot-width <px>]] [--renderer gl|wgpu|vulkan|dx12|metal] [--theme graphite|high-contrast] [--scale <percent>] [--lang <code>|auto|pseudo] [--open palette|shortcuts|lastscene|start|drop|droplibrary|select|selectzoom|about|files|confirm|transform|points|merge|rawparts|rawedit|rawsub|rawpoints|rawsnap|rulers|editguides|editgrid|symboledit|groups|combine|nineslice|nineslicedit|brush|brushing|polystar|paintinside|drawingedit|shapeenvelope|brushlibrary|brushcurve|paintbrush|eraser|erasing|erasemerge|tiltbrush|eyedropper|pen|frames|span|bucket|tlzoom|tlwide|motion|motionspan|motionpath|motionpoints|motionedit|motionpins|motionpinsspan|hints|hintsend|camera|cameraview|bones|springbones|shapebones|shapeweights|layerdepth|layerdepthview|filters|strokes|prefs|licenses|zoom|recovery|plugins|actions|script|scriptproblems|testmovie|testmovieinside|testscript|textfields|testtext|softmask|pathtext|button|testhits|exporthtml|publish|publishreport|publishanim|sound|envelope|ease|easepreset|plugineases|pluginexport|pluginexportwindow|library|librarymenu|libraryfolders|colour|layerprops|frameview|layercolour|timelinepolish|dock|dockicons|floattabs|docknarrow|workspaces|animator|designer|gradient|gradientbucket|swatches|swatchpanel]\n\
+     --renderer   the window's graphics (also ANIMA_RENDERER); default automatic, falling back to OpenGL\n\
      --open       shows a panel at start (handy with --screenshot for visual checks)\n\
      --shot-width scales the screenshot down to this width (the user guide's pictures)\n\
-     ANICRAFT_STAGE_RENDERER=gpu|cpu  stage renderer (default gpu, falling back to cpu; ADR 0032)\n\
+     ANIMA_STAGE_RENDERER=gpu|cpu  stage renderer (default gpu, falling back to cpu; ADR 0032)\n\
      --theme      the interface palette for this run (not saved)\n\
      --scale      the interface scale for this run, 75 to 200 (not saved)\n\
      --lang       the interface language for this run (not saved); pseudo tests the layout\n\
-     Headless use: anicraft-cli --help";
+     Headless use: anima-cli --help";
 
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result {
-    if let Some(result) = updates::finish_helper() {
-        let failed = result.is_err();
-        if let Err(error) = result {
-            eprintln!("Update failed: {error}");
-        }
-        std::process::exit(i32::from(failed));
-    }
     let args = match parse_args(std::env::args().skip(1)) {
         Ok(a) => a,
         Err(e) => {
@@ -294,7 +293,7 @@ fn main() -> eframe::Result {
     };
     match args.print {
         Some(Print::Version) => {
-            println!("AniCraft {} ({})", env!("CARGO_PKG_VERSION"), app::RELEASE_STAGE);
+            println!("Ánima {} ({})", env!("CARGO_PKG_VERSION"), app::RELEASE_STAGE);
             return Ok(());
         }
         Some(Print::Help) => {
@@ -319,10 +318,16 @@ fn main() -> eframe::Result {
     let mut opening = true;
     while opening {
         opening = false;
-        let attempts = startup::plan(platform::forced_backend(renderer.as_deref()), prefs::Prefs::load().window_backend, &platform::window_attempts(platform::OS), &last);
+        let attempts = startup::plan(
+            platform::forced_backend(renderer.as_deref()),
+            prefs::Prefs::load().window_backend,
+            &platform::window_attempts(platform::OS),
+            &last,
+        );
         for (n, attempt) in attempts.iter().enumerate() {
             startup::trying(attempt, n + 1, attempts.len());
-            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| run(*attempt, file.as_deref(), shot.clone(), open.clone(), look.clone())));
+            let result =
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| run(*attempt, file.as_deref(), shot.clone(), open.clone(), look.clone())));
             why = match result {
                 Ok(Ok(())) => {
                     // The window's graphics device was lost mid-session (ADR 0092): it closed
@@ -377,34 +382,39 @@ mod args_tests {
     /// argument, spaces and all; it opens through `file.open`, as File › Open does.
     #[test]
     fn a_double_clicked_document_arrives_on_the_command_line_and_opens() {
-        for path in [r"C:\Users\Ana Lima\My Films\walk cycle.anicraft", "/home/ana/Films/old scene.fla", "/home/ana/Films/Scene/DOMDocument.xfl", "relative.anicraft"] {
+        for path in [
+            r"C:\Users\Ana Lima\My Films\walk cycle.anima",
+            "/home/ana/Films/old scene.fla",
+            "/home/ana/Films/Scene/DOMDocument.xfl",
+            "relative.anima",
+        ] {
             assert_eq!(parse(&[path]).file, Some(PathBuf::from(path)), "{path}");
         }
         // The process serial number older macOS added is not a file.
         assert_eq!(parse(&["-psn_0_1234567"]).file, None);
-        let a = parse(&["walk.anicraft", "--screenshot", "shots/x.png", "--open", "testmovie"]);
-        assert_eq!((a.file, a.shot, a.open.as_deref()), (Some(PathBuf::from("walk.anicraft")), Some(PathBuf::from("shots/x.png")), Some("testmovie")));
+        let a = parse(&["walk.anima", "--screenshot", "shots/x.png", "--open", "testmovie"]);
+        assert_eq!((a.file, a.shot, a.open.as_deref()), (Some(PathBuf::from("walk.anima")), Some(PathBuf::from("shots/x.png")), Some("testmovie")));
         assert!(parse_args(["--scale".to_string(), "lots".to_string()]).is_err());
         assert!(parse_args(["--screenshot".to_string()]).is_err());
         assert_eq!(parse(&["--screenshot", "a.png", "--shot-width", "1200"]).look.shot_width, Some(1200));
         assert!(parse_args(["--shot-width".to_string(), "9".to_string()]).is_err());
         assert_eq!(parse(&["--version"]).print, Some(Print::Version));
         // And the file opens: the session starts with it, not the sample.
-        let dir = std::env::temp_dir().join(format!("anicraft-shell-args-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("anima-shell-args-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        let path = dir.join("walk cycle.anicraft");
-        let mut s = Session::new(anicraft_engine::doc::sample::interactive());
+        let path = dir.join("walk cycle.anima");
+        let mut s = Session::new(anima_engine::doc::sample::interactive());
         s.execute("file.save", &serde_json::json!({"path": path.display().to_string()})).unwrap();
         let file = parse(&[&path.display().to_string()]).file;
         let (opened, _) = open_session(file.as_deref());
         assert_eq!(opened.path.as_deref(), Some(path.as_path()));
         assert!(opened.doc == s.doc, "the document on the command line, not the sample");
         // A file that isn't there: the sample, never a crash.
-        let (fallback, said) = open_session(Some(&dir.join("missing.anicraft")));
+        let (fallback, said) = open_session(Some(&dir.join("missing.anima")));
         assert!(fallback.path.is_none());
         // #226: and the window says why (a release build has no console to print it on).
-        assert!(matches!(&said, Opened::Failed(name, why) if name == "missing.anicraft" && !why.is_empty()), "{said:?}");
-        // An Animate document double-clicked or opened with AniCraft imports, with its report.
+        assert!(matches!(&said, Opened::Failed(name, why) if name == "missing.anima" && !why.is_empty()), "{said:?}");
+        // An Animate document double-clicked or opened with Ánima imports, with its report.
         let xfl = Path::new(env!("CARGO_MANIFEST_DIR")).join("crates/xfl/tests/corpus/shapes/shapes.xfl");
         let (imported, said) = open_session(Some(&xfl));
         assert!(matches!(said, Opened::Imported(_)), "{said:?}");
@@ -414,18 +424,18 @@ mod args_tests {
 }
 
 #[cfg(test)]
+mod architecture_tests;
+#[cfg(test)]
+mod dock_narrow_tests;
+#[cfg(test)]
 mod guide_reference_tests;
 #[cfg(test)]
 mod guidelines_tests;
 #[cfg(test)]
-mod dock_narrow_tests;
-#[cfg(test)]
-mod architecture_tests;
-#[cfg(test)]
 mod packaging_tests;
 #[cfg(test)]
-mod rulers_tests;
-#[cfg(test)]
 mod retime_ui_tests;
+#[cfg(test)]
+mod rulers_tests;
 #[cfg(test)]
 mod tilt_ui_tests;

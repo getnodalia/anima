@@ -1,12 +1,12 @@
 //! Recent files in the window (ADR 0059): File › Open Recent, the list kept in the preferences,
 //! and the thumbnails the start screen shows. The list itself is the session's
-//! (`anicraft_engine::cmds_recent`): `file.open` and `file.save` add to it, the `prefs.recent_*`
+//! (`anima_engine::cmds_recent`): `file.open` and `file.save` add to it, the `prefs.recent_*`
 //! commands change it, and the window copies it into the preferences whenever it changes.
 
 use crate::app::App;
 use crate::platform;
 use crate::theme::{Type, text};
-use anicraft_engine::cmds_recent::{self, RecentFile};
+use anima_engine::cmds_recent::{self, RecentFile};
 use serde_json::json;
 use std::collections::HashMap;
 use std::path::Path;
@@ -27,9 +27,11 @@ impl Thumbs {
             return t.clone();
         }
         let png = self.seeded.get(&key).cloned().or_else(|| platform::load_thumbnail(&key));
-        let tex = png.and_then(|png| anicraft_engine::doc::decode_png(&png)).and_then(|px| {
+        let tex = png.and_then(|png| anima_engine::doc::decode_png(&png)).and_then(|px| {
             let (w, h) = (usize::try_from(px.width).ok()?, usize::try_from(px.height).ok()?);
-            (w > 0 && h > 0 && px.rgba.len() == w * h * 4).then(|| ctx.load_texture(format!("recent-{key}"), egui::ColorImage::from_rgba_unmultiplied([w, h], &px.rgba), egui::TextureOptions::LINEAR))
+            (w > 0 && h > 0 && px.rgba.len() == w * h * 4).then(|| {
+                ctx.load_texture(format!("recent-{key}"), egui::ColorImage::from_rgba_unmultiplied([w, h], &px.rgba), egui::TextureOptions::LINEAR)
+            })
         });
         self.loaded.insert(key, tex.clone());
         tex
@@ -131,7 +133,11 @@ pub fn menu(app: &mut App, ui: &mut egui::Ui) {
                     if ui.small_button(tr!("Remove")).on_hover_text(tr!("Take it off the list")).clicked() {
                         act = Some(("prefs.recent_remove", json!({"index": i})));
                     }
-                } else if ui.small_button(if e.pinned { tr!("Unpin") } else { tr!("Pin") }).on_hover_text(if e.pinned { tr!("Let it move down the list again") } else { tr!("Keep it at the top of the list") }).clicked() {
+                } else if ui
+                    .small_button(if e.pinned { tr!("Unpin") } else { tr!("Pin") })
+                    .on_hover_text(if e.pinned { tr!("Let it move down the list again") } else { tr!("Keep it at the top of the list") })
+                    .clicked()
+                {
                     act = Some(("prefs.recent_pin", json!({"index": i})));
                 }
             });
@@ -167,10 +173,14 @@ pub fn open_or_run(app: &mut App, id: &str, params: serde_json::Value) {
 /// samples in a scratch folder (one pinned), and one that is missing. Their pictures stay in
 /// memory; nothing goes into the settings folder.
 pub fn sample_entries(app: &mut App) {
-    let folder = std::env::temp_dir().join("AniCraft samples"); // i18n-exempt: a folder name
-    let _ = anicraft_engine::vfs::create_dir_all(&folder);
-    let docs = [("Bouncing ball.anicraft", Some(anicraft_engine::doc::sample::demo()), true), ("Title card.anicraft", Some(anicraft_engine::doc::sample::interactive()), false), ("Old walk cycle.anicraft", None, false)]; // i18n-exempt: sample file names
-    let mut list = anicraft_engine::cmds_recent::RecentFiles::default();
+    let folder = std::env::temp_dir().join("Ánima samples"); // i18n-exempt: a folder name
+    let _ = anima_engine::vfs::create_dir_all(&folder);
+    let docs = [
+        ("Bouncing ball.anima", Some(anima_engine::doc::sample::demo()), true), // i18n-exempt: sample file name
+        ("Title card.anima", Some(anima_engine::doc::sample::interactive()), false), // i18n-exempt: sample file name
+        ("Old walk cycle.anima", None, false),
+    ]; // i18n-exempt: sample file names
+    let mut list = anima_engine::cmds_recent::RecentFiles::default();
     for (name, doc, pinned) in docs.into_iter().rev() {
         let path = folder.join(name);
         match doc {
@@ -178,10 +188,10 @@ pub fn sample_entries(app: &mut App) {
                 if let Ok(png) = cmds_recent::thumbnail_png(&doc) {
                     app.thumbs.seeded.insert(cmds_recent::thumb_key(&path), png);
                 }
-                let _ = anicraft_engine::format::save(&doc, &path);
+                let _ = anima_engine::format::save(&doc, &path);
             }
             None => {
-                let _ = anicraft_engine::vfs::remove_file(&path);
+                let _ = anima_engine::vfs::remove_file(&path);
             }
         }
         list.add(&path);

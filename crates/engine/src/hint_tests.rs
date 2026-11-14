@@ -3,7 +3,7 @@
 //! fuzz on a document that has a shape tween.
 
 use super::*;
-use anicraft_geom::{PathCmd, Vec2};
+use anima_geom::{PathCmd, Vec2};
 use serde_json::json;
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -32,7 +32,7 @@ fn hints(s: &mut Session, frame: u32) -> Value {
 
 /// Whether the shape at `frame` has an anchor at `q` (stage space).
 fn anchor_at(s: &Session, frame: u32, q: Vec2) -> bool {
-    let dl = anicraft_doc::evaluate(&s.doc, frame);
+    let dl = anima_doc::evaluate(&s.doc, frame);
     dl.items.iter().any(|i| {
         i.path.cmds.iter().any(|c| match *c {
             PathCmd::MoveTo(a) | PathCmd::LineTo(a) | PathCmd::CubicTo(_, _, a) => i.transform.apply(a).distance(q) < 1e-2,
@@ -161,7 +161,6 @@ fn hint_commands_survive_hostile_params_on_a_shape_tween() {
     }
     // Hints thrown far away and then the shapes edited: the morph still evaluates and renders.
     for f in [0, 3, 5, 9, 10, 11] {
-        let _ = anicraft_render::render_frame(&s.doc, f, 0.1);
+        let _ = anima_render::render_frame(&s.doc, f, 0.1);
     }
 }
-

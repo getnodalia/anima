@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AniCraft XFL corpus: bitmaps. The images (LIBRARY/art/checker.png, a 16x16 checker with a
+<!-- Ánima XFL corpus: bitmaps. The images (LIBRARY/art/checker.png, a 16x16 checker with a
      transparent corner, and LIBRARY/art/sunset.jpg, a 32x16 ramp) are original. Instances
      (scaled, rotated), a repeating bitmap fill and a clipped one; a bitmap whose file is
      missing, used by an instance. Self-authored. -->

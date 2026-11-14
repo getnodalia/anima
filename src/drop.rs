@@ -3,7 +3,7 @@
 //! go onto the active layer at the playhead where they were dropped, dropped on the Library
 //! go into it, into the folder under the pointer (an SVG as a graphic symbol), and dropped on a
 //! layer's frame in the timeline go onto that layer at that frame (ADR 0065). While files are
-//! dragged over the window a highlight shows where they will land. The routing is `anicraft_engine::cmds_drop::route`;
+//! dragged over the window a highlight shows where they will land. The routing is `anima_engine::cmds_drop::route`;
 //! the import is the `file.drop` command, one undo step.
 //!
 //! Where a drop lands needs the pointer. Browsers report it while dragging (our own `dragover`
@@ -15,8 +15,8 @@
 
 use crate::app::App;
 use crate::theme::{T, Type, color, font};
-use anicraft_engine::cmds_drop::{DropAction, DropKind, DropTarget, kind_of, route};
-use anicraft_engine::doc::{FolderId, LayerId, LayerKind};
+use anima_engine::cmds_drop::{DropAction, DropKind, DropTarget, kind_of, route};
+use anima_engine::doc::{FolderId, LayerId, LayerKind};
 use egui::{Pos2, Rect, Stroke, StrokeKind, pos2, vec2};
 use serde_json::json;
 use std::path::{Path, PathBuf};
@@ -59,7 +59,7 @@ impl TimelineGeo {
     pub fn at(&self, p: Pos2, playhead: u32) -> Option<(LayerId, u32, Rect)> {
         let (row, layer) = *self.rows.iter().find(|(r, _)| r.contains(p))?;
         let cw = self.cell_w.max(1.0);
-        let frame = if p.x >= self.cells_left { ((p.x - self.x0) / cw).floor().clamp(0.0, anicraft_engine::MAX_FRAME as f32) as u32 } else { playhead };
+        let frame = if p.x >= self.cells_left { ((p.x - self.x0) / cw).floor().clamp(0.0, anima_engine::MAX_FRAME as f32) as u32 } else { playhead };
         let left = self.x0 + frame as f32 * cw;
         Some((layer, frame, Rect::from_min_max(pos2(left.max(self.cells_left), row.top()), pos2((left + cw).max(self.cells_left), row.bottom()))))
     }
@@ -97,20 +97,22 @@ pub struct Plan {
 /// Why a file can't go there, in the interface language.
 fn refusal(kind: DropKind, start: bool) -> String {
     match kind {
-        DropKind::Unsupported => tr!("AniCraft opens .anicraft, .fla and .xfl documents, and imports SVG drawings, PNG and JPEG images, and WAV, Ogg and MP3 sounds").into(),
+        DropKind::Unsupported => {
+            tr!("Ánima opens .anima, .fla and .xfl documents, and imports SVG drawings, PNG and JPEG images, and WAV, Ogg and MP3 sounds").into()
+        }
         _ if start => tr!("Open or create a document first, then drop drawings, images and sounds on its stage").into(),
         _ => tr!("Drop drawings, images and sounds on the stage or a layer's frame to place them, or on the Library to add them").into(),
     }
 }
 
-/// What dropping `files` at `spot` does. One document opens (AniCraft has one document
+/// What dropping `files` at `spot` does. One document opens (Ánima has one document
 /// window); other files in the same drop are left out then.
 pub fn plan(files: &[PathBuf], spot: Spot) -> Plan {
     let mut out = Plan::default();
     if let Some(doc) = files.iter().find(|f| kind_of(f) == DropKind::Document) {
         out.open = Some(doc.clone());
         for f in files.iter().filter(|f| *f != doc) {
-            out.left_out.push((f.clone(), tr!("AniCraft opens one document at a time; drop the others on their own").into()));
+            out.left_out.push((f.clone(), tr!("Ánima opens one document at a time; drop the others on their own").into()));
         }
         return out;
     }
@@ -213,7 +215,8 @@ fn drag_pointer(app: &App, ctx: &egui::Context) -> Option<Pos2> {
 /// After the panels drew: the highlight while files hover, and what was dropped.
 pub fn frame(app: &mut App, ctx: &egui::Context) {
     let (hovered, dropped, moved, now) = ctx.input(|i| {
-        let hovered: Vec<PathBuf> = i.raw.hovered_files.iter().map(|h| h.path.clone().unwrap_or_else(|| PathBuf::from(guess_name(&h.mime)))).collect();
+        let hovered: Vec<PathBuf> =
+            i.raw.hovered_files.iter().map(|h| h.path.clone().unwrap_or_else(|| PathBuf::from(guess_name(&h.mime)))).collect();
         let moved = i.events.iter().any(|e| matches!(e, egui::Event::PointerMoved(_)));
         (hovered, i.raw.dropped_files.clone(), moved, i.time)
     });
@@ -226,9 +229,9 @@ pub fn frame(app: &mut App, ctx: &egui::Context) {
         highlight(app, ctx, &files, p);
     }
     if !dropped.is_empty() {
-        let files: Vec<PathBuf> = dropped.iter().take(anicraft_engine::cmds_drop::MAX_DROPPED).map(|f| f.path().to_path_buf()).collect();
-        if dropped.len() > anicraft_engine::cmds_drop::MAX_DROPPED {
-            app.status_err(tr!("Drop at most {n} files at once", n = anicraft_engine::cmds_drop::MAX_DROPPED));
+        let files: Vec<PathBuf> = dropped.iter().take(anima_engine::cmds_drop::MAX_DROPPED).map(|f| f.path().to_path_buf()).collect();
+        if dropped.len() > anima_engine::cmds_drop::MAX_DROPPED {
+            app.status_err(tr!("Drop at most {n} files at once", n = anima_engine::cmds_drop::MAX_DROPPED));
             app.drop.tracked = false;
             return;
         }
@@ -288,7 +291,7 @@ fn resolve_waiting(app: &mut App, _ctx: &egui::Context, _moved: bool, _now: f64)
     for (name, data) in read {
         // Only the name: the browser never says which folder a file came from.
         let path = PathBuf::from(&name);
-        match data.and_then(|d| anicraft_engine::vfs::put(&path, d).map_err(|e| e.to_string())) {
+        match data.and_then(|d| anima_engine::vfs::put(&path, d).map_err(|e| e.to_string())) {
             Ok(()) => files.push(path),
             Err(e) => app.status_err(tr!("Could not open {name}: {e}", name = name, e = e)),
         }
@@ -307,7 +310,11 @@ pub fn run(app: &mut App, files: &[PathBuf], spot: Spot) {
         app.start = None;
         app.request("file.open", json!({"path": doc.display().to_string()}));
         if let Some((_, why)) = plan.left_out.first() {
-            app.status_ok(tr!("Left out {files}: {why}", files = names(&plan.left_out.iter().map(|(p, _)| p.clone()).collect::<Vec<_>>()), why = why));
+            app.status_ok(tr!(
+                "Left out {files}: {why}",
+                files = names(&plan.left_out.iter().map(|(p, _)| p.clone()).collect::<Vec<_>>()),
+                why = why
+            ));
         }
         return;
     }
@@ -330,12 +337,14 @@ pub fn run(app: &mut App, files: &[PathBuf], spot: Spot) {
                 // The last file added is the Library's current item.
                 let last = v["items"].as_array().and_then(|a| a.last()).cloned().unwrap_or_default();
                 match (last["bitmap"].as_u64(), last["sound"].as_u64()) {
-                    (Some(b), _) => app.library_sel = Some(anicraft_engine::doc::LibraryItem::Bitmap(anicraft_engine::doc::BitmapId(b))),
-                    (None, Some(snd)) => app.library_sel = Some(anicraft_engine::doc::LibraryItem::Sound(anicraft_engine::doc::SoundId(snd))),
+                    (Some(b), _) => app.library_sel = Some(anima_engine::doc::LibraryItem::Bitmap(anima_engine::doc::BitmapId(b))),
+                    (None, Some(snd)) => app.library_sel = Some(anima_engine::doc::LibraryItem::Sound(anima_engine::doc::SoundId(snd))),
                     _ => {}
                 }
                 match folder.and_then(|f| app.s.doc.folder(f)).map(|f| f.name.clone()) {
-                    Some(name) => trn!("Added {n} file to “{folder}” in the Library", "Added {n} files to “{folder}” in the Library", n, folder = name),
+                    Some(name) => {
+                        trn!("Added {n} file to “{folder}” in the Library", "Added {n} files to “{folder}” in the Library", n, folder = name)
+                    }
                     None => trn!("Added {n} file to the Library", "Added {n} files to the Library", n),
                 }
             })
@@ -348,9 +357,23 @@ pub fn run(app: &mut App, files: &[PathBuf], spot: Spot) {
                 let name = app.s.timeline().layer(layer).map(|l| l.name.clone()).unwrap_or_default();
                 let (frame, undo) = (frame + 1, app.undo_key());
                 if v["keyframe_made"].as_bool() == Some(true) {
-                    trn!("Placed {n} file on {layer} at frame {frame}, in a new keyframe — {undo} to undo", "Placed {n} files on {layer} at frame {frame}, in a new keyframe — {undo} to undo", n, layer = name, frame = frame, undo = undo)
+                    trn!(
+                        "Placed {n} file on {layer} at frame {frame}, in a new keyframe — {undo} to undo",
+                        "Placed {n} files on {layer} at frame {frame}, in a new keyframe — {undo} to undo",
+                        n,
+                        layer = name,
+                        frame = frame,
+                        undo = undo
+                    )
                 } else {
-                    trn!("Placed {n} file on {layer} at frame {frame} — {undo} to undo", "Placed {n} files on {layer} at frame {frame} — {undo} to undo", n, layer = name, frame = frame, undo = undo)
+                    trn!(
+                        "Placed {n} file on {layer} at frame {frame} — {undo} to undo",
+                        "Placed {n} files on {layer} at frame {frame} — {undo} to undo",
+                        n,
+                        layer = name,
+                        frame = frame,
+                        undo = undo
+                    )
                 }
             })
         }
@@ -369,9 +392,23 @@ pub fn run(app: &mut App, files: &[PathBuf], spot: Spot) {
                 let layer = app.s.active_layer().map(|l| l.name.clone()).unwrap_or_default();
                 let (frame, undo) = (app.s.frame + 1, app.undo_key());
                 if centred {
-                    trn!("Placed {n} file on {layer} at frame {frame}, in the middle of the view — {undo} to undo", "Placed {n} files on {layer} at frame {frame}, in the middle of the view — {undo} to undo", n, layer = layer, frame = frame, undo = undo)
+                    trn!(
+                        "Placed {n} file on {layer} at frame {frame}, in the middle of the view — {undo} to undo",
+                        "Placed {n} files on {layer} at frame {frame}, in the middle of the view — {undo} to undo",
+                        n,
+                        layer = layer,
+                        frame = frame,
+                        undo = undo
+                    )
                 } else {
-                    trn!("Placed {n} file on {layer} at frame {frame} — {undo} to undo", "Placed {n} files on {layer} at frame {frame} — {undo} to undo", n, layer = layer, frame = frame, undo = undo)
+                    trn!(
+                        "Placed {n} file on {layer} at frame {frame} — {undo} to undo",
+                        "Placed {n} files on {layer} at frame {frame} — {undo} to undo",
+                        n,
+                        layer = layer,
+                        frame = frame,
+                        undo = undo
+                    )
                 }
             })
         }
@@ -389,7 +426,7 @@ pub fn run(app: &mut App, files: &[PathBuf], spot: Spot) {
 /// the Dock icon, Open With; ADR 0062). The first document opens as a drop on the window would,
 /// through the unsaved-changes guard; nothing is imported this way.
 pub fn open_from_system(app: &mut App, files: &[PathBuf]) {
-    let files: Vec<PathBuf> = files.iter().take(anicraft_engine::cmds_drop::MAX_DROPPED).cloned().collect();
+    let files: Vec<PathBuf> = files.iter().take(anima_engine::cmds_drop::MAX_DROPPED).cloned().collect();
     if files.iter().any(|f| kind_of(f) == DropKind::Document) {
         app.playing = false;
         run(app, &files, Spot::Window);
@@ -466,7 +503,11 @@ fn highlight(app: &App, ctx: &egui::Context, files: &[PathBuf], p: Option<Pos2>)
     };
     if let Some(doc) = docs.first() {
         painter.rect_stroke(screen, T.rc(), stroke, StrokeKind::Inside);
-        let text = if app.s.is_dirty() { tr!("Open {name} (you'll be asked about unsaved changes)", name = crate::recent::display_name(doc)) } else { tr!("Open {name}", name = crate::recent::display_name(doc)) };
+        let text = if app.s.is_dirty() {
+            tr!("Open {name} (you'll be asked about unsaved changes)", name = crate::recent::display_name(doc))
+        } else {
+            tr!("Open {name}", name = crate::recent::display_name(doc))
+        };
         label(screen.center_top() + vec2(-120.0, 12.0), text, true);
         return;
     }
@@ -487,12 +528,18 @@ fn highlight(app: &App, ctx: &egui::Context, files: &[PathBuf], p: Option<Pos2>)
             painter.line_segment([p - vec2(0.0, r), p + vec2(0.0, r)], Stroke::new(1.5, T.accent));
             let ok = fits(DropTarget::Stage);
             let layer = app.s.active_layer().map(|l| l.name.clone()).unwrap_or_default();
-            let text = if ok { tr!("Place {what} on {layer} at frame {frame}", what = what, layer = layer, frame = app.s.frame + 1) } else { refusal(DropKind::Unsupported, false) };
+            let text = if ok {
+                tr!("Place {what} on {layer} at frame {frame}", what = what, layer = layer, frame = app.s.frame + 1)
+            } else {
+                refusal(DropKind::Unsupported, false)
+            };
             label(p + vec2(14.0, 12.0), text, ok);
         }
         (Spot::Timeline(layer, frame), Some(p)) => {
             // The row outlined and the frame's cell filled: where it lands.
-            if let Some((row, cell)) = app.drop.timeline.as_ref().and_then(|t| Some((t.rows.iter().find(|(_, l)| *l == layer)?.0, t.at(p, app.s.frame)?.2))) {
+            if let Some((row, cell)) =
+                app.drop.timeline.as_ref().and_then(|t| Some((t.rows.iter().find(|(_, l)| *l == layer)?.0, t.at(p, app.s.frame)?.2)))
+            {
                 painter.rect_stroke(row, crate::theme::SQUARE, Stroke::new(1.5, T.accent), StrokeKind::Inside);
                 painter.rect_filled(cell, crate::theme::SQUARE, T.accent.gamma_multiply(0.45));
                 painter.rect_stroke(cell, crate::theme::SQUARE, stroke, StrokeKind::Inside);
@@ -533,7 +580,11 @@ fn highlight(app: &App, ctx: &egui::Context, files: &[PathBuf], p: Option<Pos2>)
         (Spot::Unknown, _) => {
             // The desktop doesn't say where the pointer is during a drag: say what each place does.
             painter.rect_stroke(screen, T.rc(), Stroke::new(1.5, T.accent), StrokeKind::Inside);
-            label(screen.center_top() + vec2(-180.0, 12.0), tr!("Drop {what} on the stage or a layer's frame to place it, or on the Library to add it", what = what), true);
+            label(
+                screen.center_top() + vec2(-180.0, 12.0),
+                tr!("Drop {what} on the stage or a layer's frame to place it, or on the Library to add it", what = what),
+                true,
+            );
         }
         (spot, p) => {
             let at = p.unwrap_or(screen.center_top()) + vec2(14.0, 12.0);
@@ -558,16 +609,16 @@ mod tests {
     fn drops_are_routed_by_type_and_target() {
         // A document opens wherever it lands, and only one at a time.
         for spot in [Spot::Stage(1.0, 2.0), Spot::Library(None), Spot::Timeline(LayerId(1), 0), Spot::Window, Spot::Start, Spot::Unknown] {
-            let plan = plan(&[p("walk.anicraft"), p("photo.png"), p("old.fla")], spot);
-            assert_eq!(plan.open, Some(p("walk.anicraft")), "{spot:?}");
+            let plan = plan(&[p("walk.anima"), p("photo.png"), p("old.fla")], spot);
+            assert_eq!(plan.open, Some(p("walk.anima")), "{spot:?}");
             assert!(plan.import.is_empty());
             assert_eq!(plan.left_out.len(), 2);
         }
         let plan_at = |spot| plan(&[p("a.svg"), p("b.png"), p("c.mp3"), p("d.psd")], spot);
-        // On the stage: everything AniCraft reads, the rest left out with a reason.
+        // On the stage: everything Ánima reads, the rest left out with a reason.
         let on_stage = plan_at(Spot::Stage(10.0, 20.0));
         assert_eq!((on_stage.to, on_stage.import.len(), on_stage.left_out.len()), (Some(DropTarget::Stage), 3, 1));
-        assert!(on_stage.left_out[0].1.contains("SVG"), "says what AniCraft reads");
+        assert!(on_stage.left_out[0].1.contains("SVG"), "says what Ánima reads");
         // On the Library: drawings (as graphic symbols), images and sounds.
         let in_library = plan_at(Spot::Library(Some(FolderId(7))));
         assert_eq!((in_library.to, in_library.import.len(), in_library.left_out.len()), (Some(DropTarget::Library), 3, 1));
@@ -589,7 +640,7 @@ mod tests {
     #[test]
     fn a_drop_lands_where_the_layout_says() {
         let ctx = egui::Context::default();
-        let mut app = App::with_context(&ctx, anicraft_engine::Session::new(anicraft_engine::doc::sample::demo()), Some(PathBuf::from("unused.png")));
+        let mut app = App::with_context(&ctx, anima_engine::Session::new(anima_engine::doc::sample::demo()), Some(PathBuf::from("unused.png")));
         app.run("library.new_folder", json!({"name": "Props"}));
         let screen = egui::RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(1600.0, 940.0))), ..Default::default() };
         for _ in 0..3 {
@@ -619,12 +670,12 @@ mod tests {
 
     #[test]
     fn dropped_media_land_on_the_stage_or_in_a_library_folder() {
-        let dir = std::env::temp_dir().join(format!("anicraft-shell-drop-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("anima-shell-drop-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let png = dir.join("dot.png");
-        std::fs::write(&png, anicraft_engine::render::encode_png(2, 2, &[200u8; 16]).unwrap()).unwrap();
+        std::fs::write(&png, anima_engine::render::encode_png(2, 2, &[200u8; 16]).unwrap()).unwrap();
         let ctx = egui::Context::default();
-        let mut app = App::with_context(&ctx, anicraft_engine::Session::new(anicraft_engine::doc::sample::demo()), Some(PathBuf::from("unused.png")));
+        let mut app = App::with_context(&ctx, anima_engine::Session::new(anima_engine::doc::sample::demo()), Some(PathBuf::from("unused.png")));
         let bitmaps = app.s.doc.bitmaps.len();
         run(&mut app, std::slice::from_ref(&png), Spot::Stage(50.0, 40.0));
         assert_eq!(app.s.doc.bitmaps.len(), bitmaps + 1);
@@ -639,7 +690,13 @@ mod tests {
         let undo = app.s.history_len();
         run(&mut app, std::slice::from_ref(&png), Spot::Timeline(star, 9));
         assert_eq!(app.s.history_len(), undo + 1);
-        assert!(app.s.timeline().layer(star).and_then(|l| l.keyframe_at(9)).is_some_and(|k| k.start == 9 && k.elements.iter().any(|e| app.s.selection.contains(star, e.id))));
+        assert!(
+            app.s
+                .timeline()
+                .layer(star)
+                .and_then(|l| l.keyframe_at(9))
+                .is_some_and(|k| k.start == 9 && k.elements.iter().any(|e| app.s.selection.contains(star, e.id)))
+        );
         assert!(app.status.as_ref().is_some_and(|s| !s.error && s.text.contains("new keyframe")), "{:?}", app.status.as_ref().map(|s| &s.text));
         // A locked layer says why, and nothing changes.
         app.s.layer = star;
@@ -653,7 +710,7 @@ mod tests {
         assert!(app.s.doc == before);
         assert!(app.status.as_ref().is_some_and(|s| s.error && s.text.contains("notes.txt")));
         // A document over unsaved work asks first.
-        run(&mut app, &[dir.join("other.anicraft")], Spot::Stage(0.0, 0.0));
+        run(&mut app, &[dir.join("other.anima")], Spot::Stage(0.0, 0.0));
         assert!(app.confirm.is_some());
     }
 
@@ -662,18 +719,21 @@ mod tests {
     #[test]
     fn documents_the_system_hands_over_open_through_the_guard() {
         use crate::platform::{SystemRequest, push_request};
-        let dir = std::env::temp_dir().join(format!("anicraft-shell-system-open-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("anima-shell-system-open-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        let (walk, other) = (dir.join("walk.anicraft"), dir.join("other.anicraft"));
+        let (walk, other) = (dir.join("walk.anima"), dir.join("other.anima"));
         for f in [&walk, &other] {
-            let mut s = anicraft_engine::Session::new(anicraft_engine::doc::sample::demo());
+            let mut s = anima_engine::Session::new(anima_engine::doc::sample::demo());
             s.execute("file.save", &json!({"path": f.display().to_string()})).unwrap();
         }
         let ctx = egui::Context::default();
-        let mut app = App::with_context(&ctx, anicraft_engine::Session::new(anicraft_engine::doc::sample::demo()), Some(PathBuf::from("unused.png")));
+        let mut app = App::with_context(&ctx, anima_engine::Session::new(anima_engine::doc::sample::demo()), Some(PathBuf::from("unused.png")));
         crate::start::open(&mut app);
         let frame = |app: &mut App| {
-            let mut out = ctx.run_ui(egui::RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(1600.0, 940.0))), ..Default::default() }, |ui| app.frame(ui));
+            let mut out = ctx
+                .run_ui(egui::RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(1600.0, 940.0))), ..Default::default() }, |ui| {
+                    app.frame(ui)
+                });
             out.textures_delta.clear();
             out
         };
@@ -692,7 +752,7 @@ mod tests {
         assert!(app.confirm.as_ref().is_some_and(|c| c.id == "file.open"), "the unsaved-changes guard asks");
         assert_eq!(app.s.path.as_deref(), Some(walk.as_path()));
         app.confirm = None;
-        // Only files AniCraft can't open: one clear message, nothing else.
+        // Only files Ánima can't open: one clear message, nothing else.
         push_request(SystemRequest::Open(vec![dir.join("notes.txt")]));
         frame(&mut app);
         assert!(app.status.as_ref().is_some_and(|s| s.error && s.text.contains("notes.txt")));

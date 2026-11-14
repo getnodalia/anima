@@ -2,8 +2,8 @@
 
 use crate::Session;
 use crate::cmds_erase::measure_els;
-use anicraft_doc::{ElementKind, Paint, Rgba, Shape};
-use anicraft_geom::{Affine, Vec2};
+use anima_doc::{ElementKind, Paint, Rgba, Shape};
+use anima_geom::{Affine, Vec2};
 use serde_json::{Value, json};
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -11,7 +11,7 @@ fn run(s: &mut Session, id: &str, p: Value) -> Value {
 }
 
 fn blank(object: bool) -> Session {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.object_drawing", json!({"on": object}));
     s
 }
@@ -81,7 +81,7 @@ fn erasing_a_band_out_of_a_rectangle_leaves_the_analytic_area() {
     assert_eq!(top_at(&s, Vec2::new(200.0, 150.0)), None);
     assert_eq!(top_at(&s, Vec2::new(150.0, 150.0)), Some(Rgba::hex(0x0000ff)));
     // The CPU renderer agrees (the oracle): the stage shows through the band.
-    let img = anicraft_render::render_frame(&s.doc, 0, 1.0).unwrap();
+    let img = anima_render::render_frame(&s.doc, 0, 1.0).unwrap();
     let bg = s.doc.stage.background;
     let (gap, kept) = (img.pixel(200, 150).unwrap(), img.pixel(150, 150).unwrap());
     assert!((gap[0] - bg.r).abs() < 0.02 && (gap[2] - bg.b).abs() < 0.02, "{gap:?}");
@@ -120,7 +120,8 @@ fn two_fills() -> Session {
 }
 
 fn fill_area(s: &Session, c: u32) -> f64 {
-    let els: Vec<_> = s.visible_elements().into_iter().filter(|e| matches!(&e.kind, ElementKind::Shape(sh) if fill_of(sh) == Some(Rgba::hex(c)))).collect();
+    let els: Vec<_> =
+        s.visible_elements().into_iter().filter(|e| matches!(&e.kind, ElementKind::Shape(sh) if fill_of(sh) == Some(Rgba::hex(c)))).collect();
     measure_els(&els).0
 }
 
@@ -131,16 +132,31 @@ fn erase_selected_fills_and_erase_inside_keep_the_other_fills() {
     let mut s = two_fills();
     let r = run(&mut s, "draw.erase", json!({"points": band, "size": 20, "mode": "selected_fills"}));
     assert_eq!(r["erased"], false, "nothing selected, nothing erased");
-    let blue = s.visible_elements().iter().find(|e| matches!(&e.kind, ElementKind::Shape(sh) if fill_of(sh) == Some(Rgba::hex(0x0000ff)))).map(|e| e.id.0).unwrap();
+    let blue = s
+        .visible_elements()
+        .iter()
+        .find(|e| matches!(&e.kind, ElementKind::Shape(sh) if fill_of(sh) == Some(Rgba::hex(0x0000ff))))
+        .map(|e| e.id.0)
+        .unwrap();
     run(&mut s, "element.select", json!({"ids": [blue]}));
     run(&mut s, "draw.erase", json!({"points": band, "size": 20, "mode": "selected_fills"}));
-    assert!(near(fill_area(&s, 0x0000ff), 8_000.0, 30.0) && near(fill_area(&s, 0xff0000), 10_000.0, 0.01), "{} {}", fill_area(&s, 0x0000ff), fill_area(&s, 0xff0000));
+    assert!(
+        near(fill_area(&s, 0x0000ff), 8_000.0, 30.0) && near(fill_area(&s, 0xff0000), 10_000.0, 0.01),
+        "{} {}",
+        fill_area(&s, 0x0000ff),
+        fill_area(&s, 0xff0000)
+    );
     assert_eq!(s.selection.len(), 2, "both blue pieces stay selected");
     // Inside: only the fill the stroke starts on (a 50 × 20 band and the round start's half disc).
     let mut s = two_fills();
     run(&mut s, "draw.erase", json!({"points": stroke(150.0, 150.0, 350.0, 150.0), "size": 20, "mode": "inside"}));
     let want = 10_000.0 - 1_000.0 - std::f64::consts::PI * 50.0;
-    assert!(near(fill_area(&s, 0x0000ff), want, 20.0) && near(fill_area(&s, 0xff0000), 10_000.0, 0.01), "{} {}", fill_area(&s, 0x0000ff), fill_area(&s, 0xff0000));
+    assert!(
+        near(fill_area(&s, 0x0000ff), want, 20.0) && near(fill_area(&s, 0xff0000), 10_000.0, 0.01),
+        "{} {}",
+        fill_area(&s, 0x0000ff),
+        fill_area(&s, 0xff0000)
+    );
     // Starting off the artwork erases nothing, and leaves no undo step.
     let steps = s.history_len();
     let r = run(&mut s, "draw.erase", json!({"points": stroke(50.0, 150.0, 350.0, 150.0), "size": 20, "mode": "inside"}));
@@ -234,7 +250,10 @@ fn bad_params_are_errors_and_plug_ins_may_erase() {
 #[test]
 fn an_erased_gradient_keeps_its_gradient_in_both_pieces_where_it_was() {
     let mut s = blank(false);
-    let stops = vec![anicraft_doc::GradientStop { offset: 0.0, color: Rgba::hex(0xff0000) }, anicraft_doc::GradientStop { offset: 1.0, color: Rgba::hex(0x0000ff) }];
+    let stops = vec![
+        anima_doc::GradientStop { offset: 0.0, color: Rgba::hex(0xff0000) },
+        anima_doc::GradientStop { offset: 1.0, color: Rgba::hex(0x0000ff) },
+    ];
     let paint = Paint::linear(Vec2::new(100.0, 100.0), Vec2::new(300.0, 100.0), stops);
     s.style.fill_paint = Some(paint.clone());
     s.style.lock_fill = true;
@@ -250,13 +269,13 @@ fn an_erased_gradient_keeps_its_gradient_in_both_pieces_where_it_was() {
     }
     assert!(near(measure(&s).0, 18_000.0, 40.0));
     // The renderer agrees: left red, right blue, the band empty.
-    let img = anicraft_render::render_frame(&s.doc, 0, 1.0).unwrap();
+    let img = anima_render::render_frame(&s.doc, 0, 1.0).unwrap();
     let (l, r) = (img.pixel(110, 150).unwrap(), img.pixel(290, 150).unwrap());
     assert!(l[0] > 0.85 && l[2] < 0.15 && r[2] > 0.85 && r[0] < 0.15, "{l:?} {r:?}");
 }
 
 /// The raw strokes on the active layer with their profiles, as (start x, end x, profile).
-fn profiled(s: &Session) -> Vec<(f32, f32, Option<anicraft_doc::WidthProfile>)> {
+fn profiled(s: &Session) -> Vec<(f32, f32, Option<anima_doc::WidthProfile>)> {
     shapes(s)
         .into_iter()
         .filter_map(|(sh, m)| {
@@ -270,8 +289,8 @@ fn profiled(s: &Session) -> Vec<(f32, f32, Option<anicraft_doc::WidthProfile>)> 
 #[test]
 fn a_variable_width_stroke_split_by_the_eraser_keeps_its_profile_per_piece() {
     let mut s = blank(false);
-    s.style.set_profile(anicraft_doc::ProfilePreset::TaperBoth);
-    let source = anicraft_doc::ProfilePreset::TaperBoth.profile().unwrap();
+    s.style.set_profile(anima_doc::ProfilePreset::TaperBoth);
+    let source = anima_doc::ProfilePreset::TaperBoth.profile().unwrap();
     run(&mut s, "draw.line", json!({"x0": 100, "y0": 100, "x1": 300, "y1": 100, "stroke": BLACK, "stroke_width": 12}));
     run(&mut s, "edit.deselect", json!({}));
     assert_eq!(profiled(&s).len(), 1, "a variable-width line is raw (ADR 0093)");
@@ -297,16 +316,16 @@ fn a_variable_width_stroke_split_by_the_eraser_keeps_its_profile_per_piece() {
     assert_eq!(s.doc, doc);
     // A line across a variable-width line cuts it too, the profile following each piece.
     let mut t = blank(false);
-    t.style.set_profile(anicraft_doc::ProfilePreset::TaperBoth);
+    t.style.set_profile(anima_doc::ProfilePreset::TaperBoth);
     run(&mut t, "draw.line", json!({"x0": 100, "y0": 100, "x1": 300, "y1": 100, "stroke": BLACK, "stroke_width": 12}));
-    t.style.set_profile(anicraft_doc::ProfilePreset::Uniform);
+    t.style.set_profile(anima_doc::ProfilePreset::Uniform);
     run(&mut t, "draw.line", json!({"x0": 200, "y0": 0, "x1": 200, "y1": 200, "stroke": RED, "stroke_width": 2}));
     let cut: Vec<_> = profiled(&t).into_iter().filter(|p| p.2.is_some()).collect();
     assert_eq!(cut.len(), 2, "{cut:?}");
     // Merging the pieces again (a drop) keeps them as they are.
     let before = profiled(&t);
     let ids: Vec<u64> = t.visible_elements().iter().map(|e| e.id.0).collect();
-    t.select_only(ids.iter().map(|i| anicraft_doc::ElementId(*i)));
+    t.select_only(ids.iter().map(|i| anima_doc::ElementId(*i)));
     run(&mut t, "draw.drop", json!({}));
     let after = profiled(&t);
     assert_eq!(after.len(), before.len());
@@ -340,18 +359,19 @@ fn the_eraser_works_inside_an_open_symbol_and_says_how_on_the_stage() {
     // Opened in place, its raw shapes erase, in the symbol's own space.
     run(&mut s, "symbol.edit", json!({"id": inst}));
     let to_symbol = s.editing.last().map(|l| l.transform).and_then(|m| m.inverse()).unwrap();
-    let pts: Vec<[f32; 2]> = stroke(200.0, 60.0, 200.0, 240.0).into_iter().map(|[x, y]| to_symbol.apply(Vec2::new(x, y))).map(|p| [p.x, p.y]).collect();
+    let pts: Vec<[f32; 2]> =
+        stroke(200.0, 60.0, 200.0, 240.0).into_iter().map(|[x, y]| to_symbol.apply(Vec2::new(x, y))).map(|p| [p.x, p.y]).collect();
     let r = run(&mut s, "draw.erase", json!({"points": pts, "size": 20}));
     assert_eq!(r["erased"], true, "{r}");
     run(&mut s, "symbol.exit", json!({"all": true}));
     // The instance on the stage shows the cut (the renderer, the oracle).
-    let img = anicraft_render::render_frame(&s.doc, 0, 1.0).unwrap();
+    let img = anima_render::render_frame(&s.doc, 0, 1.0).unwrap();
     let bg = s.doc.stage.background;
     let (gap, kept) = (img.pixel(200, 150).unwrap(), img.pixel(150, 150).unwrap());
     assert!((gap[2] - bg.b).abs() < 0.02 && (gap[0] - bg.r).abs() < 0.02, "{gap:?}");
     assert!(kept[2] > 0.9, "{kept:?}");
     // One undo step puts the symbol back whole.
     run(&mut s, "edit.undo", json!({}));
-    let img = anicraft_render::render_frame(&s.doc, 0, 1.0).unwrap();
+    let img = anima_render::render_frame(&s.doc, 0, 1.0).unwrap();
     assert!(img.pixel(200, 150).unwrap()[2] > 0.9);
 }

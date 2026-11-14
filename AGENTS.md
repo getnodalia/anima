@@ -1,10 +1,20 @@
 # AGENTS.md: guide for AI agents and contributors
 
-AniCraft is an open-source, native, clean-room 2D animation studio (Adobe Animate class), written
-in **Rust only**. There is no Tauri, Electron or webview. The UI is egui/eframe. The product name
-is written **AniCraft**; machine names are lowercase (`anicraft-*`). Read `docs/` first.
+Engineering rules for every Nodalia repository: [getnodalia/foundation](https://github.com/getnodalia/foundation)
+([engineering](https://github.com/getnodalia/foundation/blob/main/standards/engineering.md),
+[CI](https://github.com/getnodalia/foundation/blob/main/standards/ci.md),
+[security](https://github.com/getnodalia/foundation/blob/main/standards/security.md),
+[dependencies and licences](https://github.com/getnodalia/foundation/blob/main/standards/dependencies.md),
+[release](https://github.com/getnodalia/foundation/blob/main/standards/release.md),
+[NDL](https://github.com/getnodalia/foundation/blob/main/standards/ndl.md)).
 
-## Workspace map
+## What this is
+
+Ánima is an open-source, native, clean-room 2D animation studio (Adobe Animate class), written
+in **Rust only**. There is no Tauri, Electron or webview. The UI is egui/eframe. The product name
+is written **Ánima**; machine names are lowercase (`anima-*`). Read `docs/` first.
+
+## Architecture: workspace map
 
 ```text
 crates/geom     L0  Vec2, Affine (decompose/compose), Rect, Path, flattening, hit testing
@@ -18,9 +28,9 @@ crates/text     L1  Fonts on this computer, shaping and line layout into outline
 crates/render   L2  CPU oracle renderer (coverage accumulation, paints, strokes, PNG)
 crates/xfl      L2  XFL/FLA import: own XML + zip readers, edges → paths (ADR 0009)
 crates/svg      L2  SVG import: shapes, groups, use, styles, gradients, clips/masks → mask layers, text
-crates/engine   L3  Session, undo (with gesture coalescing), command registry, .anicraft format
+crates/engine   L3  Session, undo (with gesture coalescing), command registry, .anima format
 crates/gpu      L3  wgpu stage renderer (the default stage): tile binning, compute coverage, bitmaps, filters (ADR 0019, 0029, 0032)
-crates/cli      L4  anicraft-cli: info/render/render-seq/commands/exec/run/new/guide/serve/mcp
+crates/cli      L4  anima-cli: info/render/render-seq/commands/exec/run/new/guide/serve/mcp
 src/            L5  egui shell (app, menus, stage, timeline, panels, theme)
 ```
 
@@ -76,7 +86,9 @@ a new crate needs a row here and in its `LAYERS` table.
 
 ## Licensing and legal compliance (read `docs/legal/compliance.md`)
 
-* AniCraft is **MIT OR Apache-2.0**, like PhotoCraft (`LICENSE-MIT`, `LICENSE-APACHE`, `NOTICE`).
+* Ánima is **MIT OR Apache-2.0** (`LICENSE-MIT`, `LICENSE-APACHE`, `NOTICE`). `NOTICE` keeps the
+  upstream copyright line and says where the code base began; credit the origin there and in
+  About only, never in the README, the website or the interface.
 * **Dependencies**: permissive only, from crates.io only. `deny.toml` is the policy, and
   `cargo deny check licenses bans sources` must pass. Adding a crate with a new licence needs
   a deliberate `deny.toml` change and a note in `compliance.md`. No copyleft, "non-commercial"
@@ -92,7 +104,7 @@ a new crate needs a row here and in its `LAYERS` table.
 
 ## Version control
 
-* Git. Remote `origin` = `https://github.com/storytold/AniCraft` (public). `main` is the
+* Git. Remote `origin` = `https://github.com/getnodalia/anima` (public). `main` is the
   development branch; it begins with "Initial commit v0.1.0 early alpha", and contributors are
   credited in `AUTHORS.md`.
 * **Every change reaches `main` through a pull request** from a topic branch (`feat/…`, `fix/…`,
@@ -100,7 +112,7 @@ a new crate needs a row here and in its `LAYERS` table.
   Never commit or push to `main` directly. `core.hooksPath` points at `scripts/git-hooks`:
   `pre-commit` refuses commits on `main`, and `pre-push` refuses pushes to the remote `main`.
   Run `git config core.hooksPath scripts/git-hooks` once per clone.
-* Branches marked hidden in your local git config (`git config --add anicraft.hidden <branch>`)
+* Branches marked hidden in your local git config (`git config --add anima.hidden <branch>`)
   never leave the machine: `pre-push` refuses them and anything built on them.
 * **Milestone tracks.** Milestones that don't depend on unfinished work run in parallel, one
   agent per track (`docs/roadmap.md` › Parallel tracks). Each track works in its own git
@@ -122,7 +134,33 @@ a new crate needs a row here and in its `LAYERS` table.
 * Commit in small, green steps (build + tests pass), with conventional messages:
   `feat(render): …`, `fix(engine): …`, `docs: …`, `perf: …`, `test: …`. Record measured
   numbers in `perf:` commit bodies.
-* Never commit `target/`, screenshots (`shots/`), exports or `.anicraft` user files.
+* Never commit `target/`, screenshots (`shots/`), exports or `.anima` user files.
+
+## Nodalia
+
+* **Names.** Every name is Ánima's, internal ones included: `anima` in machine names, **Ánima**
+  in prose and the interface, app id `dev.danielmiguelt.Anima`. Documents save as `.anima`;
+  `.anicraft` files keep opening, and the `"format"` signature inside a document and the plug-in <!-- rebrand: keep -->
+  host module keep their old value, because existing files and plug-ins depend on them (each such
+  line says `rebrand: keep`). `python3 scripts/rebrand.py check` fails when an old name comes back.
+* **Upstream sync.** `.github/workflows/upstream-sync.yml` brings upstream's changes in weekly,
+  renamed by `scripts/rebrand.py` with `.github/rebrand.toml` (`docs/upstream.md`). Files this
+  project owns are listed in `.github/upstream-keep`; add any new one there.
+* **Dependencies** come from crates.io or from getnodalia (`getnodalia/foundation`'s `vendor/*`
+  branches, `danielmigueltejedor/nodalia-design`), pinned by revision. Nothing depends on
+  storytold or ArtCraft repositories or services. <!-- rebrand: keep -->
+* **NDL.** Ánima belongs to the Creator suite of the Nodalia Design Language. What is done and
+  what is left is in `NODALIA_MIGRATION.md`; colours come from the theme tokens, NDL window
+  controls on Linux only, native ones on macOS and Windows. No GTK or libadwaita.
+* **CI** runs on standard GitHub-hosted runners only, actions pinned to a commit SHA, least
+  permissions. Keep CI changes in their own pull request unless a change cannot work without them.
+
+## Release
+
+A pull request that sets `[workspace.package] version` to a release
+version and adds `docs/release-notes/vX.Y.Z.md` (format in that folder's README) releases it
+when it merges: `release-auto.yml` tags it through Foundation's `release-tag`, builds the
+Linux, macOS (unsigned DMG) and Windows packages and publishes the release. Nobody pushes a tag.
 
 ## Build hygiene (disk first, then time; `docs/development.md` › Build footprint)
 
@@ -133,7 +171,7 @@ a new crate needs a row here and in its `LAYERS` table.
   locally if you need a debugger.
 * After profile or feature changes, run `cargo clean` once (with the app closed).
 
-## Before you finish
+## Build and test (before you finish)
 
 ```sh
 cargo test

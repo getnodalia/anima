@@ -2,8 +2,8 @@
 //! settings, persistence, and the snap engine's priorities at several zooms.
 
 use crate::Session;
-use anicraft_doc::{Document, GuideAxis};
-use anicraft_geom::Vec2;
+use anima_doc::{Document, GuideAxis};
+use anima_geom::Vec2;
 use serde_json::{Value, json};
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -121,7 +121,7 @@ fn settings_are_checked_and_toggles_take_no_undo_step() {
         assert!(s.execute("view.grid_set", &p).is_err(), "{p}");
     }
     assert!(s.execute("view.guides_set", &json!({"accuracy": "always"})).is_err(), "guides never always snap");
-    assert_eq!(*s.doc.aids, anicraft_doc::Aids::default(), "nothing changed on a refusal");
+    assert_eq!(*s.doc.aids, anima_doc::Aids::default(), "nothing changed on a refusal");
     run(&mut s, "view.grid_set", json!({"spacing": 50}));
     assert_eq!(s.undo_label(), Some("Edit Grid…"));
     run(&mut s, "edit.undo", json!({}));

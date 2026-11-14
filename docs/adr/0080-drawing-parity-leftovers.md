@@ -7,7 +7,7 @@
 
 ## Context
 
-The user guide's drawing chapter listed everyday Animate drawing features AniCraft still
+The user guide's drawing chapter listed everyday Animate drawing features Ánima still
 lacked: PolyStar's Polygon option, the Brush's Paint Selection and Paint Inside modes, entering a
 drawing object with a double-click, Envelope (and Delete Envelope), and gradient and bitmap
 strokes. Artists coming from Animate reach for these without thinking. We learned the behaviour
@@ -29,7 +29,7 @@ centre (needle points); between, the depth is proportional. Animate documents on
 "closer to 0, narrower points", which this matches. An explicit `inner` radius still wins, so
 older scripts draw what they drew. The outline goes through `add_shape`, so it merges or is a
 drawing object exactly as the other shape tools (ADR 0031). Geometry: `Path::polystar`,
-`polystar_corners`, `star_inner_radius` in `anicraft_geom`, tested analytically (polygon area
+`polystar_corners`, `star_inner_radius` in `anima_geom`, tested analytically (polygon area
 n/2 · r² · sin(2π/n), star area n · r · r_in · sin(π/n)).
 
 ### 2. Paint Selection and Paint Inside
@@ -77,7 +77,7 @@ for no visible difference.
 
 **Modify › Transform › Envelope** opens an envelope on the selected shapes and drawing objects
 (not symbols, text, groups or bitmaps, as in Animate). The bend is a **bicubic Bézier patch**
-(`anicraft_geom::envelope`): 4 × 4 control points over the selection's outline bounds. At rest
+(`anima_geom::envelope`): 4 × 4 control points over the selection's outline bounds. At rest
 they are a third of the way apart and the map is exactly the identity (Bernstein polynomials
 reproduce linear functions; tested command for command). The shell shows the 12 boundary
 handles: squares for corners (a corner's two tangents move with it) and circles for tangents.

@@ -22,7 +22,7 @@ A build that compiles can still trap on the first clock call, so "it builds" is 
 
 ## Decision
 
-1. **One program, two targets.** The `anicraft` binary is the web editor when built for
+1. **One program, two targets.** The `anima` binary is the web editor when built for
    wasm32: `main` calls `web::start`, which runs the editor on the page's canvas. There is no
    second app crate. Desktop-only code stays compiled but unused there (the crate allows dead
    code on wasm32 only). OS-specific decisions stay in `platform.rs` (ADR 0006); `src/web.rs`
@@ -33,14 +33,14 @@ A build that compiles can still trap on the first clock call, so "it builds" is 
    function is the `std::fs` call it names, so nothing changes there. In the browser it is an
    in-memory store (bounded at 1 GiB, paths normalized, `..` refused). The shell puts a picked
    file into it and runs the same command with that path (`file.open {"path":
-   "walk.anicraft"}`), and after any `file.*` command hands what was written to the browser as
+   "walk.anima"}`), and after any `file.*` command hands what was written to the browser as
    downloads (`vfs::take_written`, which also empties the store). So every command keeps its
    one implementation for the editor, the CLI, MCP and the web, and the downloaded name is the
    document's name. Files are written on the command's thread, never from the rayon pool (the
    PNG sequence now renders in parallel batches and writes after each). The store is per
    thread so native tests can switch one thread to it (`vfs::use_memory`); the commands'
    browser behaviour is tested natively that way.
-   * `.fla` archives open from bytes (`anicraft_xfl::import_fla`). XFL folders can't come from
+   * `.fla` archives open from bytes (`anima_xfl::import_fla`). XFL folders can't come from
      a browser and say so.
    * `file.open` gains `unsaved?` (open as unsaved work) and `untitled?` (with no file name),
      which the browser's Restore uses. Older callers are unaffected.
@@ -53,7 +53,7 @@ A build that compiles can still trap on the first clock call, so "it builds" is 
 
 4. **Autosave goes to the browser's local storage** (ADR 0015 in a browser). `web::BrowserSaver`
    has the desktop `Autosaver`'s calls (write, clear, poll, finish), so `autosave.rs` keeps one
-   flow; it writes `anicraft.recovery.<session>.doc` and `.meta` synchronously (there is no
+   flow; it writes `anima.recovery.<session>.doc` and `.meta` synchronously (there is no
    thread; serializing is milliseconds for ordinary documents). A tab that is open holds a
    **Web Lock** named after its session for its whole life (the request's promise never
    settles), so at start the copies offered are exactly those of tabs that closed or crashed.
@@ -71,7 +71,7 @@ A build that compiles can still trap on the first clock call, so "it builds" is 
    thread when threads are unsupported (it was built for exactly this), so every `par_iter`
    works unchanged and comes back parallel if the web ever gets threads. Only the
    fire-and-forget drops (`rayon::spawn`) would never run there, so they go through
-   `anicraft_render::drop_in_background`, which drops inline on wasm32. The render service
+   `anima_render::drop_in_background`, which drops inline on wasm32. The render service
    already renders on the caller when no worker starts. Other threads (font scan, sound
    decode) use `Builder::spawn` and simply don't start.
 
@@ -82,7 +82,7 @@ A build that compiles can still trap on the first clock call, so "it builds" is 
 8. **The stage draws on the CPU, and sound is silent, in the first slice.** The `gpu-stage`
    and `sound-output` features become the `gpu_stage` and `sound_output` cfgs (`build.rs`),
    which are off on wasm32. So `cargo build --target wasm32-unknown-unknown` works with the
-   default features, and the web editor needs no special flags. `anicraft-gpu` itself builds
+   default features, and the web editor needs no special flags. `anima-gpu` itself builds
    for wasm32 (its layers plan one after another there, since wgpu's handles aren't `Sync`),
    so a later slice can drive it from eframe's device. The window draws with WebGL2 (glow):
    every current browser has it, and leaving wgpu out of the web shell keeps the download

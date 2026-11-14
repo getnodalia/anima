@@ -7,7 +7,7 @@
 
 ## Context
 
-AniCraft exports animated GIF, video through the user's ffmpeg, Lottie, an HTML canvas page and
+Ánima exports animated GIF, video through the user's ffmpeg, Lottie, an HTML canvas page and
 sprite sheets. GIF has 256 colours per frame and 1-bit transparency: gradients band and soft
 edges get a hard fringe over any background other than the one they were made on. Animators who
 post to the web and chat apps want **full colour with real alpha** in one file that plays

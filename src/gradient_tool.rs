@@ -17,8 +17,8 @@
 use crate::app::{App, Drag, Tool};
 use crate::pathtools::Xf;
 use crate::theme::T;
-use anicraft_engine::doc::{Element, ElementId, ElementKind, MAX_FOCAL, Paint};
-use anicraft_engine::geom::{Affine, Vec2};
+use anima_engine::doc::{Element, ElementId, ElementKind, MAX_FOCAL, Paint};
+use anima_engine::geom::{Affine, Vec2};
 use egui::{Color32, CursorIcon, Pos2, Stroke as Line, StrokeKind, pos2, vec2};
 use serde_json::json;
 
@@ -67,7 +67,7 @@ fn target_of(app: &App, e: &Element) -> Option<Target> {
         Paint::Bitmap { .. } => (Kind::Bitmap, 0.0),
         Paint::Solid(_) => return None,
     };
-    let frame = anicraft_engine::cmds_paint::fill_frame(&app.s.doc, e)?;
+    let frame = anima_engine::cmds_paint::fill_frame(&app.s.doc, e)?;
     frame.inverse()?;
     Some(Target { id: e.id, kind, frame, focal })
 }
@@ -86,7 +86,13 @@ fn handles(t: &Target) -> Vec<(Grip, Vec2)> {
     let ring = |a: f32| Vec2::new(a.cos(), a.sin());
     match t.kind {
         Kind::Linear => vec![(Grip::Move, Vec2::ZERO), (Grip::Width, Vec2::new(1.0, 0.0)), (Grip::Rotate, Vec2::new(1.0, -1.0))],
-        Kind::Radial => vec![(Grip::Move, Vec2::ZERO), (Grip::Focal, Vec2::new(t.focal, 0.0)), (Grip::Width, Vec2::new(1.0, 0.0)), (Grip::Size, ring(SIZE_AT)), (Grip::Rotate, ring(TURN_AT))],
+        Kind::Radial => vec![
+            (Grip::Move, Vec2::ZERO),
+            (Grip::Focal, Vec2::new(t.focal, 0.0)),
+            (Grip::Width, Vec2::new(1.0, 0.0)),
+            (Grip::Size, ring(SIZE_AT)),
+            (Grip::Rotate, ring(TURN_AT)),
+        ],
         Kind::Bitmap => vec![
             (Grip::Move, Vec2::ZERO),
             (Grip::Width, Vec2::new(-1.0, 0.0)),
@@ -236,7 +242,9 @@ pub fn draw_overlay(app: &App, painter: &egui::Painter, xf: Xf, hover: Option<Po
             painter.add(egui::Shape::dashed_line(&[to_px(Vec2::new(-1.0, 0.0)), to_px(Vec2::new(1.0, 0.0))], faint, 4.0, 3.0));
         }
         Kind::Radial => {
-            let ring: Vec<Pos2> = (0..96).map(|k| to_px(Vec2::new((k as f32 / 96.0 * std::f32::consts::TAU).cos(), (k as f32 / 96.0 * std::f32::consts::TAU).sin()))).collect();
+            let ring: Vec<Pos2> = (0..96)
+                .map(|k| to_px(Vec2::new((k as f32 / 96.0 * std::f32::consts::TAU).cos(), (k as f32 / 96.0 * std::f32::consts::TAU).sin())))
+                .collect();
             painter.add(egui::Shape::closed_line(ring, line));
             painter.add(egui::Shape::dashed_line(&[to_px(Vec2::ZERO), to_px(Vec2::new(1.0, 0.0))], faint, 4.0, 3.0));
         }
@@ -301,16 +309,16 @@ mod tests {
     #[test]
     fn a_drag_on_a_handle_is_one_undo_step_on_every_kind_of_fill() {
         let ctx = egui::Context::default();
-        let mut app = App::with_context(&ctx, anicraft_engine::Session::default(), Some(std::path::PathBuf::from("unused.png")));
+        let mut app = App::with_context(&ctx, anima_engine::Session::default(), Some(std::path::PathBuf::from("unused.png")));
         let xf = Xf { origin: pos2(0.0, 0.0), zoom: 1.0 };
         app.tool = Tool::GradientTransform;
         // A solid fill has no handles: picking it says how to get a gradient.
         app.run("draw.rect", json!({"x": 100, "y": 100, "w": 200, "h": 100, "fill": "#ff0000", "stroke": null}));
         pick(&mut app, pos2(150.0, 150.0), xf);
         assert!(target(&app).is_none());
-        let png = anicraft_engine::render::encode_png(4, 2, &[200; 32]).unwrap_or_default();
+        let png = anima_engine::render::encode_png(4, 2, &[200; 32]).unwrap_or_default();
         let id = app.s.doc.alloc_id();
-        app.s.doc.bitmaps.push(std::sync::Arc::new(anicraft_engine::doc::Bitmap::from_png(anicraft_engine::doc::BitmapId(id), "tile.png", png).unwrap()));
+        app.s.doc.bitmaps.push(std::sync::Arc::new(anima_engine::doc::Bitmap::from_png(anima_engine::doc::BitmapId(id), "tile.png", png).unwrap()));
         for (kind, extra) in [("linear", json!({})), ("radial", json!({"focal": 0.3})), ("bitmap", json!({"bitmap": id}))] {
             let mut p = json!({"type": kind});
             if let (Some(o), Some(e)) = (p.as_object_mut(), extra.as_object()) {

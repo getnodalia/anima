@@ -7,7 +7,7 @@
 use crate::cmds_width::{id_param, shape_mut, visible_shape};
 use crate::params::*;
 use crate::{CommandSpec, EngineError, Result, Session};
-use anicraft_doc::{Dash, ElementId, StrokeStyle};
+use anima_doc::{Dash, ElementId, StrokeStyle};
 use serde_json::{Value, json};
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -52,7 +52,8 @@ fn set_style(s: &mut Session, p: &Value) -> Result<Value> {
     for id in &stroked {
         if let Some(st) = shape_mut(s, *id)?.stroke.as_mut() {
             // Each stroke keeps what the params leave out (and sizes a new pattern by its width).
-            let style = opt_stroke_style(p, &st.style, st.width)?.ok_or_else(|| EngineError::Param(format!("give a style to set ({STROKE_STYLE_PARAMS})")))?;
+            let style = opt_stroke_style(p, &st.style, st.width)?
+                .ok_or_else(|| EngineError::Param(format!("give a style to set ({STROKE_STYLE_PARAMS})")))?;
             st.style = style;
             last = Some(st.style.clone());
         }
@@ -65,7 +66,7 @@ fn set_style(s: &mut Session, p: &Value) -> Result<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anicraft_doc::{Cap, ElementKind, Join, Stroke};
+    use anima_doc::{Cap, ElementKind, Join, Stroke};
 
     fn line(s: &mut Session) -> u64 {
         let v = s.execute("draw.line", &json!({"x0": 100, "y0": 100, "x1": 300, "y1": 100, "stroke_width": 4})).unwrap();
@@ -85,7 +86,10 @@ mod tests {
         let id = line(&mut s);
         assert!(stroke(&s, id).unwrap().style.is_default(), "new strokes are round and solid");
         let v = s.execute("stroke.set_style", &json!({"cap": "none", "join": "miter", "miter": 6})).unwrap();
-        assert_eq!((v["cap"].as_str(), v["join"].as_str(), v["miter"].as_f64(), v["changed"].as_u64()), (Some("butt"), Some("miter"), Some(6.0), Some(1)));
+        assert_eq!(
+            (v["cap"].as_str(), v["join"].as_str(), v["miter"].as_f64(), v["changed"].as_u64()),
+            (Some("butt"), Some("miter"), Some(6.0), Some(1))
+        );
         // Dashed with no lengths: sized by the stroke (4 wide: 12 on, 8 off).
         let v = s.execute("stroke.set_style", &json!({"style": "dashed"})).unwrap();
         assert_eq!(v["dash"], json!([12.0, 8.0]));
@@ -97,8 +101,8 @@ mod tests {
         let v = s.execute("stroke.set_style", &json!({"dot_spacing": 3, "id": id})).unwrap();
         assert_eq!((v["style"].as_str(), v["dot_spacing"].as_f64()), (Some("dotted"), Some(3.0)));
         s.undo().unwrap();
-        assert_eq!(stroke(&s, id).unwrap().style.dash_kind(), anicraft_doc::DashKind::Dashed);
-        // The .anicraft file keeps it.
+        assert_eq!(stroke(&s, id).unwrap().style.dash_kind(), anima_doc::DashKind::Dashed);
+        // The .anima file keeps it.
         let text = crate::format::to_json(&s.doc).unwrap();
         assert!(text.contains("\"butt\"") && text.contains("\"lengths\""), "styled strokes are written");
         assert_eq!(crate::format::from_json(&text).unwrap(), s.doc);
@@ -147,7 +151,7 @@ mod tests {
         let v = s.execute("draw.rect", &json!({"x": 400, "y": 400, "w": 50, "h": 40, "stroke": "#000000", "join": "bevel", "dash": [4, 2]})).unwrap();
         let rect = v["element"].as_u64().unwrap();
         let st = stroke(&s, rect).unwrap().style;
-        assert_eq!((st.cap, st.join, st.dash_kind()), (Cap::Square, Join::Bevel, anicraft_doc::DashKind::Dashed));
+        assert_eq!((st.cap, st.join, st.dash_kind()), (Cap::Square, Join::Bevel, anima_doc::DashKind::Dashed));
         // element.set_stroke takes the same params.
         s.execute("element.set_stroke", &json!({"width": 6, "style": "dotted"})).unwrap();
         assert_eq!(stroke(&s, rect).unwrap().style.dash, Dash::dotted(6.0), "dots one width apart");

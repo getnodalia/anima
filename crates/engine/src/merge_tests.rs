@@ -1,7 +1,7 @@
 //! Merge drawing (ADR 0031) through the commands.
 
 use crate::Session;
-use anicraft_doc::{ElementKind, Paint, Rgba, Shape};
+use anima_doc::{ElementKind, Paint, Rgba, Shape};
 use serde_json::json;
 
 fn run(s: &mut Session, id: &str, p: serde_json::Value) -> serde_json::Value {
@@ -10,7 +10,7 @@ fn run(s: &mut Session, id: &str, p: serde_json::Value) -> serde_json::Value {
 
 /// A blank document (no sample artwork), drawing raw shapes.
 fn blank() -> Session {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.object_drawing", json!({"on": false}));
     s
 }
@@ -80,7 +80,7 @@ fn objects_keep_to_themselves() {
     let object = shapes(&s).into_iter().find(|x| !x.merge).map(|x| x.path.bounds());
     assert!(object.is_some_and(|b| (b.width() - 100.0).abs() < 0.01));
     // A new session (scripts) draws objects unless asked.
-    let mut fresh = Session::new(anicraft_doc::Document::default());
+    let mut fresh = Session::new(anima_doc::Document::default());
     run(&mut fresh, "draw.rect", json!({"x": 0, "y": 0, "w": 10, "h": 10, "stroke": "#000000"}));
     assert_eq!(fresh.visible_elements().len(), 1);
     assert_eq!(run(&mut fresh, "draw.object_drawing", json!({}))["object_drawing"], false);
@@ -106,7 +106,10 @@ fn dropping_a_moved_fill_cuts_what_it_lands_on() {
     run(&mut s, "element.translate", json!({"dx": -175, "dy": 25}));
     let r = run(&mut s, "draw.drop", json!({}));
     assert_eq!(r["dropped"], 1);
-    let red = shapes(&s).into_iter().find(|x| x.fill == Some(Paint::Solid(Rgba::hex(0xff0000)))).map(|x| x.path.cmds.iter().filter(|c| matches!(c, anicraft_geom::PathCmd::MoveTo(_))).count());
+    let red = shapes(&s)
+        .into_iter()
+        .find(|x| x.fill == Some(Paint::Solid(Rgba::hex(0xff0000))))
+        .map(|x| x.path.cmds.iter().filter(|c| matches!(c, anima_geom::PathCmd::MoveTo(_))).count());
     assert_eq!(red, Some(2), "the red square has a hole where the blue one landed");
     assert_eq!(s.selection.len(), 1, "the dropped square stays selected");
 }
@@ -130,12 +133,18 @@ fn double_click_selects_connected_strokes_or_a_fill_with_its_outline() {
 fn dashed_raw_strokes_keep_their_style_when_cut() {
     let mut s = blank();
     // A dashed, butt-capped, mitred square outline, then a solid line across it.
-    run(&mut s, "draw.rect", json!({"x": 0, "y": 0, "w": 100, "h": 100, "fill": null, "stroke": "#000000", "stroke_width": 2, "cap": "none", "join": "miter", "dash": [6, 3]}));
+    run(
+        &mut s,
+        "draw.rect",
+        json!({"x": 0, "y": 0, "w": 100, "h": 100, "fill": null, "stroke": "#000000", "stroke_width": 2, "cap": "none", "join": "miter", "dash": [6, 3]}),
+    );
     run(&mut s, "draw.line", json!({"x0": -20, "y0": 50, "x1": 120, "y1": 50, "stroke": "#000000", "stroke_width": 2}));
-    let strokes: Vec<anicraft_doc::Stroke> = shapes(&s).into_iter().filter_map(|x| x.stroke).collect();
-    let dashed = strokes.iter().filter(|st| st.style.dash == anicraft_doc::Dash::dashed(6.0, 3.0)).count();
+    let strokes: Vec<anima_doc::Stroke> = shapes(&s).into_iter().filter_map(|x| x.stroke).collect();
+    let dashed = strokes.iter().filter(|st| st.style.dash == anima_doc::Dash::dashed(6.0, 3.0)).count();
     assert!(dashed >= 5, "the cut sides are pieces, all still dashed: {dashed} of {}", strokes.len());
-    assert!(strokes.iter().filter(|st| st.style.dash.is_some()).all(|st| st.style.cap == anicraft_doc::Cap::Butt && st.style.join == anicraft_doc::Join::Miter));
+    assert!(
+        strokes.iter().filter(|st| st.style.dash.is_some()).all(|st| st.style.cap == anima_doc::Cap::Butt && st.style.join == anima_doc::Join::Miter)
+    );
     assert!(strokes.iter().any(|st| st.style.is_default()), "the solid line stays solid, a style of its own");
     // Saved and loaded, the pieces keep it.
     let back = crate::format::from_json(&crate::format::to_json(&s.doc).unwrap_or_default()).unwrap_or_default();

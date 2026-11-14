@@ -8,10 +8,10 @@ use egui::{Rect, vec2};
 fn labels(tool: Tool, tilt_seen: bool) -> Vec<String> {
     let ctx = egui::Context::default();
     ctx.enable_accesskit();
-    let session = anicraft_engine::Session::new(anicraft_engine::doc::sample::demo());
+    let session = anima_engine::Session::new(anima_engine::doc::sample::demo());
     let mut app = App::with_context(&ctx, session, Some(std::path::PathBuf::from("unused.png")));
     app.tool = tool;
-    crate::brushtool::note_tilt(&mut app, tilt_seen.then_some(anicraft_engine::geom::brush::Tilt { altitude: 40.0, azimuth: 10.0 }));
+    crate::brushtool::note_tilt(&mut app, tilt_seen.then_some(anima_engine::geom::brush::Tilt { altitude: 40.0, azimuth: 10.0 }));
     let mut nodes = Vec::new();
     for _ in 0..4 {
         let input = egui::RawInput { screen_rect: Some(Rect::from_min_size(egui::Pos2::ZERO, vec2(1600.0, 1400.0))), ..Default::default() };

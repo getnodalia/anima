@@ -26,7 +26,7 @@
 
 use crate::armature::{self, Armature, Pose};
 use crate::{ElementId, Layer};
-use anicraft_geom::{Affine, Vec2};
+use anima_geom::{Affine, Vec2};
 use std::collections::HashMap;
 use std::f32::consts::{PI, TAU};
 

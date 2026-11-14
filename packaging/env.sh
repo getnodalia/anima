@@ -1,14 +1,13 @@
 # shellcheck shell=bash
 # Shared setup for the packaging scripts. Source it: `. "$(dirname "$0")/../env.sh"`.
-# The family's shared release workflow (storytold/craft-common-actions) sources it too: it reads
-# VERSION and finds the ANICRAFT_ prefix in the VERSION line below.
+# The release workflows (.github/workflows/release-*.yml) run the scripts that source it.
 #
 # Exports:
 #   ROOT                   workspace root
-#   VERSION                [workspace.package] version from Cargo.toml (override: ANICRAFT_VERSION)
+#   VERSION                [workspace.package] version from Cargo.toml (override: ANIMA_VERSION)
 #   DIST                   output directory for release artifacts (default: $ROOT/dist/release)
-#   ANICRAFT_BUILD_SHA     git commit of the build (Info.plist, logs)
-#   ANICRAFT_BUILD_DATE    UTC build date, YYYY-MM-DD (AppStream release date)
+#   ANIMA_BUILD_SHA     git commit of the build (Info.plist, logs)
+#   ANIMA_BUILD_DATE    UTC build date, YYYY-MM-DD (AppStream release date)
 #   CARGO_TARGET_DIR       cargo's target dir (default: $ROOT/target)
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -23,7 +22,7 @@ workspace_version() {
   return 0
 }
 
-VERSION="${ANICRAFT_VERSION:-$(workspace_version)}"
+VERSION="${ANIMA_VERSION:-$(workspace_version)}"
 if [[ -z "$VERSION" ]]; then
   echo "error: could not read [workspace.package] version from $ROOT/Cargo.toml" >&2
   exit 1
@@ -34,16 +33,16 @@ DIST="${DIST:-$ROOT/dist/release}"
 mkdir -p "$DIST"
 export DIST
 
-if [[ -z "${ANICRAFT_BUILD_SHA:-}" ]]; then
-  ANICRAFT_BUILD_SHA="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || true)"
+if [[ -z "${ANIMA_BUILD_SHA:-}" ]]; then
+  ANIMA_BUILD_SHA="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || true)"
 fi
-export ANICRAFT_BUILD_SHA
-export ANICRAFT_BUILD_DATE="${ANICRAFT_BUILD_DATE:-$(date -u +%Y-%m-%d)}"
+export ANIMA_BUILD_SHA
+export ANIMA_BUILD_DATE="${ANIMA_BUILD_DATE:-$(date -u +%Y-%m-%d)}"
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$ROOT/target}"
 
 # The app id, used for the desktop entry, AppStream, MIME package, icons, the macOS bundle id and
 # the window's Wayland app_id / X11 class (src/platform.rs). One value everywhere.
-export APP_ID=ai.storyteller.anicraft
+export APP_ID=dev.danielmiguelt.Anima
 
 # Emit a GitHub Actions warning (plain stderr outside Actions).
 warn() {

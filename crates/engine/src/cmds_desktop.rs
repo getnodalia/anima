@@ -4,12 +4,12 @@
 //! types. With the user's yes, `desktop.integrate` writes them into the user's XDG data folder
 //! (`$XDG_DATA_HOME`, default `~/.local/share`), as a package would into `/usr/share`:
 //!
-//! * `applications/ai.storyteller.anicraft.desktop`: the packaged entry (`packaging/linux`) with
+//! * `applications/dev.danielmiguelt.Anima.desktop`: the packaged entry (`packaging/linux`) with
 //!   `Exec` and `TryExec` pointing at the `.AppImage`, quoted as the Desktop Entry spec says, and
-//!   an `X-AniCraft-AppImage` key that marks it as ours;
-//! * `mime/packages/ai.storyteller.anicraft.xml`: the packaged MIME types (`.anicraft`, `.fla`,
+//!   an `X-Anima-AppImage` key that marks it as ours;
+//! * `mime/packages/dev.danielmiguelt.Anima.xml`: the packaged MIME types (`.anima`, `.fla`,
 //!   `.xfl`);
-//! * `icons/hicolor/<size>/apps/ai.storyteller.anicraft.{png,svg}`: the packaged icons.
+//! * `icons/hicolor/<size>/apps/dev.danielmiguelt.Anima.{png,svg}`: the packaged icons.
 //!
 //! Then it refreshes the user's MIME and desktop databases (`update-mime-database`,
 //! `update-desktop-database`) where those tools are installed. It never writes outside the data
@@ -32,31 +32,41 @@ pub fn specs() -> Vec<CommandSpec> {
             "{appimage: absolute path to the .AppImage, data_home: absolute path (the user's $XDG_DATA_HOME, e.g. ~/.local/share), refresh? (default true: run update-mime-database and update-desktop-database)} writes the launcher, icons and file types there; again only rewrites what changed",
             integrate as crate::RunFn,
         ),
-        c("desktop.remove", "Remove from Applications Menu", "{data_home, refresh? (default true)} deletes the launcher, icons and file types desktop.integrate wrote; nothing when the entry there isn't AniCraft's", remove),
-        c("desktop.status", "Applications Menu Status", "{data_home, appimage? (to say whether the entry starts this copy)} whether AniCraft is in the applications menu, and which AppImage it starts", status),
+        c(
+            "desktop.remove",
+            "Remove from Applications Menu",
+            "{data_home, refresh? (default true)} deletes the launcher, icons and file types desktop.integrate wrote; nothing when the entry there isn't Ánima's",
+            remove,
+        ),
+        c(
+            "desktop.status",
+            "Applications Menu Status",
+            "{data_home, appimage? (to say whether the entry starts this copy)} whether Ánima is in the applications menu, and which AppImage it starts",
+            status,
+        ),
     ]
 }
 
 /// The app id (ADR 0026), which names every file written.
-pub const APP_ID: &str = "ai.storyteller.anicraft";
+pub const APP_ID: &str = "dev.danielmiguelt.Anima";
 /// The key that marks a desktop entry as written by `desktop.integrate`; its value is the
 /// AppImage it starts.
-pub const MARKER_KEY: &str = "X-AniCraft-AppImage";
+pub const MARKER_KEY: &str = "X-Anima-AppImage";
 
-const DESKTOP_TEMPLATE: &str = include_str!("../../../packaging/linux/ai.storyteller.anicraft.desktop");
-const MIME_XML: &str = include_str!("../../../packaging/linux/ai.storyteller.anicraft.mime.xml");
+const DESKTOP_TEMPLATE: &str = include_str!("../../../packaging/linux/dev.danielmiguelt.Anima.desktop");
+const MIME_XML: &str = include_str!("../../../packaging/linux/dev.danielmiguelt.Anima.mime.xml");
 
 /// The packaged icons: `(hicolor size folder, file extension, contents)`. The 512 px one is left
 /// out (desktops scale the SVG), which keeps the programs small.
 const ICONS: [(&str, &str, &[u8]); 8] = [
-    ("16x16", "png", include_bytes!("../../../assets/app-icon/hicolor/16x16/apps/ai.storyteller.anicraft.png")),
-    ("24x24", "png", include_bytes!("../../../assets/app-icon/hicolor/24x24/apps/ai.storyteller.anicraft.png")),
-    ("32x32", "png", include_bytes!("../../../assets/app-icon/hicolor/32x32/apps/ai.storyteller.anicraft.png")),
-    ("48x48", "png", include_bytes!("../../../assets/app-icon/hicolor/48x48/apps/ai.storyteller.anicraft.png")),
-    ("64x64", "png", include_bytes!("../../../assets/app-icon/hicolor/64x64/apps/ai.storyteller.anicraft.png")),
-    ("128x128", "png", include_bytes!("../../../assets/app-icon/hicolor/128x128/apps/ai.storyteller.anicraft.png")),
-    ("256x256", "png", include_bytes!("../../../assets/app-icon/hicolor/256x256/apps/ai.storyteller.anicraft.png")),
-    ("scalable", "svg", include_bytes!("../../../assets/app-icon/hicolor/scalable/apps/ai.storyteller.anicraft.svg")),
+    ("16x16", "png", include_bytes!("../../../assets/app-icon/hicolor/16x16/apps/dev.danielmiguelt.Anima.png")),
+    ("24x24", "png", include_bytes!("../../../assets/app-icon/hicolor/24x24/apps/dev.danielmiguelt.Anima.png")),
+    ("32x32", "png", include_bytes!("../../../assets/app-icon/hicolor/32x32/apps/dev.danielmiguelt.Anima.png")),
+    ("48x48", "png", include_bytes!("../../../assets/app-icon/hicolor/48x48/apps/dev.danielmiguelt.Anima.png")),
+    ("64x64", "png", include_bytes!("../../../assets/app-icon/hicolor/64x64/apps/dev.danielmiguelt.Anima.png")),
+    ("128x128", "png", include_bytes!("../../../assets/app-icon/hicolor/128x128/apps/dev.danielmiguelt.Anima.png")),
+    ("256x256", "png", include_bytes!("../../../assets/app-icon/hicolor/256x256/apps/dev.danielmiguelt.Anima.png")),
+    ("scalable", "svg", include_bytes!("../../../assets/app-icon/hicolor/scalable/apps/dev.danielmiguelt.Anima.svg")),
 ];
 
 /// Longest path accepted (anything longer is not a path a user has).
@@ -132,7 +142,8 @@ pub fn exec_argument(path: &str) -> String {
 /// `TryExec` (so the entry hides itself if the file is moved or deleted) and the marker key.
 pub fn desktop_entry(appimage: &Path) -> Result<String> {
     let text = entry_text(appimage, "AppImage")?;
-    let mut out = String::from("# Added by AniCraft for the AppImage named in X-AniCraft-AppImage.\n# AniCraft's Preferences › About › Remove takes it away again.\n");
+    let mut out =
+        String::from("# Added by Ánima for the AppImage named in X-Anima-AppImage.\n# Ánima's Preferences › About › Remove takes it away again.\n");
     for line in DESKTOP_TEMPLATE.lines() {
         let line = line.trim_end_matches('\r');
         if line.starts_with("Exec=") {
@@ -160,14 +171,15 @@ fn check_data_home(data_home: &Path) -> Result<()> {
     let text = entry_text(data_home, "data folder")?;
     let norm = text.trim_end_matches('/');
     if norm.is_empty() || SYSTEM.iter().any(|s| norm == *s || norm.starts_with(&format!("{s}/"))) {
-        return Err(EngineError::Param(format!("{text} is a system folder; AniCraft adds itself only to your own data folder (~/.local/share)")));
+        return Err(EngineError::Param(format!("{text} is a system folder; Ánima adds itself only to your own data folder (~/.local/share)")));
     }
     Ok(())
 }
 
 /// Every file desktop integration owns under `data_home`, relative to it.
 pub fn owned_files() -> Vec<PathBuf> {
-    let mut v = vec![PathBuf::from("applications").join(format!("{APP_ID}.desktop")), PathBuf::from("mime").join("packages").join(format!("{APP_ID}.xml"))];
+    let mut v =
+        vec![PathBuf::from("applications").join(format!("{APP_ID}.desktop")), PathBuf::from("mime").join("packages").join(format!("{APP_ID}.xml"))];
     v.extend(ICONS.iter().map(|(size, ext, _)| PathBuf::from("icons").join("hicolor").join(size).join("apps").join(format!("{APP_ID}.{ext}"))));
     v
 }
@@ -189,7 +201,7 @@ fn write_if_changed(path: &Path, data: &[u8]) -> Result<bool> {
         std::fs::create_dir_all(dir)?;
     }
     let mut tmp = path.as_os_str().to_owned();
-    tmp.push(".anicraft-tmp");
+    tmp.push(".anima-tmp");
     let tmp = PathBuf::from(tmp);
     std::fs::write(&tmp, data)?;
     if let Err(e) = std::fs::rename(&tmp, path) {
@@ -212,7 +224,7 @@ fn entry_path(data_home: &Path) -> PathBuf {
     data_home.join("applications").join(format!("{APP_ID}.desktop"))
 }
 
-/// Adds AniCraft (the AppImage at `appimage`) to the menu under `data_home`. Refuses to replace an
+/// Adds Ánima (the AppImage at `appimage`) to the menu under `data_home`. Refuses to replace an
 /// entry of the same name that it didn't write (a hand-made one, say).
 pub fn install(appimage: &Path, data_home: &Path) -> Result<Report> {
     check_data_home(data_home)?;
@@ -224,7 +236,7 @@ pub fn install(appimage: &Path, data_home: &Path) -> Result<Report> {
     if let Ok(old) = std::fs::read_to_string(&entry)
         && entry_appimage(&old).is_none()
     {
-        return Err(EngineError::State(format!("{} was not written by AniCraft, so it is left as it is", entry.display())));
+        return Err(EngineError::State(format!("{} was not written by Ánima, so it is left as it is", entry.display())));
     }
     let mut r = Report::default();
     for (rel, data) in planned(appimage)? {
@@ -242,7 +254,7 @@ pub fn uninstall(data_home: &Path) -> Result<Vec<PathBuf>> {
     if let Ok(old) = std::fs::read_to_string(&entry)
         && entry_appimage(&old).is_none()
     {
-        return Err(EngineError::State(format!("{} was not written by AniCraft, so it is left as it is", entry.display())));
+        return Err(EngineError::State(format!("{} was not written by Ánima, so it is left as it is", entry.display())));
     }
     let mut removed = Vec::new();
     for rel in owned_files() {
@@ -255,12 +267,12 @@ pub fn uninstall(data_home: &Path) -> Result<Vec<PathBuf>> {
     Ok(removed)
 }
 
-/// Whether AniCraft is in the menu under `data_home`.
+/// Whether Ánima is in the menu under `data_home`.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Status {
     /// The AppImage our entry starts, when there is one.
     pub appimage: Option<PathBuf>,
-    /// An entry of our name is there that AniCraft didn't write.
+    /// An entry of our name is there that Ánima didn't write.
     pub foreign: bool,
 }
 

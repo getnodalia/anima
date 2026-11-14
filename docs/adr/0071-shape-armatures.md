@@ -96,7 +96,7 @@ keeping `evaluate` pure and drawing the same shape everywhere.
 
 * No renderer, exporter or the GPU stage changed: the bent outline is just a path in the
   display list. Hit testing, onion skins and selection outlines follow it.
-* Files without shape armatures are written exactly as before. An older AniCraft reading a
+* Files without shape armatures are written exactly as before. An older Ánima reading a
   newer file ignores `skin` (an unknown field). It shows each keyframe's bent outline (the file
   holds what shows), and its bones draw but move nothing, so the file still opens.
 * A skin whose shape is a bone's node, or whose outline is over the point limit, is dropped on

@@ -9,7 +9,7 @@
 ## Context
 
 The project lead asked for ActionScript on the roadmap if it fits our constraints, at low
-priority, since it serves a smaller group of users. U2 already settled AniCraft's own scripting:
+priority, since it serves a smaller group of users. U2 already settled Ánima's own scripting:
 the Craft-family WebAssembly plug-ins, with frame scripts on the same sandbox. The ActionScript
 question is about compatibility for people who bring Animate projects with code in them.
 
@@ -42,7 +42,7 @@ blocking anything else.
 1. **Keep (tier 1).** Scripts are content and are never lost.
    * The document model gets `Keyframe.script: Option<Arc<Script>>`, where `Script` holds the
      source text verbatim and its language (`ActionScript3`, `ActionScript1or2`, `Other`), plus
-     symbol linkage and document class names as plain strings. Saved in `.anicraft` (a minor
+     symbol linkage and document class names as plain strings. Saved in `.anima` (a minor
      format version with `#[serde(default)]`, so older files open unchanged).
    * The XFL importer reads `<Actionscript><script>` on frames (scenes and symbols) and the
      linkage attributes. The import report counts them as kept, not run. *As of this ADR it
@@ -53,7 +53,7 @@ blocking anything else.
      CLI can read and write scripts too.
    * Rendering and every export ignore scripts. Tier 1 runs nothing.
 2. **Run the timeline subset (tier 2).** The common case from item 1, plus a little of item 2.
-   * New crate `anicraft-script` (layer 0; it knows the language, not the document): a hand-written
+   * New crate `anima-script` (layer 0; it knows the language, not the document): a hand-written
      lexer and recursive-descent parser for an ActionScript 3 subset, with bounded nesting
      depth, source length and token count. It lowers what it accepts to a small, typed
      **timeline action IR** (stop, play, go to frame or label (optionally in a scene), next
@@ -65,13 +65,13 @@ blocking anything else.
      the same actions, and the HTML canvas exporter writes the same actions out as
      JavaScript. One runtime, many front ends; ActionScript is not a second engine.
    * **Time stays a function.** Scripts never change the document. Interactive playback is a
-     separate, pure player in `anicraft-doc`: `PlayerState` (each timeline's playhead and playing flag) is
+     separate, pure player in `anima-doc`: `PlayerState` (each timeline's playhead and playing flag) is
      stepped by `step(doc, &state, &events) -> state` and drawn by evaluating the document
      at that state. The authoring stage and every export stay script-free and
      deterministic; a **Test Movie** preview window and the HTML canvas export use the player.
      Fuel limits a step's work, so a bad loop can't hang the app.
    * `navigateToURL` and other effects outside the movie are ignored in preview (reported in
-     its output), so opening a file can't make AniCraft do things outside the document.
+     its output), so opening a file can't make Ánima do things outside the document.
 3. **Not planned: the full language and platform (tier 3).** Classes, packages, the
    `flash.*` API, a bytecode virtual machine and SWF export with compiled code. That is a
    second product (a player), and open-source players for old content already exist. We
@@ -104,7 +104,7 @@ blocking anything else.
   canvas exports without being rewritten.
 * Documents with scripts look the same in every export as before, because exports render
   the authored timeline, not a played session. That matches Animate's own video export.
-* Games and applications written in ActionScript don't run in AniCraft and won't in this
+* Games and applications written in ActionScript don't run in Ánima and won't in this
   plan. Their artwork and timelines still come across, and their scripts are kept.
 * The subset is a moving line. It grows from user reports of the "not run" messages, never
   by guessing what unsupported code would have done.
@@ -116,7 +116,7 @@ Tier 1 follows the decision above. Where the build refines it:
 * **Where scripts live.** A kept script is a third variant of the frame-script enum ADR 0024
   put on keyframes: `Keyframe.script: Option<FrameScript>` with
   `FrameScript::Source(Arc<SourceScript>)` beside `Actions` and `Plugin`. `SourceScript` (in
-  `anicraft-actions`, L0, so the tier-2 parser can read it) holds `language` (`actionscript3`,
+  `anima-actions`, L0, so the tier-2 parser can read it) holds `language` (`actionscript3`,
   `actionscript1or2`, `other`) and `text`, byte for byte. A separate field would have allowed a
   keyframe to hold actions *and* a script, and then nobody could say which one runs once tier 2
   lowers scripts to actions. One field keeps "one of them" true by construction. Setting
@@ -169,10 +169,10 @@ Tier 1 follows the decision above. Where the build refines it:
 
 Tier 2 follows the decision above. Where the build refines it:
 
-* **Where the language lives: a module, not a crate.** The parser is `anicraft_actions::as3`
+* **Where the language lives: a module, not a crate.** The parser is `anima_actions::as3`
   (`lex.rs`, `parse.rs`, `lower.rs`), inside the L0 crate that holds the action IR, rather than
-  a new `anicraft-script` crate. Two reasons. The layering rule (`src/architecture_tests.rs`)
-  lets a crate use only *lower* layers, so an L0 `anicraft-script` could not name the L0 IR it
+  a new `anima-script` crate. Two reasons. The layering rule (`src/architecture_tests.rs`)
+  lets a crate use only *lower* layers, so an L0 `anima-script` could not name the L0 IR it
   lowers to; ADR 0024 put the IR at L0 for exactly the front ends that lower to it. And a kept
   script's compiled form is a pure function of its text, so it is cached on the script itself:
   `SourceScript::compiled()` fills a `OnceLock` the first time it is asked (never saved, never

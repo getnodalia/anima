@@ -3,7 +3,7 @@
 Some layers do a special job. This chapter covers mask layers, guide layers and motion guides,
 the camera layer, bones for posing a character, and Asset Warp for bending artwork with pins.
 
-A note on keys: AniCraft uses **Ctrl** on Windows and Linux and **⌘** (Command) on macOS, and
+A note on keys: Ánima uses **Ctrl** on Windows and Linux and **⌘** (Command) on macOS, and
 **Alt** is **⌥** (Option) on macOS. So **Ctrl+Z** is **⌘Z** on a Mac.
 
 ## Mask layers
@@ -159,7 +159,7 @@ around as the camera moves. Test Movie and every export always see through the c
 * Hide the Camera layer (its eye) to turn the camera off: the movie then shows the stage as it
   is.
 * To remove the camera, click the camera button in the timeline header again, or choose
-  **Modify › Timeline › Remove Camera**. If the camera is animated, AniCraft asks first. Undo
+  **Modify › Timeline › Remove Camera**. If the camera is animated, Ánima asks first. Undo
   brings it back.
 
 Not there yet: tools other than Selection while previewing, depth inside symbols, depth keys that
@@ -200,7 +200,7 @@ Each drag is one undo step.
 
 ### Animating poses
 
-Move the playhead to another frame and pose the armature: AniCraft keys the pose there. Poses
+Move the playhead to another frame and pose the armature: Ánima keys the pose there. Poses
 in between are tweened with the span's easing, and each pose is exact on its own frame. Test
 Movie and every export show the poses.
 
@@ -228,14 +228,14 @@ Select a bone to see **Properties › Bone**:
   pose, to see exactly the poses you key; Test Movie and every export play them while they
   are on.
 * **Remove Bone** (or **Delete**): removes the bone and those below it. Their instances stay
-  where they are, on a layer of their own. If the armature has more than one pose, AniCraft asks
+  where they are, on a layer of their own. If the armature has more than one pose, Ánima asks
   first.
 
 Selecting a bone also selects the instance it moves. Properties then shows that instance's
 **Colour effect**, and for movie clips and buttons its **Blending** and **Filters**. Change
 them there, and the instance keeps the look in every pose, while its bone still places it.
 
-Springs never change your poses: AniCraft works out the swing from how the armature moves up
+Springs never change your poses: Ánima works out the swing from how the armature moves up
 to each frame, so jumping to a frame shows exactly what playing to it shows. Each swing fades
 out within six seconds of the motion that caused it.
 
@@ -294,7 +294,7 @@ this without the stage.
 double-click the outline to add a point, delete points, or make them smooth or corners. The
 bones keep their binding. Moved points keep their weights, and a new point takes the weights
 of the points on either side, blended by where it sits between them. A deleted point's
-weights go with it. Every pose bends the new outline. At a posed frame AniCraft asks you to go
+weights go with it. Every pose bends the new outline. At a posed frame Ánima asks you to go
 to the rest pose first.
 
 Bones inside a shape take joint translation and springs too.

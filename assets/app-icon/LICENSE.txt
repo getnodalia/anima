@@ -1,8 +1,8 @@
-AniCraft app icon (anicraft.svg, anicraft-small.svg and every file derived from them in this
-directory: anicraft-1024.png, anicraft-padded-1024.png, anicraft-macos-512.png, anicraft.ico, hicolor/).
+Ánima app icon (anima.svg and every file derived from it in this directory: anima-1024.png,
+anima-padded-1024.png, anima-macos-512.png, anima.ico, hicolor/).
 
-Original artwork made for this project by the project owner, drawn in ArtCraft and vectorised for
-AniCraft (no third-party material). Licensed like the rest of AniCraft, under either of
+Original artwork made for Ánima by the Nodalia project (no third-party material). Licensed like
+the rest of Ánima, under either of
 
   * Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0)
   * MIT license (https://opensource.org/licenses/MIT)

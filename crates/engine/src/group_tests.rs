@@ -2,8 +2,8 @@
 
 use crate::Session;
 use crate::cmds_group::even_odd_area;
-use anicraft_doc::{Element, ElementId, ElementKind};
-use anicraft_geom::{Affine, Vec2};
+use anima_doc::{Element, ElementId, ElementKind};
+use anima_geom::{Affine, Vec2};
 use serde_json::{Value, json};
 use std::sync::Arc;
 
@@ -21,13 +21,13 @@ fn top(s: &Session) -> Vec<Arc<Element>> {
 
 /// Every drawn item's transform, path and fill, in order: what the movie shows, exactly.
 fn picture(s: &Session) -> Vec<([u32; 6], usize, String)> {
-    let dl = anicraft_doc::evaluate_scene(&s.doc, s.scene, s.frame);
+    let dl = anima_doc::evaluate_scene(&s.doc, s.scene, s.frame);
     dl.items.iter().map(|i| (i.transform.m.map(f32::to_bits), i.path.cmds.len(), format!("{:?}{:?}{:?}", i.fill, i.stroke, i.color))).collect()
 }
 
 /// Three objects: a rotated, scaled red square, a blue oval and a green star; Object Drawing on.
 fn three() -> (Session, [ElementId; 3]) {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     let a = run(&mut s, "draw.rect", json!({"x": 10, "y": 20, "w": 100, "h": 60, "fill": "#ff0000", "stroke": "#000000"}));
     let a = id_of(&a, "element");
     run(&mut s, "element.set_transform", json!({"rotation": 33.0, "sx": 1.3, "sy": 0.7}));
@@ -132,7 +132,7 @@ fn a_group_opens_in_place_and_edits_there_with_every_tool() {
 
 #[test]
 fn raw_shapes_in_a_group_merge_only_with_each_other() {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.object_drawing", json!({"on": false}));
     run(&mut s, "draw.rect", json!({"x": 0, "y": 0, "w": 100, "h": 100, "fill": "#ff0000", "stroke": null}));
     run(&mut s, "edit.select_all", json!({}));
@@ -154,10 +154,15 @@ fn raw_shapes_in_a_group_merge_only_with_each_other() {
     run(&mut s, "modify.ungroup", json!({}));
     let raw = top(&s);
     assert!(raw.iter().all(|e| matches!(&e.kind, ElementKind::Shape(sh) if sh.merge)), "all raw");
-    let red: f64 = raw.iter().filter_map(|e| match &e.kind {
-        ElementKind::Shape(sh) if sh.fill == Some(anicraft_doc::Paint::Solid(anicraft_doc::Rgba::hex(0xff0000))) => Some(even_odd_area(&sh.path, &e.transform)),
-        _ => None,
-    }).sum();
+    let red: f64 = raw
+        .iter()
+        .filter_map(|e| match &e.kind {
+            ElementKind::Shape(sh) if sh.fill == Some(anima_doc::Paint::Solid(anima_doc::Rgba::hex(0xff0000))) => {
+                Some(even_odd_area(&sh.path, &e.transform))
+            }
+            _ => None,
+        })
+        .sum();
     // Red (150 × 100) on top of blue: all of it shows.
     assert!((red - 15_000.0).abs() < 2.0, "{red}");
 }
@@ -196,7 +201,7 @@ fn groups_save_and_open_and_older_files_have_none() {
 
 #[test]
 fn symbols_inside_groups_count_as_used_and_go_with_their_symbol() {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.rect", json!({"x": 0, "y": 0, "w": 50, "h": 50, "fill": "#ff0000"}));
     let sym = run(&mut s, "modify.convert_to_symbol", json!({"name": "Box"}))["symbol"].as_u64().unwrap_or(0);
     run(&mut s, "draw.rect", json!({"x": 100, "y": 0, "w": 50, "h": 50, "fill": "#00ff00"}));
@@ -223,10 +228,15 @@ fn areas(s: &Session) -> Vec<f64> {
         .iter()
         .map(|e| match &e.kind {
             ElementKind::Shape(sh) => even_odd_area(&sh.path, &e.transform),
-            ElementKind::Group { .. } => e.kind.group_members().iter().filter_map(|m| match &m.kind {
-                ElementKind::Shape(sh) if sh.fill.is_some() => Some(even_odd_area(&sh.path, &e.transform.mul(&m.transform))),
-                _ => None,
-            }).sum(),
+            ElementKind::Group { .. } => e
+                .kind
+                .group_members()
+                .iter()
+                .filter_map(|m| match &m.kind {
+                    ElementKind::Shape(sh) if sh.fill.is_some() => Some(even_odd_area(&sh.path, &e.transform.mul(&m.transform))),
+                    _ => None,
+                })
+                .sum(),
             _ => 0.0,
         })
         .collect()
@@ -236,31 +246,33 @@ fn areas(s: &Session) -> Vec<f64> {
 fn combine_objects_areas_are_exact() {
     let near = |a: &[f64], b: &[f64]| a.len() == b.len() && a.iter().zip(b).all(|(x, y)| (x - y).abs() < 0.5);
     // Union of two colours: a group of the merged pieces, whose area is the union's.
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     squares(&mut s);
     let v = run(&mut s, "modify.combine", json!({"op": "union"}));
     assert_eq!(v["created"].as_array().map(Vec::len), Some(1));
     assert!(matches!(top(&s)[0].kind, ElementKind::Group { .. }));
     assert!(near(&areas(&s), &[17_500.0]), "{:?}", areas(&s));
     // Intersect: the overlap, in the top's colour.
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     squares(&mut s);
     run(&mut s, "modify.intersect", json!({}));
     assert!(near(&areas(&s), &[2_500.0]), "{:?}", areas(&s));
-    assert!(matches!(&top(&s)[0].kind, ElementKind::Shape(sh) if sh.fill == Some(anicraft_doc::Paint::Solid(anicraft_doc::Rgba::hex(0x0000ff))) && !sh.merge));
+    assert!(
+        matches!(&top(&s)[0].kind, ElementKind::Shape(sh) if sh.fill == Some(anima_doc::Paint::Solid(anima_doc::Rgba::hex(0x0000ff))) && !sh.merge)
+    );
     // Punch: the bottom square less the top one, which goes.
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     squares(&mut s);
     run(&mut s, "modify.punch", json!({}));
     assert!(near(&areas(&s), &[7_500.0]), "{:?}", areas(&s));
     // Crop: the bottom square inside the top one.
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     squares(&mut s);
     run(&mut s, "modify.crop", json!({}));
     assert!(near(&areas(&s), &[2_500.0]), "{:?}", areas(&s));
-    assert!(matches!(&top(&s)[0].kind, ElementKind::Shape(sh) if sh.fill == Some(anicraft_doc::Paint::Solid(anicraft_doc::Rgba::hex(0xff0000)))));
+    assert!(matches!(&top(&s)[0].kind, ElementKind::Shape(sh) if sh.fill == Some(anima_doc::Paint::Solid(anima_doc::Rgba::hex(0xff0000)))));
     // Union of one colour: one drawing object.
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.rect", json!({"x": 0, "y": 0, "w": 100, "h": 100, "fill": "#ff0000", "stroke": null}));
     run(&mut s, "draw.rect", json!({"x": 50, "y": 50, "w": 100, "h": 100, "fill": "#ff0000", "stroke": null}));
     run(&mut s, "edit.select_all", json!({}));
@@ -268,14 +280,14 @@ fn combine_objects_areas_are_exact() {
     assert!(matches!(&top(&s)[0].kind, ElementKind::Shape(sh) if !sh.merge), "one object");
     assert!(near(&areas(&s), &[17_500.0]), "{:?}", areas(&s));
     // A hole punched in the middle: a ring, 100² − 40².
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.rect", json!({"x": 0, "y": 0, "w": 100, "h": 100, "fill": "#ff0000", "stroke": null}));
     run(&mut s, "draw.rect", json!({"x": 30, "y": 30, "w": 40, "h": 40, "fill": "#0000ff", "stroke": null}));
     run(&mut s, "edit.select_all", json!({}));
     run(&mut s, "modify.punch", json!({}));
     assert!(near(&areas(&s), &[8_400.0]), "{:?}", areas(&s));
     // A circle cropped by a square through its centre: a quarter of π r² (cubic arcs: 0.03 %).
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.ellipse", json!({"x": -100, "y": -100, "w": 200, "h": 200, "fill": "#ff0000", "stroke": null}));
     run(&mut s, "draw.rect", json!({"x": 0, "y": 0, "w": 200, "h": 200, "fill": "#0000ff", "stroke": null}));
     run(&mut s, "edit.select_all", json!({}));
@@ -287,7 +299,7 @@ fn combine_objects_areas_are_exact() {
 
 #[test]
 fn combine_refuses_what_it_cannot_combine() {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.rect", json!({"x": 0, "y": 0, "w": 100, "h": 100, "fill": "#ff0000"}));
     run(&mut s, "edit.select_all", json!({}));
     assert!(s.execute("modify.union", &json!({})).is_err(), "one shape");
@@ -307,7 +319,7 @@ fn combine_refuses_what_it_cannot_combine() {
 fn ctrl_drag_pulls_a_sharp_corner_out_of_a_line() {
     // What the Selection tool's Ctrl-drag runs (issue #200): a point where the edge was grabbed,
     // then that point moved, in one gesture.
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.object_drawing", json!({"on": false}));
     run(&mut s, "draw.rect", json!({"x": 0, "y": 0, "w": 100, "h": 100, "fill": "#ff0000", "stroke": "#000000"}));
     run(&mut s, "edit.deselect", json!({}));
@@ -323,7 +335,11 @@ fn ctrl_drag_pulls_a_sharp_corner_out_of_a_line() {
     let fill = top(&s).into_iter().find(|e| matches!(&e.kind, ElementKind::Shape(sh) if sh.fill.is_some())).unwrap_or_else(|| panic!("fill"));
     let ElementKind::Shape(sh) = &fill.kind else { panic!("shape") };
     assert!((even_odd_area(&sh.path, &fill.transform) - 12_000.0).abs() < 0.5);
-    assert!(sh.path.cmds.iter().all(|c| !matches!(c, anicraft_geom::PathCmd::CubicTo(..) | anicraft_geom::PathCmd::QuadTo(..))), "straight lines, no curve: {:?}", sh.path.cmds);
+    assert!(
+        sh.path.cmds.iter().all(|c| !matches!(c, anima_geom::PathCmd::CubicTo(..) | anima_geom::PathCmd::QuadTo(..))),
+        "straight lines, no curve: {:?}",
+        sh.path.cmds
+    );
     assert!(s.history_len() >= 2);
     run(&mut s, "edit.undo", json!({}));
     let fill = top(&s).into_iter().find(|e| matches!(&e.kind, ElementKind::Shape(sh) if sh.fill.is_some())).unwrap_or_else(|| panic!("fill"));
@@ -334,7 +350,7 @@ fn ctrl_drag_pulls_a_sharp_corner_out_of_a_line() {
 #[test]
 fn alt_drag_copies_leave_the_original_whole() {
     // What the Selection tool's Alt-drag runs: a copy in place, moved, dropped into the drawing.
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.object_drawing", json!({"on": false}));
     run(&mut s, "draw.rect", json!({"x": 0, "y": 0, "w": 100, "h": 100, "fill": "#ff0000", "stroke": null}));
     run(&mut s, "element.pick", json!({"x": 50, "y": 50}));

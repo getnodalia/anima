@@ -1,6 +1,6 @@
 # Exporting and Publish
 
-Get your animation out of AniCraft: as pictures, animated images, video, a web page, Lottie, a
+Get your animation out of Ánima: as pictures, animated images, video, a web page, Lottie, a
 sprite sheet or a soundtrack. Export one format at a time from **File › Export**, or set up
 several once in **Publish Settings** and write them all with one key.
 
@@ -32,13 +32,13 @@ Guide layers never export, and layers shown as outlines on the stage export as n
 
 1. Choose the item from **File › Export**.
 2. Pick where to save it. For **Export PNG Sequence…** you pick a folder.
-3. AniCraft exports and the status bar says where the file went, with its size.
+3. Ánima exports and the status bar says where the file went, with its size.
 
 File › Export uses the usual settings: the whole movie, every scene in order, at 100 %, and the
 current frame for PNG and SVG stills. To choose frames, scale, looping or a background, use
 **Publish Settings** (below): you can turn on just the one format you need.
 
-If the file is already there, AniCraft asks before replacing it. A sprite sheet asks if either
+If the file is already there, Ánima asks before replacing it. A sprite sheet asks if either
 the PNG or its frame map is there, and a PNG sequence asks if the folder already holds exported
 frames.
 
@@ -63,15 +63,15 @@ frames.
 
 ### Video
 
-AniCraft makes video with **ffmpeg**, a free program you install yourself from ffmpeg.org.
-AniCraft doesn't bundle a video encoder.
+Ánima makes video with **ffmpeg**, a free program you install yourself from ffmpeg.org.
+Ánima doesn't bundle a video encoder.
 
 * End the file name in `.webm` for **WebM** (VP9, royalty-free; the default) or `.mp4` for
   **MP4** (H.264, if your ffmpeg has that encoder).
 * The soundtrack goes in too: Opus in WebM, AAC in MP4. Turn off **Include sound** in Publish
   Settings for a silent video.
-* AniCraft finds ffmpeg on your system path. To use another copy, set the `ANICRAFT_FFMPEG`
-  environment variable to its location. If ffmpeg can't be found, AniCraft says how to get it.
+* Ánima finds ffmpeg on your system path. To use another copy, set the `ANIMA_FFMPEG`
+  environment variable to its location. If ffmpeg can't be found, Ánima says how to get it.
 * Odd sizes are padded to even ones, which most video formats need.
 * Button sounds stay out of the soundtrack.
 
@@ -85,7 +85,7 @@ stage colour.
 ### Lottie
 
 A Lottie JSON animation for websites and apps. Shapes, strokes, solid and gradient fills,
-colour effects, opacity and masks come across, and every frame shows what AniCraft shows.
+colour effects, opacity and masks come across, and every frame shows what Ánima shows.
 
 Tweens become Lottie keyframes with Lottie's own eases, so the file stays small and the motion
 is smooth on any screen: No Ease, Classic Ease, Quad, Cubic, Back and Bounce, Bézier handles
@@ -119,7 +119,7 @@ a server or send it as one file.
   Settings you can turn off **Scale to the browser window**, turn off **Include sounds**, and set
   the **Page title**.
 * Filters (Drop Shadow, Blur, Glow, Bevel, Gradient Glow, Gradient Bevel and Adjust Color) and
-  every blend mode look as they do in AniCraft. A filtered symbol that doesn't change is filtered
+  every blend mode look as they do in Ánima. A filtered symbol that doesn't change is filtered
   once; large filtered symbols that change every frame can slow the page down, as in any
   browser movie, so keep animated filters small.
 * Plug-in frame scripts are left out of the page, and 9-slice symbols are scaled as a whole. The
@@ -187,9 +187,9 @@ Presets live in your preferences, not in the document.
 Choose **File › Publish** (**Shift+F12**), or press **Publish** at the bottom of Publish
 Settings.
 
-1. If the document has never been saved, AniCraft asks you to save it first, since the files go
+1. If the document has never been saved, Ánima asks you to save it first, since the files go
    beside it.
-2. If any output is already there, AniCraft asks once before replacing it. Files that this
+2. If any output is already there, Ánima asks once before replacing it. Files that this
    session published itself are replaced without asking again.
 3. The formats publish in the background, so you can keep working. A window shows each format's
    progress, with **Cancel**.

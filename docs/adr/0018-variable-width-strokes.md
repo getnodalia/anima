@@ -9,7 +9,7 @@
 Hand-drawn line work rarely has one width: lines taper at their ends and swell where the hand
 presses. Animate covers this with width profiles and the Width tool: width points along a
 stroke, each with a width on either side, edited by dragging on the stage. Until now an
-AniCraft stroke had a single width. The brush tool and a brush library come later and will
+Ánima stroke had a single width. The brush tool and a brush library come later and will
 build on the same model.
 
 ## Decision

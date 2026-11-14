@@ -3,7 +3,7 @@
 # glibc the binaries need for @GLIBC_FLOOR@, and exports VERSION and NFPM_ARCH.
 #
 #   nfpm package -f packaging/linux/nfpm.yaml -p deb -t dist/release/
-name: anicraft
+name: anima
 arch: ${NFPM_ARCH}
 platform: linux
 version: ${VERSION}
@@ -12,16 +12,16 @@ version_schema: semver
 release: 1
 section: graphics
 priority: optional
-maintainer: ${ANICRAFT_MAINTAINER}
+maintainer: ${ANIMA_MAINTAINER}
 vendor: ArtCraft Team
-homepage: https://getartcraft.com/apps/anicraft
+homepage: https://getnodalia.com/anima
 license: MIT OR Apache-2.0
 description: |-
   Open-source, native 2D animation studio.
   Vector drawing tools, a layered timeline with keyframes and classic, shape
   and motion tweens, symbols and a library; opens FLA and XFL documents;
   exports PNG, GIF, SVG, sprite sheets, Lottie and (with ffmpeg) video.
-  Includes anicraft-cli, a headless renderer, command runner and MCP server.
+  Includes anima-cli, a headless renderer, command runner and MCP server.
 
 # The binaries link glibc, libgcc_s and ALSA (libasound, for sound through cpal; PulseAudio and
 # PipeWire are reached through their ALSA plugins). Windowing (X11/Wayland, xkbcommon) and the
@@ -72,11 +72,11 @@ overrides:
       - (pipewire-alsa or alsa-plugins-pulseaudio)
 
 contents:
-  - src: ${STAGE}/usr/bin/anicraft
-    dst: /usr/bin/anicraft
+  - src: ${STAGE}/usr/bin/anima
+    dst: /usr/bin/anima
     file_info: { mode: 0755 }
-  - src: ${STAGE}/usr/bin/anicraft-cli
-    dst: /usr/bin/anicraft-cli
+  - src: ${STAGE}/usr/bin/anima-cli
+    dst: /usr/bin/anima-cli
     file_info: { mode: 0755 }
   - src: ${STAGE}/usr/share/
     dst: /usr/share/

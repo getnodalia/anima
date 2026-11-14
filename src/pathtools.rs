@@ -12,10 +12,10 @@
 
 use crate::app::{App, Drag, Tool};
 use crate::theme::T;
-use anicraft_engine::cmds_rawsub::{Handle, RawPoints};
-use anicraft_engine::doc::{ElementId, ElementKind};
-use anicraft_engine::geom::edit::{ANCHOR, C1, C2};
-use anicraft_engine::geom::{Affine, Path, PathCmd, Vec2};
+use anima_engine::cmds_rawsub::{Handle, RawPoints};
+use anima_engine::doc::{ElementId, ElementKind};
+use anima_engine::geom::edit::{ANCHOR, C1, C2};
+use anima_engine::geom::{Affine, Path, PathCmd, Vec2};
 use egui::{Color32, Key, Modifiers, Pos2, Rect, Stroke, StrokeKind, pos2, vec2};
 use serde_json::json;
 use std::sync::Arc;
@@ -429,7 +429,13 @@ fn raw_delete(app: &mut App) {
     let (n, kept) = (v["deleted"].as_u64().unwrap_or(0) as usize, v["kept"].as_u64().unwrap_or(0) as usize);
     let undo = app.undo_key();
     app.status_ok(if kept > 0 {
-        trn!("Deleted {n} point; kept {kept} where three or more lines meet. {undo} to undo.", "Deleted {n} points; kept {kept} where three or more lines meet. {undo} to undo.", n, kept = kept, undo = undo)
+        trn!(
+            "Deleted {n} point; kept {kept} where three or more lines meet. {undo} to undo.",
+            "Deleted {n} points; kept {kept} where three or more lines meet. {undo} to undo.",
+            n,
+            kept = kept,
+            undo = undo
+        )
     } else {
         trn!("Deleted {n} point. {undo} to undo.", "Deleted {n} points. {undo} to undo.", n, undo = undo)
     });
@@ -457,17 +463,29 @@ pub fn point_menu(app: &mut App, ui: &mut egui::Ui) -> bool {
         return false;
     }
     if ui.button(tr!("Make Smooth")).clicked() {
-        if raw { raw_convert(app, true) } else { convert_points(app, true) }
+        if raw {
+            raw_convert(app, true)
+        } else {
+            convert_points(app, true)
+        }
         ui.close();
     }
     if ui.button(tr!("Make Corner")).clicked() {
-        if raw { raw_convert(app, false) } else { convert_points(app, false) }
+        if raw {
+            raw_convert(app, false)
+        } else {
+            convert_points(app, false)
+        }
         ui.close();
     }
     ui.separator();
     let label = if raw { trn!("Delete Point", "Delete Points", app.raw_anchors.len()) } else { tr!("Delete Point").to_string() };
     if ui.button(label).clicked() {
-        if raw { raw_delete(app) } else { delete_points(app) }
+        if raw {
+            raw_delete(app)
+        } else {
+            delete_points(app)
+        }
         ui.close();
     }
     true
@@ -476,11 +494,11 @@ pub fn point_menu(app: &mut App, ui: &mut egui::Ui) -> bool {
 // ----- Subselection on raw shapes (ADR 0042) -------------------------------------------------
 
 /// Two positions this close are one shared point.
-const SNAP: f32 = anicraft_engine::geom::planar::SNAP;
+const SNAP: f32 = anima_engine::geom::planar::SNAP;
 /// How near (screen pixels) a press takes an anchor of a raw shape that isn't shown yet.
 const GRAB_POINT: f32 = 6.0;
 
-fn is_raw(e: &anicraft_engine::doc::Element) -> bool {
+fn is_raw(e: &anima_engine::doc::Element) -> bool {
     matches!(&e.kind, ElementKind::Shape(sh) if sh.merge)
 }
 
@@ -533,7 +551,8 @@ fn raw_upkeep(app: &mut App) {
         let mut out: Vec<Vec2> = Vec::with_capacity(list.len());
         for q in list.iter() {
             // A merge may have met it with a point nearby (at most `SNAP` away, ADR 0041).
-            if let Some(p) = pts.anchors.iter().copied().filter(|p| p.distance(*q) <= 2.5 * SNAP).min_by(|a, b| a.distance(*q).total_cmp(&b.distance(*q)))
+            if let Some(p) =
+                pts.anchors.iter().copied().filter(|p| p.distance(*q) <= 2.5 * SNAP).min_by(|a, b| a.distance(*q).total_cmp(&b.distance(*q)))
                 && !out.contains(&p)
             {
                 out.push(p);
@@ -582,7 +601,7 @@ fn raw_drag_start(app: &mut App, press: Pos2, shift: bool, xf: Xf) -> Option<Dra
         Some(RawHit::Anchor(q)) => Some(q),
         // An unselected raw shape's corner or end: show its shapes, then take the point.
         None => match app.s.raw_grab(sp, 3.0 * xf.unit(), GRAB_POINT * xf.unit()) {
-            Some((_, anicraft_engine::cmds_raw::Grab::Point { at })) if raw_show_at(app, at, false, xf) => Some(at),
+            Some((_, anima_engine::cmds_raw::Grab::Point { at })) if raw_show_at(app, at, false, xf) => Some(at),
             _ => None,
         },
     };
@@ -600,7 +619,9 @@ fn raw_drag_start(app: &mut App, press: Pos2, shift: bool, xf: Xf) -> Option<Dra
         return Some(Drag::RawPoint { at: pos2(q.x, q.y), off: pos2(q.x, q.y) - pos2(sp.x, sp.y) });
     }
     // A raw line or fill: everything connected to it moves (Animate's Subselection drag).
-    let on_shown = app.s.hit_test(sp, 3.0 * xf.unit()).is_some_and(|(l, id)| l == app.s.layer && app.s.selection.contains(l, id) && app.s.visible_elements().iter().any(|e| e.id == id && is_raw(e)));
+    let on_shown = app.s.hit_test(sp, 3.0 * xf.unit()).is_some_and(|(l, id)| {
+        l == app.s.layer && app.s.selection.contains(l, id) && app.s.visible_elements().iter().any(|e| e.id == id && is_raw(e))
+    });
     if !on_shown && !raw_show_at(app, sp, shift, xf) {
         return None;
     }
@@ -730,7 +751,12 @@ pub fn consume_keys(app: &mut App, ctx: &egui::Context) {
 fn arrow_nudge(ctx: &egui::Context, zoom: f32) -> Option<Vec2> {
     let mut d = Vec2::ZERO;
     ctx.input_mut(|i| {
-        for (k, v) in [(Key::ArrowLeft, Vec2::new(-1.0, 0.0)), (Key::ArrowRight, Vec2::new(1.0, 0.0)), (Key::ArrowUp, Vec2::new(0.0, -1.0)), (Key::ArrowDown, Vec2::new(0.0, 1.0))] {
+        for (k, v) in [
+            (Key::ArrowLeft, Vec2::new(-1.0, 0.0)),
+            (Key::ArrowRight, Vec2::new(1.0, 0.0)),
+            (Key::ArrowUp, Vec2::new(0.0, -1.0)),
+            (Key::ArrowDown, Vec2::new(0.0, 1.0)),
+        ] {
             // Shift first: a plain chord also matches a press with Shift held.
             for (m, step) in [(Modifiers::SHIFT, 10.0), (Modifiers::NONE, 1.0)] {
                 while i.consume_key(m, k) {
@@ -852,7 +878,7 @@ mod tests {
         let d = pen.to_svg(false);
         assert!(d.contains(" C0 0 80 -10 100 0") && d.contains(" C120 10 100 50 100 50"), "{d}");
         // The engine takes it.
-        let mut s = anicraft_engine::Session::default();
+        let mut s = anima_engine::Session::default();
         assert!(s.execute("draw.path", &json!({"d": pen.to_svg(true)})).is_ok());
     }
 
@@ -865,7 +891,7 @@ mod tests {
 
         fn app_and_ctx() -> (App, egui::Context) {
             let ctx = egui::Context::default();
-            let session = anicraft_engine::Session::new(anicraft_engine::doc::Document::default());
+            let session = anima_engine::Session::new(anima_engine::doc::Document::default());
             let mut app = App::with_context(&ctx, session, Some(std::path::PathBuf::from("unused.png")));
             app.run("draw.rect", json!({"x": 0, "y": 0, "w": 100, "h": 80, "fill": "#ff0000", "stroke": "#000000", "object": false}));
             app.run("edit.deselect", json!({}));

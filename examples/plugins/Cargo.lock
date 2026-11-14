@@ -3,41 +3,41 @@
 version = 4
 
 [[package]]
-name = "anicraft-plugin-jitter"
+name = "anima-plugin-jitter"
 version = "1.0.0"
 dependencies = [
- "anicraft-plugin-sdk",
+ "anima-plugin-sdk",
  "serde_json",
 ]
 
 [[package]]
-name = "anicraft-plugin-sdk"
+name = "anima-plugin-sdk"
 version = "1.0.0"
 dependencies = [
  "serde_json",
 ]
 
 [[package]]
-name = "anicraft-plugin-star-field"
+name = "anima-plugin-star-field"
 version = "1.0.0"
 dependencies = [
- "anicraft-plugin-sdk",
+ "anima-plugin-sdk",
  "serde_json",
 ]
 
 [[package]]
-name = "anicraft-plugin-stepped-ease"
+name = "anima-plugin-stepped-ease"
 version = "1.0.0"
 dependencies = [
- "anicraft-plugin-sdk",
+ "anima-plugin-sdk",
  "serde_json",
 ]
 
 [[package]]
-name = "anicraft-plugin-text-export"
+name = "anima-plugin-text-export"
 version = "1.0.0"
 dependencies = [
- "anicraft-plugin-sdk",
+ "anima-plugin-sdk",
  "serde_json",
 ]
 

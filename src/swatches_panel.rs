@@ -13,7 +13,7 @@ use crate::a11y::{self, Named};
 use crate::app::App;
 use crate::icons::{self, Icon};
 use crate::theme::{T, TARGET, Type, text, to_color32};
-use anicraft_engine::doc::{ElementKind, Paint, Rgba, SwatchPaint, ramp_at};
+use anima_engine::doc::{ElementKind, Paint, Rgba, SwatchPaint, ramp_at};
 use egui::{Id, Key, Painter, Rect, Response, Sense, Stroke, StrokeKind, WidgetType, pos2, vec2};
 use serde_json::json;
 
@@ -44,7 +44,10 @@ impl ColourTarget {
 pub fn target_toggle(app: &mut App, ui: &mut egui::Ui) {
     ui.horizontal_wrapped(|ui| {
         ui.label(tr!("Swatches set the"));
-        for (t, label, tip) in [(ColourTarget::Stroke, tr!("Stroke"), tr!("Swatch clicks set the stroke colour (gradients still go to the fill)")), (ColourTarget::Fill, tr!("Fill"), tr!("Swatch clicks set the fill: a colour or a gradient"))] {
+        for (t, label, tip) in [
+            (ColourTarget::Stroke, tr!("Stroke"), tr!("Swatch clicks set the stroke colour (gradients still go to the fill)")),
+            (ColourTarget::Fill, tr!("Fill"), tr!("Swatch clicks set the fill: a colour or a gradient")),
+        ] {
             if ui.selectable_label(app.colour_target == t, label).on_hover_text(tip).clicked() {
                 app.colour_target = t;
             }
@@ -55,7 +58,7 @@ pub fn target_toggle(app: &mut App, ui: &mut egui::Ui) {
 /// The swatch's name for people: its own, else its hex or kind.
 pub fn describe(paint: &SwatchPaint, name: &str) -> String {
     let what = match paint {
-        SwatchPaint::Solid { color } => anicraft_engine::cmds_swatch::hex(*color),
+        SwatchPaint::Solid { color } => anima_engine::cmds_swatch::hex(*color),
         SwatchPaint::Linear { stops, .. } => tr!("Linear gradient, {n} colours", n = stops.len()),
         SwatchPaint::Radial { stops, .. } => tr!("Radial gradient, {n} colours", n = stops.len()),
     };
@@ -115,7 +118,7 @@ fn add_params(app: &App) -> Option<serde_json::Value> {
         ColourTarget::Fill => {
             let (paint, _) = crate::colour_panel::current(app);
             let sw = SwatchPaint::from_paint(&paint)?;
-            let mut v = anicraft_engine::cmds_swatch::swatch_json(&anicraft_engine::doc::Swatch { name: String::new(), paint: sw });
+            let mut v = anima_engine::cmds_swatch::swatch_json(&anima_engine::doc::Swatch { name: String::new(), paint: sw });
             if let Some(o) = v.as_object_mut() {
                 o.remove("name");
             }
@@ -127,7 +130,7 @@ fn add_params(app: &App) -> Option<serde_json::Value> {
                 _ => None,
             });
             let c: Rgba = selected.unwrap_or(app.s.style.stroke);
-            Some(json!({"type": "solid", "color": anicraft_engine::cmds_swatch::hex(c)}))
+            Some(json!({"type": "solid", "color": anima_engine::cmds_swatch::hex(c)}))
         }
     }
 }
@@ -195,9 +198,13 @@ pub fn panel(app: &mut App, ui: &mut egui::Ui) {
         }
         ui.add_space(6.0);
         let more = bar_button(ui, tr!("Swatch options: import, export, defaults"), Icon::Ellipsis, true);
-        egui::Popup::menu(&more).id(Id::new("anicraft.swatches.menu")).show(|ui| menu(app, ui));
+        egui::Popup::menu(&more).id(Id::new("anima.swatches.menu")).show(|ui| menu(app, ui));
     });
-    let caption = if n == 0 { tr!("No swatches. Add the current colour with +, or load the defaults from the menu.") } else { tr!("Click to apply; drag to move; right-click for more.") };
+    let caption = if n == 0 {
+        tr!("No swatches. Add the current colour with +, or load the defaults from the menu.")
+    } else {
+        tr!("Click to apply; drag to move; right-click for more.")
+    };
     ui.label(text(Type::Caption, caption));
 }
 
@@ -217,7 +224,11 @@ fn menu(app: &mut App, ui: &mut egui::Ui) {
     if ui.button(tr!("Import Swatches…")).on_hover_text(tr!("Add the swatches in a swatch file (.json) or a GIMP palette (.gpl)")).clicked() {
         app.invoke("swatch.import");
     }
-    if ui.add_enabled(!app.s.doc.swatches.is_empty(), egui::Button::new(tr!("Export Swatches…"))).on_hover_text(tr!("Save these swatches as a swatch file (.json) for other documents")).clicked() {
+    if ui
+        .add_enabled(!app.s.doc.swatches.is_empty(), egui::Button::new(tr!("Export Swatches…")))
+        .on_hover_text(tr!("Save these swatches as a swatch file (.json) for other documents"))
+        .clicked()
+    {
         app.invoke("swatch.export");
     }
     ui.separator();
@@ -247,8 +258,10 @@ fn grid(app: &mut App, ui: &mut egui::Ui) {
     let rows = n.div_ceil(cols).max(1);
     let size = vec2(cols as f32 * (CELL + GAP) - GAP, rows as f32 * (CELL + GAP) - GAP);
     let (area, _) = ui.allocate_exact_size(size, Sense::hover());
-    let cell_rect = |i: usize| Rect::from_min_size(pos2(area.left() + (i % cols) as f32 * (CELL + GAP), area.top() + (i / cols) as f32 * (CELL + GAP)), vec2(CELL, CELL));
-    let drag_id = Id::new("anicraft.swatches.drag");
+    let cell_rect = |i: usize| {
+        Rect::from_min_size(pos2(area.left() + (i % cols) as f32 * (CELL + GAP), area.top() + (i / cols) as f32 * (CELL + GAP)), vec2(CELL, CELL))
+    };
+    let drag_id = Id::new("anima.swatches.drag");
     let mut dragging: Option<usize> = ui.data(|d| d.get_temp(drag_id));
     let pointer = ui.ctx().pointer_interact_pos();
     // Where a dragged swatch would land: the cell under the pointer (the last one past the end).
@@ -260,7 +273,7 @@ fn grid(app: &mut App, ui: &mut egui::Ui) {
     let mut act: Option<Act> = None;
     for (i, sw) in swatches.iter().enumerate() {
         let r = cell_rect(i);
-        let resp = ui.interact(r, Id::new(("anicraft.swatch", i)), Sense::click_and_drag());
+        let resp = ui.interact(r, Id::new(("anima.swatch", i)), Sense::click_and_drag());
         let name = describe(&sw.paint, &sw.name);
         let selected = app.swatch_sel == Some(i);
         a11y::control(ui, &resp, WidgetType::Button, &tr!("Swatch {n}: {name}", n = i + 1, name = name.as_str()), Some(selected));
@@ -277,7 +290,14 @@ fn grid(app: &mut App, ui: &mut egui::Ui) {
         if resp.has_focus() {
             p.rect_stroke(r.expand(3.0), 2.0, Stroke::new(1.0, T.text), StrokeKind::Outside);
             // The keyboard: Enter applies (a click), Delete removes, Alt+arrows move it.
-            let (del, left, right, alt) = ui.input(|inp| (inp.key_pressed(Key::Delete) || inp.key_pressed(Key::Backspace), inp.key_pressed(Key::ArrowLeft), inp.key_pressed(Key::ArrowRight), inp.modifiers.alt));
+            let (del, left, right, alt) = ui.input(|inp| {
+                (
+                    inp.key_pressed(Key::Delete) || inp.key_pressed(Key::Backspace),
+                    inp.key_pressed(Key::ArrowLeft),
+                    inp.key_pressed(Key::ArrowRight),
+                    inp.modifiers.alt,
+                )
+            });
             if del {
                 act = Some(Act::Remove(i));
             } else if alt && left && i > 0 {
@@ -377,11 +397,18 @@ fn grid(app: &mut App, ui: &mut egui::Ui) {
 
 /// The swatch's name, typed in its right-click menu (Enter or leaving the field renames it).
 fn name_field(app: &mut App, ui: &mut egui::Ui, i: usize, current: &str) {
-    let buf_id = Id::new(("anicraft.swatch.name", i));
+    let buf_id = Id::new(("anima.swatch.name", i));
     let mut s: String = ui.data(|d| d.get_temp(buf_id)).unwrap_or_else(|| current.to_string());
     ui.horizontal(|ui| {
         ui.label(tr!("Name"));
-        let r = ui.add(egui::TextEdit::singleline(&mut s).desired_width(crate::theme::fit(ui, 140.0)).char_limit(anicraft_engine::doc::swatch::MAX_SWATCH_NAME).hint_text(tr!("no name"))).named(tr!("Swatch name"));
+        let r = ui
+            .add(
+                egui::TextEdit::singleline(&mut s)
+                    .desired_width(crate::theme::fit(ui, 140.0))
+                    .char_limit(anima_engine::doc::swatch::MAX_SWATCH_NAME)
+                    .hint_text(tr!("no name")),
+            )
+            .named(tr!("Swatch name"));
         if r.lost_focus() {
             if s.trim() != current {
                 app.run("swatch.rename", json!({"index": i, "name": s}));
@@ -396,17 +423,17 @@ fn name_field(app: &mut App, ui: &mut egui::Ui, i: usize, current: &str) {
 /// The document's swatches as the colour pickers show them (ADR 0078): the solid colours, and
 /// the gradients for the fill picker. Put in the context each frame by the app.
 pub fn publish_to_pickers(ctx: &egui::Context, app: &App) {
-    ctx.data_mut(|d| d.insert_temp(Id::new("anicraft.colour.document"), app.s.doc.swatches.clone()));
+    ctx.data_mut(|d| d.insert_temp(Id::new("anima.colour.document"), app.s.doc.swatches.clone()));
 }
 
 /// The document's swatches, for a picker.
-pub fn for_pickers(ctx: &egui::Context) -> std::sync::Arc<Vec<anicraft_engine::doc::Swatch>> {
-    ctx.data(|d| d.get_temp(Id::new("anicraft.colour.document"))).unwrap_or_default()
+pub fn for_pickers(ctx: &egui::Context) -> std::sync::Arc<Vec<anima_engine::doc::Swatch>> {
+    ctx.data(|d| d.get_temp(Id::new("anima.colour.document"))).unwrap_or_default()
 }
 
 /// The fill a gradient swatch makes, as `paint.set_fill` params.
 pub fn fill_params(sw: &SwatchPaint) -> serde_json::Value {
-    let mut v = anicraft_engine::cmds_swatch::swatch_json(&anicraft_engine::doc::Swatch { name: String::new(), paint: sw.clone() });
+    let mut v = anima_engine::cmds_swatch::swatch_json(&anima_engine::doc::Swatch { name: String::new(), paint: sw.clone() });
     if let Some(o) = v.as_object_mut() {
         o.remove("name");
     }
@@ -434,7 +461,7 @@ mod tests {
     #[test]
     fn a_click_applies_to_the_active_colour_and_gradients_to_the_fill() {
         let ctx = egui::Context::default();
-        let mut app = App::with_context(&ctx, anicraft_engine::Session::default(), Some(PathBuf::from("unused.png")));
+        let mut app = App::with_context(&ctx, anima_engine::Session::default(), Some(PathBuf::from("unused.png")));
         app.run("draw.rect", json!({"x": 10, "y": 10, "w": 100, "h": 80, "fill": "#ff0000", "stroke": "#000000"}));
         let green = app.s.doc.swatches.iter().position(|w| w.paint == SwatchPaint::Solid { color: Rgba::hex(0x00ff00) }).unwrap();
         app.colour_target = ColourTarget::Stroke;

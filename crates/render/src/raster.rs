@@ -5,7 +5,7 @@
 //! the shape's pixel bounding box. Edges left of the box collapse onto its left edge, which keeps
 //! the winding of every pixel to their right correct.
 
-use anicraft_geom::{FillRule, Vec2};
+use anima_geom::{FillRule, Vec2};
 
 /// Integer pixel rectangle `[x0, x1) × [y0, y1)`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

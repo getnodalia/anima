@@ -56,7 +56,7 @@ observation; no code or assets were used.
    (`DockView::flyout`), never saved. The » button on a side dock's first header and the
    panel menu collapse a dock; the Window menu opens a collapsed panel as its flyout, and is
    ticked while it is open (`App::panel_visible`). Ctrl+F6 lands on the strip's first icon,
-   or on the open flyout. New panel icons are AniCraft originals on Lucide's grid.
+   or on the open flyout. New panel icons are Ánima originals on Lucide's grid.
 5. **Workspaces renamed and deleted.** `Workspaces::rename` and `delete` work only on your own
    (the built-in ones can be reset but not renamed or deleted; deleting the one in use goes to
    Essentials as last arranged). Names follow `save_as`'s rules, plus no clash with another

@@ -1,7 +1,7 @@
 //! Clip paths and masks → mask layers (ADR 0021), on self-authored drawings.
 
 use super::*;
-use anicraft_doc::{MaskMode, Paint, Rgba};
+use anima_doc::{MaskMode, Paint, Rgba};
 
 fn imp(svg: &str) -> SvgImport {
     match import_with_fonts(svg.as_bytes(), &Fonts::from_faces(Vec::new())) {
@@ -82,7 +82,7 @@ fn clips_inside_clips_intersect_exactly() {
     let (outer, inner) = (i.layers[0].mask.as_ref().unwrap(), i.layers[1].mask.as_ref().unwrap());
     assert_eq!((outer.name.as_str(), inner.name.as_str()), ("band", "disc"));
     let p = path_of(&inner.elements[0]);
-    assert!(p.cmds.iter().any(|c| matches!(c, anicraft_geom::PathCmd::CubicTo(..))), "the arcs stay curves");
+    assert!(p.cmds.iter().any(|c| matches!(c, anima_geom::PathCmd::CubicTo(..))), "the arcs stay curves");
     let b = p.bounds();
     assert!(b.min.y >= 40.0 - 1e-3 && b.max.y <= 80.0 + 1e-3 && b.min.x >= 20.0 - 1e-3 && b.max.x <= 100.0 + 1e-3, "{b:?}");
     assert!(in_mask(inner, Vec2::new(60.0, 60.0)) && !in_mask(inner, Vec2::new(60.0, 30.0)) && !in_mask(inner, Vec2::new(150.0, 60.0)));
@@ -106,7 +106,10 @@ fn bounding_box_units_and_transforms_place_the_clip() {
     </svg>"##);
     assert_eq!(i.layers.len(), 2);
     let oval = path_of(&i.layers[0].mask.as_ref().unwrap().elements[0]).bounds();
-    assert!((oval.min.x - 10.0).abs() < 1e-3 && (oval.max.x - 110.0).abs() < 1e-3 && (oval.min.y - 10.0).abs() < 1e-3 && (oval.max.y - 60.0).abs() < 1e-3, "{oval:?}");
+    assert!(
+        (oval.min.x - 10.0).abs() < 1e-3 && (oval.max.x - 110.0).abs() < 1e-3 && (oval.min.y - 10.0).abs() < 1e-3 && (oval.max.y - 60.0).abs() < 1e-3,
+        "{oval:?}"
+    );
     // A userSpaceOnUse clip lives in the space of the element it clips (inside its group).
     let user = i.layers[1].mask.as_ref().unwrap();
     assert!(in_mask(user, Vec2::new(150.0, 155.0)) && !in_mask(user, Vec2::new(155.0, 150.0)), "rotated 45° about the group's origin");
@@ -141,7 +144,10 @@ fn opaque_masks_become_mask_layers_and_soft_ones_soft_mask_layers() {
       <rect id="e" width="100" height="100" mask="url(#tight)"/>
     </svg>"##);
     let shape: Vec<(Option<&str>, Vec<&str>)> = i.layers.iter().map(|l| (l.mask.as_ref().map(|m| m.name.as_str()), names(l))).collect();
-    assert_eq!(shape, [(Some("white"), vec!["a"]), (Some("alpha"), vec!["b"]), (Some("grey"), vec!["c"]), (Some("faded"), vec!["d"]), (Some("tight"), vec!["e"])]);
+    assert_eq!(
+        shape,
+        [(Some("white"), vec!["a"]), (Some("alpha"), vec!["b"]), (Some("grey"), vec!["c"]), (Some("faded"), vec!["d"]), (Some("tight"), vec!["e"])]
+    );
     let modes: Vec<MaskMode> = i.layers.iter().map(|l| l.mask.as_ref().unwrap().mode).collect();
     // Opaque masks stay Animate's masks (by area); the grey and the faded one are soft
     // luminance masks (ADR 0070), their artwork as drawn.
@@ -185,13 +191,18 @@ fn soft_masks_keep_gradients_and_their_region_cuts_them() {
 #[test]
 fn loops_and_floods_of_clips_stay_bounded() {
     let start = std::time::Instant::now();
-    let mut svg = String::from(r##"<svg width="100" height="100">
+    let mut svg = String::from(
+        r##"<svg width="100" height="100">
       <clipPath id="self" clip-path="url(#self)"><rect width="50" height="50"/></clipPath>
       <mask id="m"><rect width="100" height="100" fill="white" mask="url(#m)"/><use href="#user"/></mask>
       <rect id="user" width="60" height="60" mask="url(#m)"/>
-      <rect width="80" height="80" clip-path="url(#self)"/>"##);
+      <rect width="80" height="80" clip-path="url(#self)"/>"##,
+    );
     for k in 0..300 {
-        svg.push_str(&format!(r##"<clipPath id="c{k}"><circle cx="{}" cy="50" r="5"/></clipPath><rect width="100" height="100" clip-path="url(#c{k})"/>"##, 5 + k % 90));
+        svg.push_str(&format!(
+            r##"<clipPath id="c{k}"><circle cx="{}" cy="50" r="5"/></clipPath><rect width="100" height="100" clip-path="url(#c{k})"/>"##,
+            5 + k % 90
+        ));
     }
     svg.push_str("</svg>");
     let i = imp(&svg);

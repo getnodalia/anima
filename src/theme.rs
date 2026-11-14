@@ -144,9 +144,10 @@ pub const GRAPHITE: Tokens = Tokens {
     text_dim: Color32::from_rgb(0xb0, 0xb0, 0xb8),
     // ≥ 4.5:1 on every surface up to `header`, so even hints stay readable.
     text_faint: Color32::from_rgb(0x98, 0x98, 0xa2),
-    accent: Color32::from_rgb(0x2e, 0x66, 0xf0),
-    accent_dim: Color32::from_rgb(0x1f, 0x35, 0x70),
-    accent_text: Color32::from_rgb(0x6f, 0x97, 0xff),
+    // Ánima's violet (its icon's, assets/app-icon/README.md), a step lighter for 3:1 focus rings.
+    accent: Color32::from_rgb(0x75, 0x59, 0xef),
+    accent_dim: Color32::from_rgb(0x34, 0x27, 0x78),
+    accent_text: Color32::from_rgb(0xa8, 0x96, 0xff),
     on_fill: Color32::WHITE,
     ink: Color32::from_rgb(0x0e, 0x0e, 0x10),
     pasteboard: Color32::from_rgb(0x2a, 0x2a, 0x30),
@@ -277,9 +278,9 @@ pub const LIGHT: Tokens = Tokens {
     text: rgb(0x17171b),
     text_dim: rgb(0x44444d),
     text_faint: rgb(0x5c5c66),
-    accent: rgb(0x2457e0),
-    accent_dim: rgb(0xd3dffb),
-    accent_text: rgb(0x1d4ccc),
+    accent: rgb(0x5a3fd6),
+    accent_dim: rgb(0xe2dcfb),
+    accent_text: rgb(0x4a31c0),
     on_fill: rgb(0xffffff),
     ink: rgb(0x101014),
     pasteboard: rgb(0xd2d2d9),
@@ -537,7 +538,9 @@ pub fn install_fonts(ctx: &egui::Context, ui_font: Option<&UserFont>, data_font:
     use egui::{FontData, FontDefinitions, FontFamily};
     use std::sync::Arc;
     let mut defs = FontDefinitions::default();
-    for (bytes, name, family) in [(craft_fonts::UI_FONT, "craft-inter", FontFamily::Proportional), (craft_fonts::MONO_FONT, "craft-jetbrains-mono", FontFamily::Monospace)] {
+    for (bytes, name, family) in
+        [(craft_fonts::UI_FONT, "craft-inter", FontFamily::Proportional), (craft_fonts::MONO_FONT, "craft-jetbrains-mono", FontFamily::Monospace)]
+    {
         if let Some(b) = bytes {
             defs.font_data.insert(name.to_owned(), Arc::new(FontData::from_static(b)));
             defs.families.entry(family).or_default().insert(0, name.to_owned());
@@ -744,7 +747,14 @@ pub fn section<R>(ui: &mut egui::Ui, id: &str, style: Section, title: &str, deta
 }
 
 /// [`section`], also returning its header (a panel's keyboard anchor, `a11y::anchor`).
-pub fn section_with_header<R>(ui: &mut egui::Ui, id: &str, style: Section, title: &str, detail: Option<&str>, add: impl FnOnce(&mut egui::Ui) -> R) -> (egui::Response, Option<R>) {
+pub fn section_with_header<R>(
+    ui: &mut egui::Ui,
+    id: &str,
+    style: Section,
+    title: &str,
+    detail: Option<&str>,
+    add: impl FnOnce(&mut egui::Ui) -> R,
+) -> (egui::Response, Option<R>) {
     use egui::{Sense, StrokeKind, pos2, vec2};
     let key = ui.make_persistent_id(("section", id));
     let mut open = ui.data_mut(|d| *d.get_temp_mut_or(key, true));
@@ -822,14 +832,20 @@ pub fn with_type<R>(ui: &mut egui::Ui, role: Type, add: impl FnOnce(&mut egui::U
 }
 
 /// The document colour of an interface colour (the onion skin's theme colours, ADR 0047).
-pub fn to_rgba(c: Color32) -> anicraft_engine::doc::Rgba {
+pub fn to_rgba(c: Color32) -> anima_engine::doc::Rgba {
     let [r, g, b, a] = c.to_srgba_unmultiplied();
-    anicraft_engine::doc::Rgba::new(f32::from(r) / 255.0, f32::from(g) / 255.0, f32::from(b) / 255.0, f32::from(a) / 255.0)
+    anima_engine::doc::Rgba::new(f32::from(r) / 255.0, f32::from(g) / 255.0, f32::from(b) / 255.0, f32::from(a) / 255.0)
 }
 
 /// The heat map of a bone's weights (ADR 0090), the same in every palette because it is drawn
 /// over artwork: blue (none) through cyan, green and yellow to red (all of the point).
-pub const HEAT: [Color32; 5] = [Color32::from_rgb(0x2b, 0x4c, 0xd9), Color32::from_rgb(0x1f, 0xb5, 0xd6), Color32::from_rgb(0x2f, 0xc2, 0x5a), Color32::from_rgb(0xf2, 0xd0, 0x2a), Color32::from_rgb(0xe8, 0x3a, 0x2a)];
+pub const HEAT: [Color32; 5] = [
+    Color32::from_rgb(0x2b, 0x4c, 0xd9),
+    Color32::from_rgb(0x1f, 0xb5, 0xd6),
+    Color32::from_rgb(0x2f, 0xc2, 0x5a),
+    Color32::from_rgb(0xf2, 0xd0, 0x2a),
+    Color32::from_rgb(0xe8, 0x3a, 0x2a),
+];
 
 /// The colour of weight `w` (0…1) on [`HEAT`], blended between its stops.
 pub fn heat(w: f32) -> Color32 {
@@ -842,9 +858,14 @@ pub fn heat(w: f32) -> Color32 {
     Color32::from_rgb(mix(a.r(), b.r()), mix(a.g(), b.g()), mix(a.b(), b.b()))
 }
 
-pub fn to_color32(c: anicraft_engine::doc::Rgba) -> Color32 {
+pub fn to_color32(c: anima_engine::doc::Rgba) -> Color32 {
     let c = c.sanitized();
-    Color32::from_rgba_unmultiplied((c.r * 255.0).round() as u8, (c.g * 255.0).round() as u8, (c.b * 255.0).round() as u8, (c.a * 255.0).round() as u8)
+    Color32::from_rgba_unmultiplied(
+        (c.r * 255.0).round() as u8,
+        (c.g * 255.0).round() as u8,
+        (c.b * 255.0).round() as u8,
+        (c.a * 255.0).round() as u8,
+    )
 }
 
 /// Where a dragged panel tab would dock (ADR 0075): the accent, light enough to see the
@@ -858,6 +879,6 @@ pub fn dock_drop() -> Color32 {
 pub const HIT_AREA_ALPHA: f32 = 0.35;
 
 /// The tint and opacity a button's hit area is drawn in (ADR 0057).
-pub fn hit_area() -> (anicraft_engine::doc::Rgba, f32) {
+pub fn hit_area() -> (anima_engine::doc::Rgba, f32) {
     (to_rgba(T.hit_area), HIT_AREA_ALPHA)
 }

@@ -9,7 +9,7 @@
 
 Sound items with their file in the package already came across (ADR 0057), but everything
 else about sound was only counted: effects and envelopes were dropped with one line, and a
-sound in a format AniCraft can't decode was "1 sounds stored in Animate's own format", with no
+sound in a format Ánima can't decode was "1 sounds stored in Animate's own format", with no
 name, so an artist couldn't tell which sound to fix. Videos were counted as "videos" and
 dropped. And two archive layouts real users hand us were refused: an XFL folder zipped as a
 folder (`walk/DOMDocument.xml`, often with macOS's `__MACOSX/` beside it), and a zip with data
@@ -37,14 +37,14 @@ self-authored.
 2. **What doesn't come across is named.** `Report::names` (kind → names, at most 64 kept per
    kind; the count stays whole) lists each sound or video that didn't come across with the
    reason; the summary line shows the first three per kind, then "and N more", and the whole
-   line is on the status bar's hover. Sounds: "sounds in formats AniCraft can't decode"
+   line is on the status bar's hover. Sounds: "sounds in formats Ánima can't decode"
    (`theme.aif: AIFF`, `voice.wav: WAV in IMA ADPCM`, `x: Animate's own sound data`, `a damaged
    MP3 file`, FLAC, Ogg Opus, AAC, Sun AU — told from the first bytes; a WAV's codec is read
    from its `fmt ` chunk), "sounds whose files couldn't be read", "missing sound files". The
    kinds' names changed from ADR 0057's ("sounds stored in Animate's own format" is now a
-   reason inside "sounds in formats AniCraft can't decode"). `file.open` returns `named` for
+   reason inside "sounds in formats Ánima can't decode"). `file.open` returns `named` for
    the CLI and MCP.
-3. **Videos: a still where we can read one, a name always.** AniCraft has no video playback
+3. **Videos: a still where we can read one, a name always.** Ánima has no video playback
    (and won't bundle patent-pool decoders). A `DOMVideoItem`'s data is looked for as
    `LIBRARY/<href>`, the package-relative `sourceExternalFilepath`, then `bin/<videoDataHRef>`.
    If it is an FLV whose first video tag is a **Screen Video** key frame (codec 3: blocks of
@@ -93,7 +93,7 @@ FLV.
   FLV in 32-pixel blocks with partial top blocks, a VP6 FLV in `bin/`, a missing MPEG-4), each
   with exact report counts **and names**, structural checks (effects, envelope points, sync,
   the still's pixels the right way up, its instance's 1.5× size), golden renders with colour
-  probes, `.anicraft` round trips, and the hostile corpus fuzz now garbling sound, video and
+  probes, `.anima` round trips, and the hostile corpus fuzz now garbling sound, video and
   data files too.
 * Six new `.fla` layouts packed by the test writer: a top folder with folder entries, a top
   folder with `__MACOSX`, a stub with offsets from the zip data, a stub with offsets from the
@@ -110,6 +110,6 @@ FLV.
   one; sound effects play as authored.
 * A zipped XFL folder or a self-extracting archive opens like any `.fla`.
 * Not in this slice: sound in/out points (needs trims in the model), decoding AIFF and
-  compressed WAV (would be straightforward later in `anicraft-audio`), video playback or a
+  compressed WAV (would be straightforward later in `anima-audio`), video playback or a
   video layer, Screen Video 2 and later frames, sounds' `linkageClassName`, and verifying the
   attribute names above against a file Animate saved.

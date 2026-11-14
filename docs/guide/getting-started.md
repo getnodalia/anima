@@ -1,36 +1,36 @@
 # Getting started
 
-This chapter takes you from installing AniCraft to a finished, exported animation in about
+This chapter takes you from installing Ánima to a finished, exported animation in about
 ten minutes. You'll draw a shape, make it move, save your work and export a GIF or a video.
 
-AniCraft is in early alpha. Most of what an animator needs every day is in place, and this
+Ánima is in early alpha. Most of what an animator needs every day is in place, and this
 guide says plainly where something isn't there yet.
 
-## Install AniCraft
+## Install Ánima
 
-Download AniCraft from the
-[releases page on GitHub](https://github.com/storytold/AniCraft/releases). Each release
+Download Ánima from the
+[releases page on GitHub](https://github.com/getnodalia/anima/releases). Each release
 lists every build, with a `SHA256SUMS.txt` file so you can check what you downloaded.
 
 | System | What to download | How to install |
 |---|---|---|
 | Windows (x64, ARM64 or 32-bit) | the `.msi` installer | Double-click it. By default it installs for your account only and doesn't need an administrator. You can choose to install it for everyone on the computer instead. A portable `.zip` is there too if you'd rather not install. |
-| macOS (Apple silicon and Intel) | the `.dmg` | Open it and drag AniCraft to Applications. The app is signed and notarized. |
+| macOS (Apple silicon and Intel) | the `.dmg` | Open it and drag Ánima to Applications. The app is signed and notarized. |
 | Linux (x86_64 or ARM64) | `.AppImage`, `.flatpak`, `.deb`, `.rpm` or `.tar.gz` | The AppImage runs anywhere. Install the Flatpak with `flatpak install --user` and the file name. Use the `.deb` on Debian and Ubuntu, and the `.rpm` on Fedora and openSUSE. |
 | FreeBSD | the `.tar.gz` | Unpack it anywhere. |
 
-Every installer sets AniCraft up to open `.anicraft` documents. Animate's `.fla` and `.xfl`
-files show AniCraft under "Open with", but your default app for them doesn't change. The
-command-line tool, `anicraft-cli`, is installed alongside the app (see
+Every installer sets Ánima up to open `.anima` documents. Animate's `.fla` and `.xfl`
+files show Ánima under "Open with", but your default app for them doesn't change. The
+command-line tool, `anima-cli`, is installed alongside the app (see
 [Working headless](working-headless.md)).
 
 ### Running the AppImage
 
-The first time you start AniCraft from an `.AppImage`, a small card at the bottom right offers to
-**Add to Menu**. Say yes and AniCraft appears in your applications menu with its icon, and
-double-clicking a `.anicraft`, `.fla` or `.xfl` file opens it. Only your own data folder
+The first time you start Ánima from an `.AppImage`, a small card at the bottom right offers to
+**Add to Menu**. Say yes and Ánima appears in your applications menu with its icon, and
+double-clicking a `.anima`, `.fla` or `.xfl` file opens it. Only your own data folder
 (`~/.local/share`) changes; nothing is installed for other users. **Not Now** puts the card away
-for good. Either way, **Preferences › About** has the button to add AniCraft to the menu or
+for good. Either way, **Preferences › About** has the button to add Ánima to the menu or
 remove it again. If you move the AppImage or an update replaces it, the menu follows the copy
 you start next.
 
@@ -38,11 +38,11 @@ you start next.
 
 The Windows `.zip` and the Linux `.tar.gz` are **portable**: they keep your preferences,
 autosaved work, logs, plug-ins, templates, brushes, filter presets, workspaces and recent files
-in a `data` folder beside AniCraft, not in your user folder. Unpack one onto a USB stick and
-your setup travels with it. A file named `anicraft-portable` next to the program is what makes a
+in a `data` folder beside Ánima, not in your user folder. Unpack one onto a USB stick and
+your setup travels with it. A file named `anima-portable` next to the program is what makes a
 copy portable: delete it to use your user folder instead, or put one next to an `.AppImage` or
-next to `AniCraft.app` on a Mac to make those portable too. If the `data` folder can't be
-written (a read-only disc, say), AniCraft uses your user folder and says so. To bring your
+next to `Anima.app` on a Mac to make those portable too. If the `data` folder can't be
+written (a read-only disc, say), Ánima uses your user folder and says so. To bring your
 existing settings along, copy the contents of your user settings folder (Preferences › About
 shows it in an installed copy) into the portable copy's `data` folder.
 
@@ -56,14 +56,14 @@ To get newer versions later, choose **Help › Check for Updates…**.
 
 ## A note on keys
 
-This guide writes shortcuts the Windows and Linux way. On macOS, AniCraft uses ⌘ (Command)
+This guide writes shortcuts the Windows and Linux way. On macOS, Ánima uses ⌘ (Command)
 wherever the guide says Ctrl, and ⌥ (Option) wherever it says Alt. So **Ctrl+S** is **⌘S**
 on a Mac, and **Ctrl+Shift+S** is **⇧⌘S**. The menus always show the keys for your computer, and you can change any shortcut
 (see [Preferences, shortcuts and accessibility](preferences-shortcuts-accessibility.md)).
 
 ## The start screen
 
-When you open AniCraft without a document, the start screen appears.
+When you open Ánima without a document, the start screen appears.
 
 ![The start screen, with new document sizes, templates, Open, the sample animation and recent files](images/start-screen.png)
 
@@ -77,7 +77,7 @@ From here you can:
   panels), Character turnaround and a Lip-sync mouth chart. Templates come with named layers,
   and with guides on a locked guide layer that show while you draw but never export.
   Templates you save yourself appear under **My templates**.
-* **Open…**: open an AniCraft document, or an Animate `.fla` or `.xfl` file.
+* **Open…**: open an Ánima document, or an Animate `.fla` or `.xfl` file.
 * **Sample animation**: open a short animation (a bouncing ball, a spinning star and a sun
   over hills, 48 frames at 24 fps) to look at and take apart.
 * **Recent**: your last documents, each with a picture of its first frame. You can pin
@@ -87,7 +87,7 @@ You can also drop a document anywhere on the window to open it.
 
 Press **Esc** to close the start screen and go back to the document behind it. To get the
 screen back later, choose **File › Start Screen**. If you'd rather not see it at every start,
-clear **Show this screen when AniCraft starts** at the bottom.
+clear **Show this screen when Ánima starts** at the bottom.
 
 The same choices are in the File menu: **File › New** (**Ctrl+N**, **⌘N** on macOS),
 **File › New from Template…**, **File › New from Sample**, **File › Open…** (**Ctrl+O**)
@@ -95,7 +95,7 @@ and **File › Open Recent**.
 
 ## The window at a glance
 
-![The AniCraft window with the sample animation: tools on the left, the stage in the middle, the timeline below and Properties and the Library on the right](images/workspace.png)
+![The Ánima window with the sample animation: tools on the left, the stage in the middle, the timeline below and Properties and the Library on the right](images/workspace.png)
 
 * The **Tools** panel is the column on the left.
 * The **stage** in the middle is your canvas. What's inside the stage rectangle is what your
@@ -142,12 +142,12 @@ the timeline header. Motion tweens, shape tweens and easing curves are in
 
 ## Save your work
 
-Choose **File › Save** (**Ctrl+S**). The first time, AniCraft asks for a name and a place.
-Documents are saved as `.anicraft` files. Each one is a single file that holds everything,
+Choose **File › Save** (**Ctrl+S**). The first time, Ánima asks for a name and a place.
+Documents are saved as `.anima` files. Each one is a single file that holds everything,
 including the images and sounds you imported. To save a copy under a new name, choose
 **File › Save As…** (**Ctrl+Shift+S**).
 
-AniCraft works on one document at a time. If you open or create another document while yours
+Ánima works on one document at a time. If you open or create another document while yours
 has unsaved changes, it asks you first, and it does the same when you quit.
 
 To start new documents from this one later, choose **File › Save as Template…**. Give the
@@ -155,13 +155,13 @@ template a name and a category. It then appears under **My templates** on the st
 
 ## Autosave and crash recovery
 
-While you work, AniCraft quietly keeps a recovery copy of your unsaved changes. By default it
+While you work, Ánima quietly keeps a recovery copy of your unsaved changes. By default it
 does this every minute, or after 25 changes, whichever comes first. The status bar shows when
 it last did ("autosaved just now"). The copy never replaces your own file. It is kept in
-AniCraft's settings folder and removed when you save or quit normally. Drawing never waits
+Ánima's settings folder and removed when you save or quit normally. Drawing never waits
 for it.
 
-If AniCraft closes unexpectedly, the next start shows a **Recover unsaved work** window:
+If Ánima closes unexpectedly, the next start shows a **Recover unsaved work** window:
 
 * **Restore** opens the work as an unsaved document. Save then puts it back where it was.
   If the file was saved after the copy was made, Save asks for a new name instead, so
@@ -182,8 +182,8 @@ Every change you make can be undone:
   go straight back to that point.
 
 A whole drag counts as one step, however long it takes. Because undo is always there,
-AniCraft doesn't stop you with "are you sure?" questions for everyday edits. When something
-big disappears, the status bar says how to undo it. AniCraft only asks first when the loss
+Ánima doesn't stop you with "are you sure?" questions for everyday edits. When something
+big disappears, the status bar says how to undo it. Ánima only asks first when the loss
 would be hard to recover, such as deleting a scene full of artwork or discarding autosaved
 work.
 
@@ -192,12 +192,12 @@ work.
 To export an **animated GIF**:
 
 1. Choose **File › Export › Export Animated GIF…**.
-2. Pick a name and a folder. AniCraft writes the GIF straight away, with the whole movie,
+2. Pick a name and a folder. Ánima writes the GIF straight away, with the whole movie,
    looping.
 
 To export a **video**:
 
-1. Install ffmpeg, the free video tool, if you haven't already. AniCraft uses your own copy
+1. Install ffmpeg, the free video tool, if you haven't already. Ánima uses your own copy
    of ffmpeg and doesn't include a video encoder. If it can't find ffmpeg, it tells you how
    to get it.
 2. Choose **File › Export › Export Video…**.

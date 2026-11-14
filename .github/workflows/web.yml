@@ -21,15 +21,10 @@ concurrency:
 jobs:
   wasm:
     name: Web build (wasm32)
-    # Tracks @main so suite-wide CI fixes reach every app without a PR in each repository.
-    uses: storytold/craft-common-actions/.github/workflows/gate.yml@main
+    uses: getnodalia/foundation/.github/workflows/rust-gate.yml@976581262c95c0d95c0184149c0e1ba55485ccb3 # foundation main
     with:
       timeout-minutes: 60
-      # As before: no craft-fonts, apt packages or nextest; the gate adds the wasm32 target.
-      craft-fonts-ref: ""
       tools: ""
-      # Its own cache, apart from ci.yml's gate.
-      cache-version: v1-web
       command: |
         # Every crate builds for wasm32.
         cargo build --workspace --target wasm32-unknown-unknown --locked
@@ -37,12 +32,12 @@ jobs:
         # tests, and the engine running the built modules.
         examples/plugins/build.sh
         (cd examples/plugins && cargo test --locked)
-        ANICRAFT_EXAMPLE_PLUGINS="$PWD/examples/plugins/dist" cargo test -p anicraft-engine --test example_plugins --locked
+        ANIMA_EXAMPLE_PLUGINS="$PWD/examples/plugins/dist" cargo test -p anima-engine --test example_plugins --locked
         # wasm-bindgen CLI at the version Cargo.lock pins.
         version="$(awk '/^name = "wasm-bindgen"$/ { getline; gsub(/version = |"/, ""); print; exit }' Cargo.lock)"
         cargo install wasm-bindgen-cli --version "$version" --locked
         # The engine inside WebAssembly (Node).
-        CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER=wasm-bindgen-test-runner           cargo test -p anicraft-engine --target wasm32-unknown-unknown --test wasm --locked
+        CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER=wasm-bindgen-test-runner           cargo test -p anima-engine --target wasm32-unknown-unknown --test wasm --locked
         # The web editor bundle and its release zip (#210): what the release workflow's web job runs.
         packaging/web/package.sh
         ls -l web dist/release

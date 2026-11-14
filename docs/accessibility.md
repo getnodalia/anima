@@ -1,6 +1,6 @@
 # Accessibility
 
-AniCraft aims to be usable with the keyboard alone, with a screen reader, at large interface
+Ánima aims to be usable with the keyboard alone, with a screen reader, at large interface
 sizes and in high contrast. This page says what works today, how to check it, and what doesn't
 work yet. Design decisions are in ADR 0022 (first pass) and ADR 0064 (stage elements, timeline
 frames, the keyboard menu bar, the system's contrast setting); the rules for contributors are in
@@ -63,7 +63,7 @@ frames, the keyboard menu bar, the system's contrast setting); the rules for con
 
 ### Screen readers
 
-AniCraft publishes its interface through [AccessKit](https://accesskit.dev) (built into eframe):
+Ánima publishes its interface through [AccessKit](https://accesskit.dev) (built into eframe):
 UI Automation on Windows, NSAccessibility on macOS, AT-SPI on Linux.
 
 * Every button, toggle, field, slider, menu and list row has a name and a role. Icon-only
@@ -96,7 +96,7 @@ UI Automation on Windows, NSAccessibility on macOS, AT-SPI on Linux.
 
 ### High contrast
 
-Preferences › Appearance › Theme › **Follow system** is the default: AniCraft switches to high
+Preferences › Appearance › Theme › **Follow system** is the default: Ánima switches to high
 contrast while the system asks for more contrast, and back when it doesn't, within a few
 seconds. It reads:
 
@@ -132,15 +132,15 @@ Run from a checkout:
 cargo run                                              # as you use it
 cargo run -- --theme high-contrast --scale 200         # high contrast at 200 %, not saved
 cargo run -- --theme high-contrast --open prefs --screenshot shots/hc.png
-cargo test --bin anicraft a11y                         # the AccessKit audit, panel focus, stage, timeline and menu keys
+cargo test --bin anima a11y                         # the AccessKit audit, panel focus, stage, timeline and menu keys
 cargo run -- --open stagekeys --screenshot shots/s.png # an element focused on the stage
 cargo run -- --open menukeys --screenshot shots/m.png  # the menu bar from the keyboard
-cargo test --bin anicraft palette                      # the contrast checks
+cargo test --bin anima palette                      # the contrast checks
 ```
 
 ### Windows: Narrator (or NVDA)
 
-1. Start AniCraft, then Narrator with **Win+Ctrl+Enter**.
+1. Start Ánima, then Narrator with **Win+Ctrl+Enter**.
 2. Press **Ctrl+F6**: Narrator reads the stage, for example "Stage · Selection tool · frame 1,
    canvas". Press it again for the timeline (the active layer, "Ball · layer"), Properties and
    Library (their section headers) and the tools ("Selection tool (V)"). Exact phrasing differs
@@ -157,7 +157,7 @@ cargo test --bin anicraft palette                      # the contrast checks
 
 ### macOS: VoiceOver
 
-1. Start AniCraft, then VoiceOver with **⌘F5**.
+1. Start Ánima, then VoiceOver with **⌘F5**.
 2. Use **⌘F6** to move between panels and **Tab** within them. VO+arrow keys also walk the
    window's elements.
 3. The Accessibility Inspector (Xcode › Open Developer Tool) shows names, roles and values.
@@ -166,7 +166,7 @@ cargo test --bin anicraft palette                      # the contrast checks
 
 1. Orca needs the AT-SPI bus (on by default in GNOME and KDE). Start it with **Super+Alt+S** in
    GNOME, or `orca` from a terminal.
-2. Start AniCraft from the same session and use **Ctrl+F6** and **Tab** as above.
+2. Start Ánima from the same session and use **Ctrl+F6** and **Tab** as above.
 3. Accerciser shows the AT-SPI tree.
 
 ## Known gaps
@@ -186,7 +186,7 @@ cargo test --bin anicraft palette                      # the contrast checks
   are fields that take typed values; the Effect menu sets any preset from the keyboard.
 * **Windows' white contrast themes get the black high-contrast palette**: the Light palette
   (ADR 0077) follows the system's light mode, but it is not a high-contrast palette.
-* **macOS has no keyboard route to AniCraft's own menu row**: use ⌘K, which lists every menu
+* **macOS has no keyboard route to Ánima's own menu row**: use ⌘K, which lists every menu
   command.
 * **Tab order across panels** follows how the window is built (menu bar, edit bar, tools,
   right-hand panels, timeline, stage). Ctrl+F6 gives the panel order listed above.
@@ -196,7 +196,7 @@ cargo test --bin anicraft palette                      # the contrast checks
   pseudo-locale too and fails on a name that stayed English. Document text (layer and symbol
   names) is announced as written.
 * **Manual passes with Narrator, VoiceOver and Orca** are still to do on real machines for each
-  platform. **What has been verified (ADR 0064):** the AccessKit tree AniCraft publishes, by
+  platform. **What has been verified (ADR 0064):** the AccessKit tree Ánima publishes, by
   automated tests on Windows: names, roles, selected states, bounds, focus, the list box under
   the stage canvas and the span list under the frame grid. Screenshots show the keyboard
   states. No live screen reader has been run against the second pass yet, so how each reader

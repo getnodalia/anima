@@ -1,9 +1,9 @@
-//! Sandboxed WebAssembly plug-ins for AniCraft (layer L0; ADR 0017, `docs/plugins.md`).
+//! Sandboxed WebAssembly plug-ins for Ánima (layer L0; ADR 0017, `docs/plugins.md`).
 //!
-//! A plug-in is a core WebAssembly module that implements the AniCraft plug-in ABI (v1). It
+//! A plug-in is a core WebAssembly module that implements the Ánima plug-in ABI (v1). It
 //! runs in [`wasmi`], a pure-Rust interpreter, with:
 //!
-//! - **no host imports but the AniCraft ABI**: the module may import only `anicraft.call` and
+//! - **no host imports but the Ánima ABI**: the module may import only `anicraft.call` and
 //!   `anicraft.response`, a JSON request/response channel to its [`Host`]. No WASI, file
 //!   system, network, clock or randomness; a module importing anything else is rejected;
 //! - an **instruction budget** (fuel), metered in slices so a wall-clock deadline is enforced

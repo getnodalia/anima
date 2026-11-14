@@ -5,15 +5,15 @@
 //! edge). Everything is a parameter: no bitmaps, so a preset is a few numbers, renders at any
 //! size and gives the same outline from the same points every time.
 //!
-//! The built-ins are AniCraft's own, made from these parameters. The user's presets belong to
+//! The built-ins are Ánima's own, made from these parameters. The user's presets belong to
 //! the session (they survive New and Open, like recent files); the desktop app keeps them in
 //! its preferences and puts them back at start, so the engine never reads the settings folder.
 //! A brush set moves between computers as a small JSON file (`brush.preset_export`/`_import`).
 
 use crate::params::*;
 use crate::{EngineError, Result};
-use anicraft_geom::brush::{Shaping, TiltResponse, Tip, TipShape};
-use anicraft_geom::pressure::PressureCurve;
+use anima_geom::brush::{Shaping, TiltResponse, Tip, TipShape};
+use anima_geom::pressure::PressureCurve;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -24,7 +24,7 @@ pub const MAX_NAME: usize = 64;
 /// Largest brush set file read.
 pub const MAX_FILE_BYTES: u64 = 1 << 20;
 /// What a brush set file says it is.
-pub const FILE_FORMAT: &str = "anicraft-brushes";
+pub const FILE_FORMAT: &str = "anima-brushes";
 pub const FILE_VERSION: u32 = 1;
 
 /// A tip shape as a preset stores it.
@@ -161,7 +161,18 @@ pub fn builtin(key: &str) -> Option<BrushPreset> {
         "marker" => BrushPreset { size: 16.0, shape: Shape::Square, angle: 30.0, roundness: 45.0, smoothing: 40.0, pressure_size: false, ..d },
         "chalk" => BrushPreset { size: 20.0, roundness: 80.0, angle: 20.0, smoothing: 40.0, jitter: 18.0, ..d },
         "dotted" => BrushPreset { size: 8.0, smoothing: 60.0, pressure_size: false, spacing: 220.0, ..d },
-        "charcoal" => BrushPreset { size: 24.0, roundness: 60.0, angle: 30.0, smoothing: 45.0, curve: PressureCurve::SOFT, jitter: 8.0, texture: 35.0, tilt_angle: true, tilt_width: true, ..d },
+        "charcoal" => BrushPreset {
+            size: 24.0,
+            roundness: 60.0,
+            angle: 30.0,
+            smoothing: 45.0,
+            curve: PressureCurve::SOFT,
+            jitter: 8.0,
+            texture: 35.0,
+            tilt_angle: true,
+            tilt_width: true,
+            ..d
+        },
         "spatter" => BrushPreset { size: 7.0, smoothing: 50.0, spacing: 60.0, scatter: 140.0, ..d },
         _ => d,
     })
@@ -277,7 +288,9 @@ pub fn curve_param(p: &Value, key: &str) -> Result<Option<PressureCurve>> {
                 .iter()
                 .map(|v| {
                     let xy = v.as_array().filter(|a| a.len() == 2).ok_or_else(bad)?;
-                    let n = |i: usize| xy.get(i).and_then(Value::as_f64).map(|f| f as f32).filter(|f| f.is_finite() && (-1e-3..=1.001).contains(f)).ok_or_else(bad);
+                    let n = |i: usize| {
+                        xy.get(i).and_then(Value::as_f64).map(|f| f as f32).filter(|f| f.is_finite() && (-1e-3..=1.001).contains(f)).ok_or_else(bad)
+                    };
                     Ok([n(0)?, n(1)?])
                 })
                 .collect::<Result<Vec<[f32; 2]>>>()?;
@@ -425,7 +438,11 @@ impl BrushLibrary {
 
     /// A brush set file holding `presets`.
     pub fn file_json(presets: &[BrushPreset]) -> String {
-        let f = BrushFile { format: FILE_FORMAT.into(), version: FILE_VERSION, brushes: presets.iter().filter_map(|p| serde_json::to_value(p).ok()).collect() };
+        let f = BrushFile {
+            format: FILE_FORMAT.into(),
+            version: FILE_VERSION,
+            brushes: presets.iter().filter_map(|p| serde_json::to_value(p).ok()).collect(),
+        };
         serde_json::to_string_pretty(&f).unwrap_or_default()
     }
 
@@ -436,9 +453,15 @@ impl BrushLibrary {
             return Err(EngineError::Param(format!("not a brush set file (its format is '{}')", f.format.chars().take(40).collect::<String>())));
         }
         if f.version > FILE_VERSION {
-            return Err(EngineError::Param(format!("this brush set is version {}, newer than this AniCraft reads ({FILE_VERSION})", f.version)));
+            return Err(EngineError::Param(format!("this brush set is version {}, newer than this Ánima reads ({FILE_VERSION})", f.version)));
         }
-        Ok(f.brushes.into_iter().take(MAX_USER_PRESETS * 4).filter_map(|v| serde_json::from_value::<BrushPreset>(v).ok()).map(BrushPreset::sanitized).filter(|p| !p.name.is_empty()).collect())
+        Ok(f.brushes
+            .into_iter()
+            .take(MAX_USER_PRESETS * 4)
+            .filter_map(|v| serde_json::from_value::<BrushPreset>(v).ok())
+            .map(BrushPreset::sanitized)
+            .filter(|p| !p.name.is_empty())
+            .collect())
     }
 }
 
@@ -480,15 +503,16 @@ mod tests {
 
     #[test]
     fn brush_set_files_round_trip_and_reject_junk() {
-        let mine = vec![BrushPreset { name: "A".into(), curve: PressureCurve::SOFT, jitter: 12.0, ..BrushPreset::default() }, builtin("dotted").unwrap()];
+        let mine =
+            vec![BrushPreset { name: "A".into(), curve: PressureCurve::SOFT, jitter: 12.0, ..BrushPreset::default() }, builtin("dotted").unwrap()];
         let text = BrushLibrary::file_json(&mine);
         assert_eq!(BrushLibrary::parse_file(&text).unwrap(), mine);
         assert!(BrushLibrary::parse_file("{}").is_err());
         assert!(BrushLibrary::parse_file(r#"{"format": "other", "version": 1, "brushes": []}"#).is_err());
-        assert!(BrushLibrary::parse_file(r#"{"format": "anicraft-brushes", "version": 99, "brushes": []}"#).is_err());
+        assert!(BrushLibrary::parse_file(r#"{"format": "anima-brushes", "version": 99, "brushes": []}"#).is_err());
         // Bad entries are skipped, out-of-range values clamped, older files without the newer
         // fields read with defaults.
-        let got = BrushLibrary::parse_file(r#"{"format": "anicraft-brushes", "version": 1, "brushes": [7, {"name": ""}, {"name": "Old", "size": -4, "spacing": 2, "curve": [[0.5, 9]]}]}"#).unwrap();
+        let got = BrushLibrary::parse_file(r#"{"format": "anima-brushes", "version": 1, "brushes": [7, {"name": ""}, {"name": "Old", "size": -4, "spacing": 2, "curve": [[0.5, 9]]}]}"#).unwrap();
         assert_eq!(got.len(), 1);
         assert_eq!((got[0].size, got[0].spacing, got[0].smoothing), (0.1, 5.0, 50.0));
         assert_eq!(got[0].curve.points(), &[[0.0, 1.0], [0.5, 1.0], [1.0, 1.0]]);
@@ -505,7 +529,14 @@ mod tests {
         assert_eq!((q.size, q.curve, q.taper_end, q.roundness), (30.0, PressureCurve::FIRM, 20.0, 15.0));
         let q = p.with_params(&serde_json::json!({"curve": [[0, 0.2], [1, 0.8]]})).unwrap();
         assert_eq!(q.curve.map(0.0), 0.2);
-        for bad in [serde_json::json!({"curve": "wobbly"}), serde_json::json!({"curve": [[0, 2]]}), serde_json::json!({"curve": []}), serde_json::json!({"spacing": 2}), serde_json::json!({"jitter": 60}), serde_json::json!({"shape": "star"})] {
+        for bad in [
+            serde_json::json!({"curve": "wobbly"}),
+            serde_json::json!({"curve": [[0, 2]]}),
+            serde_json::json!({"curve": []}),
+            serde_json::json!({"spacing": 2}),
+            serde_json::json!({"jitter": 60}),
+            serde_json::json!({"shape": "star"}),
+        ] {
             assert!(p.with_params(&bad).is_err(), "{bad}");
         }
         // The params name every setting and read back as the same preset.

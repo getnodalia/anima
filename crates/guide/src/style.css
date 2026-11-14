@@ -1,4 +1,4 @@
-/* AniCraft User Guide (ADR 0069). The editor's graphite palette when the system is dark, a
+/* Ánima User Guide (ADR 0069). The editor's graphite palette when the system is dark, a
    light reading page otherwise; Inter for prose and JetBrains Mono for keys, ids and code, as in
    the app (docs/ui-guidelines.md), with the system's fonts when they aren't installed. */
 :root {

@@ -1,22 +1,22 @@
-//! AniCraft CPU oracle renderer (layer L2).
+//! Ánima CPU oracle renderer (layer L2).
 //!
 //! Deterministic: the same display list and view always produce the same bytes, whatever the
 //! thread count. Each output row is written by exactly one task and shapes composite in order.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
-pub mod paint;
-pub mod raster;
-pub mod stroke;
 pub mod filters;
 pub mod hairline;
 pub mod html;
 pub mod lottie;
 mod lottie_keys;
+pub mod paint;
+pub mod raster;
+pub mod stroke;
 pub mod svg;
 pub mod warp;
 
-use anicraft_doc::{BlendMode, ColorTransform, DisplayItem, DisplayList, Document, MaskMode, Paint, Rgba, evaluate};
-use anicraft_geom::{Affine, FillRule, Rect, Vec2};
+use anima_doc::{BlendMode, ColorTransform, DisplayItem, DisplayList, Document, MaskMode, Paint, Rgba, evaluate};
+use anima_geom::{Affine, FillRule, Rect, Vec2};
 use paint::{Premul, Shader, premultiply};
 use raster::{Coverage, IRect};
 use rayon::prelude::*;
@@ -155,7 +155,12 @@ pub fn render(dl: &DisplayList, view: &View) -> Result<(Pixmap, RenderStats), Re
 
     // Phase 1 (parallel over items): cull, flatten, stroke and build shaders. Output keeps
     // display-list order.
-    let mut prepared: Vec<Vec<Prepared>> = dl.items.par_iter().zip(&in_run).map(|(item, &skip)| if skip { Vec::new() } else { prepare(item, &view.transform, surface, soft_art(dl, item)) }).collect();
+    let mut prepared: Vec<Vec<Prepared>> = dl
+        .items
+        .par_iter()
+        .zip(&in_run)
+        .map(|(item, &skip)| if skip { Vec::new() } else { prepare(item, &view.transform, surface, soft_art(dl, item)) })
+        .collect();
     for r in &runs {
         if let (Some(op), Some(slot)) = (filtered_group(dl, r, view, surface)?, prepared.get_mut(r.start)) {
             slot.push(op);
@@ -367,7 +372,12 @@ pub fn prepare_scene(dl: &DisplayList, view: &View) -> Result<(Scene, RenderStat
     let surface = IRect { x0: 0, y0: 0, x1: view.width as i32, y1: view.height as i32 };
     let runs = filtered_runs(dl);
     let in_run = in_runs(dl, &runs);
-    let mut prepared: Vec<Vec<Prepared>> = dl.items.par_iter().zip(&in_run).map(|(item, &skip)| if skip { Vec::new() } else { prepare(item, &view.transform, surface, soft_art(dl, item)) }).collect();
+    let mut prepared: Vec<Vec<Prepared>> = dl
+        .items
+        .par_iter()
+        .zip(&in_run)
+        .map(|(item, &skip)| if skip { Vec::new() } else { prepare(item, &view.transform, surface, soft_art(dl, item)) })
+        .collect();
     let mut layers = Vec::new();
     for r in &runs {
         if let (Some(setup), Some(slot)) = (filter_setup(dl, r, view, surface), prepared.get_mut(r.start)) {
@@ -395,7 +405,16 @@ pub fn prepare_scene(dl: &DisplayList, view: &View) -> Result<(Scene, RenderStat
         op.bounds = op.bounds.intersect(&clips.bounds(c));
         !op.bounds.is_empty()
     });
-    let fill = |op: Prepared| Fill { polys: op.polys, rule: op.rule, shader: op.shader, bounds: op.bounds, clip: op.clip, group: op.group, layer: op.layer, hairline: op.hairline };
+    let fill = |op: Prepared| Fill {
+        polys: op.polys,
+        rule: op.rule,
+        shader: op.shader,
+        bounds: op.bounds,
+        clip: op.clip,
+        group: op.group,
+        layer: op.layer,
+        hairline: op.hairline,
+    };
     let mut fills = Vec::with_capacity(ops.len());
     for op in ops {
         stats.edges += op.polys.iter().map(Vec::len).sum::<usize>();
@@ -404,7 +423,13 @@ pub fn prepare_scene(dl: &DisplayList, view: &View) -> Result<(Scene, RenderStat
     }
     stats.drawn = fills.len();
     let Clips { parents, modes, art, bounds } = clips;
-    let clips = parents.into_iter().zip(modes).zip(art).zip(bounds).map(|(((parent, mode), art), bounds)| ClipLayer { parent, mode, art: art.into_iter().map(fill).collect(), bounds }).collect();
+    let clips = parents
+        .into_iter()
+        .zip(modes)
+        .zip(art)
+        .zip(bounds)
+        .map(|(((parent, mode), art), bounds)| ClipLayer { parent, mode, art: art.into_iter().map(fill).collect(), bounds })
+        .collect();
     let groups = group_chains(&dl.groups)
         .into_iter()
         .zip(&dl.groups)
@@ -488,11 +513,11 @@ fn filter_setup(dl: &DisplayList, run: &FilteredRun, view: &View, surface: IRect
     let group = dl.groups.get(run.group as usize)?;
     let items = dl.items.get(run.start..run.end).unwrap_or(&[]);
     let scale = view.transform.mean_scale();
-    let margin = (group.filters.iter().map(anicraft_doc::Filter::margin).sum::<f32>() * scale).ceil() + 2.0;
+    let margin = (group.filters.iter().map(anima_doc::Filter::margin).sum::<f32>() * scale).ceil() + 2.0;
     // Where it can draw: its artwork's bounds, grown by how far the filters spread.
     let mut r = Rect::EMPTY;
     for it in items.iter().filter(|i| i.masks.is_none() && !i.guide) {
-        let pad = it.stroke.as_ref().map_or(0.0, anicraft_doc::Stroke::reach) + 1.0;
+        let pad = it.stroke.as_ref().map_or(0.0, anima_doc::Stroke::reach) + 1.0;
         r = r.union(&it.path.bounds().inflate(pad).transformed(&view.transform.mul(&it.transform)));
     }
     if r.is_empty() || !r.min.x.is_finite() || !r.max.y.is_finite() {
@@ -505,7 +530,12 @@ fn filter_setup(dl: &DisplayList, run: &FilteredRun, view: &View, surface: IRect
     let (sw, sh) = (surface.width() as f64, surface.height() as f64);
     let room = ((((sw + sh).powi(2) - 4.0 * (sw * sh - MAX_FILTER_PIXELS as f64)).max(0.0).sqrt() - (sw + sh)) / 4.0).floor().max(0.0) as i32;
     let around = reach.min(room);
-    let limit = IRect { x0: surface.x0.saturating_sub(around), y0: surface.y0.saturating_sub(around), x1: surface.x1.saturating_add(around), y1: surface.y1.saturating_add(around) };
+    let limit = IRect {
+        x0: surface.x0.saturating_sub(around),
+        y0: surface.y0.saturating_sub(around),
+        x1: surface.x1.saturating_add(around),
+        y1: surface.y1.saturating_add(around),
+    };
     let b = IRect {
         x0: (r.min.x.floor() as i32).saturating_sub(reach),
         y0: (r.min.y.floor() as i32).saturating_sub(reach),
@@ -524,7 +554,7 @@ fn filter_setup(dl: &DisplayList, run: &FilteredRun, view: &View, surface: IRect
     let inner: std::collections::HashSet<u32> = items.iter().filter_map(|i| i.masks).collect();
     let mut groups = dl.groups.clone();
     if let Some(g) = groups.get_mut(run.group as usize) {
-        *g = anicraft_doc::Group { parent: None, alpha: 1.0, blend: BlendMode::Normal, filters: Default::default(), clip: None };
+        *g = anima_doc::Group { parent: None, alpha: 1.0, blend: BlendMode::Normal, filters: Default::default(), clip: None };
     }
     let list = DisplayList {
         items: items.iter().map(|i| DisplayItem { clip: i.clip.filter(|c| inner.contains(c)), ..i.clone() }).collect(),
@@ -532,7 +562,12 @@ fn filter_setup(dl: &DisplayList, run: &FilteredRun, view: &View, surface: IRect
         clip_modes: dl.clip_modes.clone(),
         groups,
     };
-    let sub_view = View { transform: Affine::translate(-b.x0 as f32, -b.y0 as f32).mul(&view.transform), width: b.width() as u32, height: b.height() as u32, background: None };
+    let sub_view = View {
+        transform: Affine::translate(-b.x0 as f32, -b.y0 as f32).mul(&view.transform),
+        width: b.width() as u32,
+        height: b.height() as u32,
+        background: None,
+    };
     let filters = group.filters.iter().map(|f| filters::resolve(f, scale)).collect();
     Some(FilterSetup { layer: FilterLayer { list, view: sub_view, bounds: b, filters }, shown, clip: group.clip, group: run.group })
 }
@@ -558,7 +593,7 @@ struct OpenGroup {
 
 /// Each group's chain of groups, outermost first. A malformed parent link (not earlier in the
 /// list) is treated as no parent.
-pub(crate) fn group_chains(groups: &[anicraft_doc::Group]) -> Vec<Vec<u32>> {
+pub(crate) fn group_chains(groups: &[anima_doc::Group]) -> Vec<Vec<u32>> {
     let mut out: Vec<Vec<u32>> = Vec::with_capacity(groups.len());
     for (i, g) in groups.iter().enumerate() {
         let mut chain = g.parent.filter(|&p| (p as usize) < i).and_then(|p| out.get(p as usize)).cloned().unwrap_or_default();
@@ -570,7 +605,7 @@ pub(crate) fn group_chains(groups: &[anicraft_doc::Group]) -> Vec<Vec<u32>> {
 
 /// Blends the innermost open group into what is below it, at the group's alpha and in its
 /// blend mode.
-fn close_group(open: &mut Vec<OpenGroup>, rows: &mut [Premul], groups: &[anicraft_doc::Group], band_y0: i32, w: usize) {
+fn close_group(open: &mut Vec<OpenGroup>, rows: &mut [Premul], groups: &[anima_doc::Group], band_y0: i32, w: usize) {
     let Some(g) = open.pop() else { return };
     let alpha = groups.get(g.id as usize).map_or(1.0, |x| if x.alpha.is_finite() { x.alpha.clamp(0.0, 1.0) } else { 1.0 });
     let mode = groups.get(g.id as usize).map_or(BlendMode::Normal, |x| x.blend);
@@ -629,7 +664,14 @@ pub(crate) fn blend(mode: BlendMode, s: Premul, b: Premul) -> Premul {
     }
     let un = |c: f32, a: f32| if a > 1e-6 { (c / a).clamp(0.0, 1.0) } else { 0.0 };
     let f = |cb: f32, cs: f32| -> f32 {
-        let hard = |cb: f32, cs: f32| if cs <= 0.5 { cb * 2.0 * cs } else { let t = 2.0 * cs - 1.0; cb + t - cb * t };
+        let hard = |cb: f32, cs: f32| {
+            if cs <= 0.5 {
+                cb * 2.0 * cs
+            } else {
+                let t = 2.0 * cs - 1.0;
+                cb + t - cb * t
+            }
+        };
         match mode {
             BlendMode::Multiply => cb * cs,
             BlendMode::Screen => cb + cs - cb * cs,
@@ -814,7 +856,7 @@ fn prepare(item: &DisplayItem, view: &Affine, surface: IRect, soft: bool) -> Vec
         return out;
     }
     // Cull before flattening: control-point bounds are a cheap, conservative superset.
-    let pad = if is_mask { 1.0 } else { item.stroke.as_ref().map_or(0.0, anicraft_doc::Stroke::reach) + 1.0 };
+    let pad = if is_mask { 1.0 } else { item.stroke.as_ref().map_or(0.0, anima_doc::Stroke::reach) + 1.0 };
     let bounds = item.path.bounds().inflate(pad).transformed(&m);
     let surface_rect = Rect::new(0.0, 0.0, surface.x1 as f32, surface.y1 as f32);
     if bounds.is_empty() || bounds.intersect(&surface_rect).is_empty() {
@@ -879,7 +921,13 @@ fn prepare(item: &DisplayItem, view: &Affine, surface: IRect, soft: bool) -> Vec
             (Some(mesh), Paint::Bitmap { repeat, matrix, .. }, Some(px)) => {
                 let prepared = pixel_bounds(&polys, surface).and_then(|b| Some((warp::texture(mesh, &m, matrix, *repeat, px, item.smooth, b)?, b)));
                 match prepared {
-                    Some((tex, b)) => Shader::Bitmap { inv: Affine::translate(-(b.x0 as f32), -(b.y0 as f32)), pixels: tex, repeat: false, fx: item.color, smooth: false },
+                    Some((tex, b)) => Shader::Bitmap {
+                        inv: Affine::translate(-(b.x0 as f32), -(b.y0 as f32)),
+                        pixels: tex,
+                        repeat: false,
+                        fx: item.color,
+                        smooth: false,
+                    },
                     None => Shader::Solid([0.0; 4]),
                 }
             }
@@ -953,8 +1001,8 @@ mod nine_slice_tests;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anicraft_doc::{ElementId, LayerId, sample};
-    use anicraft_geom::Path;
+    use anima_doc::{ElementId, LayerId, sample};
+    use anima_geom::Path;
     use std::sync::Arc;
 
     fn item(path: Path, fill: Paint) -> DisplayItem {
@@ -1021,7 +1069,7 @@ mod tests {
         assert!(close(soft(MaskMode::Alpha, vec![faded]).pixel(20, 20).unwrap()[3], 0.25));
         // Strokes count in a soft mask (not in a coverage one).
         let mut ring = item(Path::rect(10.0, 10.0, 20.0, 20.0), Paint::Solid(Rgba::TRANSPARENT));
-        ring.stroke = Some(anicraft_doc::Stroke::new(Rgba::WHITE, 4.0));
+        ring.stroke = Some(anima_doc::Stroke::new(Rgba::WHITE, 4.0));
         assert!(close(soft(MaskMode::Alpha, vec![ring.clone()]).pixel(10, 20).unwrap()[3], 1.0));
         assert_eq!(soft(MaskMode::Coverage, vec![ring]).pixel(10, 1).unwrap()[3], 0.0);
         // Outside the artwork nothing shows.
@@ -1032,7 +1080,10 @@ mod tests {
     #[test]
     fn an_alpha_gradient_mask_fades_linearly() {
         // Transparent at x = 0 to opaque at x = 40: pixel x reveals (x + 0.5) / 40.
-        let stops = vec![anicraft_doc::GradientStop { offset: 0.0, color: Rgba::new(1.0, 1.0, 1.0, 0.0) }, anicraft_doc::GradientStop { offset: 1.0, color: Rgba::WHITE }];
+        let stops = vec![
+            anima_doc::GradientStop { offset: 0.0, color: Rgba::new(1.0, 1.0, 1.0, 0.0) },
+            anima_doc::GradientStop { offset: 1.0, color: Rgba::WHITE },
+        ];
         let grad = item(Path::rect(0.0, 0.0, 40.0, 40.0), Paint::linear(Vec2::new(0.0, 0.0), Vec2::new(40.0, 0.0), stops));
         let pm = soft(MaskMode::Alpha, vec![grad.clone()]);
         for x in [0u32, 10, 20, 30, 39] {
@@ -1073,7 +1124,7 @@ mod tests {
         square.clip = Some(0);
         let mut mask = item(Path::ellipse(20.0, 20.0, 10.0, 10.0), Paint::Solid(Rgba::new(1.0, 0.0, 0.0, 0.2)));
         mask.masks = Some(0);
-        mask.stroke = Some(anicraft_doc::Stroke::new(Rgba::BLACK, 8.0));
+        mask.stroke = Some(anima_doc::Stroke::new(Rgba::BLACK, 8.0));
         let dl = DisplayList { clip_modes: Vec::new(), items: vec![square, mask], clip_parents: vec![None], groups: Vec::new() };
         let (pm, _) = render(&dl, &view(40, 40)).unwrap();
         // Pixel for pixel, the same as the circle drawn in the square's colour.
@@ -1110,15 +1161,15 @@ mod tests {
         let (pm, _) = render(&list(vec![solid]), &view(4, 4)).unwrap();
         assert!(near(pm.pixel(2, 2).unwrap(), want(c)), "{:?} vs {:?}", pm.pixel(2, 2), want(c));
         // A two-stop gradient of one colour is that colour, through the transform.
-        let stops = vec![anicraft_doc::GradientStop { offset: 0.0, color: c }, anicraft_doc::GradientStop { offset: 1.0, color: c }];
+        let stops = vec![anima_doc::GradientStop { offset: 0.0, color: c }, anima_doc::GradientStop { offset: 1.0, color: c }];
         let mut grad = item(Path::rect(0.0, 0.0, 4.0, 4.0), Paint::linear(Vec2::new(0.0, 0.0), Vec2::new(4.0, 0.0), stops));
         grad.color = fx;
         let (pm, _) = render(&list(vec![grad]), &view(4, 4)).unwrap();
         assert!(near(pm.pixel(1, 2).unwrap(), want(c)));
         // A bitmap of one colour, sampled anywhere.
-        let px = Arc::new(anicraft_doc::Pixels { width: 2, height: 2, rgba: [51u8, 153, 230, 255].repeat(4) });
+        let px = Arc::new(anima_doc::Pixels { width: 2, height: 2, rgba: [51u8, 153, 230, 255].repeat(4) });
         let b = Rgba::new(51.0 / 255.0, 153.0 / 255.0, 230.0 / 255.0, 1.0);
-        let mut bmp = item(Path::rect(0.0, 0.0, 4.0, 4.0), Paint::Bitmap { bitmap: anicraft_doc::BitmapId(1), repeat: true, matrix: Affine::IDENTITY });
+        let mut bmp = item(Path::rect(0.0, 0.0, 4.0, 4.0), Paint::Bitmap { bitmap: anima_doc::BitmapId(1), repeat: true, matrix: Affine::IDENTITY });
         bmp.image = Some(px);
         bmp.color = fx;
         let (pm, _) = render(&list(vec![bmp]), &view(4, 4)).unwrap();
@@ -1142,7 +1193,12 @@ mod tests {
         let mut blue = item(Path::rect(4.0, 0.0, 8.0, 4.0), Paint::Solid(Rgba::new(0.0, 0.0, 1.0, 1.0)));
         red.group = Some(0);
         blue.group = Some(0);
-        let grouped = DisplayList { clip_modes: Vec::new(), items: vec![red.clone(), blue.clone()], clip_parents: vec![], groups: vec![anicraft_doc::Group { parent: None, alpha: 0.5, blend: Default::default(), filters: Default::default(), clip: None }] };
+        let grouped = DisplayList {
+            clip_modes: Vec::new(),
+            items: vec![red.clone(), blue.clone()],
+            clip_parents: vec![],
+            groups: vec![anima_doc::Group { parent: None, alpha: 0.5, blend: Default::default(), filters: Default::default(), clip: None }],
+        };
         let (pm, _) = render(&grouped, &white).unwrap();
         let near = |p: Premul, q: [f32; 4]| p.iter().zip(q).all(|(a, b)| (a - b).abs() < 1e-4);
         // In the overlap only the top square shows through: half blue, half white, no red.
@@ -1162,7 +1218,10 @@ mod tests {
             clip_modes: Vec::new(),
             items: vec![inner],
             clip_parents: vec![],
-            groups: vec![anicraft_doc::Group { parent: None, alpha: 0.5, blend: Default::default(), filters: Default::default(), clip: None }, anicraft_doc::Group { parent: Some(0), alpha: 0.5, blend: Default::default(), filters: Default::default(), clip: None }],
+            groups: vec![
+                anima_doc::Group { parent: None, alpha: 0.5, blend: Default::default(), filters: Default::default(), clip: None },
+                anima_doc::Group { parent: Some(0), alpha: 0.5, blend: Default::default(), filters: Default::default(), clip: None },
+            ],
         };
         let (n, _) = render(&nested, &white).unwrap();
         assert!(near(n.pixel(3, 2).unwrap(), [0.75, 0.75, 0.75, 1.0]), "{:?}", n.pixel(3, 2));
@@ -1173,7 +1232,16 @@ mod tests {
         // Spanning several render bands changes nothing.
         let mut tall = item(Path::rect(0.0, 0.0, 4.0, 100.0), Paint::Solid(Rgba::BLACK));
         tall.group = Some(0);
-        let (t, _) = render(&DisplayList { clip_modes: Vec::new(), items: vec![tall], clip_parents: vec![], groups: vec![anicraft_doc::Group { parent: None, alpha: 0.25, blend: Default::default(), filters: Default::default(), clip: None }] }, &View { background: Some(Rgba::WHITE), ..view(4, 100) }).unwrap();
+        let (t, _) = render(
+            &DisplayList {
+                clip_modes: Vec::new(),
+                items: vec![tall],
+                clip_parents: vec![],
+                groups: vec![anima_doc::Group { parent: None, alpha: 0.25, blend: Default::default(), filters: Default::default(), clip: None }],
+            },
+            &View { background: Some(Rgba::WHITE), ..view(4, 100) },
+        )
+        .unwrap();
         assert!((0..100).all(|y| near(t.pixel(1, y).unwrap(), [0.75, 0.75, 0.75, 1.0])));
     }
 
@@ -1181,7 +1249,7 @@ mod tests {
     fn prepared_scenes_match_the_renderers_preparation_and_name_what_needs_more() {
         // A filled, stroked square and an off-screen circle: fill then stroke, one culled.
         let mut sq = item(Path::rect(2.0, 2.0, 8.0, 8.0), Paint::Solid(Rgba::BLACK));
-        sq.stroke = Some(anicraft_doc::Stroke::new(Rgba::WHITE, 2.0));
+        sq.stroke = Some(anima_doc::Stroke::new(Rgba::WHITE, 2.0));
         let off = item(Path::ellipse(500.0, 500.0, 10.0, 10.0), Paint::Solid(Rgba::BLACK));
         let dl = list(vec![sq.clone(), off]);
         let (scene, st) = prepare_scene(&dl, &view(16, 16)).unwrap();
@@ -1203,28 +1271,39 @@ mod tests {
         inner.masks = Some(1);
         let mut lost = clipped.clone();
         lost.clip = Some(2);
-        let dl = DisplayList { clip_modes: Vec::new(), items: vec![clipped, outer, inner, lost], clip_parents: vec![None, Some(0), Some(9)], groups: Vec::new() };
+        let dl = DisplayList {
+            clip_modes: Vec::new(),
+            items: vec![clipped, outer, inner, lost],
+            clip_parents: vec![None, Some(0), Some(9)],
+            groups: Vec::new(),
+        };
         let (scene, st) = prepare_scene(&dl, &view(16, 16)).unwrap();
         let (_, rst) = render(&dl, &view(16, 16)).unwrap();
         assert_eq!((st.drawn, st.edges, st.pixels_touched), (rst.drawn, rst.edges, rst.pixels_touched));
         assert_eq!(scene.fills.len(), 1);
         assert_eq!((scene.fills[0].clip, scene.fills[0].bounds), (Some(1), raster::IRect { x0: 4, y0: 2, x1: 6, y1: 10 }));
         assert_eq!(scene.clips.len(), 3);
-        assert_eq!((scene.clips[1].parent, scene.clips[1].art.len(), scene.clips[1].bounds), (Some(0), 1, raster::IRect { x0: 4, y0: 0, x1: 6, y1: 16 }));
+        assert_eq!(
+            (scene.clips[1].parent, scene.clips[1].art.len(), scene.clips[1].bounds),
+            (Some(0), 1, raster::IRect { x0: 4, y0: 0, x1: 6, y1: 16 })
+        );
         assert!(scene.clips[2].parent.is_none() && scene.clips[2].bounds.is_empty());
         // Groups: chains outermost first, alpha sanitized.
         let mut grouped = sq.clone();
         grouped.group = Some(1);
-        let g = |parent, alpha| anicraft_doc::Group { parent, alpha, blend: BlendMode::Multiply, filters: Default::default(), clip: None };
+        let g = |parent, alpha| anima_doc::Group { parent, alpha, blend: BlendMode::Multiply, filters: Default::default(), clip: None };
         let dl = DisplayList { clip_modes: Vec::new(), items: vec![grouped], clip_parents: vec![], groups: vec![g(None, 2.0), g(Some(0), f32::NAN)] };
         let (scene, _) = prepare_scene(&dl, &view(16, 16)).unwrap();
         assert!(scene.fills.iter().all(|f| f.group == Some(1)));
-        assert_eq!((scene.groups[1].chain.clone(), scene.groups[0].alpha, scene.groups[1].alpha, scene.groups[1].blend), (vec![0, 1], 1.0, 1.0, BlendMode::Multiply));
+        assert_eq!(
+            (scene.groups[1].chain.clone(), scene.groups[0].alpha, scene.groups[1].alpha, scene.groups[1].blend),
+            (vec![0, 1], 1.0, 1.0, BlendMode::Multiply)
+        );
         // A filtered group is one layer, shown by one fill in the outermost filtered group, its
         // filters resolved for the view; drawing the layer and filtering it is what `render`
         // composites there.
         let mut filtered = dl.clone();
-        filtered.groups[0].filters = std::sync::Arc::from(vec![anicraft_doc::Filter::Blur { blur_x: 4.0, blur_y: 4.0, quality: 1 }]);
+        filtered.groups[0].filters = std::sync::Arc::from(vec![anima_doc::Filter::Blur { blur_x: 4.0, blur_y: 4.0, quality: 1 }]);
         let (scene, st) = prepare_scene(&filtered, &view(16, 16)).unwrap();
         let (pm, rst) = render(&filtered, &view(16, 16)).unwrap();
         assert_eq!((st.drawn, st.culled), (rst.drawn, rst.culled));
@@ -1238,8 +1317,8 @@ mod tests {
         let at = |x: i32, y: i32| layer.data[((y - l.bounds.y0) * l.bounds.width() as i32 + x - l.bounds.x0) as usize];
         assert_eq!(pm.pixel(5, 6).unwrap(), at(5, 6), "the group is opaque and normal: the layer as it is");
         // Bitmap fills come as bitmap shaders.
-        let px = std::sync::Arc::new(anicraft_doc::Pixels { width: 1, height: 1, rgba: vec![255; 4] });
-        let mut bm = item(Path::rect(0.0, 0.0, 4.0, 4.0), Paint::Bitmap { bitmap: anicraft_doc::BitmapId(1), repeat: false, matrix: Affine::IDENTITY });
+        let px = std::sync::Arc::new(anima_doc::Pixels { width: 1, height: 1, rgba: vec![255; 4] });
+        let mut bm = item(Path::rect(0.0, 0.0, 4.0, 4.0), Paint::Bitmap { bitmap: anima_doc::BitmapId(1), repeat: false, matrix: Affine::IDENTITY });
         bm.image = Some(px);
         let (scene, _) = prepare_scene(&list(vec![bm]), &view(16, 16)).unwrap();
         assert!(matches!(scene.fills[0].shader, Shader::Bitmap { .. }) && scene.layers.is_empty());
@@ -1258,7 +1337,11 @@ mod tests {
         let mut clipped = item(Path::rect(0.0, 0.0, 8.0, 8.0), Paint::Solid(Rgba::BLACK));
         clipped.clip = Some(0);
         let free = item(Path::rect(0.0, 0.0, 2.0, 2.0), Paint::Solid(Rgba::BLACK));
-        let (pm, st) = render(&DisplayList { clip_modes: Vec::new(), items: vec![clipped, free.clone()], clip_parents: vec![None], groups: Vec::new() }, &view(8, 8)).unwrap();
+        let (pm, st) = render(
+            &DisplayList { clip_modes: Vec::new(), items: vec![clipped, free.clone()], clip_parents: vec![None], groups: Vec::new() },
+            &view(8, 8),
+        )
+        .unwrap();
         assert_eq!(st.drawn, 1);
         assert_eq!(pm, render(&list(vec![free]), &view(8, 8)).unwrap().0);
     }
@@ -1273,11 +1356,17 @@ mod tests {
         inner.masks = Some(1);
         let items = vec![fill, outer, inner];
         // Clip 1 lies inside clip 0: a 32 × 32 square across two render bands survives.
-        let (pm, _) = render(&DisplayList { clip_modes: Vec::new(), items: items.clone(), clip_parents: vec![None, Some(0)], groups: Vec::new() }, &view(64, 64)).unwrap();
+        let (pm, _) = render(
+            &DisplayList { clip_modes: Vec::new(), items: items.clone(), clip_parents: vec![None, Some(0)], groups: Vec::new() },
+            &view(64, 64),
+        )
+        .unwrap();
         assert!((alpha_sum(&pm) - 32.0 * 32.0).abs() < 1e-2, "{}", alpha_sum(&pm));
         // A parent link pointing forward (malformed) or out of range masks everything out.
         for parents in [vec![Some(1), Some(1)], vec![None, Some(9)]] {
-            let (pm, _) = render(&DisplayList { clip_modes: Vec::new(), items: items.clone(), clip_parents: parents, groups: Vec::new() }, &view(64, 64)).unwrap();
+            let (pm, _) =
+                render(&DisplayList { clip_modes: Vec::new(), items: items.clone(), clip_parents: parents, groups: Vec::new() }, &view(64, 64))
+                    .unwrap();
             assert_eq!(alpha_sum(&pm), 0.0);
         }
     }
@@ -1315,17 +1404,17 @@ mod tests {
     fn stroke_covers_expected_area() {
         let mut it = item(Path::line(Vec2::new(10.0, 20.0), Vec2::new(90.0, 20.0)), Paint::Solid(Rgba::BLACK));
         it.fill = None;
-        it.stroke = Some(anicraft_doc::Stroke::new(Rgba::BLACK, 4.0));
-        let (pm, _) = render(&list(vec![it]),&view(100, 40)).unwrap();
+        it.stroke = Some(anima_doc::Stroke::new(Rgba::BLACK, 4.0));
+        let (pm, _) = render(&list(vec![it]), &view(100, 40)).unwrap();
         // 80 × 4 body plus two round caps (π · 2²)
         let expected = 80.0 * 4.0 + std::f32::consts::PI * 4.0;
         assert!((alpha_sum(&pm) - expected).abs() / expected < 0.01, "{}", alpha_sum(&pm));
     }
 
-    fn stroked(path: Path, width: f32, profile: Option<anicraft_doc::WidthProfile>) -> DisplayItem {
+    fn stroked(path: Path, width: f32, profile: Option<anima_doc::WidthProfile>) -> DisplayItem {
         let mut it = item(path, Paint::Solid(Rgba::BLACK));
         it.fill = None;
-        it.stroke = Some(anicraft_doc::Stroke::new(Rgba::BLACK, width).with_profile(profile));
+        it.stroke = Some(anima_doc::Stroke::new(Rgba::BLACK, width).with_profile(profile));
         it
     }
 
@@ -1334,8 +1423,9 @@ mod tests {
         // Taper both ends on an 80-unit line, nominal width 8: the half-width is 4·f(t), f the
         // monotone cubic 0 → 1 → 0. Each half is a Hermite segment (h = ½, ends 0 and 1,
         // tangents 2 and 0), whose integral is h·(0 + 1)/2 + h²·(2 − 0)/12 = 7/24; no caps.
-        let taper = anicraft_doc::ProfilePreset::TaperBoth.profile();
-        let (pm, _) = render(&list(vec![stroked(Path::line(Vec2::new(10.0, 20.0), Vec2::new(90.0, 20.0)), 8.0, taper.clone())]), &view(100, 40)).unwrap();
+        let taper = anima_doc::ProfilePreset::TaperBoth.profile();
+        let (pm, _) =
+            render(&list(vec![stroked(Path::line(Vec2::new(10.0, 20.0), Vec2::new(90.0, 20.0)), 8.0, taper.clone())]), &view(100, 40)).unwrap();
         let expected = 2.0 * 4.0 * 80.0 * (7.0 / 12.0);
         assert!((alpha_sum(&pm) - expected).abs() / expected < 0.01, "{} vs {expected}", alpha_sum(&pm));
         // Thin at the ends, full in the middle.
@@ -1351,7 +1441,7 @@ mod tests {
     #[test]
     fn constant_profiles_match_uniform_strokes_and_one_side_stays_on_its_side() {
         let line = || Path::line(Vec2::new(10.0, 20.0), Vec2::new(90.0, 20.0));
-        let p = |l: f32, r: f32| anicraft_doc::WidthProfile::new(vec![anicraft_doc::WidthPoint::new(0.5, l, r)]);
+        let p = |l: f32, r: f32| anima_doc::WidthProfile::new(vec![anima_doc::WidthPoint::new(0.5, l, r)]);
         // 1.5 × a 4-wide stroke is a 6-wide one: body plus round caps.
         let (wide, _) = render(&list(vec![stroked(line(), 4.0, p(1.5, 1.5))]), &view(100, 40)).unwrap();
         let expected = 80.0 * 6.0 + std::f32::consts::PI * 9.0;
@@ -1370,17 +1460,21 @@ mod tests {
         assert_eq!(f.pixel(50, 17).unwrap()[3], 0.0);
     }
 
-    /// `cargo test -p anicraft-render --release -- --ignored --nocapture variable_stroke_cost`
+    /// `cargo test -p anima-render --release -- --ignored --nocapture variable_stroke_cost`
     #[test]
     #[ignore = "measurement"]
     fn variable_stroke_cost() {
-        use anicraft_doc::{Cap, Dash, Join, StrokeStyle};
-        let strokes = |profile: Option<anicraft_doc::WidthProfile>, style: StrokeStyle| {
+        use anima_doc::{Cap, Dash, Join, StrokeStyle};
+        let strokes = |profile: Option<anima_doc::WidthProfile>, style: StrokeStyle| {
             let items = (0..300)
                 .map(|i| {
                     let (x, y) = ((i % 20) as f32 * 64.0, (i / 20) as f32 * 48.0);
                     let mut p = Path::new();
-                    p.move_to(Vec2::new(x, y + 40.0)).cubic_to(Vec2::new(x + 10.0, y - 20.0), Vec2::new(x + 50.0, y + 80.0), Vec2::new(x + 60.0, y + 10.0));
+                    p.move_to(Vec2::new(x, y + 40.0)).cubic_to(
+                        Vec2::new(x + 10.0, y - 20.0),
+                        Vec2::new(x + 50.0, y + 80.0),
+                        Vec2::new(x + 60.0, y + 10.0),
+                    );
                     let mut it = stroked(p, 6.0, profile.clone());
                     it.stroke = it.stroke.map(|st| st.with_style(style.clone()));
                     it
@@ -1392,11 +1486,11 @@ mod tests {
         let miter = StrokeStyle { cap: Cap::Square, join: Join::Miter, ..StrokeStyle::default() };
         let dashed = StrokeStyle { cap: Cap::Butt, dash: Dash::dashed(8.0, 4.0), ..StrokeStyle::default() };
         let dotted = StrokeStyle { dash: Dash::dotted(4.0), ..StrokeStyle::default() };
-        let taper = || anicraft_doc::ProfilePreset::TaperBoth.profile();
+        let taper = || anima_doc::ProfilePreset::TaperBoth.profile();
         for (name, dl) in [
             ("uniform", strokes(None, round.clone())),
             ("taper_both", strokes(taper(), round)),
-            ("bulge", strokes(anicraft_doc::ProfilePreset::Bulge.profile(), StrokeStyle::default())),
+            ("bulge", strokes(anima_doc::ProfilePreset::Bulge.profile(), StrokeStyle::default())),
             ("square + miter", strokes(None, miter)),
             ("dashed 8/4", strokes(None, dashed.clone())),
             ("dotted 4", strokes(None, dotted)),
@@ -1418,7 +1512,7 @@ mod tests {
     fn src_over_order() {
         let a = item(Path::rect(0.0, 0.0, 4.0, 4.0), Paint::Solid(Rgba::new(1.0, 0.0, 0.0, 1.0)));
         let b = item(Path::rect(0.0, 0.0, 4.0, 4.0), Paint::Solid(Rgba::new(0.0, 0.0, 1.0, 0.5)));
-        let (pm, _) = render(&list(vec![a, b]),&view(4, 4)).unwrap();
+        let (pm, _) = render(&list(vec![a, b]), &view(4, 4)).unwrap();
         let p = pm.pixel(1, 1).unwrap();
         assert!((p[0] - 0.5).abs() < 1e-5 && (p[2] - 0.5).abs() < 1e-5 && (p[3] - 1.0).abs() < 1e-5);
     }
@@ -1441,8 +1535,8 @@ mod tests {
     fn offscreen_items_are_culled_without_changing_pixels() {
         let on = item(Path::rect(2.0, 2.0, 4.0, 4.0), Paint::Solid(Rgba::BLACK));
         let off = item(Path::ellipse(500.0, 500.0, 10.0, 10.0), Paint::Solid(Rgba::BLACK));
-        let (a, sa) = render(&list(vec![on.clone(), off]),&view(16, 16)).unwrap();
-        let (b, _) = render(&list(vec![on]),&view(16, 16)).unwrap();
+        let (a, sa) = render(&list(vec![on.clone(), off]), &view(16, 16)).unwrap();
+        let (b, _) = render(&list(vec![on]), &view(16, 16)).unwrap();
         assert_eq!(sa.culled, 1);
         assert_eq!(sa.drawn, 1);
         assert_eq!(a, b);
@@ -1499,7 +1593,12 @@ mod tests {
         let bg = item(Path::rect(0.0, 0.0, 20.0, 10.0), Paint::Solid(Rgba::new(0.5, 0.5, 1.0, 1.0)));
         let mut top = item(Path::rect(0.0, 0.0, 10.0, 10.0), Paint::Solid(Rgba::new(1.0, 0.0, 0.0, 1.0)));
         top.group = Some(0);
-        let dl = DisplayList { clip_modes: Vec::new(), items: vec![bg, top], clip_parents: vec![], groups: vec![anicraft_doc::Group { parent: None, alpha: 1.0, blend: BlendMode::Multiply, filters: Default::default(), clip: None }] };
+        let dl = DisplayList {
+            clip_modes: Vec::new(),
+            items: vec![bg, top],
+            clip_parents: vec![],
+            groups: vec![anima_doc::Group { parent: None, alpha: 1.0, blend: BlendMode::Multiply, filters: Default::default(), clip: None }],
+        };
         let (pm, _) = render(&dl, &View { background: Some(Rgba::WHITE), ..view(20, 10) }).unwrap();
         let p = pm.pixel(5, 5).unwrap();
         assert!((p[0] - 0.5).abs() < 1e-3 && p[1].abs() < 1e-3 && p[2].abs() < 1e-3, "red × lavender: {p:?}");

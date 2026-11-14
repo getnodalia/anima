@@ -3,7 +3,7 @@
 //! following their filter, F6, undo and the file round trip.
 
 use super::*;
-use anicraft_doc::{ElementKind, FilterEntry, FilterParam, FilterProp, Property};
+use anima_doc::{ElementKind, FilterEntry, FilterParam, FilterProp, Property};
 use serde_json::json;
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -41,12 +41,18 @@ fn value(s: &mut Session, frame: u32, key: &str) -> f64 {
 fn track_keys(s: &mut Session, key: &str) -> Vec<(u64, f64)> {
     let v = run(s, "motion.info", json!({}));
     let t = v["tracks"].as_array().and_then(|ts| ts.iter().find(|t| t["property"] == key).cloned());
-    t.map(|t| t["keys"].as_array().map(|ks| ks.iter().map(|k| (k["frame"].as_u64().unwrap_or(0), k["value"].as_f64().unwrap_or(0.0))).collect()).unwrap_or_default()).unwrap_or_default()
+    t.map(|t| {
+        t["keys"]
+            .as_array()
+            .map(|ks| ks.iter().map(|k| (k["frame"].as_u64().unwrap_or(0), k["value"].as_f64().unwrap_or(0.0))).collect())
+            .unwrap_or_default()
+    })
+    .unwrap_or_default()
 }
 
 /// The green of a pixel: 1 on the white stage, less where the red box's blur reaches.
 fn green_at(s: &Session, frame: u32, x: u32, y: u32) -> f32 {
-    anicraft_render::render_frame(&s.doc, frame, 1.0).unwrap().pixel(x, y).unwrap()[1]
+    anima_render::render_frame(&s.doc, frame, 1.0).unwrap().pixel(x, y).unwrap()[1]
 }
 
 #[test]
@@ -73,7 +79,12 @@ fn a_blur_tweens_by_commands_with_eases_and_retiming() {
     let v = run(&mut s, "motion.remove_key", json!({"property": "filter.0.blur_y", "frame": 12}));
     assert_eq!(v["removed"], json!(["filter.0.blur_y"]));
     // What can't be keyed says why.
-    for (p, want) in [(json!({"property": "filter.1.blur_x", "value": 3}), "no filter 1"), (json!({"property": "filter.0.angle", "value": 3}), "has no Angle"), (json!({"property": "filter.0.blur_x", "value": 900}), "between"), (json!({"property": "filter.0.sparkle", "value": 1}), "unknown property")] {
+    for (p, want) in [
+        (json!({"property": "filter.1.blur_x", "value": 3}), "no filter 1"),
+        (json!({"property": "filter.0.angle", "value": 3}), "has no Angle"),
+        (json!({"property": "filter.0.blur_x", "value": 900}), "between"),
+        (json!({"property": "filter.0.sparkle", "value": 1}), "unknown property"),
+    ] {
         let e = s.execute("motion.set_key", &p).expect_err("refused").to_string();
         assert!(e.contains(want), "{p}: {e}");
     }
@@ -142,7 +153,7 @@ fn f6_keys_the_filters_and_the_file_keeps_their_tracks() {
     // The document round-trips through JSON (the file format), tracks and all.
     let json = serde_json::to_string(&s.doc).unwrap();
     assert!(json.contains("\"filter_tracks\"") && json.contains("filter.0.hue"));
-    let back: anicraft_doc::Document = serde_json::from_str(&json).unwrap();
+    let back: anima_doc::Document = serde_json::from_str(&json).unwrap();
     assert!(back == s.doc);
     let m = back.timeline(0).layers[0].keyframes[0].motion.clone().unwrap();
     assert!(m.track(Property::Filter(FilterProp { slot: 0, param: FilterParam::Hue })).is_some());

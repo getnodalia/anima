@@ -15,7 +15,7 @@
   timestamp server, ...). Optional overrides: WINDOWS_TIMESTAMP_URL, SIGNTOOL (path to signtool.exe).
 
 .EXAMPLE
-  pwsh packaging/windows/sign.ps1 dist/anicraft.exe dist/Photocraft.msi
+  pwsh packaging/windows/sign.ps1 dist/anima.exe dist/Photocraft.msi
 #>
 param(
   [Parameter(Mandatory = $true, ValueFromRemainingArguments = $true)]
@@ -65,8 +65,8 @@ if (-not $haveCert -and -not $haveAzure) {
 }
 
 $script:SignTool = Find-SignTool
-$common = @('sign', '/v', '/fd', 'SHA256', '/td', 'SHA256', '/d', 'AniCraft', '/du', 'https://github.com/storytold/AniCraft')
-$tmp = Join-Path ([IO.Path]::GetTempPath()) "anicraft-sign-$PID"
+$common = @('sign', '/v', '/fd', 'SHA256', '/td', 'SHA256', '/d', 'Ánima', '/du', 'https://github.com/getnodalia/anima')
+$tmp = Join-Path ([IO.Path]::GetTempPath()) "anima-sign-$PID"
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 
 try {

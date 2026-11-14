@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="100">
-  <!-- Self-authored test drawing for AniCraft's SVG import (ADR 0070): an alpha gradient mask,
+  <!-- Self-authored test drawing for Ánima's SVG import (ADR 0070): an alpha gradient mask,
        a grey luminance mask and text on a curved path. -->
   <defs>
     <linearGradient id="fade" x1="0" x2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>

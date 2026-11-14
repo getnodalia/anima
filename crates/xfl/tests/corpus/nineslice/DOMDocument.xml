@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AniCraft XFL corpus: nineslice. A rounded panel movie clip with guides for 9-slice scaling
+<!-- Ánima XFL corpus: nineslice. A rounded panel movie clip with guides for 9-slice scaling
      (scaleGridLeft/Right/Top/Bottom on its DOMSymbolItem), placed unscaled, scaled both ways
      and stretched wide: its corners keep their radius, its edges stretch one way and its centre
      both, and the graphic nested in it scales normally. One more symbol gives only one guide,

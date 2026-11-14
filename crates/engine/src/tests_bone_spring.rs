@@ -3,8 +3,8 @@
 
 use super::*;
 use crate::tests_bone::{ARM, HAND, ROOT, rigged};
-use anicraft_doc::{BoneId, SymbolKind, evaluate};
-use anicraft_geom::Affine;
+use anima_doc::{BoneId, SymbolKind, evaluate};
+use anima_geom::Affine;
 use serde_json::json;
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -61,7 +61,12 @@ fn a_sliding_joint_poses_within_its_limits() {
     assert_eq!(bone_at(&mut s, 0, b2)["slide_x"], Value::Null);
     // Free sliding, and the refusals.
     assert_eq!(run(&mut s, "bone.set_translation", json!({"bone": b2, "axis": "y", "enabled": true}))["constrain"], false);
-    for p in [json!({"bone": b2, "axis": "z", "enabled": true}), json!({"bone": b2, "axis": "x", "min": 10, "max": -10}), json!({"bone": b2, "axis": "x", "min": -1e9}), json!({"bone": b2, "axis": "x"})] {
+    for p in [
+        json!({"bone": b2, "axis": "z", "enabled": true}),
+        json!({"bone": b2, "axis": "x", "min": 10, "max": -10}),
+        json!({"bone": b2, "axis": "x", "min": -1e9}),
+        json!({"bone": b2, "axis": "x"}),
+    ] {
         assert!(s.execute("bone.set_translation", &p).is_err(), "{p}");
     }
 }
@@ -86,13 +91,13 @@ fn springs_swing_every_export_and_never_change_the_keyed_poses() {
     assert!(swing.abs() > 1.0, "{swing}°");
     let mut still = s.doc.clone();
     Arc::make_mut(Arc::make_mut(&mut still.timeline_mut(0).layers[0]).armature.as_mut().unwrap()).springs_off = true;
-    let hand = |d: &anicraft_doc::Document, f| evaluate(d, f).items.iter().find(|i| i.element.0 == HAND).map(|i| i.transform.translation()).unwrap();
+    let hand = |d: &anima_doc::Document, f| evaluate(d, f).items.iter().find(|i| i.element.0 == HAND).map(|i| i.transform.translation()).unwrap();
     assert!(hand(&s.doc, 12).distance(hand(&still, 12)) > 1.0);
     // The keyed poses (and what commands read) are untouched.
     assert_eq!(s.doc.timeline(0).layers[0].keyframes.iter().map(|k| k.pose.clone()).collect::<Vec<_>>(), keyed);
     assert_eq!(bone_at(&mut s, 12, b1)["angle"], json!(0.0));
     // A raster render is the display list: the swung hand shows in the pixels.
-    let (a, b) = (anicraft_render::render_frame(&s.doc, 12, 1.0).unwrap(), anicraft_render::render_frame(&still, 12, 1.0).unwrap());
+    let (a, b) = (anima_render::render_frame(&s.doc, 12, 1.0).unwrap(), anima_render::render_frame(&still, 12, 1.0).unwrap());
     assert_ne!(a.data, b.data);
     // Turning the springs off plays the keyed poses exactly.
     run(&mut s, "bone.enable_springs", json!({"bone": b1, "enabled": false}));
@@ -126,7 +131,8 @@ fn damping_one_hundred_is_no_spring_and_spring_values_are_checked() {
     }
     let v = run(&mut s, "bone.info", json!({}));
     assert_eq!(v["armatures"][0]["bones"][0]["spring"], json!({"strength": 40.0, "damping": 100.0}));
-    for p in [json!({"bone": b1, "strength": 101}), json!({"bone": b1, "damping": -1}), json!({"bone": b1}), json!({"bone": 999_999, "strength": 5})] {
+    for p in [json!({"bone": b1, "strength": 101}), json!({"bone": b1, "damping": -1}), json!({"bone": b1}), json!({"bone": 999_999, "strength": 5})]
+    {
         assert!(s.execute("bone.set_spring", &p).is_err(), "{p}");
     }
     // Strength and damping both 0: no spring left in the file.
@@ -143,7 +149,7 @@ fn springs_and_slides_survive_the_file() {
     let back = crate::format::from_json(&text).unwrap();
     assert_eq!(back, s.doc);
     let b = back.timeline(0).layers[0].armature.as_ref().unwrap().bone(BoneId(b2)).cloned().unwrap();
-    assert_eq!(b.slide_y, Some(anicraft_doc::Limits { min: -30.0, max: 30.0 }));
+    assert_eq!(b.slide_y, Some(anima_doc::Limits { min: -30.0, max: 30.0 }));
     assert!(b.spring.is_some());
 }
 
@@ -166,11 +172,11 @@ fn a_members_colour_effect_filters_and_blend_edit_in_place_on_every_pose() {
     assert_eq!(l.keyframes.len(), 2, "no frame keyed: the member changed on every pose");
     for k in &l.keyframes {
         let e = k.elements.iter().find(|e| e.id.0 == ARM).unwrap();
-        assert!(matches!(e.color, anicraft_doc::ColorEffect::Tint { .. }), "{:?}", e.color);
+        assert!(matches!(e.color, anima_doc::ColorEffect::Tint { .. }), "{:?}", e.color);
         let ElementKind::Symbol { blend, filters, .. } = &e.kind else { panic!() };
-        assert_eq!((*blend, filters.len()), (anicraft_doc::BlendMode::Multiply, 1));
+        assert_eq!((*blend, filters.len()), (anima_doc::BlendMode::Multiply, 1));
         // The others are untouched.
-        assert_eq!(k.elements.iter().find(|e| e.id.0 == HAND).unwrap().color, anicraft_doc::ColorEffect::default());
+        assert_eq!(k.elements.iter().find(|e| e.id.0 == HAND).unwrap().color, anima_doc::ColorEffect::default());
     }
     assert_eq!(l.keyframes.iter().map(|k| k.pose.clone()).collect::<Vec<_>>(), poses_before, "the armature is intact");
     // In the tween between the poses the member keeps its look and still moves with its bone.
@@ -182,7 +188,7 @@ fn a_members_colour_effect_filters_and_blend_edit_in_place_on_every_pose() {
     s.undo().unwrap();
     s.undo().unwrap();
     s.undo().unwrap();
-    assert_eq!(s.doc.timeline(0).layers[0].keyframes[1].elements.iter().find(|e| e.id.0 == ARM).unwrap().color, anicraft_doc::ColorEffect::default());
+    assert_eq!(s.doc.timeline(0).layers[0].keyframes[1].elements.iter().find(|e| e.id.0 == ARM).unwrap().color, anima_doc::ColorEffect::default());
     // A locked armature layer refuses.
     run(&mut s, "element.select", json!({"ids": [ROOT], "layer": lid.0}));
     run(&mut s, "layer.toggle_lock", json!({"layer": lid.0}));

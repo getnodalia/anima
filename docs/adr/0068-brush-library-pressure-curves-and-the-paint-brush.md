@@ -17,7 +17,7 @@ was copied: no presets, no shapes and no art brushes.
 
 ## Decision
 
-1. **A brush is parameters, never pixels.** A preset (`anicraft_engine::brush_library::BrushPreset`)
+1. **A brush is parameters, never pixels.** A preset (`anima_engine::brush_library::BrushPreset`)
    holds:
    * the tip: size, round or square, angle, roundness;
    * smoothing;
@@ -31,7 +31,7 @@ was copied: no presets, no shapes and no art brushes.
    preset in both modes). A preset's defaults are ADR 0033's plain brush, so `draw.brush` without
    the new params does exactly what it did.
 
-2. **Shaping is in the outline, pure geometry** (`anicraft_geom::brush::Shaping`, `outline_shaped`):
+2. **Shaping is in the outline, pure geometry** (`anima_geom::brush::Shaping`, `outline_shaped`):
    * **Tapers** multiply the tip's size factor by an ease-out ramp over the first and last part
      of the length (down to 5 % of the size). The centre line is cut finely enough to follow the
      ramp: a straight drag flattens to two points.
@@ -47,7 +47,7 @@ was copied: no presets, no shapes and no art brushes.
    *Rejected:* displacing the traced outline along its normals. It needs each loop's
    orientation and can fold over itself in tight corners.
 
-3. **Pressure curves** (`anicraft_geom::pressure::PressureCurve`):
+3. **Pressure curves** (`anima_geom::pressure::PressureCurve`):
    * Up to 8 points with ends at input 0 and 1, interpolated by a monotone cubic
      (Fritsch–Butland tangents, Fritsch–Carlson limits). The curve is smooth, passes through its
      points, never overshoots, and stays in 0..1. It is `Copy`, so tool options stay cheap.
@@ -75,7 +75,7 @@ was copied: no presets, no shapes and no art brushes.
    work the same from the CLI and MCP.
    * Names are unique (case doesn't matter), one line, at most 64 characters, and never a
      built-in's name. There are at most 200.
-   * **A brush set** is a small JSON file (`{"format": "anicraft-brushes", "version": 1,
+   * **A brush set** is a small JSON file (`{"format": "anima-brushes", "version": 1,
      "brushes": [..]}`). Import skips bad entries, clamps values, numbers clashing names ("Ink
      2"), and reads at most 1 MB.
 
@@ -89,7 +89,7 @@ was copied: no presets, no shapes and no art brushes.
      engine-enforced confirmations. Saving and renaming don't touch the document.
    * Plug-ins may list brushes but not change them or touch brush set files.
 
-7. **Built-in brushes are AniCraft's own**: Pencil, Ink Pen, Flat Calligraphy, Round Taper, Marker,
+7. **Built-in brushes are Ánima's own**: Pencil, Ink Pen, Flat Calligraphy, Round Taper, Marker,
    Chalk and Dotted, each a set of these parameters (`brush_library::builtin`).
 
 8. **Shell.**
@@ -132,7 +132,7 @@ was copied: no presets, no shapes and no art brushes.
 
   Tapers cost the most: their 5 % tips need fine cells. That cost comes once, when the stroke
   ends. A 300 × 80 px library preview of Chalk renders in 1.5 ms. Reproduce with `cargo test
-  --release -p anicraft-engine preset_timings -- --ignored --nocapture`.
+  --release -p anima-engine preset_timings -- --ignored --nocapture`.
 
 * Each preset's area on that wave stays within tested bounds (as a part of length × size).
   Dotted is exactly π/8.8 of it.

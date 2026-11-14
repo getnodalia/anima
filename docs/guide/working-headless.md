@@ -1,6 +1,6 @@
 # Working headless
 
-Everything you do in AniCraft is a named command, and the same commands run without a window.
+Everything you do in Ánima is a named command, and the same commands run without a window.
 This chapter is for technical artists and pipeline TDs: rendering from the command line, batch
 jobs, scripting edits as JSON, and connecting AI assistants.
 
@@ -8,23 +8,23 @@ On macOS, press ⌘ where this guide says Ctrl, and ⌥ where it says Alt.
 
 ## The command-line tool
 
-`anicraft-cli` comes with AniCraft:
+`anima-cli` comes with Ánima:
 
-* **Windows**: `anicraft-cli.exe` sits next to `anicraft.exe` in the install folder. It isn't
+* **Windows**: `anima-cli.exe` sits next to `anima.exe` in the install folder. It isn't
   added to your `PATH`, so call it by its full path or add the folder yourself.
-* **macOS**: it is inside the app at `AniCraft.app/Contents/MacOS/anicraft-cli`, and also a
-  separate download, `anicraft-cli-<version>-macos-universal.zip`, on the
-  [releases page](https://github.com/storytold/AniCraft/releases).
-* **Linux**: the deb and rpm packages install it as `/usr/bin/anicraft-cli`; the tarball has it
-  next to `anicraft`.
+* **macOS**: it is inside the app at `Anima.app/Contents/MacOS/anima-cli`, and also a
+  separate download, `anima-cli-<version>-macos-universal.zip`, on the
+  [releases page](https://github.com/getnodalia/anima/releases).
+* **Linux**: the deb and rpm packages install it as `/usr/bin/anima-cli`; the tarball has it
+  next to `anima`.
 
-Run it with no arguments, or with `--help`, to see every subcommand. `anicraft-cli --version`
+Run it with no arguments, or with `--help`, to see every subcommand. `anima-cli --version`
 prints the version.
 
 Two rules hold everywhere:
 
 * Each subcommand takes a document path, or `--sample` for the built-in sample animation. The
-  positional document must be a `.anicraft` file (to work on an Animate file, see
+  positional document must be a `.anima` file (to work on an Animate file, see
   [Converting Animate files](#converting-animate-files)).
 * **Frame flags on the command line are 1-based**, as on the timeline: `--frame 1` is the first
   frame. Frame numbers inside JSON params are 0-based, as everywhere in the engine.
@@ -39,7 +39,7 @@ Two rules hold everywhere:
 | `gif <file> --out anim.gif [--from A] [--to B] [--scale S] [--overwrite yes]` | An animated GIF. |
 | `apng <file> --out anim.png [...]` | An animated PNG, full colour with real transparency. |
 | `webp <file> --out anim.webp [...]` | A lossless animated WebP. |
-| `new --out file.anicraft [--width W] [--height H] [--fps F]` | A new, empty document. |
+| `new --out file.anima [--width W] [--height H] [--fps F]` | A new, empty document. |
 
 `apng` and `webp` take the same range and scale flags as `gif`, plus `--loop forever` (the
 default) or `--loop N` for how many times it plays, and `--background yes` to draw the stage
@@ -49,10 +49,10 @@ Every frame is drawn by the same renderer the app uses for its exports, so what 
 matches File › Export exactly.
 
 ```sh
-anicraft-cli render shot010.anicraft --frame 24 --out shot010_f24.png
-anicraft-cli render-seq shot010.anicraft --out-dir frames/shot010 --scale 0.5
-anicraft-cli gif --sample --out preview.gif --scale 0.5
-anicraft-cli webp shot010.anicraft --out loop.webp --loop 3
+anima-cli render shot010.anima --frame 24 --out shot010_f24.png
+anima-cli render-seq shot010.anima --out-dir frames/shot010 --scale 0.5
+anima-cli gif --sample --out preview.gif --scale 0.5
+anima-cli webp shot010.anima --out loop.webp --loop 3
 ```
 
 ### Replacing files
@@ -64,14 +64,14 @@ first, or run the export command itself with `"confirm": true` (see
 [Destructive commands need "confirm"](#destructive-commands-need-confirm)):
 
 ```sh
-anicraft-cli exec shot010.anicraft file.export_png '{"path":"f24.png","frame":23,"confirm":true}'
+anima-cli exec shot010.anima file.export_png '{"path":"f24.png","frame":23,"confirm":true}'
 ```
 
 ## Running any command
 
 Every menu item is a command with an id, and every command can be run from the command line.
 
-`anicraft-cli commands` prints the whole registry as JSON: each command's `id`, `label`, `menu`,
+`anima-cli commands` prints the whole registry as JSON: each command's `id`, `label`, `menu`,
 default `shortcut`, a short `params` description, and whether it changes the document. The same
 list, readable, is in [the command reference](reference/commands.md).
 
@@ -84,19 +84,19 @@ is **File › Export › Export HTML Canvas…**.
 ### One command: exec
 
 ```sh
-anicraft-cli exec <file|--sample> <command.id> ['<json-params>'] [--save out.anicraft]
+anima-cli exec <file|--sample> <command.id> ['<json-params>'] [--save out.anima]
 ```
 
 The result prints as JSON. Add `--save` to write the changed document.
 
 ```sh
-anicraft-cli exec --sample draw.rect '{"x":10,"y":10,"w":80,"h":40}' --save box.anicraft
-anicraft-cli exec shot010.anicraft file.export_html '{"path":"web/shot010.html"}'
-anicraft-cli exec shot010.anicraft file.export_video '{"path":"shot010.mp4"}'
+anima-cli exec --sample draw.rect '{"x":10,"y":10,"w":80,"h":40}' --save box.anima
+anima-cli exec shot010.anima file.export_html '{"path":"web/shot010.html"}'
+anima-cli exec shot010.anima file.export_video '{"path":"shot010.mp4"}'
 ```
 
-Video export streams frames to your own copy of ffmpeg. AniCraft looks for it in the `ffmpeg`
-param, then the `ANICRAFT_FFMPEG` environment variable, then your `PATH`.
+Video export streams frames to your own copy of ffmpeg. Ánima looks for it in the `ffmpeg`
+param, then the `ANIMA_FFMPEG` environment variable, then your `PATH`.
 
 On Windows PowerShell, quoting JSON on the command line is awkward. Put the steps in a script
 file instead (next section).
@@ -115,7 +115,7 @@ A script is a JSON array of steps, each with a `cmd` and optional `params`:
 ```
 
 ```sh
-anicraft-cli run shot010.anicraft title.json --save shot010_titled.anicraft
+anima-cli run shot010.anima title.json --save shot010_titled.anima
 ```
 
 Steps run in order. The first one that fails stops the run, and the error names the step. The
@@ -127,7 +127,7 @@ If a document has **File › Publish Settings** set up, one command writes every
 switched on, to the output names saved in the document (relative to the document's folder):
 
 ```sh
-anicraft-cli exec shot010.anicraft file.publish '{"confirm": true}'
+anima-cli exec shot010.anima file.publish '{"confirm": true}'
 ```
 
 `confirm` lets it replace files left by an earlier publish. The result is the same report the
@@ -135,23 +135,23 @@ app shows: what each format wrote, skipped or why it failed.
 
 ## Batch jobs for pipelines
 
-Because each call is a plain process with JSON in and out, AniCraft fits into any build system,
+Because each call is a plain process with JSON in and out, Ánima fits into any build system,
 render farm or shell loop. Exit status is 0 on success and 1 on any error, with the message on
 standard error, so a failed step stops your pipeline.
 
 Render every document in a folder to a half-size GIF:
 
 ```sh
-for f in shots/*.anicraft; do
-  anicraft-cli gif "$f" --out "out/$(basename "$f" .anicraft).gif" --scale 0.5 --overwrite yes
+for f in shots/*.anima; do
+  anima-cli gif "$f" --out "out/$(basename "$f" .anima).gif" --scale 0.5 --overwrite yes
 done
 ```
 
 The same in PowerShell:
 
 ```powershell
-Get-ChildItem shots\*.anicraft | ForEach-Object {
-  & anicraft-cli gif $_.FullName --out "out\$($_.BaseName).gif" --scale 0.5 --overwrite yes
+Get-ChildItem shots\*.anima | ForEach-Object {
+  & anima-cli gif $_.FullName --out "out\$($_.BaseName).gif" --scale 0.5 --overwrite yes
 }
 ```
 
@@ -159,11 +159,11 @@ Renders are deterministic: the same document and flags give the same pixels on e
 
 ### Converting Animate files
 
-The positional document must be a `.anicraft` file, but the `file.open` command reads `.fla`,
+The positional document must be a `.anima` file, but the `file.open` command reads `.fla`,
 `.xfl` and XFL folders. Start from the sample, open the Animate file over it, and save:
 
 ```sh
-anicraft-cli exec --sample file.open '{"path":"intro.fla"}' --save intro.anicraft
+anima-cli exec --sample file.open '{"path":"intro.fla"}' --save intro.anima
 ```
 
 The result includes what was imported, kept or left out, as the app's import report does. See
@@ -172,20 +172,20 @@ The result includes what was imported, kept or left out, as the app's import rep
 ### Plug-ins on the command line
 
 Headless runs load no plug-ins unless you ask, so a script gives the same result on every
-machine. Add `--plugins <folder>` to any subcommand (or set `ANICRAFT_PLUGINS`) to load the
+machine. Add `--plugins <folder>` to any subcommand (or set `ANIMA_PLUGINS`) to load the
 `.wasm` files in that folder first, then run them with `plugin.run`:
 
 ```sh
-anicraft-cli exec --sample plugin.run '{"id":"org.anicraft.star-field","params":{"count":200}}' \
-    --plugins my-plugins --save stars.anicraft
+anima-cli exec --sample plugin.run '{"id":"org.anima.star-field","params":{"count":200}}' \
+    --plugins my-plugins --save stars.anima
 ```
 
 See [Plug-ins](plugins.md).
 
 ## A live session: serve
 
-`anicraft-cli serve [file|--sample]` keeps one document open and reads one JSON request per
-line on standard input, answering one line each on standard output. Tools that drive AniCraft
+`anima-cli serve [file|--sample]` keeps one document open and reads one JSON request per
+line on standard input, answering one line each on standard output. Tools that drive Ánima
 interactively (a game engine exporter, a custom panel in another app) use it.
 
 ```text
@@ -213,30 +213,30 @@ it: they can be undone with `edit.undo` in the same session.
 
 ## AI assistants (MCP)
 
-`anicraft-cli mcp` is a Model Context Protocol server. An AI assistant that supports MCP can
+`anima-cli mcp` is a Model Context Protocol server. An AI assistant that supports MCP can
 then open a document, draw, animate, look at frames and export, through the same commands the
 app uses.
 
 ```sh
-anicraft-cli mcp                    # a new, empty document
-anicraft-cli mcp scene.anicraft     # open a document
-anicraft-cli mcp --sample           # the sample animation
+anima-cli mcp                    # a new, empty document
+anima-cli mcp scene.anima     # open a document
+anima-cli mcp --sample           # the sample animation
 ```
 
 To register it with Claude Code:
 
 ```sh
-claude mcp add anicraft -- /path/to/anicraft-cli mcp
+claude mcp add anima -- /path/to/anima-cli mcp
 ```
 
-Most other clients take an entry like this (use the full path to `anicraft-cli`):
+Most other clients take an entry like this (use the full path to `anima-cli`):
 
 ```json
 {
   "mcpServers": {
-    "anicraft": {
-      "command": "/path/to/anicraft-cli",
-      "args": ["mcp", "/path/to/scene.anicraft"]
+    "anima": {
+      "command": "/path/to/anima-cli",
+      "args": ["mcp", "/path/to/scene.anima"]
     }
   }
 }
@@ -246,11 +246,11 @@ The assistant gets five tools:
 
 | Tool | What it does |
 |---|---|
-| `anicraft_commands` | Lists commands, optionally filtered by words such as `tween` or `export`. |
-| `anicraft_run` | Runs one command with its params. |
-| `anicraft_run_script` | Runs several commands in order, stopping at the first error. |
-| `anicraft_document` | Describes the document: stage, scenes, layers, keyframes, library, selection. |
-| `anicraft_render` | Returns a frame as a PNG picture, exactly as exported. |
+| `anima_commands` | Lists commands, optionally filtered by words such as `tween` or `export`. |
+| `anima_run` | Runs one command with its params. |
+| `anima_run_script` | Runs several commands in order, stopping at the first error. |
+| `anima_document` | Describes the document: stage, scenes, layers, keyframes, library, selection. |
+| `anima_render` | Returns a frame as a PNG picture, exactly as exported. |
 
 Things to know:
 
@@ -260,22 +260,22 @@ Things to know:
 * The assistant reads and writes files with your permissions, at the paths it chooses. Only
   connect assistants you trust with those files.
 * The server works on its own copy of the document, not on the window you have open. Save from
-  the assistant, then open the file in AniCraft.
+  the assistant, then open the file in Ánima.
 
 The full details are in
-[the MCP notes on GitHub](https://github.com/storytold/AniCraft/blob/main/docs/mcp.md).
+[the MCP notes on GitHub](https://github.com/getnodalia/anima/blob/main/docs/mcp.md).
 
 ## This guide as a web page
 
-`anicraft-cli guide --out <folder>` writes this user guide as HTML pages into a folder, with its
+`anima-cli guide --out <folder>` writes this user guide as HTML pages into a folder, with its
 pictures, so you can read it offline or host it next to your studio's own documentation:
 
 ```sh
-anicraft-cli guide --out docs/anicraft-guide
+anima-cli guide --out docs/anima-guide
 ```
 
 ## Performance check
 
-`anicraft-cli bench` builds a large generated document and times editing, undo, rendering,
+`anima-cli bench` builds a large generated document and times editing, undo, rendering,
 saving and autosave on your machine. Run it on a release build; `bench --check yes` compares the
-default scenario with AniCraft's published budgets and fails if one is missed.
+default scenario with Ánima's published budgets and fails if one is missed.

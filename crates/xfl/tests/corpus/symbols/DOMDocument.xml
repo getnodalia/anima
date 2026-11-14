@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AniCraft XFL corpus: symbols. Graphic instances in every loop mode with first frames, a
+<!-- Ánima XFL corpus: symbols. Graphic instances in every loop mode with first frames, a
      graphic nesting graphics, a movie clip playing on its own timeline, a button showing its Up
      frame, and the colour effects (alpha, tint, brightness up and down, advanced). The library
      is in folders, and one Include names a file that isn't there. Self-authored. -->

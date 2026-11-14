@@ -1,6 +1,6 @@
 [package]
-name = "anicraft-actions"
-description = "AniCraft L0: the timeline action IR shared by frame actions, frame scripts and button events"
+name = "anima-actions"
+description = "Ánima L0: the timeline action IR shared by frame actions, frame scripts and button events"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

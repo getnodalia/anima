@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AniCraft XFL corpus: filters and blend modes. One instance per filter (drop shadow, blur,
+<!-- Ánima XFL corpus: filters and blend modes. One instance per filter (drop shadow, blur,
      glow, bevel, adjust colour, gradient glow, gradient bevel, a stack of two, a switched-off
      one, an unknown one) on the top row; blend modes over a striped ground on the bottom row.
      Self-authored. -->

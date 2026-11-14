@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AniCraft XFL corpus: video (ADR 0086). LIBRARY/Clips/screen.flv is original: one 64x48
+<!-- Ánima XFL corpus: video (ADR 0086). LIBRARY/Clips/screen.flv is original: one 64x48
      Screen Video key frame in four coloured quarters, in 32-pixel blocks, made by a script;
      bin/M 4 2.dat is an FLV whose video is On2 VP6 (only its header is real). A Screen Video
      instance scaled by its frame size and moved, an instance of the VP6 video, and a video

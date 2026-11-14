@@ -15,7 +15,7 @@ engine, and two of them keep state (the recent list, its pictures) between sessi
 ## Decision
 
 1. **Routing is a pure function in the engine** (`cmds_drop::kind_of`, `cmds_drop::route`). A file's
-   kind comes from its name (an XFL folder from its `DOMDocument.xml`): document (`.anicraft`, `.fla`,
+   kind comes from its name (an XFL folder from its `DOMDocument.xml`): document (`.anima`, `.fla`,
    `.xfl`), drawing (SVG), image (PNG, JPEG), sound (WAV, Ogg, MP3) or unsupported. With the target
    (stage, Library, elsewhere) it gives one action: open, import to the stage, import to the Library,
    or refuse with a reason. The shell's `drop::plan` adds what only the window knows: one document
@@ -57,7 +57,7 @@ engine, and two of them keep state (the recent list, its pictures) between sessi
    in a release build), kept as `Thumbnails/<key>.png` in the settings folder (browser storage,
    base64, on the web), the key a 64-bit FNV-1a of the normalised path. Screenshot and test runs
    write nothing.
-6. **The start screen replaces the workspace, never covers it.** It shows when AniCraft starts with
+6. **The start screen replaces the workspace, never covers it.** It shows when Ánima starts with
    no file to open (Preferences › `start_screen`, a checkbox on the screen itself), from File › Start
    Screen, and from Open Recent in the palette. The menus and status bar stay; Esc or "Back to the
    document" returns to the document behind, untouched. New offers HD 1280 × 720, Full HD 1920 ×

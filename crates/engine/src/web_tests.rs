@@ -24,28 +24,28 @@ fn save_downloads_and_a_picked_file_opens() {
     in_browser(|| {
         let mut s = Session::new(crate::doc::sample::demo());
         let frames = s.frame_count();
-        s.execute("file.save", &json!({"path": "walk.anicraft"})).unwrap();
+        s.execute("file.save", &json!({"path": "walk.anima"})).unwrap();
         let out = vfs::take_written();
-        assert_eq!(names(&out), ["walk.anicraft"], "the temporary file was renamed into place");
-        assert!(!Path::new("walk.anicraft").exists(), "nothing reached the disk");
+        assert_eq!(names(&out), ["walk.anima"], "the temporary file was renamed into place");
+        assert!(!Path::new("walk.anima").exists(), "nothing reached the disk");
         let bytes = out[0].1.clone();
         assert!(bytes.starts_with(b"{"));
 
         // The user picks it in the browser: the shell puts it in the store and opens it.
         let mut t = Session::default();
-        vfs::put(Path::new("walk.anicraft"), bytes.clone()).unwrap();
-        t.execute("file.open", &json!({"path": "walk.anicraft"})).unwrap();
-        assert_eq!((t.frame_count(), t.path.as_deref(), t.is_dirty()), (frames, Some(Path::new("walk.anicraft")), false));
+        vfs::put(Path::new("walk.anima"), bytes.clone()).unwrap();
+        t.execute("file.open", &json!({"path": "walk.anima"})).unwrap();
+        assert_eq!((t.frame_count(), t.path.as_deref(), t.is_dirty()), (frames, Some(Path::new("walk.anima")), false));
         assert!(vfs::take_written().is_empty(), "opening writes nothing, and the picked file is let go");
 
         // A restored autosave copy opens as unsaved work, with its name or without one.
-        vfs::put(Path::new("recovered/s1/walk.anicraft"), bytes.clone()).unwrap();
-        t.execute("file.open", &json!({"path": "recovered/s1/walk.anicraft", "unsaved": true, "confirm": true})).unwrap();
-        assert_eq!((t.path.as_deref(), t.is_dirty()), (Some(Path::new("recovered/s1/walk.anicraft")), true));
+        vfs::put(Path::new("recovered/s1/walk.anima"), bytes.clone()).unwrap();
+        t.execute("file.open", &json!({"path": "recovered/s1/walk.anima", "unsaved": true, "confirm": true})).unwrap();
+        assert_eq!((t.path.as_deref(), t.is_dirty()), (Some(Path::new("recovered/s1/walk.anima")), true));
         vfs::put(Path::new("recovered/s2/Untitled"), bytes).unwrap();
         t.execute("file.open", &json!({"path": "recovered/s2/Untitled", "unsaved": true, "untitled": true, "confirm": true})).unwrap();
         assert_eq!((t.path.as_deref(), t.is_dirty()), (None, true));
-        assert!(t.execute("file.open", &json!({"path": "gone.anicraft"})).is_err(), "a missing file is an error, not a crash");
+        assert!(t.execute("file.open", &json!({"path": "gone.anima"})).is_err(), "a missing file is an error, not a crash");
     });
 }
 
@@ -69,7 +69,20 @@ fn exports_come_back_as_files() {
         s.execute("file.export_png_sequence", &json!({"dir": "frames", "to": 2})).unwrap();
         let out = vfs::take_written();
         let n = names(&out);
-        for want in ["frame.png", "frame.svg", "movie.gif", "movie.png", "movie.webp", "movie.json", "movie.html", "track.wav", "sheet.png", "sheet.json", "frames/frame_00001.png", "frames/frame_00003.png"] {
+        for want in [
+            "frame.png",
+            "frame.svg",
+            "movie.gif",
+            "movie.png",
+            "movie.webp",
+            "movie.json",
+            "movie.html",
+            "track.wav",
+            "sheet.png",
+            "sheet.json",
+            "frames/frame_00001.png",
+            "frames/frame_00003.png",
+        ] {
             assert!(n.iter().any(|x| x == want), "{want} missing from {n:?}");
         }
         assert!(out.iter().all(|(_, b)| !b.is_empty()));

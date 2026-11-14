@@ -11,7 +11,7 @@ cargo run -- --theme high-contrast --scale 200 --screenshot x.png  # a palette a
 cargo test                                    # every crate
 cargo clippy --all-targets -- -D warnings
 cargo deny check licenses bans sources
-cargo run --release -p anicraft-cli -- bench  # performance probe
+cargo run --release -p anima-cli -- bench  # performance probe
 ```
 
 Fonts: builds embed Inter and JetBrains Mono when `CRAFT_FONTS_DIR` points at a craft-fonts
@@ -26,14 +26,14 @@ silent; import, waveforms and audio export still work). Tests never open an audi
 ### The user guide
 
 The user guide is Markdown in `docs/guide/` (ADR 0069); `crates/guide` bundles it as HTML for
-Help › User Guide, and `cargo run -p anicraft-cli -- guide --out <folder>` writes the pages.
+Help › User Guide, and `cargo run -p anima-cli -- guide --out <folder>` writes the pages.
 `cargo test` checks every link, anchor and picture and that every chapter is reachable from
 `index.md`; a new chapter needs its line in `PAGES` (`crates/guide/src/lib.rs`) and a link
 from the contents. The command and shortcut references in `docs/guide/reference/` are
 generated: when a command or a default key changes, a test fails until you run
 
 ```sh
-ANICRAFT_BLESS_GUIDE=1 cargo test -p anicraft guide_reference
+ANIMA_BLESS_GUIDE=1 cargo test -p anima guide_reference
 ```
 
 and commit the result. The pictures come from `scripts/guide-shots.sh` (or `.ps1`), which runs
@@ -44,24 +44,27 @@ and commit the result. The pictures come from `scripts/guide-shots.sh` (or `.ps1
 The stage draws on the graphics card by default (ADR 0032; the shell's `gpu-stage` feature is
 on by default, and the CPU draws when there is no usable card). For a CPU-only shell:
 `cargo run --no-default-features --features sound-output`; to compare at run time,
-`ANICRAFT_STAGE_RENDERER=cpu|gpu`. The `anicraft-gpu` crate builds and tests in every build:
+`ANIMA_STAGE_RENDERER=cpu|gpu`. The `anima-gpu` crate builds and tests in every build:
 its parity tests run on the graphics card, else on a software adapter (lavapipe; WARP fails the self-test, ADR 0032), and
-skip without either; `ANICRAFT_TEST_GPU=software` forces the software adapter and
-`WGPU_BACKEND=dx12|vulkan|metal` picks the backend. `cargo run --release -p anicraft-gpu
+skip without either; `ANIMA_TEST_GPU=software` forces the software adapter and
+`WGPU_BACKEND=dx12|vulkan|metal` picks the backend. `cargo run --release -p anima-gpu
 --example gpu_bench` prints timings and parity.
 
 ## CI
 
-Every workflow calls the suite's shared workflows in `storytold/craft-common-actions`, which
-start each job with Harden-Runner and pin actions by SHA.
+The gates call getnodalia/foundation's reusable workflows (`rust-gate.yml`, `freebsd.yml`,
+`packaging-lint.yml`, `agents-check.yml`, `git-sources.yml`), pinned by commit; every action is
+pinned by SHA, and every job runs on a standard GitHub-hosted runner.
 
 | Workflow | Runs on | When | What |
 |---|---|---|---|
-| `ci.yml` (CI) | Ubuntu 24.04 (lavapipe for GPU tests) | every PR, every push to `main` | `cargo test --workspace`, clippy |
+| `ci.yml` (CI) | Ubuntu 24.04 (lavapipe for GPU tests) | every PR, every push to `main` | `cargo fmt --check`, `cargo test --workspace`, clippy; git sources; no upstream names |
 | `platforms.yml` (CI (macOS, Windows), ADR 0067) | `macos-latest` (arm64), `windows-latest` (x64) | PRs and pushes to `main` that change more than docs, Markdown or other workflows | `cargo build`, `cargo test --no-fail-fast`, clippy, for the workspace |
 | `web.yml` | Ubuntu | every PR, every push to `main` | wasm32 build, the engine's tests in Node, the web bundle |
-| `freebsd.yml`, `windows-arm64.yml` | FreeBSD VM, Windows ARM64 | nightly / weekly, packaging changes | build and tests; ARM64 MSI install |
-| `sonarcloud.yml`, CodeQL default setup | Ubuntu | every PR | coverage and static analysis |
+| `freebsd.yml` | FreeBSD VM | nightly, packaging changes | build and tests |
+| `codeql.yml`, `scorecard.yml` | Ubuntu | every PR, weekly | static analysis, supply-chain checks |
+| `release-auto.yml` and `release-*.yml` | Ubuntu 22.04, macOS 15, Windows 2025 | a merged version bump with its notes | Linux, macOS (unsigned DMG) and Windows packages, then the release |
+| `upstream-sync.yml` | Ubuntu | weekly | upstream's changes, renamed, as a pull request (`docs/upstream.md`) |
 
 Measured job times (wall clock, from the job's start to its end):
 
@@ -89,7 +92,7 @@ Measured on Windows, 32 threads, offline, from an empty target directory:
 | Fresh build time | ~60 s | **44 s** (tests then add 3 s) |
 | Rebuild after editing a UI file | ~2 s (incremental) | **3.8 s** |
 | Rebuild after editing an engine file | ~3 s | **6.0 s** |
-| Debug `anicraft.exe` | 21 MB + 200 MB PDB | 21 MB + small line-table PDB |
+| Debug `anima.exe` | 21 MB + 200 MB PDB | 21 MB + small line-table PDB |
 
 What does it (in `Cargo.toml`):
 

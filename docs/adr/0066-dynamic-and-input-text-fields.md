@@ -10,7 +10,7 @@
 
 Animate has three text types. **Static** text is artwork. **Dynamic** text is a field scripts
 fill in while the movie plays (a score, a question, a name). **Input** text is a field the
-viewer types into (a name, an answer, a password), which scripts then read. AniCraft's text
+viewer types into (a name, an answer, a password), which scripts then read. Ánima's text
 (ADR 0012) was static only: a block's outlines are laid out by the engine when it is edited and
 stored, so rendering never needs fonts. XFL import (ADR 0014) brought dynamic and input fields
 in as static text, keeping only the instance name. Scripts (ADR 0013, 0052) could not name text
@@ -18,8 +18,8 @@ at all.
 
 Two constraints shape the design. **Time is a function**: the authoring stage and every export
 evaluate the document, never a played session, and the player is pure and deterministic.
-**Layering**: the player lives in `anicraft-doc` (layer 1), and the fonts in `anicraft-text`,
-also layer 1, which `anicraft-doc` may not use.
+**Layering**: the player lives in `anima-doc` (layer 1), and the fonts in `anima-text`,
+also layer 1, which `anima-doc` may not use.
 
 ## Decision
 
@@ -55,15 +55,15 @@ also layer 1, which `anicraft-doc` may not use.
    writes the same messages as other wrong-kind names.
 5. **Runtime layout through the host.** The player can't reach the fonts, so `ScriptHost` (the
    interface it already uses for plug-in frame scripts) gains `lay_out_field(block, shown)`.
-   The engine's `ScriptRunner` answers it with `anicraft-text` and the same `field_layout` the
+   The engine's `ScriptRunner` answers it with `anima-text` and the same `field_layout` the
    commands use, so a field looks the same before and after a script sets its text. The result
    (`FieldLook`: outline and caret stops per line) is stored in the state; drawing a state
    needs nothing else, and the same document, state and events always give the same picture
    on one computer. A host that can't lay out (`NoScripts`) still sets and reads text; the
-   field then draws only its box. `anicraft-text`'s `Layout` now reports **caret stops** (each
+   field then draws only its box. `anima-text`'s `Layout` now reports **caret stops** (each
    line's character range and the x of every boundary a glyph starts at), which input editing
    and click-to-place need.
-6. **Input editing is a pure state machine** (`anicraft_doc::field`): a press in an input field
+6. **Input editing is a pure state machine** (`anima_doc::field`): a press in an input field
    (or a selectable dynamic one) focuses it and places the caret; dragging selects; typed
    characters (`Event::Char`) replace the selection, respecting the line type and the maximum;
    Backspace, Delete, the arrows, Home and End move and edit by key code (Shift, key code 16,
@@ -82,7 +82,7 @@ also layer 1, which `anicraft-doc` may not use.
    focused field's caret and selection) in its state.
 8. **HTML canvas export: native inputs, canvas text, authored outlines kept.**
    * Fields are exported with their box, settings and font. Until a script or the viewer
-     changes a field's text, the page draws its **authored outline**, exactly as AniCraft
+     changes a field's text, the page draws its **authored outline**, exactly as Ánima
      does. `player.js` mirrors the Rust player's fields (tree nodes, `text`, `length`,
      `appendText`, messages), checked step by step against it in the Boa parity tests.
    * **Input fields are real, positioned `<input>` / `<textarea>` elements** over the canvas
@@ -96,7 +96,7 @@ also layer 1, which `anicraft-doc` may not use.
      reasons; its one advantage (pixel parity of the caret with Test Movie) doesn't matter to
      viewers.
    * **Text a script sets is drawn with `fillText`** in the field's family, then the generic
-     `sans-serif`, wrapped and aligned in the box as AniCraft does. Its glyphs come from the
+     `sans-serif`, wrapped and aligned in the box as Ánima does. Its glyphs come from the
      viewer's browser and may differ in shape and width from Test Movie when the family isn't
      on the viewer's computer. The export report says so for every page with fields ("text fields (their authored text keeps its outlines; text a script or the viewer changes is drawn with the browser's fonts)").
 9. **Font embedding: not in this slice, by decision.** Embedding font files in the page would
@@ -118,7 +118,7 @@ also layer 1, which `anicraft-doc` may not use.
 ## Consequences
 
 * Animate projects with scores, quizzes and name entry play in Test Movie and in the HTML
-  page without changes, and their fields stay editable as text in AniCraft.
+  page without changes, and their fields stay editable as text in Ánima.
 * Exports other than HTML canvas show fields as authored; that matches Animate's video export.
 * The document format is unchanged for files without fields; fields add one small object.
 * Not yet: `htmlText` and HTML rendering in fields, per-character styles (ADR 0012),

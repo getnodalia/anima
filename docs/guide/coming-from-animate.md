@@ -1,22 +1,22 @@
 # Coming from Animate
 
-If you already know Adobe Animate (or Flash before it), most of AniCraft will feel familiar. This
-chapter maps what you know to where it is in AniCraft, lists the keys that work the same, and is
+If you already know Adobe Animate (or Flash before it), most of Ánima will feel familiar. This
+chapter maps what you know to where it is in Ánima, lists the keys that work the same, and is
 honest about what differs and what isn't there yet.
 
-AniCraft is an independent, open-source project, and is not affiliated with or endorsed by Adobe.
+Ánima is an independent, open-source project, and is not affiliated with or endorsed by Adobe.
 
 On macOS, press ⌘ where this guide says Ctrl, and ⌥ where it says Alt.
 
 ## Panels
 
-AniCraft opens with its panels docked as in Animate's Essentials: tools on the left, the stage
+Ánima opens with its panels docked as in Animate's Essentials: tools on the left, the stage
 in the middle, Properties and the Library on the right, and the timeline at the bottom. As in
 Animate, you drag a panel's tab to dock it elsewhere (the timeline above the stage, for
 example), stack it with other panels or float it, and **Window › Workspace** has Essentials,
 Animator and Designer, plus your own saved workspaces and Reset.
 
-| In Animate | In AniCraft |
+| In Animate | In Ánima |
 |---|---|
 | Tools | The tools column on the left. A drawing tool's options show at the top of Properties while it is active. |
 | Timeline | The timeline at the bottom (**Window › Timeline**). |
@@ -34,7 +34,7 @@ Animator and Designer, plus your own saved workspaces and Reset.
 | Find and Replace | **Edit › Find and Replace** (**Ctrl+F**). |
 | Publish Settings | **File › Publish Settings…** (**Ctrl+Shift+F12**). |
 
-Not in AniCraft yet: Components, Code Snippets, the Assets panel, and moving the Tools panel.
+Not in Ánima yet: Components, Code Snippets, the Assets panel, and moving the Tools panel.
 See [The workspace](workspace.md) for a tour.
 
 ## Tools and their keys
@@ -67,13 +67,13 @@ Each tool has the key you already know.
 | Zoom | **Z** | |
 | Object Drawing | **J** | Toggles between merge drawing and drawing objects. |
 
-Not in AniCraft yet: the Lasso, Polygon and Magic Wand tools, the 3D tools,
+Not in Ánima yet: the Lasso, Polygon and Magic Wand tools, the 3D tools,
 Asset Warp, the Paint Brush and Fluid Brush, Deco and the Spray Brush. More on the tools in
 [Drawing](drawing.md).
 
 ## Keys that work as in Animate
 
-| Action | Key | Menu in AniCraft |
+| Action | Key | Menu in Ánima |
 |---|---|---|
 | Insert frame | **F5** | Insert › Timeline › Frame |
 | Remove frame | **Shift+F5** | Insert › Timeline › Remove Frame |
@@ -107,15 +107,15 @@ Asset Warp, the Paint Brush and Fluid Brush, Deco and the Spray Brush. More on t
 | Zoom in and out | **Ctrl+=**, **Ctrl+-** | View |
 | Preferences (Windows and Linux) | **Ctrl+U** | Edit › Preferences… |
 
-AniCraft also has **Home** and **End** (and **Shift+,** and **Shift+.**) for the first and last
+Ánima also has **Home** and **End** (and **Shift+,** and **Shift+.**) for the first and last
 frame, and **Shift+PageUp** and **Shift+PageDown** for the previous and next scene.
 
 ### Keys that differ
 
-* **Ctrl+K** opens AniCraft's command palette, which finds any command by name. Align is always on
+* **Ctrl+K** opens Ánima's command palette, which finds any command by name. Align is always on
   the right, and on **Ctrl+Alt+1** to **6**.
 * **Ctrl+G** and **Ctrl+Shift+G** group and ungroup, as in Animate. A drawing object that
-  mixes colours, such as the result of a Union, is a group in AniCraft: double-click it to edit
+  mixes colours, such as the result of a Union, is a group in Ánima: double-click it to edit
   inside.
 * **Ctrl+F8** (New Symbol): not there yet. Draw something and convert it with **F8**.
 * **Ctrl+J** (Document Settings): it is **Modify › Document Settings**, with no key by default.
@@ -140,7 +140,7 @@ Press **J** for Object Drawing to draw shapes that stay separate. Scripts and th
 draw objects unless told otherwise.
 
 This behaviour was rebuilt to match Animate closely, and the remaining differences are tracked in
-issue 42 on [GitHub issues](https://github.com/storytold/AniCraft/issues). One known gap:
+issue 42 on [GitHub issues](https://github.com/getnodalia/anima/issues). One known gap:
 variable-width strokes don't take part in merging yet.
 
 ### Classic, motion and shape tweens
@@ -167,7 +167,7 @@ Library items from another document. See [Symbols and the Library](symbols-and-l
 
 ### ActionScript
 
-AniCraft runs a subset of ActionScript 3.0 in frame scripts: timeline control (`stop()`,
+Ánima runs a subset of ActionScript 3.0 in frame scripts: timeline control (`stop()`,
 `gotoAndPlay` and friends, on named instances too), mouse and keyboard listeners, `trace`,
 setting and reading instance properties, variables, `if`, loops and functions. Scripts in an
 Animate document are always kept with it. One that uses more than the subset doesn't run at all
@@ -179,7 +179,7 @@ ActionScript 1.0 and 2.0, and scripts placed on instances. See [Interactivity](i
 
 ### Files, Test Movie and publishing
 
-* AniCraft saves `.anicraft` documents, an open, documented format. It **opens** `.fla`, `.xfl`
+* Ánima saves `.anima` documents, an open, documented format. It **opens** `.fla`, `.xfl`
   and XFL folders, as new, untitled documents, but can't save back to them. See
   [Opening Animate files](opening-animate-files.md).
 * There is **no SWF** export. For the web, **Export HTML Canvas** writes one page that plays the
@@ -188,7 +188,7 @@ ActionScript 1.0 and 2.0, and scripts placed on instances. See [Interactivity](i
   formats you choose at once. See [Exporting and publishing](exporting-and-publish.md).
 * **Test Movie** (**Ctrl+Enter**) opens in its own window with an Output panel; **Esc** closes it.
 
-## Not in AniCraft yet
+## Not in Ánima yet
 
 Besides the tools and keys above, these are still to come:
 
@@ -203,4 +203,4 @@ Besides the tools and keys above, these are still to come:
 * SWF, AIR and other runtime targets.
 
 The project's roadmap on GitHub keeps an honest, up-to-date list. If something you rely on is
-missing, tell us on [GitHub issues](https://github.com/storytold/AniCraft/issues).
+missing, tell us on [GitHub issues](https://github.com/getnodalia/anima/issues).

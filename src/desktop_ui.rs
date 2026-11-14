@@ -1,5 +1,5 @@
 //! Portable mode and AppImage desktop integration in the shell (ADR 0094): the one-time,
-//! non-modal offer to add AniCraft to the applications menu, and Preferences › About (where this
+//! non-modal offer to add Ánima to the applications menu, and Preferences › About (where this
 //! copy keeps its things, and the menu entry's Add / Remove button).
 //!
 //! Where things are kept is `platform::placement`; the menu entry is written by the engine's
@@ -17,7 +17,7 @@ pub struct Desktop {
     pub data_home: PathBuf,
     /// The menu entry there now (read at start and after each change).
     pub entry: Entry,
-    /// The card offering to add AniCraft to the menu is showing.
+    /// The card offering to add Ánima to the menu is showing.
     pub offer: bool,
 }
 
@@ -26,11 +26,11 @@ pub struct Desktop {
 pub enum Entry {
     #[default]
     None,
-    /// AniCraft's entry, starting this copy.
+    /// Ánima's entry, starting this copy.
     ThisCopy,
-    /// AniCraft's entry, starting another AppImage (`true`: that file is still there).
+    /// Ánima's entry, starting another AppImage (`true`: that file is still there).
     Other(PathBuf, bool),
-    /// An entry of AniCraft's name that AniCraft didn't write: left alone.
+    /// An entry of Ánima's name that Ánima didn't write: left alone.
     Foreign,
 }
 
@@ -53,7 +53,7 @@ fn read_entry(app: &mut App, d: &Desktop) -> Entry {
     }
 }
 
-/// At start: on an AppImage, see whether AniCraft is in the menu. An entry left pointing at an
+/// At start: on an AppImage, see whether Ánima is in the menu. An entry left pointing at an
 /// AppImage that is gone (moved, or replaced by an update) follows this copy without asking: the
 /// user said yes once. Otherwise, the first time only, offer to add it, unless this copy is
 /// portable (portable copies leave no trace on the computer).
@@ -70,17 +70,17 @@ pub fn start_with(app: &mut App, mut d: Desktop, portable: bool) {
     d.entry = read_entry(app, &d);
     if matches!(d.entry, Entry::Other(_, false)) && app.run("desktop.integrate", d.params()).is_some() {
         d.entry = Entry::ThisCopy;
-        app.status_ok(tr!("The applications menu now starts this copy of AniCraft"));
+        app.status_ok(tr!("The applications menu now starts this copy of Ánima"));
     }
     d.offer = d.entry == Entry::None && !app.prefs.desktop_offered && !portable;
     app.desktop = Some(d);
 }
 
-/// Adds AniCraft to the menu (or points the entry at this copy).
+/// Adds Ánima to the menu (or points the entry at this copy).
 fn add(app: &mut App) {
     let Some(d) = app.desktop.clone() else { return };
     if app.run("desktop.integrate", d.params()).is_some() {
-        app.status_ok(tr!("AniCraft is in your applications menu, and opens .anicraft, .fla and .xfl files. Preferences › About removes it."));
+        app.status_ok(tr!("Ánima is in your applications menu, and opens .anima, .fla and .xfl files. Preferences › About removes it."));
     }
     let entry = read_entry(app, &d);
     if let Some(d) = app.desktop.as_mut() {
@@ -89,11 +89,11 @@ fn add(app: &mut App) {
     }
 }
 
-/// Removes AniCraft's menu entry, icons and file types.
+/// Removes Ánima's menu entry, icons and file types.
 fn remove(app: &mut App) {
     let Some(d) = app.desktop.clone() else { return };
     if app.run("desktop.remove", json!({"data_home": d.data_home.display().to_string()})).is_some() {
-        app.status_ok(tr!("Removed AniCraft from the applications menu. Add it again here any time."));
+        app.status_ok(tr!("Removed Ánima from the applications menu. Add it again here any time."));
     }
     let entry = read_entry(app, &d);
     if let Some(d) = app.desktop.as_mut() {
@@ -120,9 +120,9 @@ pub fn offer(app: &mut App, ctx: &egui::Context) {
     egui::Area::new(egui::Id::new("desktop_offer")).order(egui::Order::Foreground).anchor(egui::Align2::RIGHT_BOTTOM, [-16.0, -40.0]).show(ctx, |ui| {
         egui::Frame::popup(ui.style()).fill(T.panel_alt).inner_margin(egui::Margin::same(12)).show(ui, |ui| {
             ui.set_width(340.0);
-            ui.label(text(Type::Label, tr!("Add AniCraft to your applications menu?")).strong());
+            ui.label(text(Type::Label, tr!("Add Ánima to your applications menu?")).strong());
             ui.add_space(4.0);
-            ui.add(egui::Label::new(text(Type::Caption, tr!("Start it from the menu like any app, and open .anicraft, .fla and .xfl files by double-clicking them. Only your own data folder changes; Preferences › About removes it again."))).wrap());
+            ui.add(egui::Label::new(text(Type::Caption, tr!("Start it from the menu like any app, and open .anima, .fla and .xfl files by double-clicking them. Only your own data folder changes; Preferences › About removes it again."))).wrap());
             ui.add_space(8.0);
             ui.horizontal(|ui| {
                 let add = egui::Button::new(text(Type::Body, tr!("Add to Menu")).color(T.on_fill).strong()).fill(T.accent).min_size(egui::vec2(110.0, crate::theme::TARGET));
@@ -142,7 +142,7 @@ pub fn offer(app: &mut App, ctx: &egui::Context) {
         }
         Some(false) => {
             answered(app, ctx);
-            app.status_ok(tr!("You can add AniCraft to the applications menu any time in Preferences › About."));
+            app.status_ok(tr!("You can add Ánima to the applications menu any time in Preferences › About."));
         }
         None => {}
     }
@@ -165,18 +165,38 @@ pub fn about(app: &App, ui: &mut egui::Ui, label_w: f32) -> Option<Act> {
         ui.label(text(Type::Data, env!("CARGO_PKG_VERSION")));
         ui.label(text(Type::Caption, crate::platform::OS.name()));
     });
+    form_row(ui, label_w, tr!("Credits"), |ui| {
+        ui.vertical(|ui| {
+            ui.add(egui::Label::new(text(Type::Body, tr!("Ánima is a Nodalia app. Free software under the MIT or Apache 2.0 licence."))).wrap());
+            let origin = tr!("Built on AniCraft, by the ArtCraft Team and its contributors."); // rebrand: keep
+            ui.add(egui::Label::new(text(Type::Caption, origin)).wrap());
+            ui.hyperlink_to(text(Type::Body, "getnodalia.com"), "https://getnodalia.com");
+        });
+    });
     form_row(ui, label_w, tr!("This copy"), |ui| {
         let mode = if crate::platform::WEB {
             tr!("In the browser: settings are kept in this site's storage")
         } else if place.portable.is_some() {
-            tr!("Portable: everything is kept in the data folder beside AniCraft")
+            tr!("Portable: everything is kept in the data folder beside Ánima")
         } else {
             tr!("Installed: settings are kept in your user folder")
         };
         ui.label(text(Type::Body, mode));
     });
     if let Some((dir, why)) = &place.unwritable {
-        form_note(ui, label_w, text(Type::Caption, tr!("This copy is portable, but {path} can't be written ({error}), so your user folder is used instead.", path = dir.display(), error = why)).color(T.error));
+        form_note(
+            ui,
+            label_w,
+            text(
+                Type::Caption,
+                tr!(
+                    "This copy is portable, but {path} can't be written ({error}), so your user folder is used instead.",
+                    path = dir.display(),
+                    error = why
+                ),
+            )
+            .color(T.error),
+        );
     }
     for (name, dir) in crate::platform::places() {
         let Some(dir) = dir else { continue };
@@ -193,10 +213,17 @@ pub fn about(app: &App, ui: &mut egui::Ui, label_w: f32) -> Option<Act> {
         form_row(ui, label_w, tr!("Applications menu"), |ui| {
             ui.vertical(|ui| {
                 let (state, button) = match &d.entry {
-                    Entry::None => (tr!("Not added: this AppImage is not in your applications menu").to_string(), Some((tr!("Add to Menu"), Act::Add))),
-                    Entry::ThisCopy => (tr!("Added: the menu starts this AppImage and it opens your .anicraft, .fla and .xfl files").to_string(), Some((tr!("Remove"), Act::Remove))),
-                    Entry::Other(other, _) => (tr!("The menu starts another AppImage: {path}", path = other.display()), Some((tr!("Use This Copy"), Act::Add))),
-                    Entry::Foreign => (tr!("A menu entry of AniCraft's name that AniCraft didn't add is there; it is left as it is").to_string(), None),
+                    Entry::None => {
+                        (tr!("Not added: this AppImage is not in your applications menu").to_string(), Some((tr!("Add to Menu"), Act::Add)))
+                    }
+                    Entry::ThisCopy => (
+                        tr!("Added: the menu starts this AppImage and it opens your .anima, .fla and .xfl files").to_string(),
+                        Some((tr!("Remove"), Act::Remove)),
+                    ),
+                    Entry::Other(other, _) => {
+                        (tr!("The menu starts another AppImage: {path}", path = other.display()), Some((tr!("Use This Copy"), Act::Add)))
+                    }
+                    Entry::Foreign => (tr!("A menu entry of Ánima's name that Ánima didn't add is there; it is left as it is").to_string(), None),
                 };
                 ui.add(egui::Label::new(text(Type::Body, state)).wrap());
                 ui.horizontal(|ui| {
@@ -231,10 +258,10 @@ pub fn apply(app: &mut App, act: Act) {
 
 /// A made-up AppImage in the temporary folder, for screenshots of the offer and of About.
 pub fn sample(tag: &str) -> Option<Desktop> {
-    let root = std::env::temp_dir().join(format!("anicraft-shot-desktop-{tag}"));
+    let root = std::env::temp_dir().join(format!("anima-shot-desktop-{tag}"));
     let apps = root.join("My Apps"); // i18n-exempt: a sample folder name
     std::fs::create_dir_all(&apps).ok()?;
-    let appimage = apps.join(format!("AniCraft-{}-x86_64.AppImage", env!("CARGO_PKG_VERSION")));
+    let appimage = apps.join(format!("Anima-{}-x86_64.AppImage", env!("CARGO_PKG_VERSION")));
     std::fs::write(&appimage, b"").ok()?;
     Some(Desktop { appimage, data_home: root.join("share"), ..Default::default() })
 }
@@ -245,7 +272,7 @@ mod tests {
 
     /// A screenshot-mode app: it never saves preferences.
     fn headless() -> App {
-        App::with_context(&egui::Context::default(), anicraft_engine::Session::default(), Some(PathBuf::from("unused.png")))
+        App::with_context(&egui::Context::default(), anima_engine::Session::default(), Some(PathBuf::from("unused.png")))
     }
 
     #[test]
@@ -257,7 +284,7 @@ mod tests {
         assert!(app.desktop.as_ref().is_some_and(|d| d.offer), "a new AppImage is offered");
         add(&mut app);
         assert_eq!(app.desktop.as_ref().map(|d| d.entry.clone()), Some(Entry::ThisCopy));
-        assert!(d.data_home.join("applications/ai.storyteller.anicraft.desktop").is_file());
+        assert!(d.data_home.join("applications/dev.danielmiguelt.Anima.desktop").is_file());
         // Already added: no offer, even if the question was never answered.
         start_with(&mut app, d.clone(), false);
         assert!(!app.desktop.as_ref().is_some_and(|d| d.offer));
@@ -278,9 +305,14 @@ mod tests {
         let mut app = headless();
         let d = sample("moved-test").unwrap();
         let _ = std::fs::remove_dir_all(&d.data_home);
-        let old = d.appimage.with_file_name("AniCraft-old.AppImage");
+        let old = d.appimage.with_file_name("Anima-old.AppImage");
         std::fs::write(&old, b"").unwrap();
-        app.s.execute("desktop.integrate", &json!({"appimage": old.display().to_string(), "data_home": d.data_home.display().to_string(), "refresh": false})).unwrap();
+        app.s
+            .execute(
+                "desktop.integrate",
+                &json!({"appimage": old.display().to_string(), "data_home": d.data_home.display().to_string(), "refresh": false}),
+            )
+            .unwrap();
         // The old one is still there: the user chooses.
         start_with(&mut app, d.clone(), false);
         assert!(matches!(app.desktop.as_ref().map(|d| &d.entry), Some(Entry::Other(_, true))));
@@ -311,7 +343,7 @@ mod tests {
     #[test]
     fn the_offer_card_adds_on_a_click_and_is_answered_once() {
         let ctx = egui::Context::default();
-        let mut app = App::with_context(&ctx, anicraft_engine::Session::default(), Some(PathBuf::from("unused.png")));
+        let mut app = App::with_context(&ctx, anima_engine::Session::default(), Some(PathBuf::from("unused.png")));
         app.open_panel(Some("desktopoffer"));
         let data = app.desktop.as_ref().map(|d| d.data_home.clone()).unwrap();
         assert!(app.desktop.as_ref().is_some_and(|d| d.offer));
@@ -321,14 +353,14 @@ mod tests {
         frames(&ctx, &mut app, 2, click(egui::pos2(card.min.x + 40.0, card.max.y - 24.0)));
         assert!(app.prefs.desktop_offered, "answered");
         assert_eq!(app.desktop.as_ref().map(|d| (d.offer, d.entry.clone())), Some((false, Entry::ThisCopy)));
-        assert!(data.join("applications/ai.storyteller.anicraft.desktop").is_file());
+        assert!(data.join("applications/dev.danielmiguelt.Anima.desktop").is_file());
         let _ = std::fs::remove_dir_all(&data);
     }
 
     #[test]
     fn not_now_puts_the_card_away_for_good() {
         let ctx = egui::Context::default();
-        let mut app = App::with_context(&ctx, anicraft_engine::Session::default(), Some(PathBuf::from("unused.png")));
+        let mut app = App::with_context(&ctx, anima_engine::Session::default(), Some(PathBuf::from("unused.png")));
         // Its own sample folder: tests run side by side.
         let d = sample("notnow-test").unwrap();
         let _ = std::fs::remove_dir_all(&d.data_home);
@@ -343,7 +375,7 @@ mod tests {
     #[test]
     fn preferences_about_shows_the_folders_and_the_menu_entry_in_each_state() {
         let ctx = egui::Context::default();
-        let mut app = App::with_context(&ctx, anicraft_engine::Session::default(), Some(PathBuf::from("unused.png")));
+        let mut app = App::with_context(&ctx, anima_engine::Session::default(), Some(PathBuf::from("unused.png")));
         app.open_panel(Some("prefsabout"));
         assert!(app.show_prefs && app.prefs_to_about);
         let d = app.desktop.clone().unwrap();
@@ -353,15 +385,20 @@ mod tests {
         apply(&mut app, Act::Add);
         assert_eq!(app.desktop.as_ref().map(|d| d.entry.clone()), Some(Entry::ThisCopy));
         frames(&ctx, &mut app, 2, vec![]);
-        let other = d.appimage.with_file_name("AniCraft-other.AppImage");
+        let other = d.appimage.with_file_name("Anima-other.AppImage");
         std::fs::write(&other, b"").unwrap();
-        app.s.execute("desktop.integrate", &json!({"appimage": other.display().to_string(), "data_home": d.data_home.display().to_string(), "refresh": false})).unwrap();
+        app.s
+            .execute(
+                "desktop.integrate",
+                &json!({"appimage": other.display().to_string(), "data_home": d.data_home.display().to_string(), "refresh": false}),
+            )
+            .unwrap();
         start_with(&mut app, d.clone(), false);
         assert!(matches!(app.desktop.as_ref().map(|d| &d.entry), Some(Entry::Other(_, true))));
         frames(&ctx, &mut app, 2, vec![]);
         apply(&mut app, Act::Remove);
         assert_eq!(app.desktop.as_ref().map(|d| d.entry.clone()), Some(Entry::None));
-        let entry = d.data_home.join("applications/ai.storyteller.anicraft.desktop");
+        let entry = d.data_home.join("applications/dev.danielmiguelt.Anima.desktop");
         std::fs::create_dir_all(entry.parent().unwrap()).unwrap();
         std::fs::write(&entry, "[Desktop Entry]\nName=Mine\n").unwrap();
         start_with(&mut app, d.clone(), false);

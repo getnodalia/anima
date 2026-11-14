@@ -27,12 +27,12 @@ distance fields) disagrees with it at every anti-aliased edge.
 
 ## Decision
 
-1. **Same input as the oracle.** `anicraft_render::plain_fills(dl, view)` returns the fills
+1. **Same input as the oracle.** `anima_render::plain_fills(dl, view)` returns the fills
    exactly as `render` prepares them: culled, flattened at the oracle's tolerance, strokes
    outlined by the oracle's stroker, shaders built (solid colours premultiplied, gradients as
    the oracle's 256-entry tables), pixel bounds clamped. The GPU path never re-derives
    geometry or colour.
-2. **Tile binning on the CPU** (`anicraft-gpu::binning`, parallel per chunk of fills, then
+2. **Tile binning on the CPU** (`anima-gpu::binning`, parallel per chunk of fills, then
    parallel per tile row). The surface is cut into 16 × 16 tiles. Edges are split at tile rows
    and columns; each piece lands in the tile it crosses. What a piece contributes to the tiles
    to its right is a winding change per pixel row (it lies wholly to their left), summed along
@@ -66,7 +66,7 @@ distance fields) disagrees with it at every anti-aliased edge.
 7. **Behind a feature, off by default.** `cargo run --features gpu-stage` adds Preferences ›
    Stage › Renderer (and View › Stage Rendering): *CPU (reference)* or *GPU (preview)*. The
    status bar says who drew the visible tiles and why the CPU stepped in ("CPU for masks").
-   `ANICRAFT_STAGE_RENDERER=gpu|cpu` overrides the preference (also in `--screenshot` runs).
+   `ANIMA_STAGE_RENDERER=gpu|cpu` overrides the preference (also in `--screenshot` runs).
    **Exports always use the CPU oracle.**
 8. **Parity tests** (`crates/gpu/src/tests.rs`): the sample scene at five frames and zooms, a
    10k-shape stress frame, an offset zoomed 512 px stage tile, and analytic scenes (fractional
@@ -79,7 +79,7 @@ distance fields) disagrees with it at every anti-aliased edge.
 
 ## Measured (2026-11-09, release, RTX 5090 over Vulkan, 32 threads)
 
-`cargo run --release -p anicraft-gpu --example gpu_bench`. GPU ms is the whole call
+`cargo run --release -p anima-gpu --example gpu_bench`. GPU ms is the whole call
 (prepare + bin + upload, compute, readback). Parity is against the oracle on the same frame.
 
 | Scene | Size | CPU oracle | GPU stage (prepare + bin + GPU) | Parity (mean / max) |

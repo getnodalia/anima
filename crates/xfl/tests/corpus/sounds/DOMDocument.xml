@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AniCraft XFL corpus: sounds (ADR 0057, ADR 0086). The sound files are original:
+<!-- Ánima XFL corpus: sounds (ADR 0057, ADR 0086). The sound files are original:
      LIBRARY/Sounds/beep.wav (a quarter second of 880 Hz, 16-bit mono at 11025 Hz, made by a
      script), LIBRARY/Sounds/tone.mp3 (the audio crate's test tone), LIBRARY/theme.aif (an AIFF
      header) and LIBRARY/voice.wav (a WAV in IMA ADPCM), and bin/M 3 1.dat (bytes in none of
-     the formats AniCraft reads, standing in for Animate's own sound data). A streamed, looping
+     the formats Ánima reads, standing in for Animate's own sound data). A streamed, looping
      soundtrack; event, start and stop sounds with every kind of effect (presets by name, a
      custom envelope, an unknown name); repeats; in and out points; a frame whose sound is in a
-     format AniCraft can't decode, and a sound whose file is missing. Self-authored. -->
+     format Ánima can't decode, and a sound whose file is missing. Self-authored. -->
 <DOMDocument xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" width="320" height="180" frameRate="24" backgroundColor="#F4F1EA">
   <folders>
     <DOMFolderItem name="Sounds" itemID="00000000-0000-0000-0000-000000000101"/>

@@ -12,8 +12,8 @@
 //!   the Eraser's selected fills): [`Selection::on`] with [`Session::layer`].
 
 use crate::{EngineError, Result, Session};
-use anicraft_doc::{Element, ElementId, LayerId, LayerKind, evaluate_layer_elements};
-use anicraft_geom::Rect;
+use anima_doc::{Element, ElementId, LayerId, LayerKind, evaluate_layer_elements};
+use anima_geom::Rect;
 use serde_json::{Map, Value, json};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -192,7 +192,9 @@ impl Session {
     pub fn selectable(&self, layer: LayerId) -> bool {
         let tl = self.timeline();
         let Some(i) = tl.layers.iter().position(|l| l.id == layer) else { return false };
-        tl.layers.get(i).is_some_and(|l| l.visible && !l.locked && l.kind != LayerKind::Folder) && !tl.locked_by_folder(layer) && !tl.hidden_by_folder(i)
+        tl.layers.get(i).is_some_and(|l| l.visible && !l.locked && l.kind != LayerKind::Folder)
+            && !tl.locked_by_folder(layer)
+            && !tl.hidden_by_folder(i)
     }
 
     /// Whether a marquee or Select All gathers artwork from `layer`: a selectable layer with
@@ -228,7 +230,7 @@ impl Session {
     pub fn element_bounds_on(&self, layer: LayerId, id: ElementId) -> Rect {
         let mut r = Rect::EMPTY;
         for item in self.display_list().items.iter().filter(|i| i.element == id && i.layer == layer) {
-            let pad = item.stroke.as_ref().map_or(0.0, anicraft_doc::Stroke::reach);
+            let pad = item.stroke.as_ref().map_or(0.0, anima_doc::Stroke::reach);
             r = r.union(&item.path.bounds().inflate(pad).transformed(&item.transform));
         }
         r
@@ -239,7 +241,7 @@ impl Session {
         let sel: HashSet<(LayerId, ElementId)> = self.selection.iter().collect();
         let mut r = Rect::EMPTY;
         for item in self.display_list().items.iter().filter(|i| sel.contains(&(i.layer, i.element))) {
-            let pad = item.stroke.as_ref().map_or(0.0, anicraft_doc::Stroke::reach);
+            let pad = item.stroke.as_ref().map_or(0.0, anima_doc::Stroke::reach);
             r = r.union(&item.path.bounds().inflate(pad).transformed(&item.transform));
         }
         r

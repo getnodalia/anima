@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AniCraft XFL corpus: text. A static field with runs in two styles over two lines, a
+<!-- Ánima XFL corpus: text. A static field with runs in two styles over two lines, a
      fixed-width static field that wraps, a dynamic field with an instance name and a centred
      run, and an input field. Text is laid out with the computer's fonts, so the golden renders
      import it with none (only the card behind it draws, and the text is reported); the

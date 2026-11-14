@@ -106,7 +106,9 @@ pub fn system_look() -> SystemLook {
 pub fn system_dark_mode() -> Option<bool> {
     #[cfg(windows)]
     {
-        let key = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER).open_subkey(r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize").ok()?; // i18n-exempt: a registry path
+        let key = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER)
+            .open_subkey(r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize")
+            .ok()?; // i18n-exempt: a registry path
         let light: u32 = key.get_value("AppsUseLightTheme").ok()?; // i18n-exempt: a registry value name
         Some(light == 0)
     }
@@ -146,7 +148,11 @@ fn scheme_from_portal(v: u32) -> Option<bool> {
 /// the portal setting.
 #[cfg(not(any(windows, target_os = "macos", target_arch = "wasm32")))]
 fn gnome_color_scheme() -> Option<bool> {
-    let out = std::process::Command::new("gsettings").args(["get", "org.gnome.desktop.interface", "color-scheme"]).output().ok().filter(|o| o.status.success())?; // i18n-exempt: a command line
+    let out = std::process::Command::new("gsettings")
+        .args(["get", "org.gnome.desktop.interface", "color-scheme"])
+        .output()
+        .ok()
+        .filter(|o| o.status.success())?; // i18n-exempt: a command line
     match String::from_utf8_lossy(&out.stdout).trim().trim_matches('\'') {
         "prefer-dark" => Some(true),
         "prefer-light" => Some(false),
@@ -164,7 +170,20 @@ fn portal_contrast() -> Option<bool> {
 #[cfg(not(any(windows, target_os = "macos", target_arch = "wasm32")))]
 fn portal_appearance(key: &str) -> Option<u32> {
     let out = std::process::Command::new("gdbus") // i18n-exempt: a command line
-        .args(["call", "--session", "--timeout", "1", "--dest", "org.freedesktop.portal.Desktop", "--object-path", "/org/freedesktop/portal/desktop", "--method", "org.freedesktop.portal.Settings.ReadOne", "org.freedesktop.appearance", key]) // i18n-exempt: a command line
+        .args([
+            "call",
+            "--session",
+            "--timeout",
+            "1",
+            "--dest",
+            "org.freedesktop.portal.Desktop",
+            "--object-path",
+            "/org/freedesktop/portal/desktop",
+            "--method",
+            "org.freedesktop.portal.Settings.ReadOne",
+            "org.freedesktop.appearance",
+            key,
+        ]) // i18n-exempt: a command line
         .output()
         .ok()
         .filter(|o| o.status.success())?;
@@ -174,7 +193,11 @@ fn portal_appearance(key: &str) -> Option<u32> {
 /// GNOME's own switch, for desktops without the portal setting.
 #[cfg(not(any(windows, target_os = "macos", target_arch = "wasm32")))]
 fn gnome_high_contrast() -> Option<bool> {
-    let out = std::process::Command::new("gsettings").args(["get", "org.gnome.desktop.a11y.interface", "high-contrast"]).output().ok().filter(|o| o.status.success())?; // i18n-exempt: a command line
+    let out = std::process::Command::new("gsettings")
+        .args(["get", "org.gnome.desktop.a11y.interface", "high-contrast"])
+        .output()
+        .ok()
+        .filter(|o| o.status.success())?; // i18n-exempt: a command line
     match String::from_utf8_lossy(&out.stdout).trim() {
         "true" => Some(true),
         "false" => Some(false),
@@ -259,10 +282,10 @@ pub fn shortcut_label_for(os: Os, s: &str, glyphs: bool) -> String {
 
 // ----- portable mode (ADR 0094) -----------------------------------------------------------------
 
-/// The file that makes a copy of AniCraft portable (ADR 0094): next to the program, above `bin/`
-/// in the Linux tar.gz, next to `AniCraft.app` on macOS, or next to the `.AppImage`. The Windows
+/// The file that makes a copy of Ánima portable (ADR 0094): next to the program, above `bin/`
+/// in the Linux tar.gz, next to `Anima.app` on macOS, or next to the `.AppImage`. The Windows
 /// zip and the Linux tar.gz ship with it. Its contents don't matter.
-pub const PORTABLE_MARKER: &str = "anicraft-portable";
+pub const PORTABLE_MARKER: &str = "anima-portable";
 /// The folder beside the marker where a portable copy keeps everything it would otherwise keep
 /// in the user's settings folder.
 pub const PORTABLE_DATA: &str = "data";
@@ -310,7 +333,7 @@ pub struct Placement {
 #[cfg(not(target_arch = "wasm32"))]
 fn writable(dir: &Path) -> Result<(), String> {
     std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-    let probe = dir.join(".anicraft-write-test");
+    let probe = dir.join(".anima-write-test");
     std::fs::write(&probe, b"").map_err(|e| e.to_string())?;
     let _ = std::fs::remove_file(&probe);
     Ok(())
@@ -368,19 +391,19 @@ pub fn data_home() -> Option<PathBuf> {
     data_home_for(&|k| std::env::var_os(k).filter(|v| !v.is_empty()).map(PathBuf::from))
 }
 
-/// The user's settings folder on `os`, from the environment `env`: %APPDATA%\AniCraft,
-/// ~/Library/Application Support/AniCraft, or $XDG_CONFIG_HOME/anicraft (default
-/// ~/.config/anicraft). A portable copy's data folder (`portable`) wins over all of them.
+/// The user's settings folder on `os`, from the environment `env`: %APPDATA%\Ánima,
+/// ~/Library/Application Support/Ánima, or $XDG_CONFIG_HOME/anima (default
+/// ~/.config/anima). A portable copy's data folder (`portable`) wins over all of them.
 pub fn config_dir_for(os: Os, portable: Option<&Path>, env: &dyn Fn(&str) -> Option<PathBuf>) -> Option<PathBuf> {
     if let Some(p) = portable {
         return Some(p.to_path_buf());
     }
     match os {
-        Os::Windows => env("APPDATA").map(|p| p.join("AniCraft")),
-        Os::Mac => env("HOME").map(|p| p.join("Library").join("Application Support").join("AniCraft")), // i18n-exempt: folder names
+        Os::Windows => env("APPDATA").map(|p| p.join("Anima")),
+        Os::Mac => env("HOME").map(|p| p.join("Library").join("Application Support").join("Ánima")), // i18n-exempt: folder names
         // A web page has no folders: settings go to browser storage (`load_settings`).
         Os::Web => None,
-        Os::Linux | Os::Other => env("XDG_CONFIG_HOME").or_else(|| env("HOME").map(|h| h.join(".config"))).map(|p| p.join("anicraft")),
+        Os::Linux | Os::Other => env("XDG_CONFIG_HOME").or_else(|| env("HOME").map(|h| h.join(".config"))).map(|p| p.join("anima")),
     }
 }
 
@@ -390,23 +413,29 @@ pub fn config_dir() -> Option<PathBuf> {
     config_dir_for(OS, placement().portable.as_deref(), &|k| std::env::var_os(k).filter(|v| !v.is_empty()).map(PathBuf::from))
 }
 
-/// Every folder AniCraft keeps things in, for Preferences › About: `(name, folder)`, the name
+/// Every folder Ánima keeps things in, for Preferences › About: `(name, folder)`, the name
 /// English (translated where shown).
 pub fn places() -> Vec<(&'static str, Option<PathBuf>)> {
     if WEB {
         return Vec::new();
     }
     #[cfg_attr(target_arch = "wasm32", allow(unused_mut))]
-    let mut v = vec![(tr_noop!("Preferences"), config_dir()), (tr_noop!("Autosave"), recovery_dir()), (tr_noop!("Logs"), log_dir()), (tr_noop!("Plug-ins"), plugins_dir()), (tr_noop!("Templates"), templates_dir())];
+    let mut v = vec![
+        (tr_noop!("Preferences"), config_dir()),
+        (tr_noop!("Autosave"), recovery_dir()),
+        (tr_noop!("Logs"), log_dir()),
+        (tr_noop!("Plug-ins"), plugins_dir()),
+        (tr_noop!("Templates"), templates_dir()),
+    ];
     #[cfg(not(target_arch = "wasm32"))]
     v.push((tr_noop!("User guide"), Some(guide_dir())));
     v
 }
 
 /// Where crash-recovery copies live (ADR 0015): `Recovery` in the settings folder.
-/// `ANICRAFT_RECOVERY_DIR` points it elsewhere (tests, portable installs).
+/// `ANIMA_RECOVERY_DIR` points it elsewhere (tests, portable installs).
 pub fn recovery_dir() -> Option<PathBuf> {
-    match std::env::var_os("ANICRAFT_RECOVERY_DIR").filter(|v| !v.is_empty()) {
+    match std::env::var_os("ANIMA_RECOVERY_DIR").filter(|v| !v.is_empty()) {
         Some(d) => Some(PathBuf::from(d)),
         None => config_dir().map(|d| d.join("Recovery")), // i18n-exempt: a folder name
     }
@@ -414,7 +443,7 @@ pub fn recovery_dir() -> Option<PathBuf> {
 
 /// Whether the recovery folder was chosen explicitly (screenshot runs only touch it then).
 pub fn recovery_dir_overridden() -> bool {
-    std::env::var_os("ANICRAFT_RECOVERY_DIR").is_some_and(|v| !v.is_empty())
+    std::env::var_os("ANIMA_RECOVERY_DIR").is_some_and(|v| !v.is_empty())
 }
 
 /// Where Help › User Guide writes the bundled book (ADR 0069): the system's cache folder
@@ -426,13 +455,13 @@ pub fn guide_dir() -> PathBuf {
     let cache = match placement().portable.as_ref() {
         Some(data) => Some(data.join("Cache")), // i18n-exempt: a folder name
         None => match OS {
-            Os::Windows => env("LOCALAPPDATA").map(|p| p.join("AniCraft")),
-            Os::Mac => env("HOME").map(|p| p.join("Library").join("Caches").join("AniCraft")), // i18n-exempt: folder names
+            Os::Windows => env("LOCALAPPDATA").map(|p| p.join("Anima")),
+            Os::Mac => env("HOME").map(|p| p.join("Library").join("Caches").join("Ánima")), // i18n-exempt: folder names
             Os::Web => None,
-            Os::Linux | Os::Other => env("XDG_CACHE_HOME").or_else(|| env("HOME").map(|h| h.join(".cache"))).map(|p| p.join("anicraft")),
+            Os::Linux | Os::Other => env("XDG_CACHE_HOME").or_else(|| env("HOME").map(|h| h.join(".cache"))).map(|p| p.join("anima")),
         },
     };
-    cache.unwrap_or_else(|| std::env::temp_dir().join("AniCraft")).join(format!("guide-{}", env!("CARGO_PKG_VERSION"))) // i18n-exempt: a folder name
+    cache.unwrap_or_else(|| std::env::temp_dir().join("Ánima")).join(format!("guide-{}", env!("CARGO_PKG_VERSION"))) // i18n-exempt: a folder name
 }
 
 /// Help › User Guide (ADR 0069): the book bundled in the app, written to [`guide_dir`] and
@@ -442,7 +471,7 @@ pub fn open_user_guide() -> Result<(), String> {
     #[cfg(not(target_arch = "wasm32"))]
     {
         let dir = guide_dir();
-        anicraft_guide::write_site(&dir).map_err(|e| tr!("could not write the user guide to {path}: {e}", path = dir.display(), e = e))?;
+        anima_guide::write_site(&dir).map_err(|e| tr!("could not write the user guide to {path}: {e}", path = dir.display(), e = e))?;
         crate::app::open_in_system(&dir.join("index.html"))
     }
     #[cfg(target_arch = "wasm32")]
@@ -485,7 +514,7 @@ pub fn save_settings(json: &str) -> Result<(), String> {
 /// folder, or browser storage on the web. `None` when there is none yet.
 pub fn load_thumbnail(key: &str) -> Option<Vec<u8>> {
     #[cfg(target_arch = "wasm32")]
-    return crate::web::storage_get(&format!("anicraft.thumb.{key}")).and_then(|t| anicraft_engine::doc::base64_decode(&t));
+    return crate::web::storage_get(&format!("anima.thumb.{key}")).and_then(|t| anima_engine::doc::base64_decode(&t));
     #[cfg(not(target_arch = "wasm32"))]
     config_dir().and_then(|d| std::fs::read(d.join("Thumbnails").join(format!("{key}.png"))).ok()) // i18n-exempt: a folder name
 }
@@ -493,7 +522,7 @@ pub fn load_thumbnail(key: &str) -> Option<Vec<u8>> {
 /// Keeps a recent file's picture (a small PNG) for the start screen.
 pub fn save_thumbnail(key: &str, png: &[u8]) -> Result<(), String> {
     #[cfg(target_arch = "wasm32")]
-    return crate::web::storage_set(&format!("anicraft.thumb.{key}"), &anicraft_engine::doc::base64_encode(png));
+    return crate::web::storage_set(&format!("anima.thumb.{key}"), &anima_engine::doc::base64_encode(png));
     #[cfg(not(target_arch = "wasm32"))]
     {
         let dir = config_dir().ok_or(tr!("no settings folder on this system"))?.join("Thumbnails"); // i18n-exempt: a folder name
@@ -511,22 +540,30 @@ pub fn unavailable(cmd: &str) -> Option<&'static str> {
         return None;
     }
     match cmd {
-        "file.export_video" => Some(tr_noop!("Video export runs ffmpeg, which a web browser can't start: use the desktop app, or export an animated GIF or a PNG sequence")),
-        "plugin.install" | "plugin.remove" | "plugin.reload" => Some(tr_noop!("Plug-ins are installed into a folder on your computer: use the desktop app")),
-        "desktop.integrate" | "desktop.remove" | "desktop.status" => Some(tr_noop!("The applications menu belongs to an AppImage on Linux: use the desktop app")),
-        "file.save_as_template" => Some(tr_noop!("Your templates are kept in a folder on your computer: use the desktop app (the built-in templates work here)")),
+        "file.export_video" => Some(tr_noop!(
+            "Video export runs ffmpeg, which a web browser can't start: use the desktop app, or export an animated GIF or a PNG sequence"
+        )),
+        "plugin.install" | "plugin.remove" | "plugin.reload" => {
+            Some(tr_noop!("Plug-ins are installed into a folder on your computer: use the desktop app"))
+        }
+        "desktop.integrate" | "desktop.remove" | "desktop.status" => {
+            Some(tr_noop!("The applications menu belongs to an AppImage on Linux: use the desktop app"))
+        }
+        "file.save_as_template" => {
+            Some(tr_noop!("Your templates are kept in a folder on your computer: use the desktop app (the built-in templates work here)"))
+        }
         _ => None,
     }
 }
 
 /// Where the user's templates live (ADR 0065): `Templates` in the settings folder, one folder
-/// per category. `ANICRAFT_TEMPLATES_DIR` points it elsewhere (tests, screenshots, portable
+/// per category. `ANIMA_TEMPLATES_DIR` points it elsewhere (tests, screenshots, portable
 /// installs). None in a browser, which has no folders to keep them in.
 pub fn templates_dir() -> Option<PathBuf> {
     if WEB {
         return None;
     }
-    match std::env::var_os("ANICRAFT_TEMPLATES_DIR").filter(|v| !v.is_empty()) {
+    match std::env::var_os("ANIMA_TEMPLATES_DIR").filter(|v| !v.is_empty()) {
         Some(d) => Some(PathBuf::from(d)),
         None => config_dir().map(|d| d.join("Templates")), // i18n-exempt: a folder name
     }
@@ -539,14 +576,14 @@ pub fn plugins_dir() -> Option<PathBuf> {
 
 /// The app id, one value everywhere (ADR 0026): the window's Wayland app_id and X11 class, the
 /// Linux desktop entry, AppStream and MIME package names, the Flatpak id and the macOS bundle id.
-pub const APP_ID: &str = "ai.storyteller.anicraft";
+pub const APP_ID: &str = "dev.danielmiguelt.Anima";
 
 /// Main-window chrome. macOS gets the unified look (content under a transparent title bar,
 /// traffic lights over our menu row); Windows and Linux keep their native frames.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn viewport(b: egui::ViewportBuilder) -> egui::ViewportBuilder {
     // The Wayland app_id / X11 class: docks match it to the installed desktop entry
-    // (packaging/linux/ai.storyteller.anicraft.desktop) for the icon and the launcher.
+    // (packaging/linux/dev.danielmiguelt.Anima.desktop) for the icon and the launcher.
     chrome(OS, b.with_app_id(APP_ID).with_icon(app_icon()))
 }
 
@@ -576,9 +613,9 @@ pub fn secondary_window(b: egui::ViewportBuilder) -> egui::ViewportBuilder {
 #[cfg(not(target_arch = "wasm32"))]
 fn app_icon() -> egui::IconData {
     #[cfg(target_os = "macos")]
-    let png: &[u8] = include_bytes!("../assets/app-icon/anicraft-macos-512.png");
+    let png: &[u8] = include_bytes!("../assets/app-icon/anima-macos-512.png");
     #[cfg(not(target_os = "macos"))]
-    let png: &[u8] = include_bytes!("../assets/app-icon/hicolor/256x256/apps/ai.storyteller.anicraft.png");
+    let png: &[u8] = include_bytes!("../assets/app-icon/hicolor/256x256/apps/dev.danielmiguelt.Anima.png");
     eframe::icon_data::from_png_bytes(png).unwrap_or_default()
 }
 
@@ -639,7 +676,7 @@ pub fn movie_host_for(os: Os, embed_viewports: bool, own_window: bool) -> MovieH
     }
 }
 
-/// Whether AniCraft can put a window back where it was. Wayland never tells an app where its
+/// Whether Ánima can put a window back where it was. Wayland never tells an app where its
 /// windows are, nor lets it place them: the desktop does.
 pub fn window_positions() -> bool {
     let env = |k: &str| std::env::var(k).ok().filter(|v| !v.is_empty());
@@ -667,7 +704,7 @@ pub fn usable_position(at: [f32; 2], monitor: Option<egui::Vec2>) -> Option<egui
     ok.then(|| egui::pos2(x, y))
 }
 
-// ----- documents the system asks AniCraft to open (ADR 0062) ------------------------------------
+// ----- documents the system asks Ánima to open (ADR 0062) ------------------------------------
 
 /// Something the system asked of the running app, outside its windows.
 // Only macOS hands documents to a running app; elsewhere the tests make requests.
@@ -722,11 +759,11 @@ thread_local! {
     static MAC_INBOX: std::cell::RefCell<Option<fmv_macos_events::Inbox>> = const { std::cell::RefCell::new(None) };
 }
 
-/// Listens for documents the system hands over while AniCraft runs. Keep the result until the
+/// Listens for documents the system hands over while Ánima runs. Keep the result until the
 /// event loop returns. On macOS it must start before the event loop does, so the document that
 /// launched the app (sent as an Apple Event, not on the command line) isn't missed. Windows and
 /// Linux pass that document on the command line (`main`), and a second document starts a second
-/// AniCraft, so there is nothing to listen for there.
+/// Ánima, so there is nothing to listen for there.
 pub struct DocumentListener {
     #[cfg(target_os = "macos")]
     _registration: fmv_macos_events::Registration,
@@ -762,11 +799,11 @@ pub fn is_system_argument(arg: &str) -> bool {
     arg.starts_with("-psn_")
 }
 
-/// The window's graphics asked for by `--renderer` / `ANICRAFT_RENDERER`, if any: `gl`,
+/// The window's graphics asked for by `--renderer` / `ANIMA_RENDERER`, if any: `gl`,
 /// `wgpu` (automatic), `vulkan`, `dx12` or `metal`. Before #207 the last three all meant `wgpu`.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn forced_backend(arg: Option<&str>) -> Option<WindowBackend> {
-    let v = arg.map(str::to_owned).or_else(|| std::env::var("ANICRAFT_RENDERER").ok())?;
+    let v = arg.map(str::to_owned).or_else(|| std::env::var("ANIMA_RENDERER").ok())?;
     match v.trim().to_ascii_lowercase().as_str() {
         "gl" | "glow" | "opengl" => Some(WindowBackend::OpenGl),
         "wgpu" | "auto" => Some(WindowBackend::Auto),
@@ -799,10 +836,10 @@ pub fn window_backends(os: Os) -> &'static [WindowBackend] {
     }
 }
 
-/// Where the start-up log goes (#207): `Logs` in the settings folder. `ANICRAFT_LOG_DIR`
+/// Where the start-up log goes (#207): `Logs` in the settings folder. `ANIMA_LOG_DIR`
 /// points it elsewhere (tests, portable installs).
 pub fn log_dir() -> Option<PathBuf> {
-    match std::env::var_os("ANICRAFT_LOG_DIR").filter(|v| !v.is_empty()) {
+    match std::env::var_os("ANIMA_LOG_DIR").filter(|v| !v.is_empty()) {
         Some(d) => Some(PathBuf::from(d)),
         None => config_dir().map(|d| d.join("Logs")), // i18n-exempt: a folder name
     }
@@ -827,19 +864,22 @@ pub fn filters(cmd: &str) -> (&'static str, &'static [&'static str]) {
         "file.export_sprite_sheet" => (tr_noop!("PNG sprite sheet"), &["png"]),
         "file.export_video" => (tr_noop!("Video (WebM or MP4)"), &["webm", "mp4"]),
         // Opening also imports .fla archives and .xfl packages.
-        "file.open" => (tr_noop!("Documents"), &["anicraft", "fla", "xfl"]),
+        "file.open" => (tr_noop!("Documents"), &["anima", "anicraft", "fla", "xfl"]), // rebrand: keep (older documents)
         "plugin.install" => (tr_noop!("WebAssembly plug-in"), &["wasm"]),
         "brush.preset_export" | "brush.preset_import" => (tr_noop!("Brush set"), &["json"]),
         "filter.preset_export" | "filter.preset_import" => (tr_noop!("Filter preset file"), &["json"]),
         "swatch.export" => (tr_noop!("Swatch file"), &["json"]),
         "swatch.import" => (tr_noop!("Swatch file or GIMP palette"), &["json", "gpl"]),
-        _ => (tr_noop!("AniCraft document"), &["anicraft"]),
+        _ => (tr_noop!("Ánima document"), &["anima"]),
     }
 }
 
 /// Commands that read a file the user picks (the others write one, or a folder of them).
 pub fn reads_file(cmd: &str) -> bool {
-    matches!(cmd, "file.open" | "plugin.install" | "file.import" | "file.import_to_library" | "brush.preset_import" | "filter.preset_import" | "swatch.import")
+    matches!(
+        cmd,
+        "file.open" | "plugin.install" | "file.import" | "file.import_to_library" | "brush.preset_import" | "filter.preset_import" | "swatch.import"
+    )
 }
 
 /// Shows the platform's own dialog (Windows common dialog, macOS panel, Linux XDG portal), with
@@ -927,7 +967,7 @@ mod tests {
 
     #[test]
     fn the_desktop_runs_every_command() {
-        assert!(anicraft_engine::commands().iter().all(|c| unavailable(c.id).is_none()));
+        assert!(anima_engine::commands().iter().all(|c| unavailable(c.id).is_none()));
         assert!(reads_file("file.open") && reads_file("file.import") && !reads_file("file.save"));
     }
 
@@ -990,22 +1030,27 @@ mod tests {
     #[test]
     fn system_requests_arrive_in_order_and_are_bounded() {
         assert!(take_requests().is_empty());
-        push_request(SystemRequest::Open(vec![PathBuf::from("a.anicraft")]));
+        push_request(SystemRequest::Open(vec![PathBuf::from("a.anima")]));
         push_request(SystemRequest::Quit);
-        assert_eq!(take_requests(), vec![SystemRequest::Open(vec![PathBuf::from("a.anicraft")]), SystemRequest::Quit]);
+        assert_eq!(take_requests(), vec![SystemRequest::Open(vec![PathBuf::from("a.anima")]), SystemRequest::Quit]);
         assert!(take_requests().is_empty(), "each is handled once");
         for _ in 0..1000 {
             push_request(SystemRequest::Quit);
         }
         assert_eq!(take_requests().len(), MAX_REQUESTS);
-        assert!(is_system_argument("-psn_0_8194") && !is_system_argument("walk.anicraft"));
+        assert!(is_system_argument("-psn_0_8194") && !is_system_argument("walk.anima"));
     }
 
     #[test]
     fn portal_replies_parse() {
         assert_eq!(parse_portal_uint("(<<uint32 1>>,)"), Some(1));
-        assert_eq!(parse_portal_uint("(<uint32 0>,)
-"), Some(0));
+        assert_eq!(
+            parse_portal_uint(
+                "(<uint32 0>,)
+"
+            ),
+            Some(0)
+        );
         assert_eq!(parse_portal_uint("Error: no such key"), None);
         // color-scheme: 1 dark, 2 light, 0 (no preference) and anything else say nothing.
         assert_eq!([0, 1, 2, 7].map(scheme_from_portal), [None, Some(true), Some(false), None]);
@@ -1049,26 +1094,36 @@ mod tests {
     #[test]
     fn a_marker_beside_the_program_makes_each_layout_portable() {
         let none = files(&[]);
-        // Windows zip: the marker next to anicraft.exe.
-        let zip = files(&["D:/Tools/AniCraft/anicraft-portable"]);
-        assert_eq!(portable_root_for(Os::Windows, Path::new("D:/Tools/AniCraft/anicraft.exe"), None, &zip), Some(PathBuf::from("D:/Tools/AniCraft")));
-        assert_eq!(portable_root_for(Os::Windows, Path::new("D:/Tools/AniCraft/anicraft.exe"), None, &none), None, "an installed copy has no marker");
+        // Windows zip: the marker next to anima.exe.
+        let zip = files(&["D:/Tools/Ánima/anima-portable"]);
+        assert_eq!(portable_root_for(Os::Windows, Path::new("D:/Tools/Ánima/anima.exe"), None, &zip), Some(PathBuf::from("D:/Tools/Ánima")));
+        assert_eq!(portable_root_for(Os::Windows, Path::new("D:/Tools/Ánima/anima.exe"), None, &none), None, "an installed copy has no marker");
         // Linux tar.gz: the marker at the top, above bin/.
-        let tar = files(&["/home/a b/anicraft-0.1.0-linux-x86_64/anicraft-portable"]);
-        assert_eq!(portable_root_for(Os::Linux, Path::new("/home/a b/anicraft-0.1.0-linux-x86_64/bin/anicraft"), None, &tar), Some(PathBuf::from("/home/a b/anicraft-0.1.0-linux-x86_64")));
-        // A package's /usr/bin/anicraft is never portable (no marker in /usr or /usr/bin).
-        assert_eq!(portable_root_for(Os::Linux, Path::new("/usr/bin/anicraft"), None, &tar), None);
-        // macOS: next to AniCraft.app, not inside it.
-        let mac = files(&["/Volumes/Stick/anicraft-portable"]);
-        assert_eq!(portable_root_for(Os::Mac, Path::new("/Volumes/Stick/AniCraft.app/Contents/MacOS/anicraft"), None, &mac), Some(PathBuf::from("/Volumes/Stick")));
-        let inside = files(&["/Volumes/Stick/AniCraft.app/Contents/MacOS/anicraft-portable"]);
-        assert_eq!(portable_root_for(Os::Mac, Path::new("/Volumes/Stick/AniCraft.app/Contents/MacOS/anicraft"), None, &inside), None, "never inside the signed bundle");
+        let tar = files(&["/home/a b/anima-0.1.0-linux-x86_64/anima-portable"]);
+        assert_eq!(
+            portable_root_for(Os::Linux, Path::new("/home/a b/anima-0.1.0-linux-x86_64/bin/anima"), None, &tar),
+            Some(PathBuf::from("/home/a b/anima-0.1.0-linux-x86_64"))
+        );
+        // A package's /usr/bin/anima is never portable (no marker in /usr or /usr/bin).
+        assert_eq!(portable_root_for(Os::Linux, Path::new("/usr/bin/anima"), None, &tar), None);
+        // macOS: next to Anima.app, not inside it.
+        let mac = files(&["/Volumes/Stick/anima-portable"]);
+        assert_eq!(
+            portable_root_for(Os::Mac, Path::new("/Volumes/Stick/Anima.app/Contents/MacOS/anima"), None, &mac),
+            Some(PathBuf::from("/Volumes/Stick"))
+        );
+        let inside = files(&["/Volumes/Stick/Anima.app/Contents/MacOS/anima-portable"]);
+        assert_eq!(
+            portable_root_for(Os::Mac, Path::new("/Volumes/Stick/Anima.app/Contents/MacOS/anima"), None, &inside),
+            None,
+            "never inside the signed bundle"
+        );
         // AppImage: next to the .AppImage file; the mounted image doesn't count.
-        let img = files(&["/home/ana/Apps/anicraft-portable", "/tmp/.mount_AniCrXYZ/usr/bin/anicraft-portable"]);
-        let exe = Path::new("/tmp/.mount_AniCrXYZ/usr/bin/anicraft");
-        assert_eq!(portable_root_for(Os::Linux, exe, Some(Path::new("/home/ana/Apps/AniCraft.AppImage")), &img), Some(PathBuf::from("/home/ana/Apps")));
-        assert_eq!(portable_root_for(Os::Linux, exe, Some(Path::new("/elsewhere/AniCraft.AppImage")), &img), None);
-        assert_eq!(portable_root_for(Os::Web, Path::new("/x/anicraft"), None, &files(&["/x/anicraft-portable"])), None);
+        let img = files(&["/home/ana/Apps/anima-portable", "/tmp/.mount_AniCrXYZ/usr/bin/anima-portable"]);
+        let exe = Path::new("/tmp/.mount_AniCrXYZ/usr/bin/anima");
+        assert_eq!(portable_root_for(Os::Linux, exe, Some(Path::new("/home/ana/Apps/Ánima.AppImage")), &img), Some(PathBuf::from("/home/ana/Apps")));
+        assert_eq!(portable_root_for(Os::Linux, exe, Some(Path::new("/elsewhere/Ánima.AppImage")), &img), None);
+        assert_eq!(portable_root_for(Os::Web, Path::new("/x/anima"), None, &files(&["/x/anima-portable"])), None);
     }
 
     #[test]
@@ -1078,11 +1133,11 @@ mod tests {
             "HOME" => Some(PathBuf::from("/home/ana")),
             _ => None,
         };
-        assert_eq!(config_dir_for(Os::Windows, None, &env), Some(PathBuf::from("C:/Users/ana/AppData/Roaming/AniCraft")));
-        assert_eq!(config_dir_for(Os::Mac, None, &env), Some(PathBuf::from("/home/ana/Library/Application Support/AniCraft")));
-        assert_eq!(config_dir_for(Os::Linux, None, &env), Some(PathBuf::from("/home/ana/.config/anicraft")));
+        assert_eq!(config_dir_for(Os::Windows, None, &env), Some(PathBuf::from("C:/Users/ana/AppData/Roaming/Anima")));
+        assert_eq!(config_dir_for(Os::Mac, None, &env), Some(PathBuf::from("/home/ana/Library/Application Support/Ánima")));
+        assert_eq!(config_dir_for(Os::Linux, None, &env), Some(PathBuf::from("/home/ana/.config/anima")));
         assert_eq!(config_dir_for(Os::Web, None, &env), None);
-        let data = Path::new("D:/Tools/AniCraft/data");
+        let data = Path::new("D:/Tools/Ánima/data");
         for os in [Os::Windows, Os::Mac, Os::Linux] {
             assert_eq!(config_dir_for(os, Some(data), &env).as_deref(), Some(data), "{os:?}");
         }
@@ -1096,10 +1151,12 @@ mod tests {
 
     #[test]
     fn the_desktop_data_folder_follows_xdg() {
-        let with = |xdg: Option<&'static str>| move |k: &str| match k {
-            "XDG_DATA_HOME" => xdg.map(PathBuf::from),
-            "HOME" => Some(PathBuf::from("/home/a b")),
-            _ => None,
+        let with = |xdg: Option<&'static str>| {
+            move |k: &str| match k {
+                "XDG_DATA_HOME" => xdg.map(PathBuf::from),
+                "HOME" => Some(PathBuf::from("/home/a b")),
+                _ => None,
+            }
         };
         assert_eq!(data_home_for(&with(Some("/data/me"))), Some(PathBuf::from("/data/me")));
         assert_eq!(data_home_for(&with(None)), Some(PathBuf::from("/home/a b/.local/share")));

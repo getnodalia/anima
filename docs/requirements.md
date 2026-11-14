@@ -1,6 +1,6 @@
-# AniCraft: technology and requirements
+# Ánima: technology and requirements
 
-AniCraft is an open-source, native, clean-room 2D vector animation studio in the class of
+Ánima is an open-source, native, clean-room 2D vector animation studio in the class of
 Adobe Animate, written in **Rust only**. It is a sibling of PhotoCraft, LightCraft, WordCraft and
 the other `{Function}Craft` apps and follows the same house rules (Rust only, no webview shells,
 everything is a command, never crash, tests are the gate).
@@ -67,14 +67,14 @@ Priority: **P0** = M0–M2 skeleton must have, **P1** = parity core, **P2** = lo
 | Rendering (oracle) | In-house CPU rasterizer: Bézier flattening + signed-area coverage accumulation, rayon row parallelism | Deterministic, testable, headless; the reference every other renderer is compared against. |
 | Rendering (interactive, M3) | wgpu compute/fragment renderer (sparse strips or tile binning in the style of public Vello/Pathfinder papers), compared per-pixel against the CPU oracle | Fast stage at high zoom and 4K; GPU and CPU must agree within a tolerance in tests. |
 | Geometry | In-house `geom` crate (affine, Bézier, flattening, hit test); `kurbo`-compatible API shape | Small, no_std-friendly, full control over tolerance and determinism. |
-| Serialization | serde + serde_json for `.anicraft` (JSON manifest), zip container from M2 for embedded media | Human-diffable, agent-friendly, versioned with `#[serde(default)]`. |
+| Serialization | serde + serde_json for `.anima` (JSON manifest), zip container from M2 for embedded media | Human-diffable, agent-friendly, versioned with `#[serde(default)]`. |
 | Images | `png` crate for encode/decode; GIF encoder from M1 | Minimal dependencies. |
 | Parallelism | rayon | Row and tile parallelism in the renderer, batch export. |
 | Errors | thiserror per crate | Typed, propagatable, no panics. |
 | Audio (M5) | cpal for output; own WAV reader, `lewton` (Ogg Vorbis) and `nanomp3` (MP3) for decoding (ADR 0020) | Pure Rust, cross-platform, permissive (symphonia is MPL-2.0, not allowed). |
 | Video export (M4) | ffmpeg as an external process (pipe raw frames) | No codec licensing in the binary. |
 | Testing | `cargo test`, golden-image tests, property tests (proptest), adversarial command fuzz, criterion benches | Tests are the gate. |
-| Automation | CLI (`anicraft-cli`), JSON-lines `serve` mode, MCP server (M2) over the same command registry | Headless parity with the UI by construction. |
+| Automation | CLI (`anima-cli`), JSON-lines `serve` mode, MCP server (M2) over the same command registry | Headless parity with the UI by construction. |
 
 ### Rejected options
 
@@ -100,6 +100,6 @@ Priority: **P0** = M0–M2 skeleton must have, **P1** = parity core, **P2** = lo
 
 | Id | Question | Current decision (until settled) |
 |---|---|---|
-| U1 | Which interchange format first? | Own `.anicraft` + PNG/GIF first (headless verification needs it), then **XFL import** (migration path for existing projects), then Lottie/SVG export. Chosen by the builder in auto mode. |
-| U2 | Scripting surface replacing ActionScript/JSFL? | **Settled by the project lead: use the sibling apps' plug-in system.** As in PhotoCraft (`docs/plugins.md` there): sandboxed WebAssembly plug-ins run by `wasmi` (pure Rust, MIT OR Apache-2.0, works in the web build), with no host imports, fuel/memory/time limits, `plugin.install/list/run/remove/reload` commands, and one undo step per run. AniCraft's ABI targets vector/timeline work (shape generators, selection transforms, easing presets, exporters) and calls the same command registry. Commands-only scripting (CLI/JSON-lines) stays available. **ActionScript** (asked for by the project lead, low priority) is a compatibility front end on top, not a second engine: ADR 0013. **Built (first slice, ADR 0017, `docs/plugins.md`)**: command plug-ins that call the registry through a two-import JSON ABI. |
+| U1 | Which interchange format first? | Own `.anima` + PNG/GIF first (headless verification needs it), then **XFL import** (migration path for existing projects), then Lottie/SVG export. Chosen by the builder in auto mode. |
+| U2 | Scripting surface replacing ActionScript/JSFL? | **Settled by the project lead: use the sibling apps' plug-in system.** As in PhotoCraft (`docs/plugins.md` there): sandboxed WebAssembly plug-ins run by `wasmi` (pure Rust, MIT OR Apache-2.0, works in the web build), with no host imports, fuel/memory/time limits, `plugin.install/list/run/remove/reload` commands, and one undo step per run. Ánima's ABI targets vector/timeline work (shape generators, selection transforms, easing presets, exporters) and calls the same command registry. Commands-only scripting (CLI/JSON-lines) stays available. **ActionScript** (asked for by the project lead, low priority) is a compatibility front end on top, not a second engine: ADR 0013. **Built (first slice, ADR 0017, `docs/plugins.md`)**: command plug-ins that call the registry through a two-import JSON ABI. |
 | U3 | When does the GPU renderer become primary on stage? | CPU oracle drives the stage until the GPU renderer passes golden parity tests (M3). |

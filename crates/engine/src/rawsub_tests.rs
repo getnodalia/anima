@@ -1,8 +1,8 @@
 //! Subselection on raw shapes and merging everywhere (ADR 0042), through the commands.
 
 use crate::Session;
-use anicraft_doc::{Element, ElementKind, GradientStop, Paint, Rgba};
-use anicraft_geom::{Affine, Vec2};
+use anima_doc::{Element, ElementKind, GradientStop, Paint, Rgba};
+use anima_geom::{Affine, Vec2};
 use serde_json::{Value, json};
 use std::sync::Arc;
 
@@ -11,7 +11,7 @@ fn run(s: &mut Session, id: &str, p: Value) -> Value {
 }
 
 fn raw_session() -> Session {
-    let mut s = Session::new(anicraft_doc::Document::default());
+    let mut s = Session::new(anima_doc::Document::default());
     run(&mut s, "draw.object_drawing", json!({"on": false}));
     s
 }
@@ -246,7 +246,7 @@ fn a_paint_bucket_fill_merges_with_an_adjacent_fill_of_its_colour() {
     run(&mut u, "draw.path", json!({"d": "M0 0 L100 0 L100 100", "fill": null, "stroke": "#000000"}));
     assert!(u.execute("paint.bucket", &json!({"x": 60, "y": 30})).is_err());
     // Headless sessions (Object Drawing on) keep making an object.
-    let mut o = Session::new(anicraft_doc::Document::default());
+    let mut o = Session::new(anima_doc::Document::default());
     run(&mut o, "draw.rect", json!({"x": 0, "y": 0, "w": 100, "h": 100, "fill": null, "stroke": "#000000"}));
     let v = run(&mut o, "paint.bucket", json!({"x": 50, "y": 50}));
     assert!(v.get("merged").is_none());
@@ -291,7 +291,11 @@ fn a_pasted_raw_shape_cuts_what_it_lands_on() {
 }
 
 fn linear() -> Paint {
-    Paint::linear(Vec2::new(0.0, 0.0), Vec2::new(200.0, 0.0), vec![GradientStop { offset: 0.0, color: Rgba::hex(0xff0000) }, GradientStop { offset: 1.0, color: Rgba::hex(0x0000ff) }])
+    Paint::linear(
+        Vec2::new(0.0, 0.0),
+        Vec2::new(200.0, 0.0),
+        vec![GradientStop { offset: 0.0, color: Rgba::hex(0xff0000) }, GradientStop { offset: 1.0, color: Rgba::hex(0x0000ff) }],
+    )
 }
 
 #[test]
@@ -324,7 +328,7 @@ fn gradient_fills_take_part_in_the_merge() {
     assert!((area(&g) - (20_000.0 - 2_500.0)).abs() < 1.0);
     // A width profile is raw too (ADR 0093: the merge carries it into each piece).
     let mut t = raw_session();
-    t.style.set_profile(anicraft_doc::ProfilePreset::TaperBoth);
+    t.style.set_profile(anima_doc::ProfilePreset::TaperBoth);
     run(&mut t, "draw.line", json!({"x0": 0, "y0": 0, "x1": 100, "y1": 0}));
     assert_eq!(raw(&t).len(), 1);
     let _ = Affine::IDENTITY;
@@ -347,7 +351,7 @@ fn subselection_timings() {
     let t = std::time::Instant::now();
     let v = run(&mut s, "raw.subselect", json!({"x": 320, "y": 320}));
     let click = t.elapsed();
-    let sel: Vec<anicraft_doc::ElementId> = s.selection.ids().collect();
+    let sel: Vec<anima_doc::ElementId> = s.selection.ids().collect();
     let t = std::time::Instant::now();
     let pts = s.raw_points(&sel);
     let list = t.elapsed();

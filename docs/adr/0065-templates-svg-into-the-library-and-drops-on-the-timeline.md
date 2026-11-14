@@ -14,7 +14,7 @@ Library to get a symbol, and drag a sound onto a frame of the timeline.
 
 ## Decision
 
-1. **Built-in templates are code, not files** (`anicraft_doc::templates`, beside the sample
+1. **Built-in templates are code, not files** (`anima_doc::templates`, beside the sample
    documents). Six, all original: Leaderboard banner 728 × 90 and Rectangle banner 300 × 250 (24 fps,
    15 s, the safe area a tenth of the short edge in), Social square 1080 × 1080 at 30 fps (safe
    margin, thirds), Storyboard 16:9 (six labelled 2-second panels on a Panels layer, action-safe
@@ -24,15 +24,15 @@ Library to get a symbol, and drag a sound onto a frame of the timeline.
    so they show while drawing and never export. Nothing binary is committed, every template is
    tested to build, open, draw on, save and reopen, and they cost under 0.1 ms to build. When a
    template opens, the first unlocked drawing layer is active, so drawing works at once.
-2. **User templates are plain `.anicraft` files with a picture**:
-   `<Templates>/<category>/<name>.anicraft` and `<name>.png` in the settings folder (or
-   `ANICRAFT_TEMPLATES_DIR`). We chose folders over a manifest because they need no new format,
+2. **User templates are plain `.anima` files with a picture**:
+   `<Templates>/<category>/<name>.anima` and `<name>.png` in the settings folder (or
+   `ANIMA_TEMPLATES_DIR`). We chose folders over a manifest because they need no new format,
    survive a copy to another computer, and can be tidied in a file browser. Category and name must
    be valid file names everywhere: at most 64 characters, none of `/ \ : * ? " < > |`, no control
    characters, no leading or trailing dot, no Windows device names. They are refused with a reason,
    never silently changed. As with recent files, the engine never looks for the folder: the shell
    passes it to `file.save_as_template`, `file.templates` and `file.delete_template`.
-   `file.new_from_template` takes a built-in `template` id or any `.anicraft` `path`, and opens it
+   `file.new_from_template` takes a built-in `template` id or any `.anima` `path`, and opens it
    untitled (Save asks for a name and never writes over the template). It isn't a recent file, and
    it asks first over unsaved work, like New. Replacing a template and deleting one are irreversible
    and always confirm (ADR 0004). The document itself doesn't change when it is saved as a template.
@@ -88,7 +88,7 @@ Library to get a symbol, and drag a sound onto a frame of the timeline.
   template and timeline-drop commands have their own hostile-params test, writing only to a
   temporary folder. Screenshot and test runs never touch the real templates folder.
 * A template is only as portable as the files it refers to. Bitmaps and sounds are inside the
-  `.anicraft`, so it carries everything.
+  `.anima`, so it carries everything.
 
 ## Not yet
 

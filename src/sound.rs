@@ -1,5 +1,5 @@
 //! Sound during stage playback (ADR 0020, ADR 0095). The movie's sounds are laid out by the
-//! engine (`doc::sound::voices`, pure), handed to an `anicraft_audio::Player` that the audio
+//! engine (`doc::sound::voices`, pure), handed to an `anima_audio::Player` that the audio
 //! device's callback pulls from, and the playhead follows the sound's clock while it plays: the
 //! frame shown is the one being *heard* (the device's latency taken off), so picture keeps time
 //! with sound and a slow frame drops frames instead of drifting.
@@ -8,12 +8,12 @@
 //! ALSA, Web Audio in the browser), or a fake one in tests, so the clock and the mixing paths are
 //! tested without a device. The device opens on first need: never at start-up, never in
 //! `--screenshot` runs or tests. If there is none, or it goes away mid-play, playback carries on
-//! silently on the wall clock with a notice and a log line, and AniCraft tries again a little
+//! silently on the wall clock with a notice and a log line, and Ánima tries again a little
 //! later (a device plugged in, or a new default device, is picked up without a restart).
 
-use anicraft_audio::{Pcm, Player, Voice, VoiceKind};
-use anicraft_engine::StateId;
-use anicraft_engine::doc::{Document, sound};
+use anima_audio::{Pcm, Player, Voice, VoiceKind};
+use anima_engine::StateId;
+use anima_engine::doc::{Document, sound};
 use std::any::Any;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -94,7 +94,7 @@ impl SoundOut {
     fn say(&mut self, e: String) {
         if self.said.as_ref() != Some(&e) {
             // A log line for bug reports, and a notice for the artist (shown by the caller).
-            eprintln!("anicraft: sound: {e}");
+            eprintln!("anima: sound: {e}");
             self.said = Some(e.clone());
             self.error = Some(e);
         }
@@ -136,7 +136,7 @@ impl SoundOut {
                 }
                 self.rate = rate;
                 if self.said.take().is_some() {
-                    eprintln!("anicraft: sound: output is back");
+                    eprintln!("anima: sound: output is back");
                 }
                 true
             }
@@ -352,7 +352,7 @@ impl Output for Device {
             cpal::SampleFormat::I16 => build::<i16>(&device, config, shared, failed, base),
             cpal::SampleFormat::U16 => build::<u16>(&device, config, shared, failed, base),
             cpal::SampleFormat::I32 => build::<i32>(&device, config, shared, failed, base),
-            other => return Err(tr!("the sound device wants {format} samples, which AniCraft doesn't write yet", format = format!("{other:?}"))),
+            other => return Err(tr!("the sound device wants {format} samples, which Ánima doesn't write yet", format = format!("{other:?}"))),
         }
         .map_err(|e| tr!("could not start sound ({error})", error = e))?;
         stream.play().map_err(|e| tr!("could not start sound ({error})", error = e))?;
@@ -361,7 +361,11 @@ impl Output for Device {
 
     #[cfg(not(sound_output))]
     fn open(&mut self, _: &Arc<Mutex<Shared>>, _: &Arc<AtomicBool>) -> Result<(Box<dyn Any>, u32), String> {
-        Err(if cfg!(target_arch = "wasm32") { tr!("the web version of AniCraft has no sound output yet").into() } else { tr!("this build of AniCraft has no sound output").into() })
+        Err(if cfg!(target_arch = "wasm32") {
+            tr!("the web version of Ánima has no sound output yet").into()
+        } else {
+            tr!("this build of Ánima has no sound output").into()
+        })
     }
 
     fn now(&self) -> f64 {
@@ -372,7 +376,13 @@ impl Output for Device {
 /// An output stream whose callback mixes from the player. The lock is held only while one
 /// buffer is mixed; the UI holds it only to change a few fields.
 #[cfg(sound_output)]
-fn build<T: cpal::SizedSample + cpal::FromSample<f32>>(device: &cpal::Device, config: cpal::StreamConfig, shared: &Arc<Mutex<Shared>>, failed: &Arc<AtomicBool>, base: web_time::Instant) -> Result<cpal::Stream, cpal::Error> {
+fn build<T: cpal::SizedSample + cpal::FromSample<f32>>(
+    device: &cpal::Device,
+    config: cpal::StreamConfig,
+    shared: &Arc<Mutex<Shared>>,
+    failed: &Arc<AtomicBool>,
+    base: web_time::Instant,
+) -> Result<cpal::Stream, cpal::Error> {
     use cpal::traits::DeviceTrait;
     let channels = usize::from(config.channels);
     let rate = f64::from(config.sample_rate);
@@ -412,7 +422,7 @@ fn build<T: cpal::SizedSample + cpal::FromSample<f32>>(device: &cpal::Device, co
 #[allow(clippy::unwrap_used, clippy::indexing_slicing)]
 mod tests {
     use super::*;
-    use anicraft_engine::Session;
+    use anima_engine::Session;
     use std::cell::Cell;
     use std::rc::Rc;
 
@@ -473,9 +483,9 @@ mod tests {
         let run = |s: &mut Session, id: &str, p: serde_json::Value| s.execute(id, &p).unwrap_or_else(|e| panic!("{id}: {e}"));
         run(&mut s, "doc.set_stage", serde_json::json!({"fps": fps}));
         let n = (f64::from(frames) / f64::from(fps) * f64::from(rate)).ceil() as usize;
-        let wav = anicraft_audio::wav::encode(rate, 1, &vec![0.25; n], anicraft_audio::wav::Bits::Int16);
+        let wav = anima_audio::wav::encode(rate, 1, &vec![0.25; n], anima_audio::wav::Bits::Int16);
         static NEXT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
-        let dir = std::env::temp_dir().join(format!("anicraft-sound-out-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+        let dir = std::env::temp_dir().join(format!("anima-sound-out-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("tone.wav");
         std::fs::write(&path, wav).unwrap();

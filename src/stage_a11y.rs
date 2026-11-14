@@ -18,8 +18,8 @@
 
 use crate::app::App;
 use crate::theme::T;
-use anicraft_engine::doc::{Document, Element, ElementId, ElementKind, LayerId, LayerKind, Paint, SymbolKind};
-use anicraft_engine::geom::{Path, PathCmd, Rect as GRect};
+use anima_engine::doc::{Document, Element, ElementId, ElementKind, LayerId, LayerKind, Paint, SymbolKind};
+use anima_engine::geom::{Path, PathCmd, Rect as GRect};
 use egui::accesskit::{Action, Role};
 use egui::{Id, Key, Modifiers, Pos2, Rect, Response, Sense, Stroke, StrokeKind, UiBuilder, Vec2};
 use serde_json::json;
@@ -66,7 +66,7 @@ pub fn node_id(layer: LayerId, element: ElementId) -> Id {
 /// tools' outlines and the Line tool's segment; anything else is a shape.
 pub fn shape_kind(p: &Path) -> &'static str {
     let (mut moves, mut lines, mut curves, mut closes) = (0usize, 0usize, 0usize, 0usize);
-    let mut pts: Vec<anicraft_engine::geom::Vec2> = Vec::new();
+    let mut pts: Vec<anima_engine::geom::Vec2> = Vec::new();
     for c in p.cmds.iter().take(64) {
         match c {
             PathCmd::MoveTo(v) => {
@@ -146,7 +146,7 @@ pub fn items(app: &App) -> (Vec<Item>, usize) {
     // Bounds of every element in one pass over what the stage draws.
     let mut bounds: HashMap<(LayerId, ElementId), GRect> = HashMap::new();
     for item in s.display_list().items.iter() {
-        let pad = item.stroke.as_ref().map_or(0.0, anicraft_engine::doc::Stroke::reach);
+        let pad = item.stroke.as_ref().map_or(0.0, anima_engine::doc::Stroke::reach);
         let r = item.path.bounds().inflate(pad).transformed(&item.transform);
         let e = bounds.entry((item.layer, item.element)).or_insert(GRect::EMPTY);
         *e = e.union(&r);
@@ -169,10 +169,25 @@ pub fn items(app: &App) -> (Vec<Item>, usize) {
             let detail = if b.is_empty() {
                 tr!("Layer {layer}", layer = layer.name)
             } else {
-                tr!("Layer {layer} · x {x}, y {y} · {w} × {h} px", layer = layer.name, x = format!("{:.0}", b.min.x), y = format!("{:.0}", b.min.y), w = format!("{:.0}", b.width()), h = format!("{:.0}", b.height()))
+                tr!(
+                    "Layer {layer} · x {x}, y {y} · {w} × {h} px",
+                    layer = layer.name,
+                    x = format!("{:.0}", b.min.x),
+                    y = format!("{:.0}", b.min.y),
+                    w = format!("{:.0}", b.width()),
+                    h = format!("{:.0}", b.height())
+                )
             };
             let detail = if locked { tr!("{detail} · locked", detail = detail) } else { detail };
-            out.push(Item { layer: layer.id, element: e.id, name: element_name(&s.doc, e), detail, bounds: b, selected: s.selection.contains(layer.id, e.id), locked });
+            out.push(Item {
+                layer: layer.id,
+                element: e.id,
+                name: element_name(&s.doc, e),
+                detail,
+                bounds: b,
+                selected: s.selection.contains(layer.id, e.id),
+                locked,
+            });
         }
     }
     (out, total)
@@ -215,7 +230,11 @@ fn element_keys(i: &mut egui::InputState) -> Option<Step> {
 
 /// Selects `it` alone (`toggle`: adds it to the selection or takes it out) and says so.
 fn select(app: &mut App, it: &Item, toggle: bool) {
-    let params = if toggle { json!({"ids": [it.element.0], "layer": it.layer.0, "toggle": true}) } else { json!({"ids": [it.element.0], "layer": it.layer.0}) };
+    let params = if toggle {
+        json!({"ids": [it.element.0], "layer": it.layer.0, "toggle": true})
+    } else {
+        json!({"ids": [it.element.0], "layer": it.layer.0})
+    };
     if app.run("element.select", params).is_some() {
         let n = app.s.selection.len();
         let now = app.s.selection.contains(it.layer, it.element);
@@ -226,7 +245,7 @@ fn select(app: &mut App, it: &Item, toggle: bool) {
 
 /// The element list under the stage's node, and its keys. `to_screen` maps the stage's drawing
 /// space to the screen. Call after the stage has drawn, while `stage` is its canvas response.
-pub fn show(app: &mut App, ui: &mut egui::Ui, stage: &Response, to_screen: impl Fn(anicraft_engine::geom::Vec2) -> Pos2) {
+pub fn show(app: &mut App, ui: &mut egui::Ui, stage: &Response, to_screen: impl Fn(anima_engine::geom::Vec2) -> Pos2) {
     let ctx = ui.ctx().clone();
     let focused = ctx.memory(|m| m.focused());
     let on_canvas = focused == Some(stage.id);
@@ -335,7 +354,9 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, stage: &Response, to_screen: impl 
     if on_canvas {
         // Tab goes into the list (when there is one); the arrows nudge, as before.
         let tab = !list.is_empty();
-        ctx.memory_mut(|m| m.set_focus_lock_filter(stage.id, egui::EventFilter { tab, horizontal_arrows: true, vertical_arrows: true, ..Default::default() }));
+        ctx.memory_mut(|m| {
+            m.set_focus_lock_filter(stage.id, egui::EventFilter { tab, horizontal_arrows: true, vertical_arrows: true, ..Default::default() })
+        });
     }
     if let Some(id) = focus_to {
         ctx.memory_mut(|m| m.request_focus(id));
@@ -353,7 +374,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, stage: &Response, to_screen: impl 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anicraft_engine::geom::Vec2 as V;
+    use anima_engine::geom::Vec2 as V;
 
     #[test]
     fn shapes_are_named_by_the_tool_that_draws_them() {

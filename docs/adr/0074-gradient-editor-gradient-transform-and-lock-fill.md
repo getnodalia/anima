@@ -101,11 +101,11 @@ turned radial gradients. XFL import reported all four as approximations.
     centre, width square, rotate knob), radial (ring, centre, focal triangle, width square, size
     circle, rotate knob) and bitmap (tile box, centre, width and height squares, skew diamonds,
     size circle, rotate knob). The plain selection box is hidden while it shows. In Animate it
-    shares a flyout with Free Transform; AniCraft has no flyouts yet, so it has its own button.
+    shares a flyout with Free Transform; Ánima has no flyouts yet, so it has its own button.
 
 ## Consequences
 
-* Gradients round-trip exactly through `.anicraft`, SVG and XFL; files without the new options
+* Gradients round-trip exactly through `.anima`, SVG and XFL; files without the new options
   are unchanged. Radial fills on skewed shapes are now drawn exactly.
 * Scripts can build and place any gradient headless (`paint.set_fill`, `paint.transform_fill`).
 * The colour picker popups are named dialogs for screen readers, and the swatch grid is a named

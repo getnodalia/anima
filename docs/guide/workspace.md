@@ -1,22 +1,22 @@
 # The workspace
 
-This chapter is a tour of the AniCraft window: what each panel is for, how to find any
+This chapter is a tour of the Ánima window: what each panel is for, how to find any
 command, how to move around the stage, and how to work with scenes. If you know Animate,
 most of it will be where you expect.
 
 Shortcuts are written the Windows and Linux way. On macOS, use ⌘ (Command) for Ctrl and ⌥
 (Option) for Alt: **Ctrl+K** is **⌘K**.
 
-![The AniCraft window with the sample animation open](images/workspace.png)
+![The Ánima window with the sample animation open](images/workspace.png)
 
 ## The window layout
 
-AniCraft opens with the **Essentials** workspace: the panels docked as below. You can move
+Ánima opens with the **Essentials** workspace: the panels docked as below. You can move
 every panel (see [Arranging panels and workspaces](#arranging-panels-and-workspaces)).
 
 | Area | Where | What it's for |
 |---|---|---|
-| Menu bar | top | Every command, grouped as in Animate: File, Edit, View, Insert, Modify, Commands, Control, Window, Help. On macOS there's also the AniCraft menu, with About, Settings… and Quit. |
+| Menu bar | top | Every command, grouped as in Animate: File, Edit, View, Insert, Modify, Commands, Control, Window, Help. On macOS there's also the Ánima menu, with About, Settings… and Quit. |
 | Edit bar | above the stage | The scene menu, the path to the symbol you're editing, the active layer, the stage size, an **Onion skin** switch, the **Clip content outside the stage** button and the zoom menu. |
 | Tools | left | The drawing and editing tools, the **Snap to Objects** magnet, and the current fill and stroke colours. Drag the dotted grip at the top to move them. |
 | Stage | middle | Your artwork. The stage rectangle is what the movie shows. You can draw on the grey area around it too. |
@@ -67,11 +67,11 @@ Explorer, History, Layer Depth, Timeline, Motion Editor, Actions and Output.
 * **Floating windows** have their own window on the desktop, which you can put on another
   screen. They can hold **several panels as tabs**: drag a tab onto a floating window, or use
   **Stack With**. Drag a tab out of the window to move just that panel; drag the window's
-  dotted grip (or, inside the AniCraft window, its title bar) to move **the whole window back
+  dotted grip (or, inside the Ánima window, its title bar) to move **the whole window back
   into a dock**, with the same blue drop areas. **Dock** puts its panels back where they came
   from. Your shortcuts with Ctrl or Alt (Undo, Save, Test Movie…) still work there. Where a
   system can't open another window (the web version), a floating window floats inside the
-  AniCraft window instead.
+  Ánima window instead.
 * **Collapse a dock to icons** with the » button on its first group's header (or **Collapse
   the Dock to Icons** in the panel menu). The dock shrinks to a strip of panel icons, so the
   stage gets the room; hold the pointer over an icon for the panel's name. Click an icon to
@@ -105,7 +105,7 @@ Each workspace remembers how you changed it, until you choose **Window › Works
 the others, and Reset brings it back as you saved it. **Manage Workspaces…** lists them all:
 rename or delete your own (delete asks with a second click, as it can't be undone), and reset
 any that changed. The built-in ones can be reset but not renamed or deleted. Your workspaces
-and where every panel is are kept in your preferences, so AniCraft opens the way you left it.
+and where every panel is are kept in your preferences, so Ánima opens the way you left it.
 
 ### Properties
 
@@ -219,11 +219,11 @@ Arrow keys nudge the selection by one screen pixel, or ten with **Shift**.
 
 ### Graphics card or CPU
 
-AniCraft draws the stage on your graphics card by default, which is much faster on big stages
+Ánima draws the stage on your graphics card by default, which is much faster on big stages
 and busy scenes. The same menu, and **Preferences › Stage › Renderer**, offers:
 
 * **Graphics card (GPU)**: the default.
-* **CPU (reference)**: AniCraft's reference renderer. It's slower on large stages.
+* **CPU (reference)**: Ánima's reference renderer. It's slower on large stages.
 
 The picture is the same either way. If there's no graphics card that can do the job, or a
 frame needs something the card can't draw, the CPU takes over for that moment. The status bar
@@ -266,7 +266,7 @@ searches as you type. You can search for:
 
 Choose whether to search this scene and the symbols in it, or the whole document. Click a
 result, or press **Find Next** (**F3**) or **Find Previous** (**Shift+F3**), to go there:
-AniCraft switches to the scene and frame, opens the symbol if needed, and selects the item.
+Ánima switches to the scene and frame, opens the symbol if needed, and selects the item.
 
 **Replace** replaces the current result and moves on to the next one. **Replace All** is a
 single undo step, and asks first if it would change more than 100 places.

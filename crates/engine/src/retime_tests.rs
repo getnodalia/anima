@@ -2,7 +2,7 @@
 //! stretching, whole spans moved and copied, Split and Join Motion.
 
 use super::*;
-use anicraft_doc::Property;
+use anima_doc::Property;
 use serde_json::json;
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
@@ -173,10 +173,12 @@ fn joining_two_tweens_of_one_object_keeps_every_frame() {
     s.set_frame(20);
     run(&mut s, "modify.rotate_cw", json!({}));
     let before: Vec<(f32, f32)> = (0..24).map(|f| pos(&mut s, f)).collect();
-    let turned: Vec<f32> = (0..24).map(|f| {
-        s.set_frame(f);
-        s.visible_elements().first().map_or(0.0, |e| e.transform.decompose().rotation)
-    }).collect();
+    let turned: Vec<f32> = (0..24)
+        .map(|f| {
+            s.set_frame(f);
+            s.visible_elements().first().map_or(0.0, |e| e.transform.decompose().rotation)
+        })
+        .collect();
     run(&mut s, "motion.join", json!({"frame": 3}));
     assert_eq!(spans(&s), vec![(0, 24, true)]);
     for f in 0..24u32 {
@@ -194,7 +196,7 @@ fn join_motion_refuses_what_it_cannot_keep() {
     run(&mut s, "motion.split", json!({"frame": 8}));
     // Actions on the second key would be dropped.
     let k = s.layer_mut(None).ok().and_then(|l| l.keyframe_mut(1)).map(|k| {
-        k.script = Some(anicraft_doc::FrameScript::Actions(Vec::new()));
+        k.script = Some(anima_doc::FrameScript::Actions(Vec::new()));
     });
     assert!(k.is_some());
     assert!(s.execute("motion.join", &json!({"frame": 0})).is_err());

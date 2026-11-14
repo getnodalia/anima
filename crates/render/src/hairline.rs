@@ -11,7 +11,7 @@
 //! bend. The GPU stage computes the same distance (`fine.wgsl` › `seg_dist`).
 
 use crate::raster::IRect;
-use anicraft_geom::Vec2;
+use anima_geom::Vec2;
 
 /// How far a hairline reaches from its line, in pixels: beyond this its coverage is 0.
 pub const REACH: f32 = 1.0;

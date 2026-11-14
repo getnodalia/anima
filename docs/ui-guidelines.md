@@ -1,6 +1,6 @@
 # UI guidelines
 
-AniCraft's interface serves artists in a flow state (see `product-principles.md`). These rules
+Ánima's interface serves artists in a flow state (see `product-principles.md`). These rules
 keep it professional, calm and predictable. **Tokens live in `src/theme.rs`**: colours in `T`,
 typography in `Type`. Panels never hard-code colours, font families or font sizes; a test
 (`guidelines_tests` in `src/main.rs`) fails the build if they do.
@@ -117,7 +117,7 @@ are not used for UI text, because they would change metrics per OS.
   as vectors at the on-screen size (crisp at any interface scale, no rasterizer dependency).
 * To add an icon: copy its SVG from the Lucide set into `assets/icons/`, add a variant and its
   file to `src/icons.rs`. Prefer an existing Lucide icon (mirrored if needed) to drawing one.
-  When none fits, draw an original `anicraft-*.svg` on the same 24 grid with 2-unit round
+  When none fits, draw an original `anima-*.svg` on the same 24 grid with 2-unit round
   strokes (the Align panel's icons are such originals).
 * Icons are placed on whole device pixels with whole-pixel stroke widths; tool icons are drawn
   at the set's native 24 px, where they are sharpest.
@@ -204,6 +204,6 @@ are not used for UI text, because they would change metrics per OS.
 3. Reachable by menu, palette and, if frequent, a shortcut and a right-click menu.
 4. Screenshot checked (`cargo run -- --screenshot shots/now.png`, `--open <panel>` for dialogs),
    also with `--theme high-contrast` and `--scale 200`.
-5. Named for screen readers (section 7a); `cargo test --bin anicraft a11y` passes.
-6. Text goes through `tr!` (section 8a); `cargo test --bin anicraft i18n` passes and a
+5. Named for screen readers (section 7a); `cargo test --bin anima a11y` passes.
+6. Text goes through `tr!` (section 8a); `cargo test --bin anima i18n` passes and a
    `--lang pseudo` screenshot shows no plain English and no cut-off `]`.

@@ -7,8 +7,8 @@
 
 use crate::params::*;
 use crate::{CommandSpec, EngineError, Result, Session};
-use anicraft_doc::library::{MAX_FOLDER_DEPTH, MAX_FOLDERS};
-use anicraft_doc::{BitmapId, ElementKind, FolderId, LibraryEntry, LibraryFolder, LibraryItem, Paint, SoundId, SymbolId, SymbolKind, Timeline};
+use anima_doc::library::{MAX_FOLDER_DEPTH, MAX_FOLDERS};
+use anima_doc::{BitmapId, ElementKind, FolderId, LibraryEntry, LibraryFolder, LibraryItem, Paint, SoundId, SymbolId, SymbolKind, Timeline};
 use serde_json::{Value, json};
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -16,17 +16,97 @@ use std::sync::Arc;
 pub fn specs() -> Vec<CommandSpec> {
     let c = |id, label, menu, shortcut, params, mutates, run| CommandSpec { id, label, menu, shortcut, params, mutates, run };
     vec![
-        c("library.items", "List Library", "", None, "{} every folder (id, name, parent, path) and item (symbol | bitmap | sound id, kind, name, folder, path, uses, unused) in Library order; `uses` counts instances, bitmap fills and keyframe sounds once per keyframe", false, items as crate::RunFn),
-        c("library.new_folder", "New Folder", "", None, "{name? (default: the next free “Folder n”), parent?: folder id} → {folder, name}; names are unique within a folder (case aside) and can't hold “/”", true, new_folder),
-        c("library.rename", "Rename", "", None, "{symbol | bitmap | sound | folder: id, name} renames a Library item or folder; the name must be free in its folder (case aside) and can't hold “/”", true, rename),
-        c("library.move", "Move to Folder", "", None, "{items: [{symbol | bitmap | sound | folder: id}, ..], to: folder id | null (the top level)} moves items and folders (with what they hold) into a folder; a folder can't go inside itself, and a name the folder already has stops the move", true, move_to),
-        c("library.duplicate", "Duplicate Symbol", "", None, "{symbol, name? (default: “<name> copy”)} → {symbol, name}: a copy in the same folder, with its own layers and elements and no linkage class", true, duplicate),
-        c("library.delete", "Delete", "", None, "{items: [{symbol | bitmap | sound | folder: id}, ..]} deletes items and folders with everything in them; instances of deleted symbols, shapes filled with deleted bitmaps and keyframes' deleted sounds go too (asks first when anything deleted is in use or a folder isn't empty)", true, delete),
-        c("library.unused", "Select Unused Items", "", None, "{} → {items: [..]} the items nothing in the movie reaches: not in a scene, nor inside a symbol that is; symbols with a linkage class count as used", false, unused),
+        c(
+            "library.items",
+            "List Library",
+            "",
+            None,
+            "{} every folder (id, name, parent, path) and item (symbol | bitmap | sound id, kind, name, folder, path, uses, unused) in Library order; `uses` counts instances, bitmap fills and keyframe sounds once per keyframe",
+            false,
+            items as crate::RunFn,
+        ),
+        c(
+            "library.new_folder",
+            "New Folder",
+            "",
+            None,
+            "{name? (default: the next free “Folder n”), parent?: folder id} → {folder, name}; names are unique within a folder (case aside) and can't hold “/”",
+            true,
+            new_folder,
+        ),
+        c(
+            "library.rename",
+            "Rename",
+            "",
+            None,
+            "{symbol | bitmap | sound | folder: id, name} renames a Library item or folder; the name must be free in its folder (case aside) and can't hold “/”",
+            true,
+            rename,
+        ),
+        c(
+            "library.move",
+            "Move to Folder",
+            "",
+            None,
+            "{items: [{symbol | bitmap | sound | folder: id}, ..], to: folder id | null (the top level)} moves items and folders (with what they hold) into a folder; a folder can't go inside itself, and a name the folder already has stops the move",
+            true,
+            move_to,
+        ),
+        c(
+            "library.duplicate",
+            "Duplicate Symbol",
+            "",
+            None,
+            "{symbol, name? (default: “<name> copy”)} → {symbol, name}: a copy in the same folder, with its own layers and elements and no linkage class",
+            true,
+            duplicate,
+        ),
+        c(
+            "library.delete",
+            "Delete",
+            "",
+            None,
+            "{items: [{symbol | bitmap | sound | folder: id}, ..]} deletes items and folders with everything in them; instances of deleted symbols, shapes filled with deleted bitmaps and keyframes' deleted sounds go too (asks first when anything deleted is in use or a folder isn't empty)",
+            true,
+            delete,
+        ),
+        c(
+            "library.unused",
+            "Select Unused Items",
+            "",
+            None,
+            "{} → {items: [..]} the items nothing in the movie reaches: not in a scene, nor inside a symbol that is; symbols with a linkage class count as used",
+            false,
+            unused,
+        ),
         c("library.delete_unused", "Delete Unused Items", "", None, "{} deletes every item `library.unused` lists (asks first)", true, delete_unused),
-        c("library.set_smoothing", "Allow Smoothing", "", None, "{bitmap, on?: bool (default: toggle)} whether the bitmap is filtered when scaled or turned (off: hard-edged pixels)", true, set_smoothing),
-        c("element.swap_bitmap", "Swap Bitmap", "", None, "{bitmap} the selected bitmaps and bitmap-filled shapes show another bitmap: a placed bitmap keeps its transform and top-left corner and takes the new bitmap's size; a bitmap fill keeps its shape and fill transform", true, |s, p| s.each_layer(false, |s| swap_bitmap(s, p))),
-        c("element.swap_symbol", "Swap Symbol", "", None, "{symbol} the selected instances show another symbol, keeping their transform, colour effect, blending, filters, looping, actions and instance name", true, |s, p| s.each_layer(false, |s| swap_symbol(s, p))),
+        c(
+            "library.set_smoothing",
+            "Allow Smoothing",
+            "",
+            None,
+            "{bitmap, on?: bool (default: toggle)} whether the bitmap is filtered when scaled or turned (off: hard-edged pixels)",
+            true,
+            set_smoothing,
+        ),
+        c(
+            "element.swap_bitmap",
+            "Swap Bitmap",
+            "",
+            None,
+            "{bitmap} the selected bitmaps and bitmap-filled shapes show another bitmap: a placed bitmap keeps its transform and top-left corner and takes the new bitmap's size; a bitmap fill keeps its shape and fill transform",
+            true,
+            |s, p| s.each_layer(false, |s| swap_bitmap(s, p)),
+        ),
+        c(
+            "element.swap_symbol",
+            "Swap Symbol",
+            "",
+            None,
+            "{symbol} the selected instances show another symbol, keeping their transform, colour effect, blending, filters, looping, actions and instance name",
+            true,
+            |s, p| s.each_layer(false, |s| swap_symbol(s, p)),
+        ),
     ]
 }
 
@@ -289,14 +369,14 @@ fn strip(tl: &mut Timeline, gone: &HashSet<LibraryItem>) -> usize {
 
 /// [`strip`], inside groups too (ADR 0073): a group keeps its other members.
 fn strip_in(tl: &mut Timeline, gone: &HashSet<LibraryItem>, depth: usize) -> usize {
-    let refers = |e: &anicraft_doc::Element| match &e.kind {
+    let refers = |e: &anima_doc::Element| match &e.kind {
         ElementKind::Symbol { symbol, .. } => gone.contains(&LibraryItem::Symbol(*symbol)),
         ElementKind::Shape(sh) => matches!(&sh.fill, Some(Paint::Bitmap { bitmap, .. }) if gone.contains(&LibraryItem::Bitmap(*bitmap))),
         ElementKind::Text(_) | ElementKind::Camera | ElementKind::Group { .. } => false,
     };
-    let inside = |e: &anicraft_doc::Element| matches!(&e.kind, ElementKind::Group { members } if depth < anicraft_doc::MAX_GROUP_DEPTH && strip_needed(members, gone));
-    let sounds = |k: &anicraft_doc::Keyframe| k.sound.as_ref().is_some_and(|f| gone.contains(&LibraryItem::Sound(f.sound)));
-    let hit = |k: &anicraft_doc::Keyframe| sounds(k) || k.elements.iter().any(|e| refers(e) || inside(e));
+    let inside = |e: &anima_doc::Element| matches!(&e.kind, ElementKind::Group { members } if depth < anima_doc::MAX_GROUP_DEPTH && strip_needed(members, gone));
+    let sounds = |k: &anima_doc::Keyframe| k.sound.as_ref().is_some_and(|f| gone.contains(&LibraryItem::Sound(f.sound)));
+    let hit = |k: &anima_doc::Keyframe| sounds(k) || k.elements.iter().any(|e| refers(e) || inside(e));
     let mut n = 0;
     for l in tl.layers.iter_mut().filter(|l| l.keyframes.iter().any(|k| hit(k))) {
         for k in Arc::make_mut(l).keyframes.iter_mut().filter(|k| hit(k)) {
@@ -361,7 +441,7 @@ fn remove(s: &mut Session, items: &[LibraryItem], folders: &[FolderId]) -> Value
 
 fn strip_needed(tl: &Timeline, gone: &HashSet<LibraryItem>) -> bool {
     let mut any = false;
-    anicraft_doc::library::visit_refs(tl, |i| any |= gone.contains(&i));
+    anima_doc::library::visit_refs(tl, |i| any |= gone.contains(&i));
     any
 }
 
@@ -426,7 +506,8 @@ fn swap_bitmap(s: &mut Session, p: &Value) -> Result<Value> {
     if s.doc.bitmap(to).is_none() {
         return Err(EngineError::State(format!("no bitmap with id {}", to.0)));
     }
-    let sizes: std::collections::HashMap<BitmapId, (String, f32, f32)> = s.doc.bitmaps.iter().map(|b| (b.id, (b.name.clone(), b.width as f32, b.height as f32))).collect();
+    let sizes: std::collections::HashMap<BitmapId, (String, f32, f32)> =
+        s.doc.bitmaps.iter().map(|b| (b.id, (b.name.clone(), b.width as f32, b.height as f32))).collect();
     let mut swapped = 0;
     for e in s.selected_elements_mut()? {
         if swap_bitmap_of(e, to, &sizes) {
@@ -444,7 +525,7 @@ fn swap_bitmap(s: &mut Session, p: &Value) -> Result<Value> {
 /// new one's size and, when it had the old one's name, its name; any other shape keeps its
 /// outline and fill transform. `sizes` are every bitmap's name, width and height. False when `e`
 /// isn't filled with a bitmap.
-pub(crate) fn swap_bitmap_of(e: &mut anicraft_doc::Element, to: BitmapId, sizes: &std::collections::HashMap<BitmapId, (String, f32, f32)>) -> bool {
+pub(crate) fn swap_bitmap_of(e: &mut anima_doc::Element, to: BitmapId, sizes: &std::collections::HashMap<BitmapId, (String, f32, f32)>) -> bool {
     let ElementKind::Shape(sh) = &mut e.kind else { return false };
     let Some(Paint::Bitmap { bitmap, repeat, matrix }) = &mut sh.fill else { return false };
     let old = *bitmap;
@@ -454,10 +535,10 @@ pub(crate) fn swap_bitmap_of(e: &mut anicraft_doc::Element, to: BitmapId, sizes:
     }
     if let (Some((name, w, h)), Some(new)) = (sizes.get(&old), sizes.get(&to))
         && !*repeat
-        && *matrix == anicraft_geom::Affine::IDENTITY
-        && *sh.path == anicraft_geom::Path::rect(0.0, 0.0, *w, *h)
+        && *matrix == anima_geom::Affine::IDENTITY
+        && *sh.path == anima_geom::Path::rect(0.0, 0.0, *w, *h)
     {
-        sh.path = Arc::new(anicraft_geom::Path::rect(0.0, 0.0, new.1, new.2));
+        sh.path = Arc::new(anima_geom::Path::rect(0.0, 0.0, new.1, new.2));
         if e.name == *name {
             e.name.clone_from(&new.0);
         }

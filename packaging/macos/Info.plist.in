@@ -7,13 +7,13 @@
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleDisplayName</key>
-  <string>AniCraft</string>
+  <string>Anima</string>
   <key>CFBundleName</key>
-  <string>AniCraft</string>
+  <string>Anima</string>
   <key>CFBundleExecutable</key>
-  <string>AniCraft</string>
+  <string>Anima</string>
   <key>CFBundleIdentifier</key>
-  <string>ai.storyteller.anicraft</string>
+  <string>dev.danielmiguelt.Anima</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundlePackageType</key>
@@ -24,12 +24,12 @@
   <string>@SHORT_VERSION@</string>
   <key>CFBundleVersion</key>
   <string>@SHORT_VERSION@</string>
-  <key>AniCraftVersion</key>
+  <key>AnimaVersion</key>
   <string>@VERSION@</string>
-  <key>AniCraftBuildCommit</key>
+  <key>AnimaBuildCommit</key>
   <string>@BUILD_SHA@</string>
   <key>CFBundleIconFile</key>
-  <string>AniCraft</string>
+  <string>Anima</string>
   <key>LSApplicationCategoryType</key>
   <string>public.app-category.graphics-design</string>
   <!-- Must match MACOSX_DEPLOYMENT_TARGET in package.sh. Big Sur is the first release on
@@ -43,39 +43,39 @@
   <key>NSRequiresAquaSystemAppearance</key>
   <false/>
   <key>NSHumanReadableCopyright</key>
-  <string>Copyright © 2026 ArtCraft Team and the AniCraft contributors. MIT OR Apache-2.0.</string>
+  <string>Copyright © 2026 Nodalia and the authors listed in NOTICE. MIT OR Apache-2.0.</string>
 
-  <!-- AniCraft's own format: a JSON document (crates/engine/src/format.rs). -->
+  <!-- Ánima's own format: a JSON document (crates/engine/src/format.rs). -->
   <key>UTExportedTypeDeclarations</key>
   <array>
     <dict>
       <key>UTTypeIdentifier</key>
-      <string>ai.storyteller.anicraft.document</string>
+      <string>dev.danielmiguelt.anima.document</string>
       <key>UTTypeDescription</key>
-      <string>AniCraft Document</string>
+      <string>Ánima Document</string>
       <key>UTTypeConformsTo</key>
       <array>
         <string>public.data</string>
         <string>public.content</string>
       </array>
       <key>UTTypeIconFile</key>
-      <string>AniCraft</string>
+      <string>Anima</string>
       <key>UTTypeTagSpecification</key>
       <dict>
         <key>public.filename-extension</key>
-        <array><string>anicraft</string></array>
+        <array><string>anima</string><string>anicraft</string></array><!-- rebrand: keep: older documents -->
         <key>public.mime-type</key>
-        <array><string>application/x-anicraft</string></array>
+        <array><string>application/x-anima</string></array>
       </dict>
     </dict>
   </array>
-  <!-- Formats AniCraft opens as an untitled import (ADR 0009). Imported, so the system's own
+  <!-- Formats Ánima opens as an untitled import (ADR 0009). Imported, so the system's own
        declaration wins when another app declares them. -->
   <key>UTImportedTypeDeclarations</key>
   <array>
     <dict>
       <key>UTTypeIdentifier</key>
-      <string>ai.storyteller.anicraft.fla</string>
+      <string>dev.danielmiguelt.anima.fla</string>
       <key>UTTypeDescription</key>
       <string>FLA Document</string>
       <key>UTTypeConformsTo</key>
@@ -88,7 +88,7 @@
     </dict>
     <dict>
       <key>UTTypeIdentifier</key>
-      <string>ai.storyteller.anicraft.xfl</string>
+      <string>dev.danielmiguelt.anima.xfl</string>
       <key>UTTypeDescription</key>
       <string>XFL Document</string>
       <key>UTTypeConformsTo</key>
@@ -105,18 +105,18 @@
   <array>
     <dict>
       <key>CFBundleTypeName</key>
-      <string>AniCraft Document</string>
+      <string>Ánima Document</string>
       <key>CFBundleTypeRole</key>
       <string>Editor</string>
       <key>LSHandlerRank</key>
       <string>Owner</string>
       <key>CFBundleTypeIconFile</key>
-      <string>AniCraft</string>
+      <string>Anima</string>
       <key>LSItemContentTypes</key>
-      <array><string>ai.storyteller.anicraft.document</string></array>
+      <array><string>dev.danielmiguelt.anima.document</string></array>
     </dict>
     <dict>
-      <!-- Viewer: AniCraft reads these and never writes them back. -->
+      <!-- Viewer: Ánima reads these and never writes them back. -->
       <key>CFBundleTypeName</key>
       <string>Animation Document</string>
       <key>CFBundleTypeRole</key>
@@ -125,8 +125,8 @@
       <string>Alternate</string>
       <key>LSItemContentTypes</key>
       <array>
-        <string>ai.storyteller.anicraft.fla</string>
-        <string>ai.storyteller.anicraft.xfl</string>
+        <string>dev.danielmiguelt.anima.fla</string>
+        <string>dev.danielmiguelt.anima.xfl</string>
       </array>
     </dict>
   </array>

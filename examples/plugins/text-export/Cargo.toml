@@ -1,6 +1,6 @@
 [package]
-name = "anicraft-plugin-text-export"
-description = "Sample AniCraft exporter plug-in: the movie as readable text, one block per frame"
+name = "anima-plugin-text-export"
+description = "Sample Ánima exporter plug-in: the movie as readable text, one block per frame"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -11,5 +11,5 @@ publish.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-anicraft-plugin-sdk.workspace = true
+anima-plugin-sdk.workspace = true
 serde_json.workspace = true

@@ -1,6 +1,6 @@
 # Localisation
 
-AniCraft's interface can be drawn in other languages (ADR 0040). This page is for contributors
+Ánima's interface can be drawn in other languages (ADR 0040). This page is for contributors
 who write interface text, translators, and whoever builds a release.
 
 ## What is translated
@@ -10,7 +10,7 @@ drawn), panels, the timeline, Properties, tool options, dialogs, tooltips, statu
 on-stage hints, and the names screen readers announce.
 
 Not translated, on purpose: your documents (layer, symbol and scene names), command ids and
-parameters, the `.anicraft` format, `anicraft-cli`, `serve` and MCP (scripts and agents see
+parameters, the `.anima` format, `anima-cli`, `serve` and MCP (scripts and agents see
 the same English everywhere), log output, and the `--help` text.
 
 Not yet: engine messages (errors, import reports and the body of confirmations stay English;
@@ -21,11 +21,11 @@ plug-in names.
 
 **Preferences › Appearance › Language.** *System language* (the default) follows the
 computer's (the browser's on the web); a language this build has no catalog for falls back to
-English. A change shows at once. For one run, without saving: `anicraft --lang de`
+English. A change shows at once. For one run, without saving: `anima --lang de`
 (`--lang auto`, `--lang pseudo`).
 
 Which languages a build offers depends on the catalogs it was built with (below). Today
-craft-i18n has no AniCraft catalog yet, so builds offer English, and the **pseudo-locale**
+craft-i18n has no Ánima catalog yet, so builds offer English, and the **pseudo-locale**
 (`--lang pseudo`; listed in Preferences in debug builds) for testing.
 
 ## The pseudo-locale
@@ -75,18 +75,18 @@ accessibility audit fails on a name that the pseudo-locale didn't reach.
 ## Translating (translators)
 
 Translations live in the Craft family's shared repository,
-[storytold/craft-i18n](https://github.com/storytold/craft-i18n) (MIT OR Apache-2.0), in its
-format: `locales/<locale>/anicraft.tsv`, one row per string, `context<TAB>English<TAB>translation`
+[getnodalia/foundation (vendor/craft-i18n)](https://github.com/getnodalia/foundation/tree/vendor/craft-i18n/main) (MIT OR Apache-2.0), in its
+format: `locales/<locale>/anima.tsv`, one row per string, `context<TAB>English<TAB>translation`
 (see its `docs/catalog-format.md`). Strings the apps share are in `locales/<locale>/common.tsv`
-and already apply to AniCraft; AniCraft's catalog adds the rest and may override a shared row.
+and already apply to Ánima; Ánima's catalog adds the rest and may override a shared row.
 
 To get the list of strings:
 
 ```sh
-scripts/i18n-extract.sh                                  # target/i18n/anicraft.tsv: every string
+scripts/i18n-extract.sh                                  # target/i18n/anima.tsv: every string
 CRAFT_I18N_DIR=/abs/path/craft-i18n scripts/i18n-extract.sh
-    # also prints how much of AniCraft each locale already covers
-CRAFT_I18N_DIR=/abs/path/craft-i18n ANICRAFT_I18N_LOCALE=de scripts/i18n-extract.sh de.tsv
+    # also prints how much of Ánima each locale already covers
+CRAFT_I18N_DIR=/abs/path/craft-i18n ANIMA_I18N_LOCALE=de scripts/i18n-extract.sh de.tsv
     # only the strings German doesn't have yet
 ```
 
@@ -95,13 +95,13 @@ files are: delete the `#` and type the translation after the last TAB. Keep `{pl
 and a trailing `…`. Then open a pull request in craft-i18n. Follow its clean-room rule: write
 from the plain meaning of the English, never from another product's translated interface.
 
-A language is offered once craft-i18n has its `anicraft.tsv` and it is in `i18n::READY`
+A language is offered once craft-i18n has its `anima.tsv` and it is in `i18n::READY`
 (left-to-right Latin, Greek and Cyrillic scripts today).
 
 ## Building with translations
 
 ```sh
-git clone https://github.com/storytold/craft-i18n ../craft-i18n
+git clone https://github.com/getnodalia/foundation/tree/vendor/craft-i18n/main ../craft-i18n
 CRAFT_I18N_DIR="$PWD/../craft-i18n" cargo build --release      # an absolute path
 ```
 

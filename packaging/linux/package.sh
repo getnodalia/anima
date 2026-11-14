@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Build and package AniCraft for Linux (<arch> is x86_64, aarch64 or riscv64):
+# Build and package Ánima for Linux (<arch> is x86_64, aarch64 or riscv64):
 #
-#   $DIST/anicraft-<version>-linux-<arch>.AppImage        any distro with glibc >= the build host's
-#   $DIST/anicraft-<version>-linux-<arch>.AppImage.zsync  delta updates (needs zsyncmake)
-#   $DIST/anicraft-<version>-linux-<arch>.deb             Debian, Ubuntu, Mint, Pop!_OS, ...
-#   $DIST/anicraft-<version>-linux-<arch>.rpm             Fedora, openSUSE, RHEL, ...
-#   $DIST/anicraft-<version>-linux-<arch>.tar.gz          plain FHS-style tree (bin/, share/), portable
+#   $DIST/anima-<version>-linux-<arch>.AppImage        any distro with glibc >= the build host's
+#   $DIST/anima-<version>-linux-<arch>.AppImage.zsync  delta updates (needs zsyncmake)
+#   $DIST/anima-<version>-linux-<arch>.deb             Debian, Ubuntu, Mint, Pop!_OS, ...
+#   $DIST/anima-<version>-linux-<arch>.rpm             Fedora, openSUSE, RHEL, ...
+#   $DIST/anima-<version>-linux-<arch>.tar.gz          plain FHS-style tree (bin/, share/), portable
 #
 # Every format installs the desktop entry, the AppStream metainfo, the hicolor icons and the
-# MIME types (.anicraft is AniCraft's; .fla and .xfl open as an untitled import).
+# MIME types (.anima is Ánima's; .fla and .xfl open as an untitled import).
 #
 # Usage: packaging/linux/package.sh [--skip-build] [--formats "appimage deb rpm tar"]
 #
@@ -44,13 +44,13 @@ case "$ARCH" in
   aarch64 | arm64) ARCH=aarch64; DEB_ARCH=arm64 ;;
   *) echo "unsupported architecture $ARCH" >&2; exit 2 ;;
 esac
-export ANICRAFT_MAINTAINER="${ANICRAFT_MAINTAINER:-AniCraft maintainers <anicraft@storyteller.ai>}"
-BASENAME="anicraft-$VERSION-linux-$ARCH"
+export ANIMA_MAINTAINER="${ANIMA_MAINTAINER:-Nodalia <https://github.com/getnodalia/anima/issues>}"
+BASENAME="anima-$VERSION-linux-$ARCH"
 
-echo "==> AniCraft $VERSION for Linux $ARCH ($FORMATS)"
+echo "==> Ánima $VERSION for Linux $ARCH ($FORMATS)"
 
 if [[ "$SKIP_BUILD" = 0 ]]; then
-  (cd "$ROOT" && cargo build --release --locked -p anicraft -p anicraft-cli --bins ${CROSS_TARGET:+--target "$CROSS_TARGET"})
+  (cd "$ROOT" && cargo build --release --locked -p anima -p anima-cli --bins ${CROSS_TARGET:+--target "$CROSS_TARGET"})
 fi
 BIN="$CARGO_TARGET_DIR/${CROSS_TARGET:+$CROSS_TARGET/}release"
 WORK="$CARGO_TARGET_DIR/linux-package"
@@ -58,18 +58,18 @@ STAGE="$WORK/root"
 rm -rf "$WORK"
 
 # ---- stage an FHS tree (shared by every format) -------------------------------------------------
-install -Dm755 "$BIN/anicraft" "$STAGE/usr/bin/anicraft"
-install -Dm755 "$BIN/anicraft-cli" "$STAGE/usr/bin/anicraft-cli"
-"${CROSS_COMPILE:-}strip" "$STAGE/usr/bin/anicraft" "$STAGE/usr/bin/anicraft-cli" 2>/dev/null || true
+install -Dm755 "$BIN/anima" "$STAGE/usr/bin/anima"
+install -Dm755 "$BIN/anima-cli" "$STAGE/usr/bin/anima-cli"
+"${CROSS_COMPILE:-}strip" "$STAGE/usr/bin/anima" "$STAGE/usr/bin/anima-cli" 2>/dev/null || true
 install -Dm644 "$HERE/$APP_ID.desktop" "$STAGE/usr/share/applications/$APP_ID.desktop"
 install -Dm644 "$HERE/$APP_ID.mime.xml" "$STAGE/usr/share/mime/packages/$APP_ID.xml"
 mkdir -p "$STAGE/usr/share/metainfo"
-sed -e "s/@VERSION@/$VERSION/g" -e "s/@DATE@/$ANICRAFT_BUILD_DATE/g" \
+sed -e "s/@VERSION@/$VERSION/g" -e "s/@DATE@/$ANIMA_BUILD_DATE/g" \
   "$HERE/$APP_ID.metainfo.xml.in" >"$STAGE/usr/share/metainfo/$APP_ID.metainfo.xml"
 mkdir -p "$STAGE/usr/share/icons"
 cp -R "$ROOT/assets/app-icon/hicolor" "$STAGE/usr/share/icons/"
-mkdir -p "$STAGE/usr/share/doc/anicraft"
-copy_docs "$STAGE/usr/share/doc/anicraft"
+mkdir -p "$STAGE/usr/share/doc/anima"
+copy_docs "$STAGE/usr/share/doc/anima"
 
 if command -v desktop-file-validate >/dev/null; then
   desktop-file-validate "$STAGE/usr/share/applications/$APP_ID.desktop"
@@ -81,15 +81,15 @@ fi
 has() { case " $FORMATS " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 
 # ---- .tar.gz ------------------------------------------------------------------------------------
-# Unpacks to anicraft-<version>-linux-<arch>/{bin,share}; the Flatpak and Arch packages are made
+# Unpacks to anima-<version>-linux-<arch>/{bin,share}; the Flatpak and Arch packages are made
 # from this tarball by the shared release workflow (they copy bin/ and share/ only). The
-# anicraft-portable marker at its top makes the unpacked folder a portable copy (ADR 0094):
+# anima-portable marker at its top makes the unpacked folder a portable copy (ADR 0094):
 # settings go to data/ beside bin/.
 if has tar; then
   mkdir -p "$WORK/tar"
   cp -R "$STAGE/usr" "$WORK/tar/$BASENAME"
-  printf '%s\n' "This copy of AniCraft is portable: it keeps its settings in the data folder here (ADR 0094)." \
-    "Delete this file to use ~/.config/anicraft instead." >"$WORK/tar/$BASENAME/anicraft-portable"
+  printf '%s\n' "This copy of Ánima is portable: it keeps its settings in the data folder here (ADR 0094)." \
+    "Delete this file to use ~/.config/anima instead." >"$WORK/tar/$BASENAME/anima-portable"
   tar -C "$WORK/tar" -czf "$DIST/$BASENAME.tar.gz" "$BASENAME"
   echo "wrote $DIST/$BASENAME.tar.gz"
 fi
@@ -108,9 +108,9 @@ fi
 
 # ---- AppImage -----------------------------------------------------------------------------------
 if has appimage; then
-  APPDIR="$WORK/AniCraft.AppDir"
+  APPDIR="$WORK/Anima.AppDir"
   cp -R "$STAGE" "$APPDIR"
-  ln -s usr/bin/anicraft "$APPDIR/AppRun"
+  ln -s usr/bin/anima "$APPDIR/AppRun"
   cp "$HERE/$APP_ID.desktop" "$APPDIR/$APP_ID.desktop"
   cp "$ROOT/assets/app-icon/hicolor/256x256/apps/$APP_ID.png" "$APPDIR/$APP_ID.png"
   ln -s "$APP_ID.png" "$APPDIR/.DirIcon"
@@ -155,8 +155,8 @@ if has appimage; then
   # Update information: AppImageUpdate and the like read it from the file and fetch only the
   # blocks that changed in a newer release, through the .zsync published next to each AppImage.
   # A fork's builds point at its own releases through GITHUB_REPOSITORY.
-  REPO="${GITHUB_REPOSITORY:-storytold/AniCraft}"
-  UPDATE_INFO="gh-releases-zsync|${REPO%%/*}|${REPO#*/}|latest|anicraft-*-linux-$ARCH.AppImage.zsync"
+  REPO="${GITHUB_REPOSITORY:-getnodalia/anima}"
+  UPDATE_INFO="gh-releases-zsync|${REPO%%/*}|${REPO#*/}|latest|anima-*-linux-$ARCH.AppImage.zsync"
   # Extract-and-run: works without FUSE (containers, CI). The output embeds the static runtime,
   # so users don't need libfuse2 either.
   (cd "$DIST" && ARCH="$ARCH" APPIMAGE_EXTRACT_AND_RUN=1 "$TOOL" --no-appstream \
@@ -170,9 +170,9 @@ if has appimage; then
 fi
 
 if [[ -z "${CROSS_TARGET:-}" ]]; then
-  "$STAGE/usr/bin/anicraft-cli" --version
+  "$STAGE/usr/bin/anima-cli" --version
 elif [[ -n "${EMULATOR:-}" ]]; then
-  "$EMULATOR" "$STAGE/usr/bin/anicraft-cli" --version
+  "$EMULATOR" "$STAGE/usr/bin/anima-cli" --version
 fi
 echo "==> done"
 ls -lh "$DIST"

@@ -1,15 +1,15 @@
 <#
 .SYNOPSIS
-  Build, sign and package AniCraft for Windows.
+  Build, sign and package Ánima for Windows.
 
 .DESCRIPTION
   Produces, in $env:DIST (default: dist/release):
-    anicraft-<version>-windows-<arch>.msi            installer (WiX v5, per-user by default, everyone optional)
-    anicraft-<version>-windows-<arch>-portable.zip   anicraft.exe + anicraft-cli.exe + notices + the
-                                                     anicraft-portable marker (ADR 0094)
-    anicraft-<version>-windows-<arch>-symbols.zip    anicraft.pdb + anicraft_cli.pdb (optional, for profilers)
+    anima-<version>-windows-<arch>.msi            installer (WiX v5, per-user by default, everyone optional)
+    anima-<version>-windows-<arch>-portable.zip   anima.exe + anima-cli.exe + notices + the
+                                                     anima-portable marker (ADR 0094)
+    anima-<version>-windows-<arch>-symbols.zip    anima.pdb + anima_cli.pdb (optional, for profilers)
 
-  The installer registers .anicraft (AniCraft is its default app) and offers AniCraft under
+  The installer registers .anima (Ánima is its default app) and offers Ánima under
   "Open with" for .fla and .xfl. The binaries link the C runtime statically (+crt-static), so
   neither the MSI nor the portable zip needs the Visual C++ redistributable. Signing is
   delegated to sign.ps1, which warns and leaves files unsigned when no signing secrets are set.
@@ -29,7 +29,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $Root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$AppId = 'ai.storyteller.anicraft'
+$AppId = 'dev.danielmiguelt.Anima'
 
 function Invoke-Native([string] $What, [scriptblock] $Block) {
   Write-Output "==> $What"
@@ -38,8 +38,8 @@ function Invoke-Native([string] $What, [scriptblock] $Block) {
 }
 
 # The version lives in one place: [workspace.package] version in the root Cargo.toml.
-# ANICRAFT_VERSION (set by the shared release workflow from packaging/env.sh) overrides it.
-$Version = $env:ANICRAFT_VERSION
+# ANIMA_VERSION (set by the shared release workflow from packaging/env.sh) overrides it.
+$Version = $env:ANIMA_VERSION
 if (-not $Version) {
   $inPkg = $false
   foreach ($line in Get-Content (Join-Path $Root 'Cargo.toml')) {
@@ -56,7 +56,7 @@ $Dist = if ($env:DIST) { $env:DIST } else { Join-Path $Root 'dist\release' }
 $TargetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $Root 'target' }
 New-Item -ItemType Directory -Force -Path $Dist | Out-Null
 
-Write-Output "AniCraft $Version for Windows $Arch ($Target)"
+Write-Output "Ánima $Version for Windows $Arch ($Target)"
 
 if (-not $SkipBuild) {
   # Static CRT: no VC++ redistributable needed. Scoped to the target so host build scripts and
@@ -64,8 +64,8 @@ if (-not $SkipBuild) {
   $flagVar = 'CARGO_TARGET_' + ($Target.ToUpper() -replace '-', '_') + '_RUSTFLAGS'
   [Environment]::SetEnvironmentVariable($flagVar, '-C target-feature=+crt-static')
   # Fail the build (rather than warn) if build.rs can't embed the icon and version resource.
-  $env:ANICRAFT_REQUIRE_WINRES = '1'
-  Invoke-Native "cargo build ($Target)" { cargo build --release --locked -p anicraft -p anicraft-cli --target $Target }
+  $env:ANIMA_REQUIRE_WINRES = '1'
+  Invoke-Native "cargo build ($Target)" { cargo build --release --locked -p anima -p anima-cli --target $Target }
 }
 
 $Bin = Join-Path $TargetDir "$Target\release"
@@ -80,7 +80,7 @@ function Get-PeHeader([string] $Path) {
   return @{ Machine = [BitConverter]::ToUInt16($bytes, $pe + 4); Subsystem = [BitConverter]::ToUInt16($bytes, $pe + 0x5C) }
 }
 $Machine = switch ($Arch) { 'x64' { 0x8664 } 'x86' { 0x14C } 'arm64' { 0xAA64 } }
-foreach ($check in @(@('anicraft.exe', 2), @('anicraft-cli.exe', 3))) {
+foreach ($check in @(@('anima.exe', 2), @('anima-cli.exe', 3))) {
   $h = Get-PeHeader (Join-Path $Bin $check[0])
   if ($h.Machine -ne $Machine) { throw "$($check[0]) is for machine 0x$('{0:X}' -f $h.Machine), expected 0x$('{0:X}' -f $Machine) ($Arch)" }
   if ($h.Subsystem -ne $check[1]) { throw "$($check[0]) has PE subsystem $($h.Subsystem), expected $($check[1])" }
@@ -89,9 +89,9 @@ foreach ($check in @(@('anicraft.exe', 2), @('anicraft-cli.exe', 3))) {
 $Stage = Join-Path $TargetDir "windows-package\$Arch"
 Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Stage | Out-Null
-Copy-Item (Join-Path $Bin 'anicraft.exe'), (Join-Path $Bin 'anicraft-cli.exe') $Stage
+Copy-Item (Join-Path $Bin 'anima.exe'), (Join-Path $Bin 'anima-cli.exe') $Stage
 
-& (Join-Path $PSScriptRoot 'sign.ps1') (Join-Path $Stage 'anicraft.exe') (Join-Path $Stage 'anicraft-cli.exe')
+& (Join-Path $PSScriptRoot 'sign.ps1') (Join-Path $Stage 'anima.exe') (Join-Path $Stage 'anima-cli.exe')
 
 # ---- notices -----------------------------------------------------------------------------------
 # Installed next to the app: our licences, the dependencies' notices and the OFL licences of the
@@ -108,11 +108,11 @@ if ($env:CRAFT_FONTS_DIR) {
 }
 
 # ---- MSI ---------------------------------------------------------------------------------------
-# The setup wizard's art, drawn here from the app icon so the MSI shows AniCraft rather than
+# The setup wizard's art, drawn here from the app icon so the MSI shows Ánima rather than
 # WiX's stock bitmaps: a 493x58 banner across the top of the inner pages (the page title is drawn
 # over its left side, so that stays white) and a 493x312 backdrop for the Welcome and Finish pages
 # (their text sits on the right; the left 164 px are ours). Both must be 24-bit BMPs. The colours
-# are the icon's (assets/app-icon/README.md): Paper and the AniCraft yellow.
+# are the icon's (assets/app-icon/README.md): Paper and the Ánima yellow.
 function New-InstallerArt([string] $IconPng, [string] $BannerOut, [string] $DialogOut) {
   Add-Type -AssemblyName System.Drawing
   $paper = [System.Drawing.ColorTranslator]::FromHtml('#f2f1ee')
@@ -146,13 +146,13 @@ $Banner = Join-Path $Stage 'installer-banner.bmp'
 $Dialog = Join-Path $Stage 'installer-dialog.bmp'
 New-InstallerArt (Join-Path $Root "assets\app-icon\hicolor\256x256\apps\$AppId.png") $Banner $Dialog
 
-$Msi = Join-Path $Dist "anicraft-$Version-windows-$Arch.msi"
+$Msi = Join-Path $Dist "anima-$Version-windows-$Arch.msi"
 & (Join-Path $PSScriptRoot 'check-icons.ps1')
 Invoke-Native 'wix build' {
-  wix build (Join-Path $PSScriptRoot 'anicraft.wxs') -arch $Arch `
+  wix build (Join-Path $PSScriptRoot 'anima.wxs') -arch $Arch `
     -ext WixToolset.UI.wixext -ext WixToolset.Util.wixext `
-    -culture en-US -loc (Join-Path $PSScriptRoot 'anicraft.en-us.wxl') `
-    -d "Version=$MsiVersion" -d "DisplayVersion=$Version" -d "BinDir=$Stage" -d "IconPath=$(Join-Path $Root 'assets\app-icon\anicraft.ico')" `
+    -culture en-US -loc (Join-Path $PSScriptRoot 'anima.en-us.wxl') `
+    -d "Version=$MsiVersion" -d "DisplayVersion=$Version" -d "BinDir=$Stage" -d "IconPath=$(Join-Path $Root 'assets\app-icon\anima.ico')" `
     -d "BannerBmp=$Banner" -d "DialogBmp=$Dialog" -d "DocsDir=$Docs" `
     -o $Msi
 }
@@ -168,38 +168,38 @@ Remove-Item -Force -ErrorAction SilentlyContinue ([IO.Path]::ChangeExtension($Ms
 
 # ---- portable zip ------------------------------------------------------------------------------
 # The exes and notices at the archive's root (`<folder>\*`, not the folder itself), so they come
-# out side by side wherever it is extracted. The anicraft-portable marker makes it a portable copy
+# out side by side wherever it is extracted. The anima-portable marker makes it a portable copy
 # (ADR 0094): preferences, autosave, logs, plug-ins and templates go to a data\ folder beside it.
-$Portable = Join-Path $TargetDir "windows-package\anicraft-$Version-windows-$Arch-portable"
+$Portable = Join-Path $TargetDir "windows-package\anima-$Version-windows-$Arch-portable"
 Remove-Item -Recurse -Force $Portable -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Portable | Out-Null
 Copy-Item (Join-Path $Stage '*.exe') $Portable
 Copy-Item (Join-Path $Docs '*') $Portable
-Set-Content -LiteralPath (Join-Path $Portable 'anicraft-portable') -Encoding ascii -Value 'This copy of AniCraft is portable: it keeps its settings in the data folder here (ADR 0094). Delete this file to use the settings folder in your user profile instead.'
-$Zip = Join-Path $Dist "anicraft-$Version-windows-$Arch-portable.zip"
+Set-Content -LiteralPath (Join-Path $Portable 'anima-portable') -Encoding ascii -Value 'This copy of Ánima is portable: it keeps its settings in the data folder here (ADR 0094). Delete this file to use the settings folder in your user profile instead.'
+$Zip = Join-Path $Dist "anima-$Version-windows-$Arch-portable.zip"
 Remove-Item -Force $Zip -ErrorAction SilentlyContinue
 Compress-Archive -Path (Join-Path $Portable '*') -DestinationPath $Zip
 $Check = Join-Path $TargetDir 'windows-package\portable-zip-check'
 Remove-Item -Recurse -Force $Check -ErrorAction SilentlyContinue
 Expand-Archive -Path $Zip -DestinationPath $Check -Force
-foreach ($f in 'anicraft.exe', 'anicraft-cli.exe', 'NOTICE', 'anicraft-portable') {
+foreach ($f in 'anima.exe', 'anima-cli.exe', 'NOTICE', 'anima-portable') {
   if (-not (Test-Path (Join-Path $Check $f))) { throw "the portable zip has no $f at its root: $Zip" }
 }
 Remove-Item -Recurse -Force $Check -ErrorAction SilentlyContinue
 
 # ---- debug symbols -----------------------------------------------------------------------------
-# The MSVC linker writes a PDB beside each exe (anicraft.pdb, anicraft_cli.pdb). They ship as a
-# separate, optional download so profilers show AniCraft's function names for the released
+# The MSVC linker writes a PDB beside each exe (anima.pdb, anima_cli.pdb). They ship as a
+# separate, optional download so profilers show Ánima's function names for the released
 # binaries. Signing doesn't change the PDB signature an exe records, so they match the signed exes.
 $Outputs = @($Msi, $Zip)
-$Pdbs = @('anicraft.pdb', 'anicraft_cli.pdb' | ForEach-Object { Join-Path $Bin $_ })
+$Pdbs = @('anima.pdb', 'anima_cli.pdb' | ForEach-Object { Join-Path $Bin $_ })
 if (@($Pdbs | Where-Object { -not (Test-Path $_) }).Count -eq 0) {
-  $Symbols = Join-Path $TargetDir "windows-package\anicraft-$Version-windows-$Arch-symbols"
+  $Symbols = Join-Path $TargetDir "windows-package\anima-$Version-windows-$Arch-symbols"
   Remove-Item -Recurse -Force $Symbols -ErrorAction SilentlyContinue
   New-Item -ItemType Directory -Force -Path $Symbols | Out-Null
   Copy-Item $Pdbs $Symbols
   Copy-Item (Join-Path $PSScriptRoot 'symbols.txt') $Symbols
-  $SymbolsZip = Join-Path $Dist "anicraft-$Version-windows-$Arch-symbols.zip"
+  $SymbolsZip = Join-Path $Dist "anima-$Version-windows-$Arch-symbols.zip"
   Remove-Item -Force $SymbolsZip -ErrorAction SilentlyContinue
   Compress-Archive -Path (Join-Path $Symbols '*') -DestinationPath $SymbolsZip
   $Outputs += $SymbolsZip
@@ -213,8 +213,8 @@ if (@($Pdbs | Where-Object { -not (Test-Path $_) }).Count -eq 0) {
 # here; .github/workflows/windows-arm64.yml installs and runs it on ARM64 instead.
 $HostArch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
 if ($Arch -ne 'arm64' -or $HostArch -eq 'arm64') {
-  Invoke-Native 'anicraft-cli --version' { & (Join-Path $Stage 'anicraft-cli.exe') --version }
+  Invoke-Native 'anima-cli --version' { & (Join-Path $Stage 'anima-cli.exe') --version }
 } else {
-  Write-Output "skipping anicraft-cli --version: an $Arch build doesn't run on this $HostArch machine"
+  Write-Output "skipping anima-cli --version: an $Arch build doesn't run on this $HostArch machine"
 }
 Get-Item $Outputs | Format-Table Name, Length

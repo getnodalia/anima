@@ -11,8 +11,8 @@
 //! smooth, pass through every point and never overshoot them: a taper never bulges past its
 //! ends and never dips below zero. Before the first and after the last point the width holds.
 
-use anicraft_geom::walk::PathWalk;
-use anicraft_geom::{Path, Vec2};
+use anima_geom::walk::PathWalk;
+use anima_geom::{Path, Vec2};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -143,12 +143,16 @@ impl WidthProfile {
     /// number of points blend point by point; others blend their widths at every point of
     /// either, so any two profiles tween.
     pub fn lerp(a: Option<&WidthProfile>, b: Option<&WidthProfile>, t: f32) -> Option<WidthProfile> {
-        let l = anicraft_geom::lerp;
+        let l = anima_geom::lerp;
         match (a, b) {
             (None, None) => None,
-            (Some(x), Some(y)) if x.points.len() == y.points.len() => {
-                WidthProfile::new(x.points.iter().zip(y.points.iter()).map(|(p, q)| WidthPoint::new(l(p.t, q.t, t), l(p.left, q.left, t), l(p.right, q.right, t))).collect())
-            }
+            (Some(x), Some(y)) if x.points.len() == y.points.len() => WidthProfile::new(
+                x.points
+                    .iter()
+                    .zip(y.points.iter())
+                    .map(|(p, q)| WidthPoint::new(l(p.t, q.t, t), l(p.left, q.left, t), l(p.right, q.right, t)))
+                    .collect(),
+            ),
             _ => {
                 let at = |p: Option<&WidthProfile>, s: f32| p.map_or((1.0, 1.0), |p| p.at(s));
                 let mut ts: Vec<f32> = a.into_iter().chain(b).flat_map(|p| p.points.iter().map(|q| q.t)).collect();
@@ -225,7 +229,14 @@ pub enum ProfilePreset {
 }
 
 impl ProfilePreset {
-    pub const ALL: [ProfilePreset; 6] = [ProfilePreset::Uniform, ProfilePreset::TaperBoth, ProfilePreset::TaperStart, ProfilePreset::TaperEnd, ProfilePreset::Bulge, ProfilePreset::Pinch];
+    pub const ALL: [ProfilePreset; 6] = [
+        ProfilePreset::Uniform,
+        ProfilePreset::TaperBoth,
+        ProfilePreset::TaperStart,
+        ProfilePreset::TaperEnd,
+        ProfilePreset::Bulge,
+        ProfilePreset::Pinch,
+    ];
 
     /// The name used in commands (`taper_both`…).
     pub fn key(self) -> &'static str {
@@ -272,7 +283,7 @@ impl ProfilePreset {
 impl WidthProfile {
     /// This profile carried onto a piece of its stroke (ADR 0093): the piece runs along the
     /// stretches `spans` of `path` (the stroke's path, in path positions: `k + t` is parameter
-    /// `t` of the segment command `k` draws, as `anicraft_geom::planar::Piece::spans` gives
+    /// `t` of the segment command `k` draws, as `anima_geom::planar::Piece::spans` gives
     /// them; a stretch with `to < from` runs backwards). The piece's width at each place is the
     /// stroke's width there: every width point inside a stretch moves to the same place on the
     /// piece (positions are rescaled by arc length), and where the piece starts, ends or jumps
@@ -284,7 +295,13 @@ impl WidthProfile {
         let (first, last) = (pts.first().map_or(0.0, |p| p.t), pts.last().map_or(1.0, |p| p.t));
         let inside = |f: f32| f > first + MERGE && f < last - MERGE;
         // Each stretch: its subpath, and where it starts and ends along it (arc length).
-        let parts: Vec<(usize, f64, f64)> = spans.iter().take(4096).filter_map(|sp| Some((m.locate(sp[0])?, m.locate(sp[1])?))).filter(|(a, b)| a.0 == b.0).map(|(a, b)| (a.0, a.1, b.1)).collect();
+        let parts: Vec<(usize, f64, f64)> = spans
+            .iter()
+            .take(4096)
+            .filter_map(|sp| Some((m.locate(sp[0])?, m.locate(sp[1])?)))
+            .filter(|(a, b)| a.0 == b.0)
+            .map(|(a, b)| (a.0, a.1, b.1))
+            .collect();
         let total: f64 = parts.iter().map(|(_, a, b)| (b - a).abs()).sum();
         if !total.is_finite() || total <= 1e-9 {
             return Some(self.clone());
@@ -353,7 +370,7 @@ struct Measure {
 
 impl Measure {
     fn new(path: &Path) -> Measure {
-        use anicraft_geom::PathCmd;
+        use anima_geom::PathCmd;
         let mut segs = Vec::new();
         let mut sub_len: Vec<f64> = Vec::new();
         let (mut start, mut cur, mut acc) = (Vec2::ZERO, Vec2::ZERO, 0.0f64);
@@ -403,7 +420,13 @@ impl Measure {
 
 /// Arc length of a cubic from 0 to `t` (composite five-point Gauss–Legendre on 16 pieces).
 fn cubic_length(c: &[Vec2; 4], t: f64) -> f64 {
-    const G: [(f64, f64); 5] = [(0.046_910_077_030_668, 0.118_463_442_528_094_5), (0.230_765_344_947_158_45, 0.239_314_335_249_683_2), (0.5, 0.284_444_444_444_444_4), (0.769_234_655_052_841_6, 0.239_314_335_249_683_2), (0.953_089_922_969_332, 0.118_463_442_528_094_5)];
+    const G: [(f64, f64); 5] = [
+        (0.046_910_077_030_668, 0.118_463_442_528_094_5),
+        (0.230_765_344_947_158_45, 0.239_314_335_249_683_2),
+        (0.5, 0.284_444_444_444_444_4),
+        (0.769_234_655_052_841_6, 0.239_314_335_249_683_2),
+        (0.953_089_922_969_332, 0.118_463_442_528_094_5),
+    ];
     let t = t.clamp(0.0, 1.0);
     let p = c.map(|v| (f64::from(v.x), f64::from(v.y)));
     let speed = |s: f64| {
@@ -426,7 +449,7 @@ pub fn left_normal(d: Vec2) -> Vec2 {
 /// A shape's subpaths as walks in its local space (closed ones end where they start), for
 /// placing and finding width points. `tolerance` is in local units.
 pub fn stroke_walks(path: &Path, tolerance: f32) -> Vec<PathWalk> {
-    path.flatten(&anicraft_geom::Affine::IDENTITY, tolerance)
+    path.flatten(&anima_geom::Affine::IDENTITY, tolerance)
         .into_iter()
         .take(4096)
         .filter_map(|line| {
@@ -464,7 +487,12 @@ mod tests {
 
     #[test]
     fn profiles_are_sanitized_and_uniform_ones_dropped() {
-        let p = WidthProfile::from(vec![WidthPoint::new(0.9, 2.0, 2.0), WidthPoint::new(f32::NAN, 0.0, 0.0), WidthPoint::new(-3.0, -1.0, 99.0), WidthPoint::new(0.9002, 3.0, 3.0)]);
+        let p = WidthProfile::from(vec![
+            WidthPoint::new(0.9, 2.0, 2.0),
+            WidthPoint::new(f32::NAN, 0.0, 0.0),
+            WidthPoint::new(-3.0, -1.0, 99.0),
+            WidthPoint::new(0.9002, 3.0, 3.0),
+        ]);
         assert_eq!(p.points(), &[WidthPoint::new(0.0, 0.0, MAX_WIDTH_FACTOR), WidthPoint::new(0.9, 3.0, 3.0)]);
         assert!(WidthProfile::new(vec![WidthPoint::new(0.3, 1.0, 1.0)]).is_none(), "all nominal: uniform");
         assert!(WidthProfile::new(vec![]).is_none());

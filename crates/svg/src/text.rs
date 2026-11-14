@@ -1,9 +1,9 @@
-//! SVG text (`text`, `tspan`) → text blocks laid out by `anicraft-text` (ADR 0021).
+//! SVG text (`text`, `tspan`) → text blocks laid out by `anima-text` (ADR 0021).
 //!
 //! SVG places text in chunks: a chunk starts at the `text` element and at every `tspan` with
 //! an absolute `x`, and runs on until the next one. Each chunk becomes one single-line text
 //! block, placed by its baseline (`x`, `y`, plus a leading `dx`/`dy`) and its `text-anchor`.
-//! An AniCraft block has one style, so a chunk whose pieces differ in style takes the style of
+//! An Ánima block has one style, so a chunk whose pieces differ in style takes the style of
 //! most of its visible characters, and the report counts it (as in ADR 0014). Whitespace is
 //! collapsed as browsers do, unless `xml:space="preserve"`.
 //!
@@ -13,10 +13,10 @@
 //! (rotated about its baseline origin), the next continuing after the text before it.
 
 use crate::{Anchor, Builder, ImportedElement, PaintSpec, Style, declarations, get, hidden, length, local, name_of};
-use anicraft_doc::{ElementKind, Paint, TextAlign, TextBlock};
-use anicraft_geom::{Affine, Rect};
-use anicraft_text::{Align, FaceMatch, Fonts, MAX_CHARS, TextError};
-use anicraft_xml::Element as X;
+use anima_doc::{ElementKind, Paint, TextAlign, TextBlock};
+use anima_geom::{Affine, Rect};
+use anima_text::{Align, FaceMatch, Fonts, MAX_CHARS, TextError};
+use anima_xml::Element as X;
 use std::sync::Arc;
 
 /// Most chunks read from one `text` element.
@@ -41,7 +41,7 @@ struct Chunk {
 
 /// A `textPath`'s path in the text's user space, and where along it the text is anchored.
 struct OnPath {
-    path: anicraft_geom::Path,
+    path: anima_geom::Path,
     offset: f32,
     flip: bool,
 }
@@ -63,7 +63,7 @@ impl Chunk {
     }
 }
 
-/// What a `text` element used that AniCraft draws differently, reported once per element.
+/// What a `text` element used that Ánima draws differently, reported once per element.
 #[derive(Default)]
 struct Flags {
     per_char: bool,
@@ -78,10 +78,16 @@ struct Flags {
 
 /// Whether two pieces would be drawn the same.
 fn same_look(a: &Style, b: &Style) -> bool {
-    a.font_family == b.font_family && a.font_size == b.font_size && a.bold == b.bold && a.italic == b.italic && a.fill == b.fill && a.fill_opacity == b.fill_opacity && a.letter_spacing == b.letter_spacing
+    a.font_family == b.font_family
+        && a.font_size == b.font_size
+        && a.bold == b.bold
+        && a.italic == b.italic
+        && a.fill == b.fill
+        && a.fill_opacity == b.fill_opacity
+        && a.letter_spacing == b.letter_spacing
 }
 
-/// The CSS generic family a name stands for, as the device font `anicraft-text` knows.
+/// The CSS generic family a name stands for, as the device font `anima-text` knows.
 fn generic(name: &str) -> Option<&'static str> {
     match name.to_ascii_lowercase().as_str() {
         "sans-serif" | "system-ui" | "ui-sans-serif" | "ui-rounded" | "-apple-system" | "blinkmacsystemfont" | "cursive" | "fantasy" => Some("_sans"),
@@ -100,7 +106,7 @@ fn families(css: &str) -> Vec<String> {
 fn gather(el: &X, style: &Style, c: &mut Chunk, report: &mut crate::Report, depth: usize) {
     for child in &el.children {
         match local(&child.name) {
-            anicraft_xml::TEXT_NODE => {
+            anima_xml::TEXT_NODE => {
                 let room = MAX_CHARS.saturating_sub(c.chars);
                 c.chars += child.text.chars().count().min(room);
                 c.pieces.push((child.text.chars().take(room).collect(), style.clone()));
@@ -191,7 +197,9 @@ impl<'a> Builder<'a> {
                 // Only spaces: they still move the pen on.
                 if c.path.is_none() {
                     let n = c.len() as f32;
-                    if n > 0.0 && let Some((_, st)) = c.pieces.first() {
+                    if n > 0.0
+                        && let Some((_, st)) = c.pieces.first()
+                    {
                         let w = *space.get_or_insert_with(|| self.space_width(st));
                         pen_x = start_x + n * w;
                     }
@@ -249,7 +257,9 @@ impl<'a> Builder<'a> {
                     };
                     pen_x = start_x + shift + w + if trailing > 0.0 { trailing * *space.get_or_insert_with(|| self.space_width(&st)) } else { 0.0 };
                     let transform = if c.rotate != 0.0 {
-                        m.mul(&Affine::translate(start_x + shift, c.y)).mul(&Affine::rotate(c.rotate.to_radians())).mul(&Affine::translate(0.0, -ascent))
+                        m.mul(&Affine::translate(start_x + shift, c.y))
+                            .mul(&Affine::rotate(c.rotate.to_radians()))
+                            .mul(&Affine::translate(0.0, -ascent))
                     } else {
                         m.mul(&Affine::translate(start_x + shift, c.y - ascent))
                     };
@@ -271,7 +281,13 @@ impl<'a> Builder<'a> {
     /// Reads `el`'s positions and content into chunks.
     fn text_content(&mut self, el: &'a X, style: &Style, chunks: &mut Vec<Chunk>, flags: &mut Flags, depth: usize) {
         let (vw, vh) = self.viewport;
-        let list = |key: &str, reference: f32| -> Vec<f32> { el.attr(key).map(|v| v.split([' ', ',', '\t', '\n', '\r']).filter(|p| !p.is_empty()).take(MAX_CHARS).filter_map(|p| length(p, reference)).collect()).unwrap_or_default() };
+        let list = |key: &str, reference: f32| -> Vec<f32> {
+            el.attr(key)
+                .map(|v| {
+                    v.split([' ', ',', '\t', '\n', '\r']).filter(|p| !p.is_empty()).take(MAX_CHARS).filter_map(|p| length(p, reference)).collect()
+                })
+                .unwrap_or_default()
+        };
         let (xs, ys, dxs, dys) = (list("x", vw), list("y", vh), list("dx", vw), list("dy", vh));
         let rotates: Vec<f32> = list("rotate", 1.0).into_iter().map(|a| if a.is_finite() { a } else { 0.0 }).collect();
         // Per-character positions (ADR 0070): the first values place the element's start (as
@@ -314,7 +330,7 @@ impl<'a> Builder<'a> {
         let mut last_rotate = 0.0f32;
         for child in &el.children {
             match local(&child.name) {
-                anicraft_xml::TEXT_NODE => {
+                anima_xml::TEXT_NODE => {
                     if !per_char {
                         let Some(c) = chunks.last_mut() else { continue };
                         if c.path.is_some() {
@@ -337,7 +353,11 @@ impl<'a> Builder<'a> {
                     }
                     // Character by character: one starts a chunk where it has its own position,
                     // shift or angle (or follows a rotated one).
-                    let text = if style.preserve { child.text.clone() } else { collapse_str(&child.text, k == 0 && chunks.last().is_none_or(|c| !c.has_text())) };
+                    let text = if style.preserve {
+                        child.text.clone()
+                    } else {
+                        collapse_str(&child.text, k == 0 && chunks.last().is_none_or(|c| !c.has_text()))
+                    };
                     for ch in text.chars() {
                         let rot = rotates.get(k).or(rotates.last()).copied().unwrap_or(0.0);
                         let (ax, ay) = (xs.get(k).copied().filter(|_| k > 0), ys.get(k).copied().filter(|_| k > 0));
@@ -422,12 +442,12 @@ impl<'a> Builder<'a> {
         }
         let (path, _) = self.geometry(target, name)?;
         let path = path.transformed(&target.attr("transform").map_or(Affine::IDENTITY, crate::transform));
-        let len = anicraft_geom::walk::CurveWalk::new(&path)?.length();
+        let len = anima_geom::walk::CurveWalk::new(&path)?.length();
         let offset = tp.attr("startOffset").map(str::trim).and_then(|v| match v.strip_suffix('%') {
             Some(p) => p.trim().parse::<f32>().ok().map(|p| p / 100.0 * len),
             None => length(v, len),
         });
-        let offset = offset.filter(|o| o.is_finite()).unwrap_or(0.0).clamp(-anicraft_doc::MAX_PATH_OFFSET, anicraft_doc::MAX_PATH_OFFSET);
+        let offset = offset.filter(|o| o.is_finite()).unwrap_or(0.0).clamp(-anima_doc::MAX_PATH_OFFSET, anima_doc::MAX_PATH_OFFSET);
         Some(OnPath { path, offset, flip: tp.attr("side") == Some("right") })
     }
 
@@ -435,7 +455,14 @@ impl<'a> Builder<'a> {
     fn space_width(&mut self, st: &Style) -> f32 {
         let fonts = self.fonts();
         let face = self.face(fonts, &st.font_family);
-        let style = anicraft_text::Style { family: face.family.unwrap_or_default(), size: st.font_size, bold: st.bold || face.bold, italic: st.italic || face.italic, letter_spacing: st.letter_spacing, ..anicraft_text::Style::default() };
+        let style = anima_text::Style {
+            family: face.family.unwrap_or_default(),
+            size: st.font_size,
+            bold: st.bold || face.bold,
+            italic: st.italic || face.italic,
+            letter_spacing: st.letter_spacing,
+            ..anima_text::Style::default()
+        };
         let w = |t: &str| fonts.layout(t, &style).map_or(0.0, |l| l.width);
         (w("x x") - w("xx")).max(0.0)
     }
@@ -443,13 +470,27 @@ impl<'a> Builder<'a> {
     /// Lays one chunk out along its path: the block (on its path, boxed from the origin) and
     /// where that origin is in the text's user space. `Ok(None)` draws nothing; `Err` means no
     /// text can be laid out at all.
-    fn path_block(&mut self, text: String, st: &Style, alpha: f32, on: &OnPath, align: TextAlign) -> Result<Option<(TextBlock, anicraft_geom::Vec2)>, ()> {
+    fn path_block(
+        &mut self,
+        text: String,
+        st: &Style,
+        alpha: f32,
+        on: &OnPath,
+        align: TextAlign,
+    ) -> Result<Option<(TextBlock, anima_geom::Vec2)>, ()> {
         let Some((block, _)) = self.text_block(text, st, alpha)? else { return Ok(None) };
         let fonts = self.fonts();
-        let style = anicraft_text::Style { family: block.font.clone(), size: block.size, bold: block.bold, italic: block.italic, letter_spacing: block.letter_spacing, ..anicraft_text::Style::default() };
+        let style = anima_text::Style {
+            family: block.font.clone(),
+            size: block.size,
+            bold: block.bold,
+            italic: block.italic,
+            letter_spacing: block.letter_spacing,
+            ..anima_text::Style::default()
+        };
         let line: String = block.text.chars().map(|c| if c == '\n' || c == '\r' { ' ' } else { c }).collect();
         let Ok(layout) = fonts.layout_glyphs(&line, &style) else { return Ok(None) };
-        let how = anicraft_text::PathPlacement {
+        let how = anima_text::PathPlacement {
             offset: on.offset,
             flip: on.flip,
             align: match align {
@@ -458,13 +499,13 @@ impl<'a> Builder<'a> {
                 TextAlign::Right => Align::Right,
             },
         };
-        let Some(set) = anicraft_text::on_path_boxed(&layout.glyphs, &on.path, how) else { return Ok(None) };
+        let Some(set) = anima_text::on_path_boxed(&layout.glyphs, &on.path, how) else { return Ok(None) };
         let block = TextBlock {
             align,
             outline: Arc::new(set.outline),
             box_width: set.width,
             box_height: set.height,
-            on_path: Some(anicraft_doc::TextPath { path: set.path, offset: on.offset, flip: on.flip }),
+            on_path: Some(anima_doc::TextPath { path: set.path, offset: on.offset, flip: on.flip }),
             ..block
         };
         Ok(Some((block, set.shift)))
@@ -495,7 +536,7 @@ impl<'a> Builder<'a> {
         }
         let fonts = self.fonts();
         let face = self.face(fonts, &st.font_family);
-        let style = anicraft_text::Style {
+        let style = anima_text::Style {
             family: face.family.clone().unwrap_or_default(),
             size: st.font_size,
             bold: st.bold || face.bold,

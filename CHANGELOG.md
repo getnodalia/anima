@@ -16,13 +16,13 @@
 * **Portable copies and AppImage desktop integration** (ADR 0094, M8).
   * **The Windows zip and the Linux tar.gz are portable**: preferences, autosaved work, logs,
     plug-ins, templates, brushes, filter presets, workspaces and recent files stay in a `data`
-    folder beside AniCraft. A file named `anicraft-portable` next to the program (or next to
-    `AniCraft.app` or an `.AppImage`) is what makes a copy portable; delete it to use your user
+    folder beside Ánima. A file named `anima-portable` next to the program (or next to
+    `Anima.app` or an `.AppImage`) is what makes a copy portable; delete it to use your user
     folder. A portable folder that can't be written falls back to your user folder and says so.
   * **Preferences › About** shows the version, whether this copy is installed or portable, and
-    every folder AniCraft keeps things in, each with an Open button.
+    every folder Ánima keeps things in, each with an Open button.
   * **AppImage: Add to Menu.** The first start from an AppImage offers once, in a card that
-    nothing waits on, to add AniCraft to your applications menu and open `.anicraft`, `.fla` and
+    nothing waits on, to add Ánima to your applications menu and open `.anima`, `.fla` and
     `.xfl` files with it. Only `~/.local/share` changes; Preferences › About removes it again,
     and the entry follows the AppImage when you move or update it. Headless:
     `desktop.integrate`, `desktop.remove`, `desktop.status`.
@@ -34,7 +34,7 @@
   in the merge** (ADR 0093, M7).
   * **Pen tilt** shapes the Brush: it turns the tip with the way the pen leans and paints up
     to twice as wide as it lies down (the Paint Brush too). A mouse is never affected. Desktop
-    systems don't pass tilt on to AniCraft yet, so the Tilt options stay hidden in Properties
+    systems don't pass tilt on to Ánima yet, so the Tilt options stay hidden in Properties
     until a pen reports it; scripts and MCP send it in `draw.brush` points as
     `[x, y, pressure, altitude, azimuth]`.
   * **Textured brushes**, still vector: **Texture** lets a fixed paper grain show through the
@@ -50,10 +50,10 @@
   * **The stage keeps drawing when the graphics card fails mid-session**: the CPU takes it over
     at once, the status bar says so, and the graphics card is tried again after 3, 15, 60 and
     300 seconds (sooner when the window is resized). Preferences › Stage says why.
-  * **A graphics driver error no longer closes AniCraft** (#255: `Surface::configure` "Failed to
+  * **A graphics driver error no longer closes Ánima** (#255: `Surface::configure` "Failed to
     wait for GPU to come idle"): the error goes to the log, unsaved work is autosaved at once,
     and a surface that fails is reconfigured, then made anew. If the window loses its graphics
-    device, AniCraft saves the work, reopens the window a safer way and offers the work back;
+    device, Ánima saves the work, reopens the window a safer way and offers the work back;
     the next three starts try that safer way first (#207).
   * **Filters animate in the Motion Editor**: each filter of a movie clip in a motion tween lists
     its numbers (Blur X/Y, Strength, Angle, Distance, Adjust Color's four) under its name, with
@@ -101,7 +101,7 @@
     transform: position, rotation, skew, scale); shape tweens between outlines of one
     structure are shape keys; colours, gradients, strokes, opacity and masks are keyed the
     same way.
-  * Every frame still shows exactly what AniCraft shows: each eased span is checked at every
+  * Every frame still shows exactly what Ánima shows: each eased span is checked at every
     frame, and what no Lottie ease draws (Elastic, Sine, curved motion guides, tweens inside
     tweening symbols) stays frame by frame and is reported once.
   * Files are much smaller: the demo 46.7 → 10.4 kB, a 240-frame stress movie 14.5 → 1.45 MB
@@ -114,9 +114,9 @@
   * **Export-format plug-ins** appear in **File › Export** below the built-in formats. Their
     **Export** window has the plug-in's options, the frames and the file, then a progress bar
     and **Cancel** while the export runs in the background. The plug-in gets the movie's
-    evaluated frames, never the document, and AniCraft writes the file it returns (at most
+    evaluated frames, never the document, and Ánima writes the file it returns (at most
     64 MB). Replacing a file asks first.
-  * **Ease plug-ins** add eases to every ease menu, under **Plug-in eases**. AniCraft samples
+  * **Ease plug-ins** add eases to every ease menu, under **Plug-in eases**. Ánima samples
     each ease once when the plug-in loads, and a tween keeps the curve, so the movie plays the
     same without the plug-in.
   * Hostile plug-ins stop with a clear message: endless loops, huge or misplaced output, eases
@@ -125,8 +125,8 @@
     Steps 4), built and run in CI; the guest SDK gains `exporter!`, `ease!`, `movie()` and
     `frame()`.
   * Headless: `file.export_plugin`, `file.export_formats`, `{"plugin", "ease"}` and
-    `{"sampled"}` easing params, plug-in eases in `ease.list`; `anicraft-cli export --format
-    <id>` (built-in formats too) and `anicraft-cli formats`.
+    `{"sampled"}` easing params, plug-in eases in `ease.list`; `anima-cli export --format
+    <id>` (built-in formats too) and `anima-cli formats`.
 * **Dockable panels, second slice** (ADR 0087, M8).
   * **The tools move like any panel**: drag the grip at the top of the tools (or use its
     menu) to put them in a slim bar on any side, as a tab in a dock (laid out in as many
@@ -304,7 +304,7 @@
   * **Follow system** now follows your system's light or dark mode as well as its
     contrast setting: Windows' app mode, macOS' Appearance, the Linux desktop's colour scheme and
     the browser's `prefers-color-scheme`. The window's title bar follows too.
-  * `anicraft --theme light` (also `dark`, `high-contrast`) previews a theme for one run.
+  * `anima --theme light` (also `dark`, `high-contrast`) previews a theme for one run.
   * Every palette is checked by the contrast test (WCAG AA text, 3:1 controls and focus).
 
 * **Gradient editor, the Gradient Transform tool and Lock Fill** (M1, ADR 0074; #208, #203).
@@ -357,14 +357,14 @@
     part of a `.fla` (a bitmap, a sound, a library symbol) no longer stops the whole file from
     opening: the rest opens and the report says what was left out. A file double-clicked or
     opened with **Open With** that can't be opened now says why in the status bar instead of
-    quietly showing the sample, and `anicraft-cli info`, `render` and the export commands open
+    quietly showing the sample, and `anima-cli info`, `render` and the export commands open
     `.fla` and `.xfl` files too.
   * Fixed: Animate documents opening on a black stage instead of white (#163).
-  * Fixed: AniCraft not opening at all on some laptops with two graphics chips, such as the
-    Surface Book 2 (#207). If a way of drawing the window fails, AniCraft now tries the next one
+  * Fixed: Ánima not opening at all on some laptops with two graphics chips, such as the
+    Surface Book 2 (#207). If a way of drawing the window fails, Ánima now tries the next one
     (on Windows: DirectX 12 on the built-in chip, then OpenGL) instead of exiting, and a start that
     crashed inside a graphics driver tries that way last next time. If nothing works, a message
-    says so. A start-up log in the settings folder (`Logs/anicraft.log`) records what was tried,
+    says so. A start-up log in the settings folder (`Logs/anima.log`) records what was tried,
     to attach to a bug report.
   * New: **Preferences › Stage › Window graphics** chooses how the window is drawn (Automatic,
     DirectX 12, Vulkan, Metal or OpenGL), for windows that flicker or flash black (#255).
@@ -400,10 +400,10 @@
 * **Filters, Subtract and Invert in HTML canvas export** (ADR 0072, M6). Exported web pages now
   show every filter (Drop Shadow, Blur, Glow, Bevel, Gradient Glow, Gradient Bevel and Adjust
   Color, with inner, knockout, hide object and Inner/Outer/Full) and the Subtract and Invert blend
-  modes as AniCraft draws them, in every browser: the page runs a port of AniCraft's own filters
+  modes as Ánima draws them, in every browser: the page runs a port of Ánima's own filters
   over the symbol's pixels instead of the browser's effects, and shadows and glows reach onto the
   stage from symbols beside it. A filtered symbol that doesn't change is filtered once. Tested
-  against AniCraft's renderer pixel by pixel (35 filter set-ups at three view scales, within
+  against Ánima's renderer pixel by pixel (35 filter set-ups at three view scales, within
   1/1000) and checked in a browser. At 1080p the demo's filtered symbols cost 3.4 ms a frame while
   they change; one covering the whole frame 50 to 150 ms. The export report no longer lists them.
 * **Timeline, bones, menus and stage fixes from user reports** (M1).
@@ -455,16 +455,16 @@
   found one macOS-only failure: the screen-reader translation tests treated the macOS app
   menu's title, the product name, as untranslated.
 * **The user guide** (ADR 0069, M8).
-  * **Help › User Guide** opens AniCraft's guide in your browser. It comes with the app, so it
+  * **Help › User Guide** opens Ánima's guide in your browser. It comes with the app, so it
     works offline; the web editor serves it beside the editor. It is also in the command palette.
   * Eighteen chapters written for artists, from getting started, drawing, symbols, the timeline and
     tweens to masks, the camera and bones, text, images and sound, interactivity, exporting and
     Publish, opening Animate files, preferences and accessibility, plug-ins, working headless, and
     troubleshooting, plus **Coming from Animate**, which maps Animate's panels, tools and shortcuts
-    to AniCraft's.
+    to Ánima's.
   * A **command reference** and a **shortcut reference** (with the macOS keys beside the others),
-    generated from AniCraft itself, so they always match the version you have.
-  * `anicraft-cli guide --out <folder>` writes the guide as HTML pages.
+    generated from Ánima itself, so they always match the version you have.
+  * `anima-cli guide --out <folder>` writes the guide as HTML pages.
   * On macOS, the fixed keys that hold a key while dragging ("Space+Drag") keep that key in their
     label.
 * **Brush library, pressure curves and the Paint Brush** (ADR 0068, M7).
@@ -497,7 +497,7 @@
     Select All, Copy, paste and input methods. Screen readers find fields as text inputs.
   * **HTML canvas export**: input fields are real text inputs over the movie (input methods, the
     on-screen keyboard and the clipboard work), and text that scripts set is drawn in the
-    browser. Authored text is drawn exactly as in AniCraft.
+    browser. Authored text is drawn exactly as in Ánima.
   * **Animate files**: dynamic and input fields come across as fields, with their names, boxes,
     borders and line types (they used to become static text).
   * Every other export and the stage draw fields with their authored text, box and border.
@@ -541,7 +541,7 @@
       applications.
     * Alt+F, Alt+E and the rest open a menu directly. While Alt is held, each title shows its
       letter underlined.
-  * **Follow system** is the new default theme. AniCraft switches to high contrast while
+  * **Follow system** is the new default theme. Ánima switches to high contrast while
     Windows uses a contrast theme, macOS has Increase Contrast on, the Linux desktop asks for
     high contrast, or the browser prefers more contrast. Choosing Graphite or High contrast
     keeps that palette.
@@ -557,10 +557,10 @@
     editor as before and says why. **Preferences › Test Movie** keeps it inside the editor if
     you prefer. On Wayland the desktop places the window, so it can't come back where it was
     (Preferences says so).
-  * **macOS:** double-clicking a `.anicraft`, `.fla` or `.xfl` in Finder, dropping it on the
-    Dock icon, or choosing Open With › AniCraft opens it, whether AniCraft is running or
+  * **macOS:** double-clicking a `.anima`, `.fla` or `.xfl` in Finder, dropping it on the
+    Dock icon, or choosing Open With › Ánima opens it, whether Ánima is running or
     not. If there are unsaved changes it asks first, and the Dock's Quit asks to save too.
-    This uses the small `fmv-macos-events` crate (MIT OR Apache-2.0), so AniCraft's own code
+    This uses the small `fmv-macos-events` crate (MIT OR Apache-2.0), so Ánima's own code
     stays free of `unsafe`. Still to be checked on a Mac (the list is in ADR 0062).
   * Windows and Linux already open a double-clicked document from the command line; a test
     now covers it.
@@ -587,20 +587,20 @@
     animations with real transparency, for the web and chat apps, where a GIF has 256 colours
     and hard edges. WebP is lossless. Both are transparent by default; turn on the stage colour
     as background if you want it. Loop forever, play once, or play a set number of times.
-  * Every frame is exactly what AniCraft renders. Frames that repeat the one before are stored
+  * Every frame is exactly what Ánima renders. Frames that repeat the one before are stored
     once and shown longer, and each later frame stores only the rectangle that changed, so
     holds and small motions cost little.
   * Timing is exact: APNG delays are fractions of the frame rate (29.97 fps stays 29.97), and
     WebP's milliseconds never drift.
   * Both are in **Publish Settings** (Animated PNG, Animated WebP) with frames, scale, loop and
     background; in a browser they download. Headless: `file.export_apng`, `file.export_webp`
-    and `anicraft-cli apng` / `webp`.
+    and `anima-cli apng` / `webp`.
   * On the sample (48 frames, 1280 × 720) the APNG is 2.0 MB and the WebP 1.8 MB, against the
     GIF's 1.4 MB, which has only 256 colours; both take less time to make than the GIF.
 
 * **Publish Settings and Publish** (ADR 0060, M8).
   * **File › Publish Settings** (Ctrl+Shift+F12) is a window that stays open while you work.
-    It lists every format AniCraft exports (HTML canvas, animated GIF, video, Lottie, sprite
+    It lists every format Ánima exports (HTML canvas, animated GIF, video, Lottie, sprite
     sheet, PNG sequence, PNG, SVG, audio), each with a checkbox. The selected format shows
     its output name and the same options its File › Export command has. The settings are
     saved **in the document** and every change can be undone. Older files open with the HTML
@@ -622,16 +622,16 @@
   * Headless: `publish.settings_get`, `publish.settings_set` and `file.publish`, which returns
     the report. Publishing the sample in six formats takes 0.64 s.
 * **Files from the desktop, recent files and a start screen** (ADR 0059, M8).
-  * **Drop files onto the window**: `.anicraft`, `.fla` and `.xfl` open (asking first over
+  * **Drop files onto the window**: `.anima`, `.fla` and `.xfl` open (asking first over
     unsaved work); SVG drawings, PNG and JPEG images and WAV, Ogg and MP3 sounds dropped on the
     **stage** go onto the active layer at the playhead, centred where they were dropped, and
     dropped on the **Library** go into the folder under the pointer. One undo step per drop.
-    A highlight shows where they will land; anything AniCraft can't take gets one clear
+    A highlight shows where they will land; anything Ánima can't take gets one clear
     status line. In the web editor too.
   * **File › Open Recent**: the last 10 documents opened or saved, with pinned favourites on
     top, missing files greyed out with Remove, and Clear Recent Files. Kept in the
     preferences (browser storage on the web).
-  * **Start screen** when AniCraft starts without a document: New with HD, Full HD, square
+  * **Start screen** when Ánima starts without a document: New with HD, Full HD, square
     and vertical presets or a custom size and frame rate, Open, the sample animation, and the
     recent files with a picture of their first frame (captured on save). Esc goes back to the
     document; File › Start Screen brings it back; it can be switched off.
@@ -812,7 +812,7 @@
     instead of 122, and the 50,000-shape 4K stage about 37 ms instead of 75. Frames with few
     shapes, shapes inside masks or faded symbols, and Direct3D 12 (where the passes cost more
     per stage tile) are still binned on the CPU, which stays the reference
-    (`ANICRAFT_GPU_BINNING=cpu|gpu|auto` to compare).
+    (`ANIMA_GPU_BINNING=cpu|gpu|auto` to compare).
   * **Outline mode** (an outlined layer, and onion skin's Outlines) draws true one-pixel
     hairlines, one edge per segment where the old half-pixel strokes had four and a disc at
     every bend, in the CPU renderer and on the GPU alike. On a 2,000-shape scene with ±5 onion
@@ -904,7 +904,7 @@
   roll over and out, with a named or inline function); `trace`; and setting `x`, `y`,
   `alpha`, `visible`, `rotation`, `scaleX` and `scaleY`.
   * A script runs whole or not at all. Anything else (variables, `if`, loops, reading
-    properties) keeps it from running, and AniCraft says where: the Script view lists each
+    properties) keeps it from running, and Ánima says where: the Script view lists each
     problem with its line and column above the code and marks the lines (click one to go
     there), or says the script runs. Test Movie's Output begins with which scripts run and
     which don't, and why.
@@ -943,7 +943,7 @@
     this build has, named in itself. A change shows at once. `--lang <code>` sets it for one
     run.
   * Translations come from the Craft family's shared **craft-i18n** catalogs, built in with
-    `CRAFT_I18N_DIR`; a missing one shows the English. craft-i18n has no AniCraft catalog yet,
+    `CRAFT_I18N_DIR`; a missing one shows the English. craft-i18n has no Ánima catalog yet,
     so builds are English for now: `scripts/i18n-extract.sh` lists every string for
     translators (and, with a craft-i18n checkout, how much each language already covers).
   * A **pseudo-locale** (`--lang pseudo`) draws everything accented, longer and bracketed, to
@@ -951,7 +951,7 @@
   * Messages that say how to undo show your Undo key as this computer writes it (⌘Z on a
     Mac, and a rebound key wherever it is), instead of a fixed "Ctrl+Z".
   * Menus, the command palette and the shortcut sheet translate the command registry's labels
-    as they are drawn; command ids, `.anicraft` files, `anicraft-cli` and MCP stay English.
+    as they are drawn; command ids, `.anima` files, `anima-cli` and MCP stay English.
   * For developers: `tr!`, `trn!` (plurals by CLDR rules), `trc!` and `tr_noop!`; a test fails
     on new interface text that skips them. Not yet: engine messages, right-to-left languages
     (egui can't lay them out yet), Chinese, Japanese and Korean (need a font).
@@ -1062,7 +1062,7 @@
     scripts. Test Movie says how many kept scripts don't run, and the HTML canvas export
     lists them in its report.
   * Headless: `script.set`, `script.clear`, `script.list` and `script.set_class`. Plug-ins may
-    call them too. Saved in `.anicraft` without a format change, so older files open as
+    call them too. Saved in `.anima` without a format change, so older files open as
     before.
   * A new XFL corpus package, `scripts`, has frame scripts in a scene and a movie clip, a
     linkage class and a document class, checked byte for byte and against golden renders.
@@ -1079,7 +1079,7 @@
   anchors tied to frames (spatial keys; ADR 0038 explains why), a marquee over path anchors,
   nudging and transforming a whole path.
 
-* **AniCraft in a web browser** (ADR 0036, first slice; `docs/web.md`). The editor builds for
+* **Ánima in a web browser** (ADR 0036, first slice; `docs/web.md`). The editor builds for
   WebAssembly and runs in a page: `scripts/build-web.sh` (or `.ps1`) makes `web/`, which any
   static server can serve. The module is about 9 MB, 3.3 MB gzipped.
   * Open and import with the browser's file picker. Save and exports download the file; Save
@@ -1216,13 +1216,13 @@
 * **HTML canvas export** (ADR 0028). File › Export › Export HTML Canvas… writes the movie as
   one web page that plays in any modern browser: open it from your disk, put it on a server or
   send it as one file. Everything moves exactly as on the stage, because every frame of every
-  timeline is computed by AniCraft (classic, shape and motion tweens, easing, motion guides,
+  timeline is computed by Ánima (classic, shape and motion tweens, easing, motion guides,
   shape hints); shapes, gradients, strokes (variable-width ones too), text, bitmaps, masks,
   symbols that fade or blend as one, alpha and tint all come across. It is interactive: movie
   clips play on their own timelines, buttons show Up, Over and Down and answer in their Hit
   area, and frame actions and button events (stop, play, go to a frame or label in any scene,
   next/previous frame and scene, trace, set properties, instance paths like `panel.door`)
-  behave as in Test Movie: the page's player is a port of AniCraft's and the tests run both
+  behave as in Test Movie: the page's player is a port of Ánima's and the tests run both
   side by side. Sounds play with the first click (Event, Start, Stop; Stream over its span).
   The movie fits the browser window, sharp on high-density screens. The demo exports in 1 ms
   to a 59 KB page (18 KB of movie data). Filters, Subtract and Invert blending, tints on
@@ -1244,18 +1244,18 @@
   an animated camera asks first. Headless: `camera.add`, `camera.remove`, `camera.set`,
   `camera.info`, `layer.set_depth`.
 * **Installers for Windows, macOS and Linux** (ADR 0026, `docs/release.md`). A push to the
-  `release` branch now builds installable AniCraft for every platform and drafts a GitHub
+  `release` branch now builds installable Ánima for every platform and drafts a GitHub
   Release: a Windows **MSI** (x64 and arm64) that installs for your account without an admin
   prompt, or for everyone if you choose, with a Start menu entry; a macOS **DMG** with the
   universal app (drag to Applications); a Linux **AppImage**, **deb**, **rpm**, **Flatpak** and
-  tarball. Everywhere, `.anicraft` documents get AniCraft's icon and open in AniCraft, and FLA
-  and XFL files list AniCraft under "Open with" without changing your default app.
-  `anicraft-cli` is installed next to the app. Windows and macOS builds are signed (macOS also
+  tarball. Everywhere, `.anima` documents get Ánima's icon and open in Ánima, and FLA
+  and XFL files list Ánima under "Open with" without changing your default app.
+  `anima-cli` is installed next to the app. Windows and macOS builds are signed (macOS also
   notarized) and the Linux packages and checksums are signed when the release secrets are set.
-  `anicraft --version` and `anicraft-cli --version` print the version. On Windows, AniCraft no
+  `anima --version` and `anima-cli --version` print the version. On Windows, Ánima no
   longer opens a console window beside the app. On Linux the window now
-  reports the app id `ai.storyteller.anicraft`, so docks show AniCraft's icon. Not yet: on macOS,
-  double-clicking a document starts AniCraft but doesn't open the file.
+  reports the app id `dev.danielmiguelt.Anima`, so docks show Ánima's icon. Not yet: on macOS,
+  double-clicking a document starts Ánima but doesn't open the file.
 
 * **Bevel, Gradient Glow and Gradient Bevel filters** (ADR 0025). Properties › Filters ›
   Add filter now offers all seven of Animate's filters on movie clip and button instances.
@@ -1268,7 +1268,7 @@
   it, pick one to change its colour and opacity or remove it; the glow's first stop and the
   bevel's middle stop stay transparent, as in Animate, so nothing is painted away from the
   edges. SVG export writes them as standard SVG filters, Animate documents keep them, and
-  `.anicraft` files save them. Headless: `element.set_filters` with `bevel`, `gradient_glow`
+  `.anima` files save them. Headless: `element.set_filters` with `bevel`, `gradient_glow`
   and `gradient_bevel` (colours as `#rrggbbaa`).
 * **Fixed**: a filter reaching very far (a long drop shadow distance, or several large
   filters) could stop the whole frame from drawing; it is now cut far off the stage instead.
@@ -1300,7 +1300,7 @@
   Markers are rose until placed, amber once placed on the first keyframe and mint on the last;
   they snap to the nearest edge as you drag, and right-click removes one or all (Ctrl+Z
   undoes). Headless: `tween.add_hint`, `tween.move_hint`, `tween.remove_hint`,
-  `tween.clear_hints` and `tween.hints`. Hints are saved in `.anicraft` files (older files open
+  `tween.clear_hints` and `tween.hints`. Hints are saved in `.anima` files (older files open
   unchanged) and come across from XFL `shapeHints`.
 
 * **Accessibility, first pass** (ADR 0022, `docs/accessibility.md`). **High contrast** theme in
@@ -1317,7 +1317,7 @@
   status bar shortens its message instead of overlapping. The default theme now meets WCAG AA
   everywhere (the playhead's frame number, the current-frame readout and faint hints were
   below it). A test walks the AccessKit tree in 23 states of the interface and fails on any
-  unnamed control. `anicraft --theme high-contrast --scale 200` previews a look for one run.
+  unnamed control. `anima --theme high-contrast --scale 200` previews a look for one run.
   Not yet: stage elements and single frames one by one for screen readers, following the
   system's contrast setting, the menu bar from the keyboard.
 * **Variable-width strokes and the Width tool** (**U**, ADR 0018). A stroke's width can now
@@ -1328,7 +1328,7 @@
   it along, or drag anywhere on the line to add a point. Delete removes the selected point, and
   each drag is one undo step. Changing the stroke width scales the whole profile. Shape tweens
   blend profiles, SVG and Lottie export write the strokes as filled outlines matching the
-  stage, and `.anicraft` files keep them. Headless: `stroke.set_profile`,
+  stage, and `.anima` files keep them. Headless: `stroke.set_profile`,
   `stroke.set_width_point`, `stroke.delete_width_point`, `stroke.width_at`, and a `profile`
   param on `element.set_stroke`, the drawing commands and `paint.ink`.
 * **Fixed**: perfectly horizontal or vertical lines inside a moved shape could not be picked
@@ -1339,7 +1339,7 @@
   preparation and matches it to within one 8-bit step at a few edge pixels; masks, symbol
   opacity, blend modes, filters and bitmaps still draw on the CPU, and the status bar says
   which drew the stage and why. A 4K frame of 1,000 shapes takes about 9 ms instead of 18 ms.
-  Exports always use the CPU renderer. `ANICRAFT_STAGE_RENDERER=gpu|cpu` overrides the choice.
+  Exports always use the CPU renderer. `ANIMA_STAGE_RENDERER=gpu|cpu` overrides the choice.
 * **Clip paths, masks and text in SVG drawings** (ADR 0021). Import to Stage (Ctrl+R) now
   brings clipped artwork across on mask layers: a drawing with clip paths comes in as a folder
   named after the file, with each clipped group on a masked layer under a mask layer holding
@@ -1362,7 +1362,7 @@
   jumps, and dragging the playhead plays short snippets of them. The Library lists sounds with
   Preview, Place on timeline and Delete. **File › Export › Export Audio** writes the
   soundtrack as a WAV, and **Export Video** now includes it (Opus in WebM, AAC in MP4, by your
-  ffmpeg). Sounds are saved inside the `.anicraft` file as imported. Headless:
+  ffmpeg). Sounds are saved inside the `.anima` file as imported. Headless:
   `file.import_to_library`, `sound.place`, `sound.set`, `sound.remove`, `sound.rename`,
   `sound.delete`, `file.export_audio`. Linux builds need the ALSA development package (or
   `--no-default-features` for silent playback).
@@ -1371,11 +1371,11 @@
   such as the sample **Jitter Selection**. A plug-in with settings opens a dialog with a live
   preview on the stage; OK keeps the result as one undo step named after the plug-in. Install
   with Commands › Install Plug-in…, see and remove them in Commands › Manage Plug-ins…; they
-  load from the `plugins` folder in AniCraft's settings folder (or `ANICRAFT_PLUGINS`), and the
+  load from the `plugins` folder in Ánima's settings folder (or `ANIMA_PLUGINS`), and the
   command palette finds them too. Plug-ins run sandboxed: they change the open document through
-  AniCraft's own commands, never files, the clipboard or the undo history, and a runaway or
+  Ánima's own commands, never files, the clipboard or the undo history, and a runaway or
   broken plug-in stops with a message and leaves the document as it was. Headless:
-  `plugin.install/list/run/remove/reload`, `anicraft-cli --plugins <folder>`. The samples and a
+  `plugin.install/list/run/remove/reload`, `anima-cli --plugins <folder>`. The samples and a
   small Rust SDK are in `examples/plugins`.
 * **Motion tweens and the Motion Editor** (ADR 0016). Insert › Create Motion Tween (also in
   the timeline header, the right-click menu and Properties) makes a span animate its object
@@ -1392,9 +1392,9 @@
   motion. Headless: `timeline.create_motion_tween`, `motion.set_key`, `motion.remove_key`,
   `motion.set_ease`, `motion.info`. Not yet: motion paths on the stage, moving keys in time,
   importing motion tweens from Animate files.
-* **Crash recovery.** AniCraft keeps a recovery copy of unsaved work in the background (every
+* **Crash recovery.** Ánima keeps a recovery copy of unsaved work in the background (every
   minute, or after 25 changes, whichever comes first; Preferences › Files › Autosave changes
-  both or turns it off). If AniCraft closes unexpectedly, the next start shows what was left
+  both or turns it off). If Ánima closes unexpectedly, the next start shows what was left
   behind: **Restore** opens it as unsaved work, and Save puts it back where it was (or asks for
   a name if that file was saved after the copy); **Discard** deletes it after a second click;
   **Later** keeps it for File › Recover Autosaved Documents…. Copies live in the settings
@@ -1402,9 +1402,9 @@
   close normally. Drawing never waits for them: the 65 MB stress document is copied in 0.18 s
   on a background thread. Headless: `file.recovery_list`, `file.recover`,
   `file.discard_recovery`, `file.autosave`.
-* **App icon**: an engraved rabbit on AniCraft yellow, on the same rounded tile as the other
+* **App icon**: an engraved rabbit on Ánima yellow, on the same rounded tile as the other
   Crafting Apps. It shows on the window, the macOS Dock (on Apple's icon grid), the Windows
-  taskbar and `anicraft.exe`, and in Help › About. Files and how to regenerate them are in
+  taskbar and `anima.exe`, and in Help › About. Files and how to regenerate them are in
   `assets/app-icon/`.
 * **README**: screenshots of the app and the sample animation, and a quick start.
 * **Text in Animate documents.** Opening a `.fla` or XFL now brings its text across as text
@@ -1450,14 +1450,14 @@
   `text.fonts`.
 
 * **Export Lottie Animation** (File › Export, `file.export_lottie`): the movie, or a range of
-  its frames, as a Lottie animation (JSON) for websites and apps. Every frame matches AniCraft:
+  its frames, as a Lottie animation (JSON) for websites and apps. Every frame matches Ánima:
   shapes, strokes, solid and gradient fills, colour effects, opacity and masks come across,
   each piece of artwork as its own layer that changes exactly where it changes in the movie.
   Transparent by default, or with the stage colour behind. Anything that can't come across
   exactly (images, masks inside masks, symbols fading as one, stretched round gradients) is
   named in the status bar.
 
-* **AniCraft for AI assistants** (`anicraft-cli mcp`): a Model Context Protocol server, so an
+* **Ánima for AI assistants** (`anima-cli mcp`): a Model Context Protocol server, so an
   assistant can open a document, draw, animate, look at frames and export, through the same
   commands as the app, with undo and the same "are you sure" rules. See `docs/mcp.md`.
 
@@ -1481,9 +1481,9 @@
   image.
 
 * **Export Video** (File › Export, `file.export_video`): the movie as **WebM** (VP9,
-  royalty-free; the default) or **MP4** (H.264), made by your own installed ffmpeg. AniCraft
+  royalty-free; the default) or **MP4** (H.264), made by your own installed ffmpeg. Ánima
   bundles no video encoder. ffmpeg is found through the `ffmpeg` parameter, the
-  `ANICRAFT_FFMPEG` setting, or the system path, and if it's missing you're told how to get it.
+  `ANIMA_FFMPEG` setting, or the system path, and if it's missing you're told how to get it.
   Frames stream in order straight from the renderer; odd sizes are padded to even.
 
 * **Movie clips and buttons behave like themselves.** A movie clip instance plays its own
@@ -1562,13 +1562,13 @@ repository starts here with one commit; earlier work is credited in `AUTHORS.md`
   scrolling.
 * **Mask layers**: a mask reveals only its fill area of the layers under it, on the stage and in
   every export.
-* **Files**: `.anicraft` documents, PNG frames and sequences, animated GIF. Opens Animate
+* **Files**: `.anima` documents, PNG frames and sequences, animated GIF. Opens Animate
   documents (`.fla`, `.xfl`), with a report of anything not yet supported.
 * **Ease of use**: an editable keyboard shortcut map (F1), with the familiar animation
   defaults. Also the command palette (Ctrl+K), right-click menus everywhere, confirmations only
   before real loss, an unsaved-changes guard, Preferences, and macOS, Windows and Linux
   conventions.
-* **Engine**: every action is a command, scriptable headless through `anicraft-cli`. Undo is
+* **Engine**: every action is a command, scriptable headless through `anima-cli`. Undo is
   cheap even on large files. The stage renders in tiles in the background, on a deterministic
   CPU renderer.
 

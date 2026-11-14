@@ -2,7 +2,7 @@
 # latest macOS (arm64) and Windows (x64) runners, so `cfg(target_os = "macos")` and
 # `cfg(windows)` code (the platform layer, Apple Events, Increase Contrast, contrast themes,
 # the Windows resource build) is compiled and linted on every pull request that changes code.
-# The Linux gate is ci.yml; this file only calls the suite's shared gate with other runners.
+# The Linux gate is ci.yml; this file only calls Foundation's Rust gate with other runners.
 name: CI (macOS, Windows)
 
 # A change that touches only documentation or other workflows skips both legs. Later patterns
@@ -37,23 +37,14 @@ concurrency:
 
 jobs:
   gate:
-    # Tracks @main so suite-wide CI fixes reach every app without a PR in each repository. The
-    # shared gate pins every action by SHA, runs Harden-Runner first in each leg, and keys
-    # rust-cache per OS and architecture (written by pushes to main, read by pull requests).
-    uses: storytold/craft-common-actions/.github/workflows/gate.yml@main
+    uses: getnodalia/foundation/.github/workflows/rust-gate.yml@976581262c95c0d95c0184149c0e1ba55485ccb3 # foundation main
     with:
       os: '["macos-latest", "windows-latest"]'
-      # Same craft-fonts commit as ci.yml, release.yml and freebsd.yml.
-      craft-fonts-ref: b076417b5880bd4154bd22f00695b1d28c6bea83
-      # Nothing extra: the wasm build is web.yml's, and plain cargo test needs no nextest.
+      fonts-repository: getnodalia/foundation
+      fonts-ref: 37827adc41fd165f9a9234ac40f94dbad353aa69
       targets: ""
       tools: ""
-      # Cargo.toml's dev profile already keeps line tables only (and Windows PDBs small).
-      dev-debug: ""
       timeout-minutes: 90
-      gate-timeout-minutes: 85
-      # All three steps run, so one run reports every failure; GPU tests skip themselves when
-      # the runner has no usable adapter (crates/gpu/src/tests.rs).
       command: |
         status=0
         cargo build --workspace --locked || status=1

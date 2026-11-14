@@ -12,11 +12,11 @@ Set-Location $Root
 $Out = "docs/guide/images"
 $Width = 1100
 
-cargo build -p anicraft --bin anicraft
+cargo build -p anima --bin anima
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 $TargetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $Root "target" }
-$App = Join-Path $TargetDir "debug/anicraft.exe"
-if (-not (Test-Path $App)) { $App = Join-Path $TargetDir "debug/anicraft" }
+$App = Join-Path $TargetDir "debug/anima.exe"
+if (-not (Test-Path $App)) { $App = Join-Path $TargetDir "debug/anima" }
 if (-not (Test-Path $App)) { Write-Error "$App was not built" }
 
 # picture name, then the --open state ("-" for the window as it starts)

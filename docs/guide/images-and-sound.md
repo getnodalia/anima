@@ -1,11 +1,11 @@
 # Images and sound
 
-This chapter covers bringing pictures, SVG drawings and sounds into AniCraft, and putting sound
+This chapter covers bringing pictures, SVG drawings and sounds into Ánima, and putting sound
 to work on the timeline: sync, loops, fades, volume and sounds inside symbols and buttons.
 
 On a Mac, read **⌘** wherever this chapter says **Ctrl**, and **⌥** for **Alt**.
 
-## What AniCraft can bring in
+## What Ánima can bring in
 
 | Kind | Files | Comes in as |
 |---|---|---|
@@ -13,7 +13,7 @@ On a Mac, read **⌘** wherever this chapter says **Ctrl**, and **⌥** for **Al
 | Drawings | SVG | Editable shapes, groups, gradients, masks and text |
 | Sounds | WAV, Ogg Vorbis, MP3 | A sound in the Library, played from a keyframe |
 
-Anything else is turned away with one line in the status bar that says what AniCraft takes.
+Anything else is turned away with one line in the status bar that says what Ánima takes.
 
 ## Importing images
 
@@ -28,7 +28,7 @@ It goes into the Library at the same time. From here it is ordinary artwork: mov
 rotate, fade, tween and mask it like anything else. It stays smooth at every size, on the stage
 and in every export.
 
-Images are stored inside your `.anicraft` document, so you can move the document to another
+Images are stored inside your `.anima` document, so you can move the document to another
 computer without the original files. JPEGs are converted to PNG without losing quality, which
 can make the document larger than the JPEG was.
 
@@ -87,7 +87,7 @@ SVG files from illustration tools come in as artwork you can keep editing, not a
 
 ### What doesn't come across yet
 
-AniCraft lists these in the status bar after the import, instead of guessing:
+Ánima lists these in the status bar after the import, instead of guessing:
 
 * images embedded in the SVG, filters, style sheets (inline styles are read) and pattern fills;
 * gradient strokes (drawn in one colour).
@@ -100,7 +100,7 @@ every copy changes. See [Symbols and the Library](symbols-and-library.md).
 
 ## Dropping files from your desktop
 
-You can drag files straight from your file manager onto AniCraft's window. Each drop is one
+You can drag files straight from your file manager onto Ánima's window. Each drop is one
 undo step, however many files it brings, and a highlight shows where they will land.
 
 | Drop it on | What happens |
@@ -113,13 +113,13 @@ A drawing whose clipping needs several layers can't sit on one layer, so dropped
 it arrives as a graphic symbol instead. Locked layers, folders and the camera layer say why
 they won't take a drop.
 
-On the desktop, AniCraft learns exactly where you dropped once you move the pointer again; if
-you don't, the drop lands in the middle of the view. Dropping `.anicraft`, `.fla` or `.xfl`
+On the desktop, Ánima learns exactly where you dropped once you move the pointer again; if
+you don't, the drop lands in the middle of the view. Dropping `.anima`, `.fla` or `.xfl`
 files opens them instead (see [Opening Animate files](opening-animate-files.md)).
 
 ## Importing sounds
 
-AniCraft reads WAV, Ogg Vorbis and MP3 files.
+Ánima reads WAV, Ogg Vorbis and MP3 files.
 
 * **File › Import › Import to Stage…** (**Ctrl+R**) with a sound puts it on a new layer, named
   after the file, starting at the playhead. The layer's frames run as long as the sound, so you

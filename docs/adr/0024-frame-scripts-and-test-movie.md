@@ -20,10 +20,10 @@ movie clips told what to do by name, and a Test Movie window to try it.
 
 | Part | Where | Why |
 |---|---|---|
-| Action IR (`Action`, `Target`, `FrameRef`, `ButtonEvent`, `EventHandler`, `PluginScript`, `FrameScript`) | new crate **`anicraft-actions` (L0)**, serde only | It is stored in documents (so `anicraft-doc` needs it) *and* produced by front ends that know nothing about documents: the ActionScript parser is planned at L0 (ADR 0013), and an L0 crate can't use an L1 type. Targets are name paths and frames numbers or labels, resolved at run time, so the IR needs no document. |
-| Player (`PlayerState`, `start`, `step`, `input`, `tree`, `hit`) and `evaluate_player` | `anicraft-doc` (L1), `player.rs` beside `eval.rs` | It walks timelines exactly as evaluation does and must stay in lock-step with it. `evaluate` gains nothing but an optional player state threaded through one private function; with none it is unchanged. |
-| Frame scripts on the plug-in host, a JSON view of the player, headless runs | `anicraft-engine` (L3), `player.rs` | The player calls scripts through a `ScriptHost` trait it defines; the engine implements it over the session's plug-in registry (L0 `anicraft-plugins`). The doc crate never sees `wasmi`. |
-| Commands | `anicraft-engine`, `cmds_actions.rs` | Everything is a command. |
+| Action IR (`Action`, `Target`, `FrameRef`, `ButtonEvent`, `EventHandler`, `PluginScript`, `FrameScript`) | new crate **`anima-actions` (L0)**, serde only | It is stored in documents (so `anima-doc` needs it) *and* produced by front ends that know nothing about documents: the ActionScript parser is planned at L0 (ADR 0013), and an L0 crate can't use an L1 type. Targets are name paths and frames numbers or labels, resolved at run time, so the IR needs no document. |
+| Player (`PlayerState`, `start`, `step`, `input`, `tree`, `hit`) and `evaluate_player` | `anima-doc` (L1), `player.rs` beside `eval.rs` | It walks timelines exactly as evaluation does and must stay in lock-step with it. `evaluate` gains nothing but an optional player state threaded through one private function; with none it is unchanged. |
+| Frame scripts on the plug-in host, a JSON view of the player, headless runs | `anima-engine` (L3), `player.rs` | The player calls scripts through a `ScriptHost` trait it defines; the engine implements it over the session's plug-in registry (L0 `anima-plugins`). The doc crate never sees `wasmi`. |
+| Commands | `anima-engine`, `cmds_actions.rs` | Everything is a command. |
 | Actions panel, Test Movie window, Properties rows, timeline mark | shell | View state only. |
 
 ### Model

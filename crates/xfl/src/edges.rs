@@ -1,4 +1,4 @@
-//! XFL shape edges → AniCraft paths.
+//! XFL shape edges → Ánima paths.
 //!
 //! A `DOMShape` stores its outline as `<Edge>` elements. Each carries an `edges` string of
 //! drawing commands in twips (1/20 px): `!x y` moves, `|x y` or `/x y` draws a line, `[cx cy x y`
@@ -10,7 +10,7 @@
 //! reversed, then chained end to start into closed loops. Strokes are the stroked edges in
 //! drawing order. Written from the public description of the format; no Animate code involved.
 
-use anicraft_geom::{Path, Vec2};
+use anima_geom::{Path, Vec2};
 use std::collections::HashMap;
 
 /// One segment in pixels: a line (`ctrl` = None) or a quadratic curve.
@@ -36,7 +36,7 @@ pub struct Edge {
     pub segs: Vec<Seg>,
 }
 
-/// Decodes an `edges` attribute through craft-libs and maps its neutral geometry to AniCraft.
+/// Decodes an `edges` attribute through craft-libs and maps its neutral geometry to Ánima.
 pub fn parse(s: &str) -> Vec<Seg> {
     craft_xfl::edges::parse_edge_segments(s)
         .into_iter()
@@ -146,11 +146,11 @@ mod tests {
         let e = |l, r, d: &str| Edge { fill_left: l, fill_right: r, stroke: 1, segs: parse(d) };
         let edges = vec![e(0, 1, "!0 0|200 0|200 200"), e(1, 0, "!0 0|0 200|200 200")];
         let p = fill_path(&edges, 1);
-        let lines = p.flatten(&anicraft_geom::Affine::IDENTITY, 0.1);
+        let lines = p.flatten(&anima_geom::Affine::IDENTITY, 0.1);
         assert_eq!(lines.len(), 1, "one closed loop");
         assert!(lines[0].closed);
-        assert!(p.contains(Vec2::new(5.0, 5.0), &anicraft_geom::Affine::IDENTITY, anicraft_geom::FillRule::EvenOdd));
-        assert!(!p.contains(Vec2::new(15.0, 5.0), &anicraft_geom::Affine::IDENTITY, anicraft_geom::FillRule::EvenOdd));
+        assert!(p.contains(Vec2::new(5.0, 5.0), &anima_geom::Affine::IDENTITY, anima_geom::FillRule::EvenOdd));
+        assert!(!p.contains(Vec2::new(15.0, 5.0), &anima_geom::Affine::IDENTITY, anima_geom::FillRule::EvenOdd));
         let st = stroke_path(&edges, 1);
         assert_eq!(st.anchors().len(), 6, "two runs of two segments each, plus their starts");
         assert!(fill_path(&edges, 7).is_empty());

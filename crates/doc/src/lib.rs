@@ -1,58 +1,70 @@
-//! AniCraft document model (layer L1).
+//! Ánima document model (layer L1).
 //!
 //! A document is plain data. Time is a function: [`evaluate`] turns a document and a frame into
 //! a flat [`DisplayList`], which renderers draw. Nothing here mutates during playback.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
-pub use anicraft_audio as audio;
-pub use anicraft_actions as actions;
+pub use anima_actions as actions;
+pub use anima_audio as audio;
 
 pub mod aids;
 pub mod armature;
-pub mod spring;
-pub mod skin;
-pub mod weights;
-pub mod warp;
 mod bitmap;
-mod color_effect;
 pub mod camera;
-mod filter;
+mod color_effect;
 mod easing;
 mod eval;
 pub mod field;
+mod filter;
 mod hints;
-pub mod nine_slice;
 pub mod library;
 pub mod motion;
+pub mod nine_slice;
 pub mod path_table;
-pub mod width;
-pub mod stroke_style;
 pub mod player;
 pub mod publish;
 pub mod sample;
-pub mod templates;
+pub mod skin;
 pub mod sound;
+pub mod spring;
+pub mod stroke_style;
 pub mod swatch;
+pub mod templates;
+pub mod warp;
+pub mod weights;
+pub mod width;
 
-pub use filter::{FILTER_PARAMS, Filter, FilterEntry, FilterParam, FilterProp, FilterSide, MAX_FILTER_SLOTS, active as active_filters, any_active as any_active_filter, pairs_up as filters_pair_up, MAX_BLUR, MAX_QUALITY, MAX_RAMP_STOPS, REST_SNAP, default_bevel_ramp, default_glow_ramp, pinned_stop, ramp_at};
+pub use actions::{Action, ButtonEvent, EventHandler, FrameScript, Language, PluginScript, SourceScript};
+pub use aids::{Aids, GUIDE_REACH, Grid, Guide, GuideAxis, MAX_GUIDES};
+pub use armature::{Armature, Bone, BoneId, JointAngle, Limits, Pose};
 pub use bitmap::{Bitmap, BitmapId, ImageError, MAX_BITMAP_EDGE, Pixels, base64_decode, base64_encode, decode_png, image_to_png};
-pub use easing::{CustomEase, EaseDir, EaseFamily, EasePoint, Easing, Handle, MAX_EASE_NAME, MAX_EASE_POINTS, MAX_EASE_SAMPLES, MAX_EASE_Y, MAX_SAVED_EASES, SampledEase, SavedEase, ease_name};
+pub use camera::{Camera, DepthKey};
 pub use color_effect::{ADVANCED_ADD, ADVANCED_MUL, ColorEffect, ColorStyle, ColorTransform};
+pub use easing::{
+    CustomEase, EaseDir, EaseFamily, EasePoint, Easing, Handle, MAX_EASE_NAME, MAX_EASE_POINTS, MAX_EASE_SAMPLES, MAX_EASE_Y, MAX_SAVED_EASES,
+    SampledEase, SavedEase, ease_name,
+};
+pub use eval::{
+    DisplayItem, DisplayList, Group, MAX_SYMBOL_DEPTH, evaluate, evaluate_guided, evaluate_layer_elements, evaluate_player, evaluate_scene,
+    evaluate_scene_camera, evaluate_shown, evaluate_timeline, evaluate_timeline_at, guide_walk, instance_start,
+};
+pub use filter::{
+    FILTER_PARAMS, Filter, FilterEntry, FilterParam, FilterProp, FilterSide, MAX_BLUR, MAX_FILTER_SLOTS, MAX_QUALITY, MAX_RAMP_STOPS, REST_SNAP,
+    active as active_filters, any_active as any_active_filter, default_bevel_ramp, default_glow_ramp, pairs_up as filters_pair_up, pinned_stop,
+    ramp_at,
+};
 pub use hints::{HINT_TOLERANCE, HintSide, MAX_SHAPE_HINTS, ShapeHint, hint_index, hint_letter, nearest_outline, placed_on, shapes_centre};
 pub use library::{FolderId, LibraryEntry, LibraryFolder, LibraryItem, LibraryTree, NameError};
-pub use motion::{KeyRef, MotionTween, OnPath, PROPERTIES, Pin, PinError, Property, PropertyKey, Props, Track, filter_properties, motion_path, own_value};
-pub use sound::{EnvelopePoint, FrameSound, Sound, SoundEffect, SoundFormat, SoundId, SoundSync};
-pub use width::{MAX_WIDTH_FACTOR, MAX_WIDTH_POINTS, ProfilePreset, WidthPoint, WidthProfile};
-pub use stroke_style::{Cap, Dash, DashKind, Join, StrokeStyle};
-pub use camera::{Camera, DepthKey};
-pub use swatch::{MAX_SWATCHES, Swatch, SwatchPaint};
-pub use aids::{Aids, GUIDE_REACH, Grid, Guide, GuideAxis, MAX_GUIDES};
+pub use motion::{
+    KeyRef, MotionTween, OnPath, PROPERTIES, Pin, PinError, Property, PropertyKey, Props, Track, filter_properties, motion_path, own_value,
+};
 pub use nine_slice::symbol_box;
-pub use armature::{Armature, Bone, BoneId, JointAngle, Limits, Pose};
-pub use eval::{DisplayItem, DisplayList, Group, MAX_SYMBOL_DEPTH, evaluate, evaluate_guided, evaluate_layer_elements, evaluate_shown, evaluate_player, evaluate_scene, evaluate_scene_camera, evaluate_timeline, evaluate_timeline_at, guide_walk, instance_start};
-pub use actions::{Action, ButtonEvent, EventHandler, FrameScript, Language, PluginScript, SourceScript};
+pub use sound::{EnvelopePoint, FrameSound, Sound, SoundEffect, SoundFormat, SoundId, SoundSync};
+pub use stroke_style::{Cap, Dash, DashKind, Join, StrokeStyle};
+pub use swatch::{MAX_SWATCHES, Swatch, SwatchPaint};
+pub use width::{MAX_WIDTH_FACTOR, MAX_WIDTH_POINTS, ProfilePreset, WidthPoint, WidthProfile};
 
-use anicraft_geom::{Affine, FillRule, Path, Rect, Vec2};
+use anima_geom::{Affine, FillRule, Path, Rect, Vec2};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -81,7 +93,7 @@ impl Rgba {
         Rgba { a, ..self }
     }
     pub fn lerp(self, o: Rgba, t: f32) -> Rgba {
-        use anicraft_geom::lerp;
+        use anima_geom::lerp;
         Rgba::new(lerp(self.r, o.r, t), lerp(self.g, o.g, t), lerp(self.b, o.b, t), lerp(self.a, o.a, t))
     }
     /// Clamped to `0..=1`, NaN mapped to 0.
@@ -271,7 +283,9 @@ impl Paint {
     pub fn transformed(&self, m: &Affine) -> Paint {
         match self {
             Paint::Solid(_) => self.clone(),
-            Paint::Linear { start, end, stops, spread, linear_rgb } => Paint::Linear { start: m.apply(*start), end: m.apply(*end), stops: stops.clone(), spread: *spread, linear_rgb: *linear_rgb },
+            Paint::Linear { start, end, stops, spread, linear_rgb } => {
+                Paint::Linear { start: m.apply(*start), end: m.apply(*end), stops: stops.clone(), spread: *spread, linear_rgb: *linear_rgb }
+            }
             Paint::Radial { .. } => match self.frame(None) {
                 Some(f) => self.with_frame(&m.mul(&f), None),
                 None => self.clone(),
@@ -297,7 +311,9 @@ impl Paint {
                 let h = (*end - *start) * 0.5;
                 Some(Affine { m: [h.x, h.y, -h.y, h.x, mid.x, mid.y] })
             }
-            Paint::Radial { center, radius, matrix, .. } => Some(matrix.mul(&Affine::translate(center.x, center.y)).mul(&Affine::scale(*radius, *radius))),
+            Paint::Radial { center, radius, matrix, .. } => {
+                Some(matrix.mul(&Affine::translate(center.x, center.y)).mul(&Affine::scale(*radius, *radius)))
+            }
             Paint::Bitmap { matrix, .. } => {
                 let (w, h) = image?;
                 Some(matrix.mul(&Affine::translate(w * 0.5, h * 0.5)).mul(&Affine::scale(w * 0.5, h * 0.5)))
@@ -316,7 +332,13 @@ impl Paint {
         }
         match self {
             Paint::Solid(_) => self.clone(),
-            Paint::Linear { stops, spread, linear_rgb, .. } => Paint::Linear { start: f.apply(Vec2::new(-1.0, 0.0)), end: f.apply(Vec2::new(1.0, 0.0)), stops: stops.clone(), spread: *spread, linear_rgb: *linear_rgb },
+            Paint::Linear { stops, spread, linear_rgb, .. } => Paint::Linear {
+                start: f.apply(Vec2::new(-1.0, 0.0)),
+                end: f.apply(Vec2::new(1.0, 0.0)),
+                stops: stops.clone(),
+                spread: *spread,
+                linear_rgb: *linear_rgb,
+            },
             Paint::Radial { stops, spread, linear_rgb, focal, .. } => {
                 let center = f.apply(Vec2::ZERO);
                 let [a, b, c, d, ..] = f.m;
@@ -325,14 +347,22 @@ impl Paint {
                     // The linear part with the x axis's length taken out, about the centre.
                     let l = Affine { m: [a / radius, b / radius, c / radius, d / radius, 0.0, 0.0] };
                     let plain = (l.m[0] - 1.0).abs() < 1e-6 && l.m[1].abs() < 1e-6 && l.m[2].abs() < 1e-6 && (l.m[3] - 1.0).abs() < 1e-6;
-                    if plain { (Affine::IDENTITY, radius) } else { (Affine::translate(center.x, center.y).mul(&l).mul(&Affine::translate(-center.x, -center.y)), radius) }
+                    if plain {
+                        (Affine::IDENTITY, radius)
+                    } else {
+                        (Affine::translate(center.x, center.y).mul(&l).mul(&Affine::translate(-center.x, -center.y)), radius)
+                    }
                 } else {
                     (Affine::IDENTITY, 0.0)
                 };
                 Paint::Radial { center, radius, stops: stops.clone(), spread: *spread, linear_rgb: *linear_rgb, focal: *focal, matrix }
             }
             Paint::Bitmap { bitmap, repeat, .. } => match image {
-                Some((w, h)) if w > 0.0 && h > 0.0 => Paint::Bitmap { bitmap: *bitmap, repeat: *repeat, matrix: f.mul(&Affine::scale(2.0 / w, 2.0 / h)).mul(&Affine::translate(-w * 0.5, -h * 0.5)) },
+                Some((w, h)) if w > 0.0 && h > 0.0 => Paint::Bitmap {
+                    bitmap: *bitmap,
+                    repeat: *repeat,
+                    matrix: f.mul(&Affine::scale(2.0 / w, 2.0 / h)).mul(&Affine::translate(-w * 0.5, -h * 0.5)),
+                },
                 _ => self.clone(),
             },
         }
@@ -364,30 +394,37 @@ impl Paint {
     pub fn lerp(&self, o: &Paint, t: f32) -> Paint {
         let lerp_stops = |a: &[GradientStop], b: &[GradientStop]| -> Option<Vec<GradientStop>> {
             (a.len() == b.len()).then(|| {
-                a.iter().zip(b).map(|(x, y)| GradientStop { offset: anicraft_geom::lerp(x.offset, y.offset, t), color: x.color.lerp(y.color, t) }).collect()
+                a.iter()
+                    .zip(b)
+                    .map(|(x, y)| GradientStop { offset: anima_geom::lerp(x.offset, y.offset, t), color: x.color.lerp(y.color, t) })
+                    .collect()
             })
         };
         match (self, o) {
             (Paint::Solid(a), Paint::Solid(b)) => Paint::Solid(a.lerp(*b, t)),
-            (Paint::Linear { start: s0, end: e0, stops: a, spread, linear_rgb }, Paint::Linear { start: s1, end: e1, stops: b, .. }) => match lerp_stops(a, b) {
-                Some(stops) => Paint::Linear { start: s0.lerp(*s1, t), end: e0.lerp(*e1, t), stops, spread: *spread, linear_rgb: *linear_rgb },
-                None => self.clone(),
-            },
-            (Paint::Radial { stops: a, .. }, Paint::Radial { stops: b, focal: f1, .. }) => match (lerp_stops(a, b), self.frame(None), o.frame(None)) {
-                (Some(stops), Some(fa), Some(fb)) => {
-                    let mut m = [0.0; 6];
-                    for (k, v) in m.iter_mut().enumerate() {
-                        *v = anicraft_geom::lerp(fa.m[k], fb.m[k], t);
-                    }
-                    let mut p = self.with_frame(&Affine { m }, None);
-                    if let Paint::Radial { stops: s, focal, .. } = &mut p {
-                        *s = stops;
-                        *focal = anicraft_geom::lerp(*focal, *f1, t);
-                    }
-                    p
+            (Paint::Linear { start: s0, end: e0, stops: a, spread, linear_rgb }, Paint::Linear { start: s1, end: e1, stops: b, .. }) => {
+                match lerp_stops(a, b) {
+                    Some(stops) => Paint::Linear { start: s0.lerp(*s1, t), end: e0.lerp(*e1, t), stops, spread: *spread, linear_rgb: *linear_rgb },
+                    None => self.clone(),
                 }
-                _ => self.clone(),
-            },
+            }
+            (Paint::Radial { stops: a, .. }, Paint::Radial { stops: b, focal: f1, .. }) => {
+                match (lerp_stops(a, b), self.frame(None), o.frame(None)) {
+                    (Some(stops), Some(fa), Some(fb)) => {
+                        let mut m = [0.0; 6];
+                        for (k, v) in m.iter_mut().enumerate() {
+                            *v = anima_geom::lerp(fa.m[k], fb.m[k], t);
+                        }
+                        let mut p = self.with_frame(&Affine { m }, None);
+                        if let Paint::Radial { stops: s, focal, .. } = &mut p {
+                            *s = stops;
+                            *focal = anima_geom::lerp(*focal, *f1, t);
+                        }
+                        p
+                    }
+                    _ => self.clone(),
+                }
+            }
             _ => self.clone(),
         }
     }
@@ -454,7 +491,7 @@ impl Stroke {
     pub fn lerp(&self, o: &Stroke, t: f32) -> Stroke {
         Stroke {
             color: self.color.lerp(o.color, t),
-            width: anicraft_geom::lerp(self.width, o.width, t),
+            width: anima_geom::lerp(self.width, o.width, t),
             profile: WidthProfile::lerp(self.profile.as_ref(), o.profile.as_ref(), t),
             style: self.style.lerp(&o.style, t),
         }
@@ -602,7 +639,9 @@ impl ElementKind {
     /// first (back to front). Empty for anything else.
     pub fn group_members(&self) -> Vec<Arc<Element>> {
         match self {
-            ElementKind::Group { members } => members.layers.iter().rev().filter_map(|l| l.keyframe_at(0)).flat_map(|k| k.elements.iter().cloned()).collect(),
+            ElementKind::Group { members } => {
+                members.layers.iter().rev().filter_map(|l| l.keyframe_at(0)).flat_map(|k| k.elements.iter().cloned()).collect()
+            }
             _ => Vec::new(),
         }
     }
@@ -717,7 +756,22 @@ impl BlendMode {
         match self {
             BlendMode::HardLight => "Hard Light",
             m => {
-                const L: [&str; 14] = ["Normal", "Layer", "Darken", "Multiply", "Lighten", "Screen", "Overlay", "Hard Light", "Add", "Subtract", "Difference", "Invert", "Alpha", "Erase"];
+                const L: [&str; 14] = [
+                    "Normal",
+                    "Layer",
+                    "Darken",
+                    "Multiply",
+                    "Lighten",
+                    "Screen",
+                    "Overlay",
+                    "Hard Light",
+                    "Add",
+                    "Subtract",
+                    "Difference",
+                    "Invert",
+                    "Alpha",
+                    "Erase",
+                ];
                 L.get(BlendMode::ALL.iter().position(|x| *x == m).unwrap_or(0)).copied().unwrap_or("Normal")
             }
         }
@@ -912,7 +966,17 @@ fn white() -> Rgba {
 impl TextField {
     /// A single-line field of `kind`.
     pub fn new(kind: TextKind) -> TextField {
-        TextField { kind, lines: LineType::Single, selectable: true, border: false, border_color: Rgba::BLACK, background: false, background_color: Rgba::WHITE, max_chars: 0, variable: String::new() }
+        TextField {
+            kind,
+            lines: LineType::Single,
+            selectable: true,
+            border: false,
+            border_color: Rgba::BLACK,
+            background: false,
+            background_color: Rgba::WHITE,
+            max_chars: 0,
+            variable: String::new(),
+        }
     }
 
     /// The width text wraps at in a box `box_width` wide, if its lines wrap.
@@ -932,7 +996,11 @@ impl TextField {
 
     /// Values in range: names cut to length, at most [`MAX_FIELD_CHARS`] typed.
     pub fn sanitized(&self) -> TextField {
-        TextField { max_chars: self.max_chars.min(MAX_FIELD_CHARS as u32), variable: self.variable.chars().take(MAX_FIELD_NAME).collect(), ..self.clone() }
+        TextField {
+            max_chars: self.max_chars.min(MAX_FIELD_CHARS as u32),
+            variable: self.variable.chars().take(MAX_FIELD_NAME).collect(),
+            ..self.clone()
+        }
     }
 }
 
@@ -1140,13 +1208,33 @@ pub struct Keyframe {
 
 impl PartialEq for Keyframe {
     fn eq(&self, o: &Keyframe) -> bool {
-        self.start == o.start && self.duration == o.duration && self.tween == o.tween && self.motion == o.motion && self.hints == o.hints && self.label == o.label && self.sound == o.sound && self.script == o.script && self.pose == o.pose && arcs_eq(&self.elements, &o.elements)
+        self.start == o.start
+            && self.duration == o.duration
+            && self.tween == o.tween
+            && self.motion == o.motion
+            && self.hints == o.hints
+            && self.label == o.label
+            && self.sound == o.sound
+            && self.script == o.script
+            && self.pose == o.pose
+            && arcs_eq(&self.elements, &o.elements)
     }
 }
 
 impl Keyframe {
     pub fn new(start: u32, duration: u32) -> Self {
-        Keyframe { start, duration: duration.max(1), elements: Vec::new(), tween: None, motion: None, hints: Vec::new(), label: String::new(), sound: None, script: None, pose: Pose::default() }
+        Keyframe {
+            start,
+            duration: duration.max(1),
+            elements: Vec::new(),
+            tween: None,
+            motion: None,
+            hints: Vec::new(),
+            label: String::new(),
+            sound: None,
+            script: None,
+            pose: Pose::default(),
+        }
     }
     /// Mutable access to the elements whose ids satisfy `pick`, cloning only those.
     pub fn elements_mut_where(&mut self, mut pick: impl FnMut(ElementId) -> bool) -> Vec<&mut Element> {
@@ -1695,7 +1783,11 @@ pub struct Linkage {
 impl Linkage {
     pub fn check(&self) -> Result<(), String> {
         if !actions::valid_class_name(&self.class) {
-            return Err(format!("“{}” isn't a class name: letters, digits, _ and $ joined by dots, at most {} characters", self.class, actions::MAX_CLASS_CHARS));
+            return Err(format!(
+                "“{}” isn't a class name: letters, digits, _ and $ joined by dots, at most {} characters",
+                self.class,
+                actions::MAX_CLASS_CHARS
+            ));
         }
         if !self.base.is_empty() && !actions::valid_class_name(&self.base) {
             return Err(format!("“{}” isn't a class name", self.base));
@@ -1743,7 +1835,7 @@ impl Scene {
 /// Most scenes in a document.
 pub const MAX_SCENES: usize = 1_000;
 
-/// A whole AniCraft document: a persistent (structurally shared) tree.
+/// A whole Ánima document: a persistent (structurally shared) tree.
 ///
 /// `clone()` is O(scenes + layers + symbols) pointer copies, which makes undo snapshots and
 /// render-thread hand-off cheap, and `==` costs O(changed) because shared subtrees compare by
@@ -1829,7 +1921,20 @@ impl From<DocumentFile> for Document {
         if let Some(tl) = f.timeline {
             scenes.insert(0, Arc::new(Scene { name: "Scene 1".into(), timeline: tl, guides: Vec::new() }));
         }
-        Document { stage: f.stage, scenes, library: f.library, bitmaps: f.bitmaps, sounds: f.sounds, library_tree: f.library_tree, document_class: f.document_class, publish: f.publish, aids: f.aids, swatches: f.swatches, eases: f.eases, next_id: f.next_id }
+        Document {
+            stage: f.stage,
+            scenes,
+            library: f.library,
+            bitmaps: f.bitmaps,
+            sounds: f.sounds,
+            library_tree: f.library_tree,
+            document_class: f.document_class,
+            publish: f.publish,
+            aids: f.aids,
+            swatches: f.swatches,
+            eases: f.eases,
+            next_id: f.next_id,
+        }
     }
 }
 
@@ -1858,13 +1963,37 @@ static NO_TIMELINE: Timeline = Timeline { layers: Vec::new() };
 
 impl PartialEq for Document {
     fn eq(&self, o: &Document) -> bool {
-        self.stage == o.stage && self.next_id == o.next_id && self.document_class == o.document_class && arcs_eq(&self.scenes, &o.scenes) && arcs_eq(&self.library, &o.library) && arcs_eq(&self.bitmaps, &o.bitmaps) && arcs_eq(&self.sounds, &o.sounds) && arc_eq(&self.library_tree, &o.library_tree) && arc_eq(&self.publish, &o.publish) && arc_eq(&self.aids, &o.aids) && arc_eq(&self.swatches, &o.swatches) && arc_eq(&self.eases, &o.eases)
+        self.stage == o.stage
+            && self.next_id == o.next_id
+            && self.document_class == o.document_class
+            && arcs_eq(&self.scenes, &o.scenes)
+            && arcs_eq(&self.library, &o.library)
+            && arcs_eq(&self.bitmaps, &o.bitmaps)
+            && arcs_eq(&self.sounds, &o.sounds)
+            && arc_eq(&self.library_tree, &o.library_tree)
+            && arc_eq(&self.publish, &o.publish)
+            && arc_eq(&self.aids, &o.aids)
+            && arc_eq(&self.swatches, &o.swatches)
+            && arc_eq(&self.eases, &o.eases)
     }
 }
 
 impl Default for Document {
     fn default() -> Self {
-        let mut d = Document { stage: Stage::default(), scenes: vec![Arc::new(Scene::new("Scene 1"))], library: Vec::new(), bitmaps: Vec::new(), sounds: Vec::new(), library_tree: Arc::default(), document_class: String::new(), publish: Arc::default(), aids: Arc::default(), swatches: default_swatches(), eases: Arc::default(), next_id: 1 };
+        let mut d = Document {
+            stage: Stage::default(),
+            scenes: vec![Arc::new(Scene::new("Scene 1"))],
+            library: Vec::new(),
+            bitmaps: Vec::new(),
+            sounds: Vec::new(),
+            library_tree: Arc::default(),
+            document_class: String::new(),
+            publish: Arc::default(),
+            aids: Arc::default(),
+            swatches: default_swatches(),
+            eases: Arc::default(),
+            next_id: 1,
+        };
         let id = LayerId(d.alloc_id());
         d.timeline_mut(0).layers.push(Arc::new(Layer::new(id, "Layer 1")));
         d
@@ -2087,7 +2216,8 @@ fn sanitize_groups(layer: &mut Arc<Layer>, depth: usize, max_id: &mut u64) {
             for gl in &mut members.layers {
                 *max_id = (*max_id).max(gl.id.0);
                 let bad_kind = matches!(gl.kind, LayerKind::Camera | LayerKind::Armature | LayerKind::Folder);
-                let bad_frames = gl.keyframes.len() != 1 || gl.keyframes.first().is_some_and(|k| k.start != 0 || k.duration != 1 || k.tween.is_some() || k.motion.is_some());
+                let bad_frames = gl.keyframes.len() != 1
+                    || gl.keyframes.first().is_some_and(|k| k.start != 0 || k.duration != 1 || k.tween.is_some() || k.motion.is_some());
                 if bad_kind || bad_frames {
                     let g = Arc::make_mut(gl);
                     if bad_kind {
@@ -2193,7 +2323,11 @@ fn sanitize_scripts(layer: &mut Arc<Layer>) {
     let bad_script = |k: &Keyframe| k.script.as_ref().is_some_and(FrameScript::needs_repair);
     let bad_events = |e: &Element| match &e.kind {
         ElementKind::Symbol { events, .. } => {
-            events.len() > actions::MAX_HANDLERS || events.iter().enumerate().any(|(i, h)| events.iter().take(i).any(|o| o.event == h.event) || actions::check_actions(&h.actions).is_err())
+            events.len() > actions::MAX_HANDLERS
+                || events
+                    .iter()
+                    .enumerate()
+                    .any(|(i, h)| events.iter().take(i).any(|o| o.event == h.event) || actions::check_actions(&h.actions).is_err())
         }
         _ => false,
     };

@@ -1,12 +1,12 @@
-//! Templates (ADR 0065): new documents from the templates AniCraft ships with
-//! (`anicraft_doc::templates`, built by code) and from the user's own, which File › Save as
-//! Template keeps as plain `.anicraft` files with a picture beside them:
-//! `<folder>/<category>/<name>.anicraft` and `<name>.png`. The shell passes the folder (its
+//! Templates (ADR 0065): new documents from the templates Ánima ships with
+//! (`anima_doc::templates`, built by code) and from the user's own, which File › Save as
+//! Template keeps as plain `.anima` files with a picture beside them:
+//! `<folder>/<category>/<name>.anima` and `<name>.png`. The shell passes the folder (its
 //! settings folder's `Templates`); the engine never looks for it, as with recent files.
 
 use crate::params::*;
 use crate::{CommandSpec, EngineError, Result, Session, format};
-use anicraft_doc::templates::{self, TEMPLATES};
+use anima_doc::templates::{self, TEMPLATES};
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 
@@ -25,7 +25,7 @@ pub fn specs() -> Vec<CommandSpec> {
             label: "New from Template…",
             menu: "File",
             shortcut: None,
-            params: "{template? (a built-in template's id, from file.templates) | path? (a template file: any .anicraft opens as a new, untitled document)}",
+            params: "{template? (a built-in template's id, from file.templates) | path? (a template file: any .anima opens as a new, untitled document)}",
             mutates: false,
             run: new_from_template,
         },
@@ -43,11 +43,19 @@ pub fn specs() -> Vec<CommandSpec> {
             label: "Save as Template…",
             menu: "File",
             shortcut: None,
-            params: "{folder (the user templates folder), name, category? (default “My Templates”), confirm? (to replace a template of that name)} → {path, thumbnail}: the document as it is, kept as <folder>/<category>/<name>.anicraft with a picture of its first frame; the open document is unchanged",
+            params: "{folder (the user templates folder), name, category? (default “My Templates”), confirm? (to replace a template of that name)} → {path, thumbnail}: the document as it is, kept as <folder>/<category>/<name>.anima with a picture of its first frame; the open document is unchanged",
             mutates: false,
             run: save_as_template,
         },
-        CommandSpec { id: "file.delete_template", label: "Delete Template", menu: "", shortcut: None, params: "{folder, name, category?, confirm}: removes a user template and its picture (cannot be undone)", mutates: false, run: delete_template },
+        CommandSpec {
+            id: "file.delete_template",
+            label: "Delete Template",
+            menu: "",
+            shortcut: None,
+            params: "{folder, name, category?, confirm}: removes a user template and its picture (cannot be undone)",
+            mutates: false,
+            run: delete_template,
+        },
     ]
 }
 
@@ -68,7 +76,8 @@ fn clean_name(raw: &str, what: &str) -> Result<String> {
     }
     // Names Windows keeps for devices, with or without an extension.
     let stem = name.split('.').next().unwrap_or(name).trim().to_ascii_uppercase();
-    let reserved = matches!(stem.as_str(), "CON" | "PRN" | "AUX" | "NUL") || ((stem.starts_with("COM") || stem.starts_with("LPT")) && stem.len() == 4 && stem.ends_with(|c: char| c.is_ascii_digit()));
+    let reserved = matches!(stem.as_str(), "CON" | "PRN" | "AUX" | "NUL")
+        || ((stem.starts_with("COM") || stem.starts_with("LPT")) && stem.len() == 4 && stem.ends_with(|c: char| c.is_ascii_digit()));
     if reserved {
         return Err(EngineError::Param(format!("“{name}” is a name the system keeps for itself: pick another {what} name")));
     }
@@ -79,7 +88,7 @@ fn clean_name(raw: &str, what: &str) -> Result<String> {
 pub fn template_path(folder: &Path, category: &str, name: &str) -> Result<PathBuf> {
     let category = clean_name(category, "category")?;
     let name = clean_name(name, "template")?;
-    Ok(folder.join(category).join(format!("{name}.anicraft")))
+    Ok(folder.join(category).join(format!("{name}.anima")))
 }
 
 /// The picture kept beside a template file.
@@ -106,7 +115,7 @@ pub fn user_templates(folder: &Path) -> Vec<UserTemplate> {
             if out.len() >= MAX_TEMPLATES {
                 break;
             }
-            let is_template = f.extension().is_some_and(|e| e.eq_ignore_ascii_case("anicraft")) && crate::vfs::is_file(&f);
+            let is_template = f.extension().and_then(|e| e.to_str()).is_some_and(crate::format::is_native_extension) && crate::vfs::is_file(&f);
             let Some(name) = f.file_stem().map(|n| n.to_string_lossy().into_owned()).filter(|_| is_template) else { continue };
             let thumb = thumbnail_path(&f);
             out.push(UserTemplate { name, category: category.clone(), thumbnail: crate::vfs::is_file(&thumb).then_some(thumb), path: f });
@@ -118,7 +127,7 @@ pub fn user_templates(folder: &Path) -> Vec<UserTemplate> {
 
 /// A template's picture: its first frame fitting the recent files' thumbnail size, guides
 /// drawn, their lines widened to stay visible at that size.
-pub fn picture_png(doc: &anicraft_doc::Document) -> Result<Vec<u8>> {
+pub fn picture_png(doc: &anima_doc::Document) -> Result<Vec<u8>> {
     let (w, h) = (doc.stage.width.max(1) as f32, doc.stage.height.max(1) as f32);
     let scale = (crate::cmds_recent::THUMB_W as f32 / w).min(crate::cmds_recent::THUMB_H as f32 / h).min(1.0);
     crate::cmds_recent::thumbnail_png(&templates::with_guides_shown(doc, 1.5 / scale.max(1e-3)))
@@ -132,8 +141,8 @@ fn new_from_template(s: &mut Session, p: &Value) -> Result<Value> {
         }
         (None, Some(path)) => {
             let path = PathBuf::from(path);
-            if !path.extension().is_some_and(|e| e.eq_ignore_ascii_case("anicraft")) {
-                return Err(EngineError::Param("a template is an .anicraft document".into()));
+            if !path.extension().and_then(|e| e.to_str()).is_some_and(crate::format::is_native_extension) {
+                return Err(EngineError::Param("a template is an .anima document".into()));
             }
             let name = path.file_stem().map_or_else(String::new, |n| n.to_string_lossy().into_owned());
             (format::load(&path)?, name)
@@ -143,7 +152,7 @@ fn new_from_template(s: &mut Session, p: &Value) -> Result<Value> {
     // A new document: untitled, so Save asks for a name and never writes over the template.
     s.replace_document(doc, None);
     // Ready to draw: the top layer that takes artwork is active (not a locked guide).
-    if let Some(l) = s.timeline().layers.iter().find(|l| l.kind == anicraft_doc::LayerKind::Normal && !l.locked) {
+    if let Some(l) = s.timeline().layers.iter().find(|l| l.kind == anima_doc::LayerKind::Normal && !l.locked) {
         s.layer = l.id;
     }
     let mut info = s.info();

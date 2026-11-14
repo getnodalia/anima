@@ -7,21 +7,21 @@
 
 ## Context
 
-Test Movie (ADR 0024) floated inside the editor until AniCraft could open more than one window.
+Test Movie (ADR 0024) floated inside the editor until Ánima could open more than one window.
 In Animate, Control › Test Movie opens the movie in a window of its own, at the stage's size,
 which artists put on a second screen or beside the editor and close with the usual
 window-close key. eframe 0.36 can open more windows (viewports) on Windows, macOS, X11 and
 Wayland, but not in a browser.
 
-The packaging work (ADR 0026) declared AniCraft's document types to macOS, but double-clicking
-a `.anicraft` file in Finder started AniCraft without opening the file. macOS does not put the
+The packaging work (ADR 0026) declared Ánima's document types to macOS, but double-clicking
+a `.anima` file in Finder started Ánima without opening the file. macOS does not put the
 file on the command line. It sends an Apple Event (`kAEOpenDocuments`), both at launch and
 while the app runs, and winit 0.30 has no event for it (`WindowEvent::DroppedFile` is a drop on
 a window, which is something else). winit's docs say to install your own `NSApplication`
-delegate, which needs `unsafe` Objective-C. AniCraft forbids `unsafe` in its code.
+delegate, which needs `unsafe` Objective-C. Ánima forbids `unsafe` in its code.
 
 Windows and Linux already pass the document on the command line (`"%1"` in the MSI's file
-association, `Exec=anicraft %f` in the desktop entry). Nothing had tested that.
+association, `Exec=anima %f` in the desktop entry). Nothing had tested that.
 
 ## Decision
 
@@ -103,9 +103,9 @@ association, `Exec=anicraft %f` in the desktop entry). Nothing had tested that.
    when one arrives) are the only macOS code. Requests (`SystemRequest::Open(paths)` /
    `Quit`) go through a bounded queue (64) that `App::frame` drains first thing.
    * **Open** goes through the same routing as a drop on the window (ADR 0059): the first
-     `.anicraft` / `.fla` / `.xfl` opens via `file.open` through `request`, so **unsaved
+     `.anima` / `.fla` / `.xfl` opens via `file.open` through `request`, so **unsaved
      changes ask first**. Other files in the same request are left out with a reason, and a
-     request with no document says what AniCraft opens. The start screen gives way.
+     request with no document says what Ánima opens. The start screen gives way.
    * **Quit** (the Dock's Quit, logging out) closes the editor's window, which the close
      guard intercepts when there is unsaved work. The handler replaces AppKit's default, which
      would terminate without asking.
@@ -130,19 +130,19 @@ association, `Exec=anicraft %f` in the desktop entry). Nothing had tested that.
 The crate compiles and passes clippy for `aarch64-apple-darwin` from Windows, but nobody has run
 it on a Mac yet. Check on a Mac, from a signed DMG install:
 
-1. Double-clicking a `.anicraft` while AniCraft is closed starts it with that document (not the
+1. Double-clicking a `.anima` while Ánima is closed starts it with that document (not the
    start screen).
 2. Double-clicking another document while it runs opens it, and asks first if there are
    unsaved changes.
-3. Dropping a `.fla` on the Dock icon, and Finder › Open With › AniCraft, open it.
+3. Dropping a `.fla` on the Dock icon, and Finder › Open With › Ánima, open it.
 4. Dock › Quit with unsaved work asks to save. Logging out does the same.
 5. The Test Movie window opens at the stage's size, comes to the front, ⌘W and Esc close it,
    ⌘↩ restarts it, and it reopens where it was.
 
 ## Not in this slice
 
-* Several documents at once: AniCraft has one document window, so a second document replaces
-  the first (after asking). Windows and Linux start a second AniCraft for a second
+* Several documents at once: Ánima has one document window, so a second document replaces
+  the first (after asking). Windows and Linux start a second Ánima for a second
   double-click; a single-instance hand-over is later.
 * `file://` URLs from Linux desktops that pass `%u`. Our desktop entry passes `%f` paths.
 * Test Movie as a deferred viewport (point 1), a full-screen mode, zoom inside the movie

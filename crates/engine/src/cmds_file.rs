@@ -2,8 +2,8 @@
 
 use crate::params::*;
 use crate::{CommandSpec, EngineError, Result, Session, format};
-use anicraft_doc::{Document, MAX_STAGE_EDGE, Stage, sample};
-use anicraft_render::{View, render};
+use anima_doc::{Document, MAX_STAGE_EDGE, Stage, sample};
+use anima_render::{View, render};
 use rayon::prelude::*;
 use serde_json::{Value, json};
 use std::path::PathBuf;
@@ -11,10 +11,42 @@ use std::sync::Arc;
 
 pub fn specs() -> Vec<CommandSpec> {
     let mut v = vec![
-        CommandSpec { id: "file.new", label: "New", menu: "File", shortcut: Some("Ctrl+N"), params: "{width?, height?, fps?}", mutates: false, run: new_doc },
-        CommandSpec { id: "file.new_sample", label: "New from Sample", menu: "File", shortcut: None, params: "{which?: demo (default) | interactive (a menu with a Play button, for Test Movie)}", mutates: false, run: new_sample },
-        CommandSpec { id: "file.open", label: "Open…", menu: "File", shortcut: Some("Ctrl+O"), params: "{path, unsaved? (opens it as unsaved work: a restored copy), untitled? (with no file name, so Save asks for one)}", mutates: false, run: open },
-        CommandSpec { id: "file.save", label: "Save", menu: "File", shortcut: Some("Ctrl+S"), params: "{path?, confirm?}", mutates: false, run: save },
+        CommandSpec {
+            id: "file.new",
+            label: "New",
+            menu: "File",
+            shortcut: Some("Ctrl+N"),
+            params: "{width?, height?, fps?}",
+            mutates: false,
+            run: new_doc,
+        },
+        CommandSpec {
+            id: "file.new_sample",
+            label: "New from Sample",
+            menu: "File",
+            shortcut: None,
+            params: "{which?: demo (default) | interactive (a menu with a Play button, for Test Movie)}",
+            mutates: false,
+            run: new_sample,
+        },
+        CommandSpec {
+            id: "file.open",
+            label: "Open…",
+            menu: "File",
+            shortcut: Some("Ctrl+O"),
+            params: "{path, unsaved? (opens it as unsaved work: a restored copy), untitled? (with no file name, so Save asks for one)}",
+            mutates: false,
+            run: open,
+        },
+        CommandSpec {
+            id: "file.save",
+            label: "Save",
+            menu: "File",
+            shortcut: Some("Ctrl+S"),
+            params: "{path?, confirm?}",
+            mutates: false,
+            run: save,
+        },
         CommandSpec {
             id: "file.save_as",
             label: "Save As…",
@@ -27,7 +59,15 @@ pub fn specs() -> Vec<CommandSpec> {
                 save(s, p)
             },
         },
-        CommandSpec { id: "file.export_png", label: "Export Frame as PNG…", menu: "File/Export", shortcut: None, params: "{path, frame? (in the current scene), scale?}", mutates: false, run: export_png },
+        CommandSpec {
+            id: "file.export_png",
+            label: "Export Frame as PNG…",
+            menu: "File/Export",
+            shortcut: None,
+            params: "{path, frame? (in the current scene), scale?}",
+            mutates: false,
+            run: export_png,
+        },
         CommandSpec {
             id: "file.import",
             label: "Import to Stage…",
@@ -37,13 +77,21 @@ pub fn specs() -> Vec<CommandSpec> {
             mutates: true,
             run: import_to_stage,
         },
-        CommandSpec { id: "file.export_svg", label: "Export Frame as SVG…", menu: "File/Export", shortcut: None, params: "{path, frame? (in the current scene), confirm?}", mutates: false, run: export_svg },
+        CommandSpec {
+            id: "file.export_svg",
+            label: "Export Frame as SVG…",
+            menu: "File/Export",
+            shortcut: None,
+            params: "{path, frame? (in the current scene), confirm?}",
+            mutates: false,
+            run: export_svg,
+        },
         CommandSpec {
             id: "file.export_video",
             label: "Export Video…",
             menu: "File/Export",
             shortcut: None,
-            params: "{path (.mp4 or .webm), from?, to? (movie frames), scale?, audio? (default true: the movie's sounds, Opus in WebM, AAC in MP4), ffmpeg? (path; else ANICRAFT_FFMPEG, else ffmpeg on the PATH), confirm?}",
+            params: "{path (.mp4 or .webm), from?, to? (movie frames), scale?, audio? (default true: the movie's sounds, Opus in WebM, AAC in MP4), ffmpeg? (path; else ANIMA_FFMPEG, else ffmpeg on the PATH), confirm?}",
             mutates: false,
             run: export_video,
         },
@@ -184,19 +232,19 @@ pub(crate) fn open(s: &mut Session, p: &Value) -> Result<Value> {
     let unsaved = opt_bool(p, "unsaved")?.unwrap_or(false);
     let untitled = opt_bool(p, "untitled")?.unwrap_or(false);
     if is_animate(&path) {
-        // Imported, not adopted: the document is untitled, so Save asks for a new .anicraft
+        // Imported, not adopted: the document is untitled, so Save asks for a new .anima
         // name and never writes over the Animate file.
         let fla = path.extension().is_some_and(|e| e.eq_ignore_ascii_case("fla")) && crate::vfs::is_file(&path);
         let imported = if fla {
             // Through `vfs`, so an archive the browser handed over opens too (ADR 0036).
-            if crate::vfs::len(&path)? > anicraft_xfl::MAX_FLA_BYTES {
+            if crate::vfs::len(&path)? > anima_xfl::MAX_FLA_BYTES {
                 return Err(EngineError::Format(format!("{} is too large to open", path.display())));
             }
-            anicraft_xfl::import_fla(&crate::vfs::read(&path)?)
+            anima_xfl::import_fla(&crate::vfs::read(&path)?)
         } else if crate::vfs::in_memory() {
             return Err(EngineError::Param("an XFL document is a folder, which a web browser can't hand over: open the .fla instead".into()));
         } else {
-            anicraft_xfl::import_path(&path)
+            anima_xfl::import_path(&path)
         };
         let (mut doc, report) = imported.map_err(|e| EngineError::Format(format!("{}: {e}", path.display())))?;
         // Raw artwork arrives one shape per style: each keyframe's becomes one merged drawing,
@@ -249,7 +297,7 @@ pub(crate) fn scale_param(p: &Value) -> Result<f32> {
 
 /// Renders movie frame `frame` (scenes in order) of `doc` to PNG bytes.
 pub fn render_png(doc: &Document, frame: u32, scale: f32) -> Result<Vec<u8>> {
-    let dl = anicraft_doc::evaluate(doc, frame);
+    let dl = anima_doc::evaluate(doc, frame);
     let (pm, _) = render(&dl, &View::stage(doc, scale))?;
     Ok(pm.encode_png()?)
 }
@@ -285,13 +333,13 @@ pub(crate) fn import_to_stage(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let bytes = crate::vfs::read(&path)?;
     let (drawing, bitmap) = if ext.as_deref() == Some("svg") {
-        (anicraft_svg::import(&bytes).map_err(|e| EngineError::Format(format!("{}: {e}", path.display())))?, None)
+        (anima_svg::import(&bytes).map_err(|e| EngineError::Format(format!("{}: {e}", path.display())))?, None)
     } else {
         let drawing = import_image(s, &path, bytes)?;
         (drawing, s.doc.bitmaps.last().map(|b| b.id.0))
     };
     if drawing.is_empty() {
-        return Err(EngineError::State(format!("{} has no shapes AniCraft can import yet. {}", path.display(), drawing.report.summary())));
+        return Err(EngineError::State(format!("{} has no shapes Ánima can import yet. {}", path.display(), drawing.report.summary())));
     }
     let stage = s.doc.stage;
     // `cx`/`cy` centre it on a point (a drop, ADR 0059); `x`/`y` give its top-left corner.
@@ -311,25 +359,31 @@ pub(crate) fn import_to_stage(s: &mut Session, p: &Value) -> Result<Value> {
     if !(x.is_finite() && y.is_finite()) {
         return Err(EngineError::Param("'x' and 'y' must be numbers".into()));
     }
-    let place = anicraft_geom::Affine::translate(x, y);
+    let place = anima_geom::Affine::translate(x, y);
     let name: String = path.file_stem().map_or_else(|| "Imported".into(), |n| n.to_string_lossy().chars().take(128).collect());
     let frame = s.frame;
     let end = s.frame_count().max(frame + 1);
-    let elements = |s: &mut Session, list: Vec<anicraft_svg::ImportedElement>| -> Vec<Arc<anicraft_doc::Element>> {
+    let elements = |s: &mut Session, list: Vec<anima_svg::ImportedElement>| -> Vec<Arc<anima_doc::Element>> {
         list.into_iter()
             .map(|e| {
-                let id = anicraft_doc::ElementId(s.doc.alloc_id());
-                Arc::new(anicraft_doc::Element { id, name: e.name, transform: place.mul(&e.transform), color: anicraft_doc::ColorEffect::opacity(e.alpha), kind: e.kind })
+                let id = anima_doc::ElementId(s.doc.alloc_id());
+                Arc::new(anima_doc::Element {
+                    id,
+                    name: e.name,
+                    transform: place.mul(&e.transform),
+                    color: anima_doc::ColorEffect::opacity(e.alpha),
+                    kind: e.kind,
+                })
             })
             .collect()
     };
     // Empty before the playhead, the drawing from the playhead to the end of the timeline.
-    let keys = |els: Vec<Arc<anicraft_doc::Element>>| -> Vec<Arc<anicraft_doc::Keyframe>> {
-        let mut key = anicraft_doc::Keyframe::new(frame, end - frame);
+    let keys = |els: Vec<Arc<anima_doc::Element>>| -> Vec<Arc<anima_doc::Keyframe>> {
+        let mut key = anima_doc::Keyframe::new(frame, end - frame);
         key.elements = els;
-        if frame == 0 { vec![Arc::new(key)] } else { vec![Arc::new(anicraft_doc::Keyframe::new(0, frame)), Arc::new(key)] }
+        if frame == 0 { vec![Arc::new(key)] } else { vec![Arc::new(anima_doc::Keyframe::new(0, frame)), Arc::new(key)] }
     };
-    let texts = drawing.elements().filter(|e| matches!(e.kind, anicraft_doc::ElementKind::Text(_))).count();
+    let texts = drawing.elements().filter(|e| matches!(e.kind, anima_doc::ElementKind::Text(_))).count();
     let count = drawing.elements().count();
     let masks = drawing.layers.iter().filter(|l| l.mask.is_some()).count();
     let (width, height, report) = (drawing.width, drawing.height, drawing.report);
@@ -337,14 +391,14 @@ pub(crate) fn import_to_stage(s: &mut Session, p: &Value) -> Result<Value> {
     let (layer_id, ids, made, folder) = if onto_active && layers.len() == 1 && masks == 0 {
         // Onto the active layer's keyframe at the playhead, as a drop on the stage puts it.
         let els = elements(s, layers.pop().map(|l| l.elements).unwrap_or_default());
-        let ids: Vec<anicraft_doc::ElementId> = els.iter().map(|e| e.id).collect();
+        let ids: Vec<anima_doc::ElementId> = els.iter().map(|e| e.id).collect();
         s.editable_keyframe()?.elements.extend(els);
         (s.layer, ids, 0, None)
     } else if layers.len() == 1 && masks == 0 {
         // One layer, named after the file, as Import to Stage always made.
         crate::cmds_timeline::new_layer(s, &json!({"name": name}))?;
         let els = elements(s, layers.pop().map(|l| l.elements).unwrap_or_default());
-        let ids: Vec<anicraft_doc::ElementId> = els.iter().map(|e| e.id).collect();
+        let ids: Vec<anima_doc::ElementId> = els.iter().map(|e| e.id).collect();
         let layer = s.layer_mut(None)?;
         layer.keyframes = keys(els);
         layer.normalize();
@@ -360,30 +414,30 @@ pub(crate) fn import_to_stage(s: &mut Session, p: &Value) -> Result<Value> {
         // Above the active layer, beside it; above its whole mask group when it is masked.
         let mut at = s.active_layer_index().unwrap_or(0);
         let mut parent = tl.layers.get(at).and_then(|l| l.parent);
-        if let Some(m) = parent.and_then(|pid| tl.layer(pid)).filter(|m| m.kind == anicraft_doc::LayerKind::Mask) {
+        if let Some(m) = parent.and_then(|pid| tl.layer(pid)).filter(|m| m.kind == anima_doc::LayerKind::Mask) {
             parent = m.parent;
             at = tl.layers.iter().position(|l| l.id == m.id).unwrap_or(at);
         }
         let palette = [0x4fa3ff, 0xff6b4a, 0x66bb6a, 0xffd54a, 0xba68c8, 0x4dd0e1, 0xff8a65];
         let mut color = tl.layers.len();
-        let mut new_layer = |s: &mut Session, name: String, kind: anicraft_doc::LayerKind, parent: Option<anicraft_doc::LayerId>| {
-            let mut l = anicraft_doc::Layer::new(anicraft_doc::LayerId(s.doc.alloc_id()), name);
+        let mut new_layer = |s: &mut Session, name: String, kind: anima_doc::LayerKind, parent: Option<anima_doc::LayerId>| {
+            let mut l = anima_doc::Layer::new(anima_doc::LayerId(s.doc.alloc_id()), name);
             l.kind = kind;
             l.parent = parent;
             color += 1;
-            l.color = anicraft_doc::Rgba::hex(palette[color % palette.len()]);
+            l.color = anima_doc::Rgba::hex(palette[color % palette.len()]);
             l
         };
-        let mut folder = new_layer(s, name, anicraft_doc::LayerKind::Folder, parent);
+        let mut folder = new_layer(s, name, anima_doc::LayerKind::Folder, parent);
         folder.keyframes.clear();
         let fid = folder.id;
         let mut stack = vec![folder];
-        let mut top: Option<(anicraft_doc::LayerId, Vec<anicraft_doc::ElementId>)> = None;
+        let mut top: Option<(anima_doc::LayerId, Vec<anima_doc::ElementId>)> = None;
         for (n, l) in layers.into_iter().enumerate().rev() {
             let mut inside = Some(fid);
             if let Some(mask) = l.mask {
                 let label = if mask.name.is_empty() { "Mask".to_string() } else { mask.name.clone() };
-                let mut ml = new_layer(s, label, anicraft_doc::LayerKind::Mask, Some(fid));
+                let mut ml = new_layer(s, label, anima_doc::LayerKind::Mask, Some(fid));
                 // Mask layers are locked, as Animate keeps them: the mask shows, its edge hides.
                 ml.locked = true;
                 ml.mask_mode = mask.mode;
@@ -391,7 +445,7 @@ pub(crate) fn import_to_stage(s: &mut Session, p: &Value) -> Result<Value> {
                 inside = Some(ml.id);
                 stack.push(ml);
             }
-            let mut cl = new_layer(s, format!("Layer {}", n + 1), anicraft_doc::LayerKind::Normal, inside);
+            let mut cl = new_layer(s, format!("Layer {}", n + 1), anima_doc::LayerKind::Normal, inside);
             let els = elements(s, l.elements);
             if top.is_none() {
                 top = Some((cl.id, els.iter().map(|e| e.id).collect()));
@@ -426,19 +480,19 @@ pub(crate) fn import_to_stage(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// An SVG drawing read from `path` (size-checked), with at least one shape.
-pub(crate) fn read_svg(path: &std::path::Path) -> Result<anicraft_svg::SvgImport> {
+pub(crate) fn read_svg(path: &std::path::Path) -> Result<anima_svg::SvgImport> {
     if crate::vfs::len(path)? > MAX_IMPORT_BYTES {
         return Err(EngineError::Format(format!("{} is too large to import", path.display())));
     }
-    let drawing = anicraft_svg::import(&crate::vfs::read(path)?).map_err(|e| EngineError::Format(format!("{}: {e}", path.display())))?;
+    let drawing = anima_svg::import(&crate::vfs::read(path)?).map_err(|e| EngineError::Format(format!("{}: {e}", path.display())))?;
     if drawing.is_empty() {
-        return Err(EngineError::State(format!("{} has no shapes AniCraft can import yet. {}", path.display(), drawing.report.summary())));
+        return Err(EngineError::State(format!("{} has no shapes Ánima can import yet. {}", path.display(), drawing.report.summary())));
     }
     Ok(drawing)
 }
 
 /// Whether a drawing fits on one layer (one run of artwork, nothing masked).
-pub(crate) fn one_layer(d: &anicraft_svg::SvgImport) -> bool {
+pub(crate) fn one_layer(d: &anima_svg::SvgImport) -> bool {
     d.layers.len() == 1 && d.layers.iter().all(|l| l.mask.is_none())
 }
 
@@ -446,18 +500,26 @@ pub(crate) fn one_layer(d: &anicraft_svg::SvgImport) -> bool {
 /// name at the Library's top level) holding the drawing's shapes, its registration point at
 /// the drawing's centre. Clips and masks keep their mask layers inside the symbol.
 pub(crate) fn import_svg_symbol(s: &mut Session, path: &std::path::Path, name: Option<&str>) -> Result<Value> {
-    use anicraft_doc::{Layer, LayerId, LayerKind, Symbol, SymbolId, SymbolKind, Timeline};
+    use anima_doc::{Layer, LayerId, LayerKind, Symbol, SymbolId, SymbolKind, Timeline};
     let drawing = read_svg(path)?;
     let stem: String = path.file_stem().map_or_else(|| "Drawing".into(), |n| n.to_string_lossy().chars().take(128).collect());
     let name = s.doc.unique_name(None, name.map_or(stem.as_str(), str::trim));
-    let place = anicraft_geom::Affine::translate(-drawing.width * 0.5, -drawing.height * 0.5);
-    let elements = |s: &mut Session, list: Vec<anicraft_svg::ImportedElement>| -> Vec<Arc<anicraft_doc::Element>> {
+    let place = anima_geom::Affine::translate(-drawing.width * 0.5, -drawing.height * 0.5);
+    let elements = |s: &mut Session, list: Vec<anima_svg::ImportedElement>| -> Vec<Arc<anima_doc::Element>> {
         list.into_iter()
-            .map(|e| Arc::new(anicraft_doc::Element { id: anicraft_doc::ElementId(s.doc.alloc_id()), name: e.name, transform: place.mul(&e.transform), color: anicraft_doc::ColorEffect::opacity(e.alpha), kind: e.kind }))
+            .map(|e| {
+                Arc::new(anima_doc::Element {
+                    id: anima_doc::ElementId(s.doc.alloc_id()),
+                    name: e.name,
+                    transform: place.mul(&e.transform),
+                    color: anima_doc::ColorEffect::opacity(e.alpha),
+                    kind: e.kind,
+                })
+            })
             .collect()
     };
-    let one_key = |els: Vec<Arc<anicraft_doc::Element>>| {
-        let mut k = anicraft_doc::Keyframe::new(0, 1);
+    let one_key = |els: Vec<Arc<anima_doc::Element>>| {
+        let mut k = anima_doc::Keyframe::new(0, 1);
         k.elements = els;
         vec![Arc::new(k)]
     };
@@ -485,36 +547,50 @@ pub(crate) fn import_svg_symbol(s: &mut Session, path: &std::path::Path, name: O
     let mut timeline = Timeline { layers };
     timeline.repair_masks();
     let id = SymbolId(s.doc.alloc_id());
-    s.doc.library.push(Arc::new(Symbol { id, name: name.clone(), kind: SymbolKind::Graphic, linkage: None, scale_grid: None, scale_grid_kept: None, timeline }));
-    Ok(json!({"symbol": id.0, "name": name, "elements": count, "layers": timeline_len(s, id), "width": width, "height": height, "report": report.summary(), "skipped": report.skipped}))
+    s.doc.library.push(Arc::new(Symbol {
+        id,
+        name: name.clone(),
+        kind: SymbolKind::Graphic,
+        linkage: None,
+        scale_grid: None,
+        scale_grid_kept: None,
+        timeline,
+    }));
+    Ok(
+        json!({"symbol": id.0, "name": name, "elements": count, "layers": timeline_len(s, id), "width": width, "height": height, "report": report.summary(), "skipped": report.skipped}),
+    )
 }
 
-fn timeline_len(s: &Session, id: anicraft_doc::SymbolId) -> usize {
+fn timeline_len(s: &Session, id: anima_doc::SymbolId) -> usize {
     s.doc.library.iter().find(|x| x.id == id).map_or(0, |x| x.timeline.layers.len())
 }
 
 /// A PNG or JPEG as a bitmap in the document, and the one shape that shows it: a rectangle of
 /// the image's size filled with it. JPEGs are kept as PNG (lossless, so nothing degrades).
-fn import_image(s: &mut Session, path: &std::path::Path, bytes: Vec<u8>) -> Result<anicraft_svg::SvgImport> {
-    let id = anicraft_doc::BitmapId(s.doc.alloc_id());
+fn import_image(s: &mut Session, path: &std::path::Path, bytes: Vec<u8>) -> Result<anima_svg::SvgImport> {
+    let id = anima_doc::BitmapId(s.doc.alloc_id());
     let name: String = path.file_name().map_or_else(|| "image".into(), |n| n.to_string_lossy().chars().take(128).collect());
-    let bitmap = anicraft_doc::Bitmap::from_image(id, name.clone(), bytes).map_err(|e| EngineError::Format(format!("{}: {e}", path.display())))?;
+    let bitmap = anima_doc::Bitmap::from_image(id, name.clone(), bytes).map_err(|e| EngineError::Format(format!("{}: {e}", path.display())))?;
     let (w, h) = (bitmap.width as f32, bitmap.height as f32);
     s.doc.bitmaps.push(std::sync::Arc::new(bitmap));
-    let shape = anicraft_doc::Shape {
-        path: std::sync::Arc::new(anicraft_geom::Path::rect(0.0, 0.0, w, h)),
-        fill: Some(anicraft_doc::Paint::Bitmap { bitmap: id, repeat: false, matrix: anicraft_geom::Affine::IDENTITY }),
+    let shape = anima_doc::Shape {
+        path: std::sync::Arc::new(anima_geom::Path::rect(0.0, 0.0, w, h)),
+        fill: Some(anima_doc::Paint::Bitmap { bitmap: id, repeat: false, matrix: anima_geom::Affine::IDENTITY }),
         stroke: None,
-        fill_rule: anicraft_geom::FillRule::NonZero,
+        fill_rule: anima_geom::FillRule::NonZero,
         merge: false,
         warp: None,
     };
-    Ok(anicraft_svg::SvgImport::single(w, h, vec![anicraft_svg::ImportedElement { name, transform: anicraft_geom::Affine::IDENTITY, alpha: 1.0, kind: anicraft_doc::ElementKind::Shape(shape) }]))
+    Ok(anima_svg::SvgImport::single(
+        w,
+        h,
+        vec![anima_svg::ImportedElement { name, transform: anima_geom::Affine::IDENTITY, alpha: 1.0, kind: anima_doc::ElementKind::Shape(shape) }],
+    ))
 }
 
 /// Movie frame `frame` as a standalone SVG document (vectors, gradients and masks kept).
 pub fn frame_svg(doc: &Document, frame: u32) -> String {
-    anicraft_render::svg::to_svg(&anicraft_doc::evaluate(doc, frame), &doc.stage)
+    anima_render::svg::to_svg(&anima_doc::evaluate(doc, frame), &doc.stage)
 }
 
 fn export_svg(s: &mut Session, p: &Value) -> Result<Value> {
@@ -556,25 +632,25 @@ fn export_sprite_sheet(s: &mut Session, p: &Value) -> Result<Value> {
     let (fw, fh) = (view.width, view.height);
     let sheet_w = u64::from(fw) * cols as u64 + u64::from(pad) * (cols as u64 - 1);
     let sheet_h = u64::from(fh) * rows as u64 + u64::from(pad) * (rows as u64 - 1);
-    if sheet_w * sheet_h > anicraft_render::MAX_PIXELS || sheet_w > u64::from(u32::MAX) || sheet_h > u64::from(u32::MAX) {
+    if sheet_w * sheet_h > anima_render::MAX_PIXELS || sheet_w > u64::from(u32::MAX) || sheet_h > u64::from(u32::MAX) {
         return Err(EngineError::Param(format!(
             "that sheet would be {sheet_w}×{sheet_h} px (the limit is {} pixels); lower 'scale' or the frame range",
-            anicraft_render::MAX_PIXELS
+            anima_render::MAX_PIXELS
         )));
     }
     // Frames render in parallel, then go onto the sheet in order.
     let doc = &s.doc;
     // A publish counts the frames, and stops between them when cancelled (ADR 0060).
     let job = s.job.as_deref();
-    let frames: Vec<anicraft_render::Pixmap> = (from..=to)
+    let frames: Vec<anima_render::Pixmap> = (from..=to)
         .into_par_iter()
         .map(|f| {
-            let (pm, _) = render(&anicraft_doc::evaluate(doc, f), &view)?;
+            let (pm, _) = render(&anima_doc::evaluate(doc, f), &view)?;
             crate::publish::tick(job, 1)?;
             Ok(pm)
         })
         .collect::<Result<_>>()?;
-    let mut sheet = anicraft_render::Pixmap::new(sheet_w as u32, sheet_h as u32)?;
+    let mut sheet = anima_render::Pixmap::new(sheet_w as u32, sheet_h as u32)?;
     let stride = sheet_w as usize;
     let delays = gif_delays(n, doc.stage.fps);
     let stem = path.file_stem().map_or_else(|| "frame".to_string(), |x| x.to_string_lossy().into_owned());
@@ -606,7 +682,7 @@ fn export_sprite_sheet(s: &mut Session, p: &Value) -> Result<Value> {
     let atlas = json!({
         "frames": map,
         "meta": {
-            "app": "AniCraft",
+            "app": "Ánima",
             "version": env!("CARGO_PKG_VERSION"),
             "image": image,
             "format": "RGBA8888",
@@ -619,18 +695,20 @@ fn export_sprite_sheet(s: &mut Session, p: &Value) -> Result<Value> {
     let text = serde_json::to_string_pretty(&atlas).map_err(|e| EngineError::Format(e.to_string()))?;
     crate::vfs::write(&path, &png)?;
     crate::vfs::write(&json_path, text)?;
-    Ok(json!({"written": path.display().to_string(), "map": json_path.display().to_string(), "frames": n, "columns": cols, "rows": rows, "width": sheet_w, "height": sheet_h}))
+    Ok(
+        json!({"written": path.display().to_string(), "map": json_path.display().to_string(), "frames": n, "columns": cols, "rows": rows, "width": sheet_w, "height": sheet_h}),
+    )
 }
 
-/// The ffmpeg to run: `ffmpeg` param, else `ANICRAFT_FFMPEG`, else `ffmpeg` on the PATH.
+/// The ffmpeg to run: `ffmpeg` param, else `ANIMA_FFMPEG`, else `ffmpeg` on the PATH.
 fn ffmpeg_program(p: &Value) -> Result<std::ffi::OsString> {
     if let Some(x) = opt_str(p, "ffmpeg")?.filter(|x| !x.trim().is_empty()) {
         return Ok(x.into());
     }
-    Ok(std::env::var_os("ANICRAFT_FFMPEG").filter(|x| !x.is_empty()).unwrap_or_else(|| "ffmpeg".into()))
+    Ok(std::env::var_os("ANIMA_FFMPEG").filter(|x| !x.is_empty()).unwrap_or_else(|| "ffmpeg".into()))
 }
 
-/// Export Video: movie frames streamed in order to the user's own ffmpeg (AniCraft bundles no
+/// Export Video: movie frames streamed in order to the user's own ffmpeg (Ánima bundles no
 /// video encoder; see docs/legal/compliance.md). `.webm` is VP9 (royalty-free); `.mp4` is H.264
 /// from whatever encoder that ffmpeg has. Frames render in parallel batches; odd sizes are
 /// padded to even, as 4:2:0 video needs.
@@ -639,13 +717,17 @@ fn export_video(s: &mut Session, p: &Value) -> Result<Value> {
     let path = PathBuf::from(str_req(p, "path")?);
     if crate::vfs::in_memory() {
         // ffmpeg writes the file itself, and a web browser can't start it (ADR 0036).
-        return Err(EngineError::State("video export runs ffmpeg, which can't run in a web browser: export an animated GIF, a PNG sequence or an HTML page instead".into()));
+        return Err(EngineError::State(
+            "video export runs ffmpeg, which can't run in a web browser: export an animated GIF, a PNG sequence or an HTML page instead".into(),
+        ));
     }
     let ext = path.extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase);
     // Sound is encoded by the same ffmpeg: Opus in WebM (royalty-free), AAC in MP4.
     let (codec, audio_codec): (&[&str], &[&str]) = match ext.as_deref() {
         Some("webm") => (&["-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "30", "-row-mt", "1"], &["-c:a", "libopus", "-b:a", "160k"]),
-        Some("mp4" | "m4v" | "mov") => (&["-c:v", "libx264", "-crf", "18", "-preset", "medium", "-movflags", "+faststart"], &["-c:a", "aac", "-b:a", "192k"]),
+        Some("mp4" | "m4v" | "mov") => {
+            (&["-c:v", "libx264", "-crf", "18", "-preset", "medium", "-movflags", "+faststart"], &["-c:a", "aac", "-b:a", "192k"])
+        }
         _ => return Err(EngineError::Param("video goes to .mp4 or .webm".into())),
     };
     let last = s.doc.frame_count().saturating_sub(1);
@@ -660,7 +742,11 @@ fn export_video(s: &mut Session, p: &Value) -> Result<Value> {
     let size = format!("{w}x{h}");
     let rate = format!("{fps}");
     // The soundtrack (when the movie has sounds) goes to ffmpeg as a WAV beside the frames.
-    let track = if opt_bool(p, "audio")?.unwrap_or(true) && anicraft_doc::sound::has_sounds(&s.doc) { Some(crate::cmds_sound::temp_track(s, from, to)?) } else { None };
+    let track = if opt_bool(p, "audio")?.unwrap_or(true) && anima_doc::sound::has_sounds(&s.doc) {
+        Some(crate::cmds_sound::temp_track(s, from, to)?)
+    } else {
+        None
+    };
     let mut args: Vec<&std::ffi::OsStr> = Vec::new();
     for a in ["-hide_banner", "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgba", "-s", &size, "-r", &rate, "-i", "-"] {
         args.push(a.as_ref());
@@ -688,7 +774,7 @@ fn export_video(s: &mut Session, p: &Value) -> Result<Value> {
         .spawn()
         .map_err(|e| {
             EngineError::State(format!(
-                "AniCraft makes video with ffmpeg, which could not be started ({e}). Install it from ffmpeg.org, or point ANICRAFT_FFMPEG at it."
+                "Ánima makes video with ffmpeg, which could not be started ({e}). Install it from ffmpeg.org, or point ANIMA_FFMPEG at it."
             ))
         })?;
     // Read ffmpeg's messages as they come, so a full pipe never stalls it.
@@ -707,7 +793,11 @@ fn export_video(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(mut stdin) = child.stdin.take() {
         let frames: Vec<u32> = (from..=to).collect();
         'batches: for batch in frames.chunks(8) {
-            let images: Vec<Vec<u8>> = match batch.par_iter().map(|&f| render(&anicraft_doc::evaluate(doc, f), &view).map(|(pm, _)| pm.to_rgba8())).collect::<std::result::Result<_, _>>() {
+            let images: Vec<Vec<u8>> = match batch
+                .par_iter()
+                .map(|&f| render(&anima_doc::evaluate(doc, f), &view).map(|(pm, _)| pm.to_rgba8()))
+                .collect::<std::result::Result<_, _>>()
+            {
                 Ok(v) => v,
                 Err(e) => {
                     failure = Some(e.into());
@@ -740,10 +830,15 @@ fn export_video(s: &mut Session, p: &Value) -> Result<Value> {
     }
     if !status.success() || written != to - from + 1 {
         let tail: Vec<&str> = log.lines().rev().take(4).collect::<Vec<_>>().into_iter().rev().collect();
-        return Err(EngineError::Format(format!("ffmpeg could not make the video ({status}): {}", if tail.is_empty() { "no message".to_string() } else { tail.join(" | ") })));
+        return Err(EngineError::Format(format!(
+            "ffmpeg could not make the video ({status}): {}",
+            if tail.is_empty() { "no message".to_string() } else { tail.join(" | ") }
+        )));
     }
     let bytes = crate::vfs::len(&path).unwrap_or(0);
-    Ok(json!({"written": path.display().to_string(), "frames": written, "bytes": bytes, "width": w, "height": h, "fps": fps, "audio": track.is_some()}))
+    Ok(
+        json!({"written": path.display().to_string(), "frames": written, "bytes": bytes, "width": w, "height": h, "fps": fps, "audio": track.is_some()}),
+    )
 }
 
 fn export_sequence(s: &mut Session, p: &Value) -> Result<Value> {
@@ -793,7 +888,7 @@ pub fn gif_delays(frames: usize, fps: f32) -> Vec<u16> {
 }
 
 /// The movie as a Lottie (JSON) animation, keyed with eases and equal to `evaluate` at every
-/// frame (see `anicraft_render::lottie`, ADR 0089).
+/// frame (see `anima_render::lottie`, ADR 0089).
 fn export_lottie(s: &mut Session, p: &Value) -> Result<Value> {
     let path = PathBuf::from(str_req(p, "path")?);
     let last = s.doc.frame_count().saturating_sub(1);
@@ -803,30 +898,32 @@ fn export_lottie(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(EngineError::Param("'to' must not be before 'from'".into()));
     }
     let background = opt_bool(p, "background")?.unwrap_or(false);
-    let name: String = path.file_stem().map_or_else(|| "AniCraft".into(), |n| n.to_string_lossy().chars().take(128).collect());
-    let out = anicraft_render::lottie::to_lottie(&s.doc, &name, from, to, background);
+    let name: String = path.file_stem().map_or_else(|| "Ánima".into(), |n| n.to_string_lossy().chars().take(128).collect());
+    let out = anima_render::lottie::to_lottie(&s.doc, &name, from, to, background);
     crate::vfs::write(&path, out.json.as_bytes())?;
     let summary = if out.report.is_empty() {
         String::new()
     } else {
         format!("Approximated or left out: {}.", out.report.iter().map(|(k, n)| format!("{k} on {n}")).collect::<Vec<_>>().join(", "))
     };
-    Ok(json!({"written": path.display().to_string(), "frames": to - from + 1, "layers": out.layers, "bytes": out.json.len(), "report": summary, "notes": out.report}))
+    Ok(
+        json!({"written": path.display().to_string(), "frames": to - from + 1, "layers": out.layers, "bytes": out.json.len(), "report": summary, "notes": out.report}),
+    )
 }
 
 /// The movie as one web page that plays in a browser, buttons and frame actions included
-/// (see `anicraft_render::html`, ADR 0028).
+/// (see `anima_render::html`, ADR 0028).
 fn export_html(s: &mut Session, p: &Value) -> Result<Value> {
     let path = PathBuf::from(str_req(p, "path")?);
-    let stem: String = path.file_stem().map_or_else(|| "AniCraft movie".into(), |n| n.to_string_lossy().chars().take(128).collect());
+    let stem: String = path.file_stem().map_or_else(|| "Ánima movie".into(), |n| n.to_string_lossy().chars().take(128).collect());
     let title = match opt_str(p, "title")? {
         Some(t) if t.chars().count() > 256 => return Err(EngineError::Param("param 'title' is at most 256 characters".into())),
         Some(t) if !t.trim().is_empty() => t.to_string(),
         _ => stem,
     };
-    let opts = anicraft_render::html::HtmlOptions { title, sound: opt_bool(p, "sound")?.unwrap_or(true), fit: opt_bool(p, "fit")?.unwrap_or(true) };
+    let opts = anima_render::html::HtmlOptions { title, sound: opt_bool(p, "sound")?.unwrap_or(true), fit: opt_bool(p, "fit")?.unwrap_or(true) };
     let started = web_time::Instant::now();
-    let out = anicraft_render::html::to_html(&s.doc, &opts).map_err(EngineError::Param)?;
+    let out = anima_render::html::to_html(&s.doc, &opts).map_err(EngineError::Param)?;
     crate::vfs::write(&path, out.html.as_bytes())?;
     let summary = if out.report.is_empty() {
         String::new()
@@ -878,10 +975,9 @@ fn export_gif(s: &mut Session, p: &Value) -> Result<Value> {
         .into_par_iter()
         .zip(delays.into_par_iter())
         .map(|(f, delay)| {
-            let (pm, _) = render(&anicraft_doc::evaluate(doc, f), &view)?;
+            let (pm, _) = render(&anima_doc::evaluate(doc, f), &view)?;
             let rgba = pm.to_rgba8();
-            let frame = craft_gif::write::prepare_frame(u32::from(w), u32::from(h), rgba, 10)
-                .map_err(|e| EngineError::Format(e.to_string()))?;
+            let frame = craft_gif::write::prepare_frame(u32::from(w), u32::from(h), rgba, 10).map_err(|e| EngineError::Format(e.to_string()))?;
             crate::publish::tick(job, 1)?;
             Ok((frame, delay))
         })
@@ -889,8 +985,8 @@ fn export_gif(s: &mut Session, p: &Value) -> Result<Value> {
     let mut bytes = Vec::new();
     {
         let opts = craft_gif::write::Options { loop_forever: looping, ..Default::default() };
-        let mut enc = craft_gif::write::AnimationWriter::new(&mut bytes, u32::from(w), u32::from(h), opts)
-            .map_err(|e| EngineError::Format(e.to_string()))?;
+        let mut enc =
+            craft_gif::write::AnimationWriter::new(&mut bytes, u32::from(w), u32::from(h), opts).map_err(|e| EngineError::Format(e.to_string()))?;
         for (fr, delay) in frames {
             enc.write_prepared_frame(fr, delay).map_err(|e| EngineError::Format(e.to_string()))?;
         }

@@ -1,4 +1,4 @@
-//! AniCraft text (layer 1): the fonts on this computer, and text laid out into vector outlines.
+//! Ánima text (layer 1): the fonts on this computer, and text laid out into vector outlines.
 //!
 //! `layout` shapes text with `harfrust` (a HarfBuzz port), breaks it into lines, and draws each
 //! glyph's outline with `skrifa` into one [`Path`], in pixels, with the layout box's top-left
@@ -10,18 +10,20 @@
 //! positions.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
-use anicraft_geom::{Path, PathCmd, Vec2};
+use anima_geom::{Path, PathCmd, Vec2};
 use skrifa::MetadataProvider as _;
 use std::sync::{Arc, OnceLock};
 
 /// Families tried, in order, when none is asked for or the one asked for isn't installed.
-pub const DEFAULT_FAMILIES: &[&str] = &["Inter", "Arial", "Helvetica", "Helvetica Neue", "Segoe UI", "DejaVu Sans", "Liberation Sans", "Noto Sans", "Roboto", "Ubuntu"];
+pub const DEFAULT_FAMILIES: &[&str] =
+    &["Inter", "Arial", "Helvetica", "Helvetica Neue", "Segoe UI", "DejaVu Sans", "Liberation Sans", "Noto Sans", "Roboto", "Ubuntu"];
 
 /// Installed families tried for the device font `_serif`, in order.
 const SERIF_FAMILIES: &[&str] = &["Times New Roman", "Times", "Georgia", "DejaVu Serif", "Liberation Serif", "Noto Serif"];
 
 /// Installed families tried for the device font `_typewriter`, in order.
-const MONO_FAMILIES: &[&str] = &["Courier New", "Courier", "JetBrains Mono", "DejaVu Sans Mono", "Liberation Mono", "Noto Sans Mono", "Consolas", "Menlo"];
+const MONO_FAMILIES: &[&str] =
+    &["Courier New", "Courier", "JetBrains Mono", "DejaVu Sans Mono", "Liberation Mono", "Noto Sans Mono", "Consolas", "Menlo"];
 
 /// Largest text block laid out (characters).
 pub const MAX_CHARS: usize = 100_000;
@@ -54,7 +56,16 @@ pub struct Style {
 
 impl Default for Style {
     fn default() -> Self {
-        Style { family: String::new(), size: 32.0, bold: false, italic: false, align: Align::Left, letter_spacing: 0.0, line_spacing: 0.0, width: None }
+        Style {
+            family: String::new(),
+            size: 32.0,
+            bold: false,
+            italic: false,
+            align: Align::Left,
+            letter_spacing: 0.0,
+            line_spacing: 0.0,
+            width: None,
+        }
     }
 }
 
@@ -132,7 +143,7 @@ pub struct PathText {
 /// glyphs wrap round; on an open one those past its ends are left out. `None` when the path has
 /// no length.
 pub fn on_path(glyphs: &[PlacedGlyph], path: &Path, how: PathPlacement) -> Option<PathText> {
-    let walk = anicraft_geom::walk::CurveWalk::new(path)?;
+    let walk = anima_geom::walk::CurveWalk::new(path)?;
     let length = walk.length();
     let closed = first_subpath_closed(path);
     // The run's width: from its pen start (0) to the end of its last glyph.
@@ -161,7 +172,9 @@ pub fn on_path(glyphs: &[PlacedGlyph], path: &Path, how: PathPlacement) -> Optio
         };
         let (p, t) = if how.flip { (walk.at(length - s), walk.tangent(length - s) * -1.0) } else { (walk.at(s), walk.tangent(s)) };
         let angle = t.y.atan2(t.x);
-        let m = anicraft_geom::Affine::translate(p.x, p.y).mul(&anicraft_geom::Affine::rotate(angle)).mul(&anicraft_geom::Affine::translate(-g.advance * 0.5, 0.0));
+        let m = anima_geom::Affine::translate(p.x, p.y)
+            .mul(&anima_geom::Affine::rotate(angle))
+            .mul(&anima_geom::Affine::translate(-g.advance * 0.5, 0.0));
         out.outline.cmds.extend(g.outline.transformed(&m).cmds);
         out.placed.push((g.index, p, angle));
     }
@@ -186,9 +199,16 @@ pub fn on_path_boxed(glyphs: &[PlacedGlyph], path: &Path, how: PathPlacement) ->
     let set = on_path(glyphs, path, how)?;
     let b = set.outline.bounds().union(&path.bounds());
     let shift = if b.min.x.is_finite() && b.min.y.is_finite() { b.min } else { Vec2::ZERO };
-    let back = anicraft_geom::Affine::translate(-shift.x, -shift.y);
+    let back = anima_geom::Affine::translate(-shift.x, -shift.y);
     let size = |v: f32| if v.is_finite() { v.max(0.0) } else { 0.0 };
-    Some(BoxedPathText { outline: set.outline.transformed(&back), path: path.transformed(&back), width: size(b.width()), height: size(b.height()), shift, hidden: set.hidden })
+    Some(BoxedPathText {
+        outline: set.outline.transformed(&back),
+        path: path.transformed(&back),
+        width: size(b.width()),
+        height: size(b.height()),
+        shift,
+        hidden: set.hidden,
+    })
 }
 
 /// Whether a path's first subpath ends with a close.
@@ -275,7 +295,7 @@ impl std::fmt::Display for TextError {
 
 impl std::error::Error for TextError {}
 
-/// The fonts AniCraft can use: the system's, those in `CRAFT_FONTS_DIR`, and faces the app
+/// The fonts Ánima can use: the system's, those in `CRAFT_FONTS_DIR`, and faces the app
 /// registered (its embedded interface font).
 pub struct Fonts {
     db: fontdb::Database,
@@ -313,7 +333,8 @@ impl Fonts {
     }
 
     fn from_db(db: fontdb::Database) -> Fonts {
-        let mut families: Vec<String> = db.faces().filter_map(|f| f.families.first().map(|(n, _)| n.clone())).filter(|n| !n.starts_with('.')).collect();
+        let mut families: Vec<String> =
+            db.faces().filter_map(|f| f.families.first().map(|(n, _)| n.clone())).filter(|n| !n.starts_with('.')).collect();
         families.sort_by_key(|f| f.to_lowercase());
         families.dedup();
         Fonts { db, families }
@@ -354,7 +375,12 @@ impl Fonts {
         if let Some(f) = self.db.faces().find(|f| f.post_script_name.eq_ignore_ascii_case(name))
             && let Some((family, _)) = f.families.first()
         {
-            return FaceMatch { family: Some(family.clone()), wanted: family.clone(), bold: f.weight.0 >= 600, italic: f.style != fontdb::Style::Normal };
+            return FaceMatch {
+                family: Some(family.clone()),
+                wanted: family.clone(),
+                bold: f.weight.0 >= 600,
+                italic: f.style != fontdb::Style::Normal,
+            };
         }
         let device: Option<&[&str]> = match name {
             "_sans" => Some(DEFAULT_FAMILIES),
@@ -582,7 +608,18 @@ fn lay_out(data: &[u8], index: u32, text: &str, style: &Style, want_glyphs: bool
     }
     let height = (lines.len().max(1) as f32 - 1.0) * line_height + (metrics.ascent - metrics.descent);
     let carets = caret_lines(&lines, &spans, box_width, style.align);
-    Some(Layout { outline, width: box_width.max(0.0), height: height.max(0.0), family: String::new(), missing, lines: lines.len().max(1), line_height, ascent, carets, glyphs: placed })
+    Some(Layout {
+        outline,
+        width: box_width.max(0.0),
+        height: height.max(0.0),
+        family: String::new(),
+        missing,
+        lines: lines.len().max(1),
+        line_height,
+        ascent,
+        carets,
+        glyphs: placed,
+    })
 }
 
 /// The caret positions of laid-out lines (see [`CaretLine`]).
@@ -797,7 +834,7 @@ mod tests {
         assert_eq!(l.glyphs.iter().map(|g| g.index).collect::<Vec<_>>(), vec![0, 1, 2, 3, 4]);
         let mut joined = Path::new();
         for g in &l.glyphs {
-            joined.cmds.extend(g.outline.transformed(&anicraft_geom::Affine::translate(g.x, g.baseline)).cmds);
+            joined.cmds.extend(g.outline.transformed(&anima_geom::Affine::translate(g.x, g.baseline)).cmds);
             assert_eq!(g.baseline, l.ascent);
         }
         let (a, b) = (joined.bounds(), l.outline.bounds());
@@ -808,7 +845,9 @@ mod tests {
 
     /// Synthetic glyphs: a 10 × 20 box standing on the baseline, `n` of them 10 apart.
     fn boxes(n: u32) -> Vec<PlacedGlyph> {
-        (0..n).map(|i| PlacedGlyph { outline: Path::rect(0.0, -20.0, 10.0, 20.0), x: i as f32 * 10.0, baseline: 20.0, advance: 10.0, index: i }).collect()
+        (0..n)
+            .map(|i| PlacedGlyph { outline: Path::rect(0.0, -20.0, 10.0, 20.0), x: i as f32 * 10.0, baseline: 20.0, advance: 10.0, index: i })
+            .collect()
     }
 
     #[test]
@@ -845,7 +884,7 @@ mod tests {
         // A circle of radius 100 (clockwise on screen, from the right): a glyph at distance s
         // sits at angle s / r, turned a quarter more.
         let circle = Path::ellipse(0.0, 0.0, 100.0, 100.0);
-        let walk = anicraft_geom::walk::CurveWalk::new(&circle).unwrap();
+        let walk = anima_geom::walk::CurveWalk::new(&circle).unwrap();
         let len = walk.length();
         assert!((len - 2.0 * std::f32::consts::PI * 100.0).abs() < 0.5, "{len}");
         let t = on_path(&boxes(4), &circle, PathPlacement { offset: len - 15.0, flip: false, align: Align::Left }).unwrap();
@@ -867,8 +906,13 @@ mod tests {
     #[test]
     fn carets_stand_at_every_boundary_line_by_line() {
         let Some(fonts) = fonts() else { return };
-        let l = fonts.layout("ab
-cd", &style(20.0)).unwrap();
+        let l = fonts
+            .layout(
+                "ab
+cd",
+                &style(20.0),
+            )
+            .unwrap();
         assert_eq!(l.carets.len(), 2);
         let (a, b) = (&l.carets[0], &l.carets[1]);
         assert_eq!((a.start, a.end, b.start, b.end), (0, 2, 3, 5), "the line break belongs to neither line");

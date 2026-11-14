@@ -19,8 +19,8 @@
 //! program; nothing was copied.
 
 use crate::{CommandSpec, MAX_FRAME, Result, Session};
-use anicraft_doc::{ColorTransform, DisplayList, Document, ElementId, LayerId, LayerKind, Rgba, Timeline};
-use anicraft_geom::{Rect, Vec2};
+use anima_doc::{ColorTransform, DisplayList, Document, ElementId, LayerId, LayerKind, Rgba, Timeline};
+use anima_geom::{Rect, Vec2};
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, HashSet};
 use std::hash::{Hash, Hasher};
@@ -239,7 +239,16 @@ pub fn onion_frames(tl: &Timeline, playhead: u32, skin: &OnionSkin) -> Vec<Extra
             let ids: Vec<LayerId> = if skin.keyframes_only {
                 // A layer's keyframe starting there; the one the playhead is on only when it
                 // tweens (otherwise it looks the same as the playhead's frame).
-                layers.iter().filter_map(|&i| tl.layers.get(i)).filter(|l| l.keyframe_starting_at(f).and_then(|k| l.keyframes.get(k)).is_some_and(|k| !k.covers(playhead) || k.tween.is_some() || k.motion.is_some())).map(|l| l.id).collect()
+                layers
+                    .iter()
+                    .filter_map(|&i| tl.layers.get(i))
+                    .filter(|l| {
+                        l.keyframe_starting_at(f)
+                            .and_then(|k| l.keyframes.get(k))
+                            .is_some_and(|k| !k.covers(playhead) || k.tween.is_some() || k.motion.is_some())
+                    })
+                    .map(|l| l.id)
+                    .collect()
             } else {
                 layers.iter().filter_map(|&i| tl.layers.get(i)).map(|l| l.id).collect()
             };
@@ -311,7 +320,7 @@ fn interleave(tl: &Timeline, parts: Vec<DisplayList>) -> (DisplayList, Vec<usize
         for (i, m) in part.clip_modes.into_iter().enumerate() {
             dl.set_clip_mode(base + i as u32, m);
         }
-        dl.groups.extend(part.groups.into_iter().map(|g| anicraft_doc::Group { parent: gshift(g.parent), clip: shift(g.clip), ..g }));
+        dl.groups.extend(part.groups.into_iter().map(|g| anima_doc::Group { parent: gshift(g.parent), clip: shift(g.clip), ..g }));
         iters.push(
             part.items
                 .into_iter()
@@ -410,19 +419,30 @@ impl Session {
         let mut parts = Vec::new();
         let mut starts: Vec<Vec<(LayerId, u32)>> = Vec::new();
         for e in multi_frames(tl, self.frame, first, last) {
-            let mut dl = if self.editing.is_empty() { anicraft_doc::evaluate_scene(&self.doc, self.scene, e.frame) } else { anicraft_doc::evaluate_timeline(&self.doc, tl, e.frame) };
+            let mut dl = if self.editing.is_empty() {
+                anima_doc::evaluate_scene(&self.doc, self.scene, e.frame)
+            } else {
+                anima_doc::evaluate_timeline(&self.doc, tl, e.frame)
+            };
             keep_layers(&mut dl, &e.layers);
             parts.push(dl);
             starts.push(e.layers.iter().map(|l| (*l, e.frame)).collect());
         }
         // The playhead's frame: every editable layer, at the start of its keyframe there.
-        let now: Vec<(LayerId, u32)> = tl.layers.iter().enumerate().filter(|(i, _)| multi_editable(tl, *i)).filter_map(|(_, l)| l.keyframe_at(self.frame).map(|k| (l.id, k.start))).collect();
+        let now: Vec<(LayerId, u32)> = tl
+            .layers
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| multi_editable(tl, *i))
+            .filter_map(|(_, l)| l.keyframe_at(self.frame).map(|k| (l.id, k.start)))
+            .collect();
         let mut dl = (*self.display_list()).clone();
         keep_layers(&mut dl, &now.iter().map(|(l, _)| *l).collect::<Vec<_>>());
         parts.push(dl);
         starts.push(now);
         let (dl, from) = interleave(tl, parts);
-        let frames = dl.items.iter().zip(&from).map(|(it, &k)| starts.get(k).and_then(|s| s.iter().find(|(l, _)| *l == it.layer)).map(|(_, f)| *f)).collect();
+        let frames =
+            dl.items.iter().zip(&from).map(|(it, &k)| starts.get(k).and_then(|s| s.iter().find(|(l, _)| *l == it.layer)).map(|(_, f)| *f)).collect();
         (dl, frames)
     }
 
@@ -437,7 +457,7 @@ impl Session {
             for (item, frame) in dl.items.iter().zip(frames) {
                 let Some(frame) = frame else { continue };
                 let key = FrameItem { layer: item.layer, frame, element: item.element };
-                let pad = item.stroke.as_ref().map_or(0.0, anicraft_doc::Stroke::reach);
+                let pad = item.stroke.as_ref().map_or(0.0, anima_doc::Stroke::reach);
                 let b = item.path.bounds().inflate(pad).transformed(&item.transform);
                 match index.get(&key).and_then(|&i| out.get_mut(i)) {
                     Some((_, r)) => *r = r.union(&b),
@@ -463,14 +483,24 @@ impl Session {
 
 pub fn specs() -> Vec<CommandSpec> {
     let c = |id, label, menu, shortcut, params, mutates, run| CommandSpec { id, label, menu, shortcut, params, mutates, run };
-    vec![
-        c("frames.artwork", "Artwork on Multiple Frames", "", None, "{first, last} lists every element Edit Multiple Frames shows in frames first..=last (0-based): [layer, frame (its keyframe's first frame), id] with stage bounds; the playhead's elements as they look there", false, artwork as crate::RunFn),
-    ]
+    vec![c(
+        "frames.artwork",
+        "Artwork on Multiple Frames",
+        "",
+        None,
+        "{first, last} lists every element Edit Multiple Frames shows in frames first..=last (0-based): [layer, frame (its keyframe's first frame), id] with stage bounds; the playhead's elements as they look there",
+        false,
+        artwork as crate::RunFn,
+    )]
 }
 
 fn artwork(s: &mut Session, p: &Value) -> Result<Value> {
     let (first, last) = crate::multi::range_param(p)?;
-    let items: Vec<Value> = s.multi_frame_items(first, last).into_iter().map(|(it, b)| json!({"layer": it.layer.0, "frame": it.frame, "id": it.element.0, "bounds": [b.min.x, b.min.y, b.max.x, b.max.y]})).collect();
+    let items: Vec<Value> = s
+        .multi_frame_items(first, last)
+        .into_iter()
+        .map(|(it, b)| json!({"layer": it.layer.0, "frame": it.frame, "id": it.element.0, "bounds": [b.min.x, b.min.y, b.max.x, b.max.y]}))
+        .collect();
     Ok(json!({"first": first, "last": last, "items": items}))
 }
 

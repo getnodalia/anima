@@ -8,7 +8,7 @@
 //! The morph uses only hints placed on both keyframes, on the same pair of shapes.
 
 use crate::{Element, ElementKind, Keyframe, Layer, TweenKind};
-use anicraft_geom::{Rect, Vec2, morph};
+use anima_geom::{Rect, Vec2, morph};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -22,8 +22,8 @@ pub const HINT_TOLERANCE: f32 = 0.5;
 /// Its letter is its position in the list.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShapeHint {
-    pub start: anicraft_geom::Vec2,
-    pub end: anicraft_geom::Vec2,
+    pub start: anima_geom::Vec2,
+    pub end: anima_geom::Vec2,
 }
 
 /// The letter of hint `i` (`a` for the first).

@@ -11,7 +11,7 @@ Artists coming from Animate asked for (issue #206) **Modify › Group** (Ctrl+G)
 (Ctrl+Shift+G), and (issue #229) for Animate's vector workflow around drawing objects:
 **Modify › Combine Objects** (Union, Intersect, Punch, Crop) and the **Selection tool's
 modifiers** (Ctrl/Cmd-drag pulls a corner, issue #200; Alt-drag copies; Shift constrains).
-AniCraft had no groups: XFL `DOMGroup`s were flattened on import, and the guide told people to
+Ánima had no groups: XFL `DOMGroup`s were flattened on import, and the guide told people to
 make a symbol instead. Issue #241 asks, among other things, to open symbols by double-clicking
 them (done in ADR 0045) and for snapping (Snap to Objects, ADR 0042); nothing else in it is in
 this area.
@@ -71,11 +71,11 @@ nothing was copied.
 
 4. **Combine Objects** (`modify.combine {op}`, and Modify › Combine Objects › **Union**,
    **Intersect**, **Punch**, **Crop** as `modify.union` …): exact geometry on the planar map of
-   merge drawing (`anicraft_geom::planar`, ADR 0031), on two or more selected shapes (raw or
+   merge drawing (`anima_geom::planar`, ADR 0031), on two or more selected shapes (raw or
    drawing objects) on one layer, bottom to top as stacked:
    * **Union**: everything merged as merge drawing merges it. One fill of one look becomes one
      drawing object; anything with several colours or lines left becomes a **group of the merged
-     raw shapes**, AniCraft's equivalent of Animate's multi-colour drawing object.
+     raw shapes**, Ánima's equivalent of Animate's multi-colour drawing object.
    * **Intersect**: the area every shape's fill covers (each cutter first resolved to
      non-overlapping outlines, then `merge_cut`, keeping what is inside), in the topmost shape's
      fill and stroke, as Animate does.
@@ -84,7 +84,7 @@ nothing was copied.
    * A result of one piece is a drawing object; of several, a group of raw pieces. Areas are
      tested analytically (squares: 17,500, 2,500, 7,500, 2,500; a 100² − 40² ring; a quarter
      circle within 0.1 %).
-   * *Not in this slice:* **Delete Envelope** (AniCraft has no Envelope distortion yet; see
+   * *Not in this slice:* **Delete Envelope** (Ánima has no Envelope distortion yet; see
      below), and shapes whose stroke has a width profile (they merge as objects, ADR 0031).
 
 5. **Selection-tool modifiers** (the shell composes existing commands, so a script does the same

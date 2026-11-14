@@ -15,7 +15,7 @@ fn run(s: &mut Session, id: &str, p: Value) -> Value {
 }
 
 fn temp_dir(tag: &str) -> std::path::PathBuf {
-    let dir = std::env::temp_dir().join(format!("anicraft-drop-{tag}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("anima-drop-{tag}-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     dir
 }
@@ -23,9 +23,10 @@ fn temp_dir(tag: &str) -> std::path::PathBuf {
 /// A 4 × 2 PNG, a one-rectangle SVG and a short WAV in `dir`.
 fn media(dir: &Path) -> (String, String, String) {
     let png = dir.join("photo.png");
-    std::fs::write(&png, anicraft_render::encode_png(4, 2, &[255u8; 4 * 2 * 4]).unwrap()).unwrap();
+    std::fs::write(&png, anima_render::encode_png(4, 2, &[255u8; 4 * 2 * 4]).unwrap()).unwrap();
     let svg = dir.join("badge.svg");
-    std::fs::write(&svg, r##"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><rect width="40" height="20" fill="#f00"/></svg>"##).unwrap();
+    std::fs::write(&svg, r##"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><rect width="40" height="20" fill="#f00"/></svg>"##)
+        .unwrap();
     let wav = dir.join("beep.wav");
     std::fs::write(&wav, crate::cmds_sound::test_wav(8000, &[0.25; 4000])).unwrap();
     (png.display().to_string(), svg.display().to_string(), wav.display().to_string())
@@ -36,7 +37,7 @@ fn drops_route_by_file_type_and_target() {
     use DropAction::*;
     use DropTarget::*;
     let k = |p: &str| kind_of(Path::new(p));
-    assert_eq!(k("a.anicraft"), DropKind::Document);
+    assert_eq!(k("a.anima"), DropKind::Document);
     assert_eq!(k("A.FLA"), DropKind::Document);
     assert_eq!(k("b.xfl"), DropKind::Document);
     assert_eq!(k("c.svg"), DropKind::Drawing);
@@ -108,12 +109,16 @@ fn media_dropped_on_the_library_go_into_the_folder_under_the_pointer() {
     let v = run(&mut s, "file.drop", json!({"paths": [png.clone(), wav], "to": "library", "folder": folder}));
     assert_eq!(s.history_len(), history + 1);
     assert_eq!(v["items"].as_array().map(Vec::len), Some(2));
-    let in_folder = s.doc.folder_contents(anicraft_doc::FolderId(folder));
+    let in_folder = s.doc.folder_contents(anima_doc::FolderId(folder));
     assert_eq!(in_folder.len(), 2, "{in_folder:?}");
-    assert!(s.timeline().layers.iter().all(|l| l.keyframes.iter().all(|k| k.elements.is_empty() && k.sound.is_none())), "nothing placed on the stage");
+    assert!(
+        s.timeline().layers.iter().all(|l| l.keyframes.iter().all(|k| k.elements.is_empty() && k.sound.is_none())),
+        "nothing placed on the stage"
+    );
     // The same image again: numbered, not refused.
     run(&mut s, "file.drop", json!({"path": png.clone(), "to": "library", "folder": folder}));
-    let names: Vec<String> = s.doc.folder_contents(anicraft_doc::FolderId(folder)).into_iter().filter_map(|e| s.doc.entry_name(e).map(str::to_string)).collect();
+    let names: Vec<String> =
+        s.doc.folder_contents(anima_doc::FolderId(folder)).into_iter().filter_map(|e| s.doc.entry_name(e).map(str::to_string)).collect();
     assert!(names.contains(&"photo.png".to_string()) && names.contains(&"photo.png 2".to_string()), "{names:?}");
     // At the top level without a folder.
     run(&mut s, "file.drop", json!({"path": png, "to": "library"}));
@@ -123,8 +128,8 @@ fn media_dropped_on_the_library_go_into_the_folder_under_the_pointer() {
     let v = run(&mut s, "file.drop", json!({"paths": [svg], "to": "library", "folder": folder}));
     assert_eq!(s.doc.library.len(), symbols + 1, "{v}");
     let sym = s.doc.library.last().unwrap();
-    assert_eq!((sym.name.as_str(), sym.kind), ("badge", anicraft_doc::SymbolKind::Graphic));
-    assert!(s.doc.folder_contents(anicraft_doc::FolderId(folder)).contains(&anicraft_doc::LibraryEntry::Item(anicraft_doc::LibraryItem::Symbol(sym.id))));
+    assert_eq!((sym.name.as_str(), sym.kind), ("badge", anima_doc::SymbolKind::Graphic));
+    assert!(s.doc.folder_contents(anima_doc::FolderId(folder)).contains(&anima_doc::LibraryEntry::Item(anima_doc::LibraryItem::Symbol(sym.id))));
     // Nothing is imported when one file is refused.
     let before = s.doc.clone();
     assert!(s.execute("file.drop", &json!({"paths": [png.clone(), dir.join("notes.txt").display().to_string()], "to": "library"})).is_err());
@@ -142,7 +147,7 @@ fn drawings_with_layers_keep_them_and_bad_drops_change_nothing() {
     run(&mut s, "file.drop", json!({"path": masked.display().to_string(), "to": "stage", "x": 10, "y": 10}));
     assert!(s.timeline().layers.len() > layers + 1, "a masked drawing brings its folder and mask layer");
     let before = s.doc.clone();
-    let doc = dir.join("x.anicraft");
+    let doc = dir.join("x.anima");
     for p in [
         json!({"path": doc.display().to_string(), "to": "stage"}),
         json!({"path": dir.join("y.psd").display().to_string(), "to": "stage"}),
@@ -173,19 +178,19 @@ fn drawings_with_layers_keep_them_and_bad_drops_change_nothing() {
 #[test]
 fn opening_and_saving_keep_the_recent_list_and_open_recent_reopens() {
     let dir = temp_dir("recent");
-    let a = dir.join("a.anicraft");
-    let b = dir.join("b.anicraft");
-    let mut s = Session::new(anicraft_doc::sample::demo());
+    let a = dir.join("a.anima");
+    let b = dir.join("b.anima");
+    let mut s = Session::new(anima_doc::sample::demo());
     run(&mut s, "file.save_as", json!({"path": a.display().to_string()}));
     run(&mut s, "file.new", json!({"width": 1280, "height": 720}));
     run(&mut s, "file.save_as", json!({"path": b.display().to_string()}));
     let list = run(&mut s, "file.recent_list", json!({}));
     let names: Vec<&str> = list["files"].as_array().unwrap().iter().filter_map(|f| f["name"].as_str()).collect();
-    assert_eq!(names, ["b.anicraft", "a.anicraft"], "most recent first; New doesn't clear it");
+    assert_eq!(names, ["b.anima", "a.anima"], "most recent first; New doesn't clear it");
     // Open Recent by index opens it, and moves it to the top.
     run(&mut s, "file.open_recent", json!({"index": 1}));
     assert_eq!(s.path.as_deref(), Some(a.as_path()));
-    assert_eq!(s.doc.stage.width, anicraft_doc::sample::demo().stage.width);
+    assert_eq!(s.doc.stage.width, anima_doc::sample::demo().stage.width);
     assert_eq!(s.recent.entries().first().map(|e| e.path.clone()), Some(a.clone()));
     // Over unsaved work it asks first, like Open.
     run(&mut s, "draw.rect", json!({"x": 0, "y": 0, "w": 5, "h": 5}));
@@ -196,7 +201,7 @@ fn opening_and_saving_keep_the_recent_list_and_open_recent_reopens() {
     // A file that is gone stays listed, marked missing, and says so when opened.
     std::fs::remove_file(&a).unwrap();
     let list = run(&mut s, "file.recent_list", json!({}));
-    let gone = list["files"].as_array().unwrap().iter().find(|f| f["name"] == "a.anicraft").unwrap();
+    let gone = list["files"].as_array().unwrap().iter().find(|f| f["name"] == "a.anima").unwrap();
     assert_eq!(gone["missing"], true);
     let e = s.execute("file.open_recent", &json!({"path": a.display().to_string()})).unwrap_err();
     assert!(e.to_string().contains("no longer there"), "{e}");
@@ -211,7 +216,15 @@ fn opening_and_saving_keep_the_recent_list_and_open_recent_reopens() {
     run(&mut s, "file.open", json!({"path": b.display().to_string()}));
     let before = s.recent.clone();
     for id in ["file.open_recent", "prefs.recent_pin", "prefs.recent_remove"] {
-        for p in [json!({"index": u64::MAX}), json!({"index": -1}), json!({"path": ""}), json!({"index": 0, "path": "x"}), json!({"pinned": "x"}), json!("x"), Value::Null] {
+        for p in [
+            json!({"index": u64::MAX}),
+            json!({"index": -1}),
+            json!({"path": ""}),
+            json!({"index": 0, "path": "x"}),
+            json!({"pinned": "x"}),
+            json!("x"),
+            Value::Null,
+        ] {
             let _ = s.execute(id, &p);
             assert_eq!(s.recent, before, "{id} {p}");
         }

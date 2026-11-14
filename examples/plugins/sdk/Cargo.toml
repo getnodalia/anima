@@ -1,6 +1,6 @@
 [package]
-name = "anicraft-plugin-sdk"
-description = "Guest-side helpers for AniCraft WebAssembly plug-ins (ABI v1)"
+name = "anima-plugin-sdk"
+description = "Guest-side helpers for Ánima WebAssembly plug-ins (ABI v1)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

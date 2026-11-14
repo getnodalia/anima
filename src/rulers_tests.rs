@@ -4,8 +4,8 @@
 
 use crate::app::{App, Drag, Tool};
 use crate::theme::RULER;
-use anicraft_engine::Session;
-use anicraft_engine::doc::{GuideAxis, sample};
+use anima_engine::Session;
+use anima_engine::doc::{GuideAxis, sample};
 use egui::{Event, Modifiers, PointerButton, Pos2, Rect, pos2, vec2};
 use serde_json::json;
 
@@ -135,7 +135,7 @@ fn the_dialogs_and_the_view_menu_draw() {
     assert!(app.aids_dialogs.grid.is_none() && app.aids_dialogs.guides.is_none());
     assert_eq!(app.s.guides().len(), 1);
     // The View menu, with its check items.
-    let cmds = anicraft_engine::commands();
+    let cmds = anima_engine::commands();
     let mut out = ctx.run_ui(screen(), |ui| crate::menus::menu_contents(&mut app, ui, "View", &cmds));
     out.textures_delta.clear();
     // Clear Guides says how many went.

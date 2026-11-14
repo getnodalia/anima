@@ -13,9 +13,9 @@ OUT="docs/guide/images"
 WIDTH=1100
 ONLY="${1:-}"
 
-cargo build -p anicraft --bin anicraft
+cargo build -p anima --bin anima
 TARGET_DIR="${CARGO_TARGET_DIR:-$ROOT/target}"
-APP="$TARGET_DIR/debug/anicraft"
+APP="$TARGET_DIR/debug/anima"
 [[ -x "$APP" || -x "$APP.exe" ]] || { echo "error: $APP was not built" >&2; exit 1; }
 
 # picture name, then the --open state ("-" for the window as it starts)
