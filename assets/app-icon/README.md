@@ -1,9 +1,9 @@
 # Ánima app icon
 
-**Figure:** Émile Reynaud (1844–1918). His Théâtre Optique projected the first animated films in
-1892, hand-painted frame by frame: the animator's craft Ánima is for.
+**Figure:** Émile Cohl (1857–1938). His *Fantasmagorie* (1908), drawn frame by frame on paper,
+is the first hand-drawn animated cartoon: the animator's craft Ánima is for.
 
-**Style:** a black-and-white portrait cut out over a full-bleed colour field, head and shoulders,
+**Style:** a black-and-white portrait cut out over a full-bleed colour field, head and shoulders, the bust running off the bottom edge,
 in the Nodalia icon family (one historical figure per app, one colour per app).
 
 **Tile:** Ánima violet, `#6B4CE8` at the top to `#5034C6` at the bottom; `viewBox="0 0 512 512"`,
@@ -12,9 +12,9 @@ a rounded square with `rx=112`, the artwork clipped to it. macOS adds Apple's tr
 application grid, like the Nodalix icon theme around it: a 224 px tile in a 256 px canvas, a
 51.5 px corner radius and a soft shadow 5 px below.
 
-**Provenance:** the portrait is "Émile Reynaud.png" from
-[Wikimedia Commons](https://commons.wikimedia.org/wiki/File:%C3%89mile_Reynaud.png), a photograph
-by an unknown photographer from before 1918 (public domain). The figure was separated from its
+**Provenance:** the portrait is "Emile Cohl portrait.jpg" from
+[Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Emile_Cohl_portrait.jpg), a photograph
+by an unidentified photographer from circa 1885 (public domain). The figure was separated from its
 background, converted to black and white and placed over the app colour with nodalia-design's
 `tools/app-portrait`. Licence: see `LICENSE.txt`.
 
@@ -43,9 +43,8 @@ background, converted to black and white and placed over the app colour with nod
 
 ```sh
 # 1. the artwork, in nodalia-design (needs rembg):
-python3 tools/app-portrait/portrait.py "Émile_Reynaud.png" anima.png --box 0,-30,470,440 \
-  --colors '#6B4CE8' '#5034C6' --gamma 1.25 \
-  --add-mask 300,300,340,300,400,330,440,380,470,420,470,572,300,572
+python3 tools/app-portrait/portrait.py "Emile_Cohl_portrait.jpg" anima.png --box 0,20,1080,1100 \
+  --colors '#6B4CE8' '#5034C6' --gamma 1.1
 # 2. the master SVG, here:
 python3 scripts/icon-svg.py anima.png assets/app-icon
 # 3. every render (needs resvg or rsvg-convert, and Python with Pillow):

@@ -35,8 +35,8 @@ def master(art, comment):
         '</svg>\n')
 
 
-COMMENT = ('<!-- Ánima app icon: Émile Reynaud, inventor of the Théâtre Optique (public-domain '
-           'photograph), cut out in black and white on Ánima\'s violet. '
+COMMENT = ('<!-- Ánima app icon: Émile Cohl, maker of Fantasmagorie, the first hand-drawn '
+           'animated cartoon (public-domain photograph), cut out in black and white on Ánima\'s violet. '
            'MIT OR Apache-2.0 (assets/app-icon/README.md). -->')
 
 if __name__ == '__main__':
