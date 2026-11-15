@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **Spanish interface.** Release builds are made with craft-i18n, which now has a Spanish
+  catalog for every Ánima string, so Preferences › Appearance › Language offers Español.
 * **Sound output polish** (ADR 0095, M5).
   * The playhead follows the sound being **heard**: the device's latency is taken off and slow
     frames are dropped rather than drifting (within a frame over an hour of play in tests).
