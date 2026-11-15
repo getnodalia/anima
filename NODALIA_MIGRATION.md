@@ -11,8 +11,8 @@ Pure-Rust 2D animation studio (egui/eframe 0.36, wgpu), MIT OR Apache-2.0. Every
 renamed (`docs/upstream.md`). Cargo git dependencies come from getnodalia/foundation (craft-libs at
 `vendor/craft-libs/pin-f0f4758`) and nodalia-design (`nodalia-update`). CI calls Foundation's
 reusable workflows pinned by commit, on standard GitHub-hosted runners only; releases use the
-automatic flow (`release-auto.yml`, unsigned macOS DMG). Ánima has its own icon (vector, Colloid
-style, `assets/app-icon/`), Nodalia's violet accent and a Nodalia DMG window.
+automatic flow (`release-auto.yml`, unsigned macOS DMG). Ánima has its own icon (Émile Reynaud's portrait,
+Nodalia icon family, `assets/app-icon/`), Nodalia's violet accent and a Nodalia DMG window.
 
 ## Compatibility kept on purpose
 
