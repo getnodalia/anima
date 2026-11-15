@@ -109,13 +109,15 @@ serde_json.workspace = true
 web-time.workspace = true
 # The system's interface language, for the default language (ADR 0040; MIT OR Apache-2.0).
 sys-locale = "0.3"
+# The Nodalia Design Language (MIT): palette, creator-suite parts, icons and window controls.
+nodalia-theme = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "570a721432c378da0a80f065419b4766ee0e4d06", features = ["creator"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # The user guide, bundled for Help › User Guide (ADR 0069). The web build serves it as pages instead.
 anima-guide.workspace = true
 # Release checks and in-place updates, shared by the Nodalia apps (MIT). Without its egui windows:
 # Ánima draws its own with the egui it already uses.
-nodalia-update = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "6d94e9c17c1767260bcb020f00c71eddd105561f" }
+nodalia-update = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "570a721432c378da0a80f065419b4766ee0e4d06" }
 
 eframe = { workspace = true, features = ["links"] }
 rfd.workspace = true
@@ -127,6 +129,11 @@ cpal = { version = "0.18", optional = true }
 # open-documents and quit handlers with AppKit and hands us plain paths, so our code stays free of
 # `unsafe`. Pinned exactly: it is young, and a new version is read again before it comes in. Its
 # objc2 / objc2-app-kit / objc2-foundation are the versions wgpu already brings on macOS.
+# The global menu (dbusmenu over the session bus) on Linux desktops with a top-bar menu. The zbus
+# the portal file dialogs (rfd) and accesskit already bring (MIT).
+[target.'cfg(target_os = "linux")'.dependencies]
+zbus = "5.19"
+
 [target.'cfg(target_os = "macos")'.dependencies]
 fmv-macos-events = "=0.1.0"
 

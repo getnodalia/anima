@@ -391,9 +391,9 @@ fn volume(app: &mut App, ui: &mut egui::Ui) {
     }
 }
 
-/// The header's volume slider, in points: short, as the header is full (with Inter, the widest
-/// header at the default window size has 2 pt to spare).
-const VOLUME_W: f32 = 48.0;
+/// The header's volume slider, in points: short, as the header is full (the islands take 16 pt of
+/// its width at the default window size, so every control in it is as narrow as it can be).
+const VOLUME_W: f32 = 40.0;
 
 /// The timeline header's tools, beside the dock's tabs (ADR 0075): transport, readouts, frame
 /// and tween buttons, `width` wide at most. What doesn't fit scrolls sideways (Shift+wheel) in
@@ -1840,7 +1840,7 @@ fn header(app: &mut App, ui: &mut egui::Ui) {
     }
     match in_tween.filter(|_| !in_motion) {
         Some(tw) => {
-            match crate::ease_editor::picker(app, ui, "tl_ease", &tw.easing, 112.0, tr!("Easing")) {
+            match crate::ease_editor::picker(app, ui, "tl_ease", &tw.easing, 104.0, tr!("Easing")) {
                 Some(crate::ease_editor::Picked::Ease(e)) => {
                     app.run("timeline.set_easing", json!({"easing": e}));
                 }

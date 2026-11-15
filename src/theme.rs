@@ -125,32 +125,43 @@ pub struct Tokens {
 /// * **Round only where the thing is round**: keyframe dots, dials, onion-skin marks.
 pub const SQUARE: f32 = 0.0;
 
+/// The Nodalia Design Language's palettes with Ánima's accent: Dark and Light take their
+/// surfaces, text, borders, controls and accent from them; the timeline's and the stage's own
+/// colours stay Ánima's.
+pub const ND: nodalia_theme::Palette = nodalia_theme::Mode::Dark.palette_with(nodalia_theme::Accent::Anima);
+pub const NL: nodalia_theme::Palette = nodalia_theme::Mode::Light.palette_with(nodalia_theme::Accent::Anima);
+
+/// An NDL colour (opaque) as egui's.
+const fn ndl(c: nodalia_theme::Rgba) -> Color32 {
+    Color32::from_rgb(c.r, c.g, c.b)
+}
+
 /// The graphite look (ADR 0008), the default.
 pub const GRAPHITE: Tokens = Tokens {
-    chrome: Color32::from_rgb(0x13, 0x13, 0x16),
-    panel: Color32::from_rgb(0x1b, 0x1b, 0x1f),
-    panel_alt: Color32::from_rgb(0x22, 0x22, 0x27),
-    header: Color32::from_rgb(0x2c, 0x2c, 0x32),
-    hover: Color32::from_rgb(0x3a, 0x3a, 0x42),
-    active: Color32::from_rgb(0x4a, 0x4a, 0x53),
-    on_active: Color32::WHITE,
-    icon: Color32::from_rgb(0xb4, 0xb4, 0xbc),
-    icon_hot: Color32::WHITE,
-    field: Color32::from_rgb(0x0e, 0x0e, 0x11),
-    border: Color32::from_rgb(0x36, 0x36, 0x3e),
-    control_edge: Color32::from_rgb(0x78, 0x78, 0x82),
-    separator: Color32::from_rgb(0x26, 0x26, 0x2c),
-    text: Color32::from_rgb(0xee, 0xee, 0xf0),
-    text_dim: Color32::from_rgb(0xb0, 0xb0, 0xb8),
+    chrome: ndl(ND.surface_window),
+    panel: ndl(ND.surface_panel),
+    panel_alt: ndl(ND.surface_raised),
+    header: ndl(ND.control_bg),
+    hover: ndl(ND.control_bg_hover),
+    active: ndl(ND.control_bg_pressed),
+    on_active: ndl(ND.text_primary),
+    icon: ndl(ND.text_secondary),
+    icon_hot: ndl(ND.text_primary),
+    field: ndl(ND.control_field_bg),
+    border: ndl(ND.border_subtle),
+    control_edge: ndl(ND.border_strong),
+    separator: ndl(ND.border_subtle),
+    text: ndl(ND.text_primary),
+    text_dim: ndl(ND.text_secondary),
     // ≥ 4.5:1 on every surface up to `header`, so even hints stay readable.
-    text_faint: Color32::from_rgb(0x98, 0x98, 0xa2),
+    text_faint: ndl(ND.text_tertiary),
     // Ánima's violet (its icon's, assets/app-icon/README.md), a step lighter for 3:1 focus rings.
-    accent: Color32::from_rgb(0x75, 0x59, 0xef),
-    accent_dim: Color32::from_rgb(0x34, 0x27, 0x78),
-    accent_text: Color32::from_rgb(0xa8, 0x96, 0xff),
-    on_fill: Color32::WHITE,
+    accent: ndl(ND.accent_default),
+    accent_dim: ndl(ND.accent_subtle),
+    accent_text: ndl(ND.accent_text),
+    on_fill: ndl(ND.text_on_accent),
     ink: Color32::from_rgb(0x0e, 0x0e, 0x10),
-    pasteboard: Color32::from_rgb(0x2a, 0x2a, 0x30),
+    pasteboard: ndl(ND.surface_sunken),
     stage_shadow: Color32::from_black_alpha(150),
     span: Color32::from_rgb(0x22, 0xc7, 0xa9),
     span_empty: Color32::from_rgb(0x2e, 0x2e, 0x35),
@@ -162,7 +173,7 @@ pub const GRAPHITE: Tokens = Tokens {
     tween_line: Color32::from_rgb(0x0e, 0x0e, 0x10),
     playhead: Color32::from_rgb(0xff, 0x4d, 0x3d),
     selection: Color32::from_rgb(0x2e, 0x66, 0xf0),
-    danger: Color32::from_rgb(0xd8, 0x34, 0x2a),
+    danger: Color32::from_rgb(0xf2, 0x5c, 0x4f),
     error: Color32::from_rgb(0xff, 0x6e, 0x60),
     ok: Color32::from_rgb(0x5f, 0xe0, 0x9a),
     hint_unplaced: Color32::from_rgb(0xff, 0x5c, 0x8a),
@@ -182,9 +193,9 @@ pub const GRAPHITE: Tokens = Tokens {
     stage_edge: Color32::from_black_alpha(160),
     window_shadow: 150,
     popup_shadow: 130,
-    radius_control: 3,
-    radius_menu: 6,
-    radius_window: 10,
+    radius_control: 8,
+    radius_menu: 10,
+    radius_window: 16,
 };
 
 /// High contrast (ADR 0022): the same roles on black, with white text, a yellow accent for
@@ -246,9 +257,9 @@ pub const HIGH_CONTRAST: Tokens = Tokens {
     stage_edge: Color32::from_black_alpha(160),
     window_shadow: 150,
     popup_shadow: 130,
-    radius_control: 3,
-    radius_menu: 6,
-    radius_window: 10,
+    radius_control: 8,
+    radius_menu: 10,
+    radius_window: 16,
 };
 
 /// A colour written as a hex triplet, `0xrrggbb`, as the light palette is specified (ADR 0077).
@@ -262,28 +273,28 @@ const fn rgb(hex: u32) -> Color32 {
 /// deeper mid-tones: the timeline's mint, violet, amber and sky blocks sit at 3:1 against the
 /// panels and keep dark marks at 4.5:1, the same rules Graphite meets.
 pub const LIGHT: Tokens = Tokens {
-    chrome: rgb(0xe1e1e6),
-    panel: rgb(0xf0f0f3),
-    panel_alt: rgb(0xf8f8fa),
-    header: rgb(0xe3e3e8),
-    hover: rgb(0xd5d5dc),
-    active: rgb(0xd0dcfa),
-    on_active: rgb(0x0b1f5c),
-    icon: rgb(0x4c4c56),
-    icon_hot: rgb(0x101014),
-    field: rgb(0xffffff),
-    border: rgb(0xc9c9d1),
-    control_edge: rgb(0x7a7a85),
-    separator: rgb(0xdfdfe5),
-    text: rgb(0x17171b),
-    text_dim: rgb(0x44444d),
-    text_faint: rgb(0x5c5c66),
-    accent: rgb(0x5a3fd6),
-    accent_dim: rgb(0xe2dcfb),
-    accent_text: rgb(0x4a31c0),
-    on_fill: rgb(0xffffff),
+    chrome: ndl(NL.surface_window),
+    panel: ndl(NL.surface_panel),
+    panel_alt: ndl(NL.surface_sunken),
+    header: ndl(NL.control_bg),
+    hover: ndl(NL.control_bg_hover),
+    active: ndl(NL.control_bg_pressed),
+    on_active: ndl(NL.text_primary),
+    icon: ndl(NL.text_secondary),
+    icon_hot: ndl(NL.text_primary),
+    field: ndl(NL.control_field_bg),
+    border: ndl(NL.border_subtle),
+    control_edge: ndl(NL.border_strong),
+    separator: ndl(NL.surface_sunken),
+    text: ndl(NL.text_primary),
+    text_dim: ndl(NL.text_secondary),
+    text_faint: rgb(0x555b6e),
+    accent: ndl(NL.accent_default),
+    accent_dim: ndl(NL.accent_subtle),
+    accent_text: ndl(NL.accent_text),
+    on_fill: ndl(NL.text_on_accent),
     ink: rgb(0x101014),
-    pasteboard: rgb(0xd2d2d9),
+    pasteboard: ndl(NL.control_bg_pressed),
     stage_shadow: Color32::from_black_alpha(34),
     span: rgb(0x15957d),
     span_empty: rgb(0xdbdbe2),
@@ -315,9 +326,9 @@ pub const LIGHT: Tokens = Tokens {
     stage_edge: Color32::from_black_alpha(70),
     window_shadow: 46,
     popup_shadow: 40,
-    radius_control: 3,
-    radius_menu: 6,
-    radius_window: 10,
+    radius_control: 8,
+    radius_menu: 10,
+    radius_window: 16,
 };
 
 /// Which palette the interface uses (Preferences › Appearance › Theme).
@@ -572,6 +583,8 @@ pub fn bundled_names() -> (&'static str, &'static str) {
 /// proportional. Code outside this module uses these roles, never raw font sizes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Type {
+    /// The product's name where it stands alone (About).
+    Display,
     /// Dialog titles.
     Title,
     /// Panel and section headings (sentence case, bold; see `section`).
@@ -598,6 +611,7 @@ pub enum Type {
 pub fn font(t: Type) -> egui::FontId {
     use egui::FontId;
     match t {
+        Type::Display => FontId::proportional(24.0),
         Type::Title => FontId::proportional(17.0),
         Type::Heading => FontId::proportional(12.5),
         Type::Body => FontId::proportional(13.0),
@@ -614,7 +628,7 @@ pub fn font(t: Type) -> egui::FontId {
 /// Default colour for a role (override with `.color()` for state: error, accent…).
 pub fn color(t: Type) -> Color32 {
     match t {
-        Type::Title | Type::Heading | Type::Body | Type::Data | Type::DataLarge | Type::Path => T.text,
+        Type::Display | Type::Title | Type::Heading | Type::Body | Type::Data | Type::DataLarge | Type::Path => T.text,
         Type::Label | Type::DataSmall => T.text_dim,
         Type::Caption | Type::Key => T.text_faint,
     }
@@ -643,7 +657,7 @@ pub fn access_key_label(s: &str, at: Option<usize>) -> egui::text::LayoutJob {
 pub fn text(t: Type, s: impl Into<String>) -> egui::RichText {
     let rt = egui::RichText::new(s).font(font(t)).color(color(t));
     match t {
-        Type::Title | Type::Heading => rt.strong(),
+        Type::Display | Type::Title | Type::Heading => rt.strong(),
         _ => rt,
     }
 }
@@ -881,4 +895,80 @@ pub const HIT_AREA_ALPHA: f32 = 0.35;
 /// The tint and opacity a button's hit area is drawn in (ADR 0057).
 pub fn hit_area() -> (anima_engine::doc::Rgba, f32) {
     (to_rgba(T.hit_area), HIT_AREA_ALPHA)
+}
+
+/// The gap between islands, and between an island and the window's edge (NDL's creator suite).
+pub const ISLAND_GAP: f32 = 8.0;
+
+/// The NDL palette the shared creator parts draw with: the one the theme is built from (high
+/// contrast: NDL's dark high-contrast palette with Ánima's yellow focus colour).
+pub fn ndl_palette() -> nodalia_theme::Palette {
+    match palette() {
+        Palette::Graphite => ND,
+        Palette::Light => NL,
+        Palette::HighContrast => {
+            let mut p = *nodalia_theme::Mode::DarkHc.palette();
+            let y = nodalia_theme::Rgba::new(HIGH_CONTRAST.accent.r(), HIGH_CONTRAST.accent.g(), HIGH_CONTRAST.accent.b(), 255);
+            p.accent_default = y;
+            p.border_focus = y;
+            p.accent_text = y;
+            p.surface_window = nodalia_theme::Rgba::new(0, 0, 0, 255);
+            p
+        }
+    }
+}
+
+/// The NDL mode of the palette in use (window controls pick their tints by it).
+pub fn ndl_mode() -> nodalia_theme::Mode {
+    match palette() {
+        Palette::Graphite => nodalia_theme::Mode::Dark,
+        Palette::Light => nodalia_theme::Mode::Light,
+        Palette::HighContrast => nodalia_theme::Mode::DarkHc,
+    }
+}
+
+/// The creator suite's look (workspace selector, tabs, dialog buttons, Home) in the palette in use.
+pub fn creator() -> nodalia_theme::creator::Look {
+    nodalia_theme::creator::Look::new(ndl_palette())
+}
+
+/// A panel drawn as an island: `fill` with an outer margin in the window colour, half the gap on
+/// each side so two islands sit [`ISLAND_GAP`] apart. Round its corners with [`round_island`].
+pub fn island_frame(fill: Color32) -> egui::Frame {
+    egui::Frame::NONE.fill(fill).outer_margin(egui::Margin::same((ISLAND_GAP / 2.0) as i8))
+}
+
+/// Rounds the corners of an island shown with [`island_frame`] whose outer rect is `outer`.
+pub fn round_island(painter: &egui::Painter, outer: egui::Rect) {
+    let rect = outer.shrink(ISLAND_GAP / 2.0);
+    if !rect.is_positive() {
+        return;
+    }
+    let r = f32::from(nodalia_theme::creator::layout::ISLAND_RADIUS);
+    painter.with_clip_rect(rect).rect_stroke(
+        rect,
+        CornerRadius::same(nodalia_theme::creator::layout::ISLAND_RADIUS),
+        Stroke::new(r, T.chrome),
+        egui::StrokeKind::Outside,
+    );
+}
+
+/// The top of an NDL dialog drawn in a window without egui's title bar: its title (when there is
+/// one) and Nodalia's round close button at the right. Returns true when the close was clicked.
+pub fn dialog_header(ui: &mut egui::Ui, title: Option<&str>) -> bool {
+    use egui::{Sense, pos2, vec2};
+    let (rect, _) = ui.allocate_exact_size(vec2(ui.available_width(), 36.0), Sense::hover());
+    if let Some(title) = title {
+        let mut job = egui::text::LayoutJob::simple_singleline(title.to_owned(), font(Type::Title), T.text);
+        job.wrap = egui::text::TextWrapping::truncate_at_width((rect.width() - 44.0).max(0.0));
+        let g = ui.painter().layout_job(job);
+        ui.painter().galley(pos2(rect.left() + 2.0, rect.center().y - g.size().y / 2.0), g, T.text);
+    }
+    let close = egui::Rect::from_center_size(pos2(rect.right() - 14.0, rect.center().y), vec2(28.0, 28.0));
+    let id = ui.scope_id().with("ndl_dialog_close");
+    let clicked = nodalia_theme::creator::close_button(ui, &creator(), close, id);
+    // NDL names the button in English; screen readers get it in the interface's language.
+    ui.ctx().accesskit_node_builder(id, |n| n.set_label(tr!("Close")));
+    ui.add_space(4.0);
+    clicked
 }

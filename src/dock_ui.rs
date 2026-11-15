@@ -371,8 +371,9 @@ pub fn workspace(app: &mut App, ui: &mut egui::Ui) {
             .resizable(true)
             .default_size(size)
             .size_range(min..=max)
-            .frame(egui::Frame::NONE.fill(T.panel))
+            .frame(theme::island_frame(T.panel))
             .show(ui, |ui| zone_ui(app, ui, side, &zone.groups, &layout, &mut acts));
+        theme::round_island(ui.painter(), shown.response.rect);
         let resize = id.with("__resize");
         if ctx.is_being_dragged(resize) {
             let r = shown.response.rect;
@@ -387,8 +388,9 @@ pub fn workspace(app: &mut App, ui: &mut egui::Ui) {
         };
         a11y::name_resize(&ctx, resize, name);
     }
-    let stage = egui::CentralPanel::default().frame(egui::Frame::NONE.fill(T.pasteboard)).show(ui, |ui| crate::stage::show(app, ui));
-    app.dock_view.stage = Some(stage.response.rect);
+    let stage = egui::CentralPanel::default().frame(theme::island_frame(T.pasteboard)).show(ui, |ui| crate::stage::show(app, ui));
+    theme::round_island(ui.painter(), stage.response.rect);
+    app.dock_view.stage = Some(stage.response.rect.shrink(theme::ISLAND_GAP / 2.0));
     app.dock_view.origin_from(&ctx);
     flyout(app, &ctx, (dock_w, dock_h), &layout, &mut acts);
     drag_and_drop(app, &ctx, &mut acts);
@@ -418,15 +420,15 @@ impl DockView {
 fn tools_bar(app: &mut App, ui: &mut egui::Ui, side: Side, layout: &Layout, acts: &mut Vec<Act>) {
     let id = if side == Side::Left { Id::unique("tools") } else { Id::unique(("tools", side)) };
     let margin =
-        if side.stacks() { egui::Margin { left: 0, right: 0, top: 2, bottom: 8 } } else { egui::Margin { left: 2, right: 8, top: 0, bottom: 0 } };
-    let frame = egui::Frame::NONE.fill(T.panel).inner_margin(margin);
+        if side.stacks() { egui::Margin { left: 0, right: 0, top: 6, bottom: 8 } } else { egui::Margin { left: 6, right: 8, top: 0, bottom: 0 } };
+    let frame = theme::island_frame(T.panel).inner_margin(margin);
     let panel = match side {
         Side::Left => egui::Panel::left(id),
         Side::Right => egui::Panel::right(id),
         Side::Top => egui::Panel::top(id),
         Side::Bottom => egui::Panel::bottom(id),
     };
-    panel.resizable(false).exact_size(BAR).frame(frame).show(ui, |ui| {
+    let shown = panel.resizable(false).exact_size(BAR + theme::ISLAND_GAP).frame(frame).show(ui, |ui| {
         if side.stacks() {
             let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), GRIP), Sense::hover());
             grip(ui, r, true, Where::Bar(side), layout, acts);
@@ -441,6 +443,7 @@ fn tools_bar(app: &mut App, ui: &mut egui::Ui, side: Side, layout: &Layout, acts
             });
         }
     });
+    theme::round_island(ui.painter(), shown.response.rect);
 }
 
 /// The tools bar's grip: drag it to move the tools, click it for their menu.
@@ -1018,7 +1021,7 @@ fn strip(app: &mut App, ui: &mut egui::Ui, side: Side, zone: &Zone, layout: &Lay
         Side::Bottom => egui::Panel::bottom(id),
     };
     let flyout = app.dock_view.flyout;
-    let shown = panel.resizable(false).exact_size(STRIP).frame(egui::Frame::NONE.fill(T.panel_alt)).show(ui, |ui| {
+    let shown = panel.resizable(false).exact_size(STRIP + theme::ISLAND_GAP).frame(theme::island_frame(T.panel_alt)).show(ui, |ui| {
         let area = ui.max_rect();
         ui.allocate_rect(area, Sense::hover());
         let down = side.stacks();
@@ -1082,6 +1085,7 @@ fn strip(app: &mut App, ui: &mut egui::Ui, side: Side, zone: &Zone, layout: &Lay
         }
         area
     });
+    theme::round_island(ui.painter(), shown.response.rect);
     let rect = shown.inner;
     if let Some(first) = zone.panels().next() {
         app.dock_view.drawn.push(Drawn { over: Over::Strip(side), first, next: None, rect, header: rect });
@@ -1496,7 +1500,9 @@ mod tests {
             app.dock.right.size = Some(size);
             settle(&ctx, &mut app);
             let Some(d) = app.dock_view.drawn.iter().find(|d| d.first == Panel::Library) else { panic!("drawn") };
-            assert!((d.header.width() - size).abs() <= 2.0, "the dock is {} wide, not {size}", d.header.width());
+            // The island sits inside the dock, half the gap between islands in from each side.
+            let island = size - crate::theme::ISLAND_GAP;
+            assert!((d.header.width() - island).abs() <= 2.0, "the dock island is {} wide, not {island}", d.header.width());
             let menu_left = d.header.right() - MENU_W - 4.0;
             for t in tabs {
                 if let Some((r, _)) = rect(&ctx, t) {

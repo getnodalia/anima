@@ -99,6 +99,10 @@ fn lenient_backend<'de, D: serde::Deserializer<'de>>(d: D) -> Result<WindowBacke
     Ok(serde_json::from_value(serde_json::Value::deserialize(d)?).unwrap_or_default())
 }
 
+fn lenient_controls<'de, D: serde::Deserializer<'de>>(d: D) -> Result<WindowControls, D::Error> {
+    Ok(serde_json::from_value(serde_json::Value::deserialize(d)?).unwrap_or_default())
+}
+
 impl StageRenderer {
     pub const ALL: [(StageRenderer, &'static str, &'static str); 2] = [
         (
@@ -107,6 +111,23 @@ impl StageRenderer {
             tr_noop!("Draws the stage on the graphics card, and on the CPU when there is no card that can. The picture is the same either way."),
         ),
         (StageRenderer::Cpu, tr_noop!("CPU (reference)"), tr_noop!("The reference renderer: slower on large stages. Exports always use it.")),
+    ];
+}
+
+/// Whose window controls the editor wears on Linux (NDL): Nodalia's round ones in the app bar,
+/// or the desktop's own title bar. macOS and Windows always keep their native controls. Takes
+/// effect from the next start.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum WindowControls {
+    #[default]
+    Nodalia,
+    System,
+}
+
+impl WindowControls {
+    pub const ALL: [(WindowControls, &'static str, &'static str); 2] = [
+        (WindowControls::Nodalia, tr_noop!("Nodalia"), tr_noop!("Round controls in Ánima's top bar, which is also the title bar.")),
+        (WindowControls::System, tr_noop!("The desktop's"), tr_noop!("The title bar and controls of your desktop (GNOME, KDE…), above the top bar.")),
     ];
 }
 
@@ -140,6 +161,9 @@ pub struct Prefs {
     /// How the window is drawn, from the next start (#207, #255).
     #[serde(deserialize_with = "lenient_backend")]
     pub window_backend: WindowBackend,
+    /// Linux: Nodalia's window controls or the desktop's, from the next start.
+    #[serde(deserialize_with = "lenient_controls")]
+    pub window_controls: WindowControls,
     /// Native open/save dialogs; off = a built-in path field (for Linux setups without an XDG
     /// desktop portal).
     pub native_dialogs: bool,
@@ -257,6 +281,7 @@ impl Default for Prefs {
             render_mode: RenderMode::Auto,
             stage_renderer: StageRenderer::Gpu,
             window_backend: WindowBackend::Auto,
+            window_controls: WindowControls::Nodalia,
             native_dialogs: true,
             timeline_start_gap: 0.0,
             timeline_short_rows: false,

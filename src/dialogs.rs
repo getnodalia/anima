@@ -420,13 +420,17 @@ fn preferences(app: &mut App, ctx: &egui::Context) {
     let shown = egui::Window::new(title)
         // An id of its own: the window keeps its place when the language changes.
         .id(egui::Id::unique("prefs_window"))
-        .open(&mut open)
+        // NDL: the dialog's own header, with Nodalia's close button and no title bar of egui's.
+        .title_bar(false)
         .collapsible(false)
         .resizable(false)
         .pivot(egui::Align2::CENTER_CENTER)
         .default_pos(ctx.content_rect().center())
         .default_width(560.0)
         .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(title)) {
+                open = false;
+            }
             // Taller than small windows: the sections scroll, the footer stays.
             let max_h = (ctx.content_rect().height() - 160.0).max(200.0);
             egui::ScrollArea::vertical().max_height(max_h).auto_shrink([false, true]).show(ui, |ui| {
@@ -489,6 +493,20 @@ fn preferences(app: &mut App, ctx: &egui::Context) {
                             }
                         });
                     });
+                    // Linux (NDL): Nodalia's round window controls or the desktop's own title bar.
+                    if crate::platform::OS == crate::platform::Os::Linux {
+                        ui.add_space(4.0);
+                        form_row(ui, LW, tr!("Window controls"), |ui| {
+                            ui.vertical(|ui| {
+                                for (choice, name, tip) in crate::prefs::WindowControls::ALL {
+                                    crate::theme::radio_value(ui, &mut p.window_controls, choice, text(Type::Body, crate::i18n::t(name)));
+                                    form_note(ui, toggle_indent, text(Type::Caption, crate::i18n::t(tip)));
+                                    ui.add_space(2.0);
+                                }
+                            });
+                        });
+                        form_note(ui, LW, text(Type::Caption, tr!("A change takes effect the next time Ánima starts.")));
+                    }
                     ui.add_space(4.0);
                     form_row(ui, LW, tr!("Interface font"), |ui| {
                         if let Some(c) = font_picker(ui, "pref_ui_font", tr!("Interface font"), &p.ui_font, sys.as_ref().map(|s| s.families.as_slice()), bundled_ui) {
