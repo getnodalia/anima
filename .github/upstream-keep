@@ -17,4 +17,5 @@ docs/release-notes/**
 .github/ISSUE_TEMPLATE/**
 scripts/rebrand.py
 scripts/icons.sh
+scripts/icon-svg.py
 scripts/check-release-notes.sh

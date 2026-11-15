@@ -1,12 +1,15 @@
 Ánima app icon (anima.svg and every file derived from it in this directory: anima-1024.png,
 anima-padded-1024.png, anima-macos-512.png, anima.ico, hicolor/).
 
-Original artwork made for Ánima by the Nodalia project (no third-party material). Licensed like
-the rest of Ánima, under either of
+The source photograph of Émile Reynaud (unknown photographer, before 1918) is in the public
+domain: https://commons.wikimedia.org/wiki/File:%C3%89mile_Reynaud.png
+
+The icon made from it (the cut-out, black-and-white portrait on Ánima's violet tile) is licensed
+like the rest of Ánima, under either of
 
   * Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0)
   * MIT license (https://opensource.org/licenses/MIT)
 
 at your option.
 
-Regenerate the derived files with scripts/icons.sh.
+Regenerate the derived files with scripts/icons.sh (see README.md).
