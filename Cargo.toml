@@ -110,14 +110,14 @@ web-time.workspace = true
 # The system's interface language, for the default language (ADR 0040; MIT OR Apache-2.0).
 sys-locale = "0.3"
 # The Nodalia Design Language (MIT): palette, creator-suite parts, icons and window controls.
-nodalia-theme = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "570a721432c378da0a80f065419b4766ee0e4d06", features = ["creator"] }
+nodalia-theme = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "07e63775aca14bc13f98e72e3c67be978f2f7fc3", features = ["creator"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # The user guide, bundled for Help › User Guide (ADR 0069). The web build serves it as pages instead.
 anima-guide.workspace = true
 # Release checks and in-place updates, shared by the Nodalia apps (MIT). Without its egui windows:
 # Ánima draws its own with the egui it already uses.
-nodalia-update = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "570a721432c378da0a80f065419b4766ee0e4d06" }
+nodalia-update = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "07e63775aca14bc13f98e72e3c67be978f2f7fc3" }
 
 eframe = { workspace = true, features = ["links"] }
 rfd.workspace = true
