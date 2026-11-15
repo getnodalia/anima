@@ -14,8 +14,9 @@ parameters, the `.anima` format, `anima-cli`, `serve` and MCP (scripts and agent
 the same English everywhere), log output, and the `--help` text.
 
 Not yet: engine messages (errors, import reports and the body of confirmations stay English;
-their titles and buttons are translated), default names of new layers and symbols, and
-plug-in names.
+their titles and buttons are translated), default names of new layers and symbols,
+plug-in names, and the names egui gives screen readers for its own window close button and
+resize handles.
 
 ## Choosing a language
 

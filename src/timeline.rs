@@ -6,7 +6,7 @@ use crate::icons::{self, Icon};
 use crate::menus;
 use crate::theme::{SQUARE, T, TARGET, Type, color, font, text, to_color32, with_type};
 use anima_engine::doc::{Layer, LayerId, LayerKind, TweenKind};
-use egui::{Align2, Color32, Rect, Sense, Stroke, StrokeKind, WidgetType, pos2, vec2};
+use egui::{Align2, Color32, Rect, Role, Sense, Stroke, StrokeKind, pos2, vec2};
 use serde_json::json;
 use std::sync::Arc;
 
@@ -318,7 +318,7 @@ pub fn icon_button(ui: &mut egui::Ui, tip: &str, on: Option<bool>, icon: Icon) -
             T.icon
         },
     );
-    a11y::control(ui, &resp, WidgetType::Button, tip, on);
+    a11y::control(ui, &resp, Role::Button, tip, on);
     resp.on_hover_text(tip)
 }
 
@@ -557,7 +557,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             gp.line_segment([pos2(cx, ruler.bottom() - 3.0), pos2(cx, ruler.bottom())], Stroke::new(1.0, T.border));
         }
     }
-    let ruler_resp = ui.interact(ruler, ui.id().with("ruler"), a11y::pointer_only());
+    let ruler_resp = ui.interact(ruler, ui.scope_id().with("ruler"), a11y::pointer_only());
     let playhead = f64::from(app.s.frame + 1);
     ruler_resp.widget_info(|| egui::WidgetInfo::slider(true, playhead, tr!("Playhead (frame ruler)")));
     if (ruler_resp.clicked() || ruler_resp.dragged())
@@ -724,7 +724,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             painter.rect_filled(sw, 0.0, to_color32(layer.color));
         }
         let name_rect = Rect::from_min_max(left.left_top(), pos2(attach_t.or(speaker).or(onion_t).unwrap_or(eye).left() - 4.0, left.bottom()));
-        let nr = ui.interact(name_rect, ui.id().with(("lname", layer.id.0)), Sense::click());
+        let nr = ui.interact(name_rect, ui.scope_id().with(("lname", layer.id.0)), Sense::click());
         // Screen readers hear the row as a selectable item, "Ball · layer", then its toggles.
         let name = &layer.name;
         let row_name = match layer.kind {
@@ -737,7 +737,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             LayerKind::Normal => tr!("{name} · layer", name = name),
         };
         let row_name = if has_selection { tr!("{row} · has selected artwork", row = row_name) } else { row_name };
-        a11y::control(ui, &nr, WidgetType::SelectableLabel, &row_name, Some(is_active));
+        a11y::control(ui, &nr, Role::Button, &row_name, Some(is_active));
         // Ctrl+F6 lands on the active layer, or on the top row shown when it is scrolled away
         // (rows are drawn top down, so the active row, when drawn, has the last word).
         if is_active || r == first_row {
@@ -758,24 +758,24 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         .into_iter()
         .take(if is_camera { 2 } else { 3 })
         {
-            let rr = ui.interact(r, ui.id().with((salt, layer.id.0)), Sense::click());
-            a11y::control(ui, &rr, WidgetType::Checkbox, &label, Some(on));
+            let rr = ui.interact(r, ui.scope_id().with((salt, layer.id.0)), Sense::click());
+            a11y::control(ui, &rr, Role::CheckBox, &label, Some(on));
             let rr = if salt == "outline" { rr.on_hover_text(tr!("View as outlines in the layer's colour (on the stage only)")) } else { rr };
             if rr.clicked() {
                 app.run(id, json!({"layer": layer.id.0}));
             }
         }
         if let Some(at) = attach_t {
-            let rr = ui.interact(at, ui.id().with(("attach", layer.id.0)), Sense::click());
-            a11y::control(ui, &rr, WidgetType::Checkbox, &tr!("Attach {name} to camera", name = name), Some(layer.attached));
+            let rr = ui.interact(at, ui.scope_id().with(("attach", layer.id.0)), Sense::click());
+            a11y::control(ui, &rr, Role::CheckBox, &tr!("Attach {name} to camera", name = name), Some(layer.attached));
             if rr.on_hover_text(tr!("Attach Layer to Camera: the layer stays where it is on screen while the camera moves (titles, HUDs)")).clicked()
             {
                 app.run("layer.set_attached", json!({"layer": layer.id.0}));
             }
         }
         if let Some(ot) = onion_t {
-            let rr = ui.interact(ot, ui.id().with(("onion", layer.id.0)), Sense::click());
-            a11y::control(ui, &rr, WidgetType::Checkbox, &tr!("Onion skin {name}", name = name), Some(layer.onion));
+            let rr = ui.interact(ot, ui.scope_id().with(("onion", layer.id.0)), Sense::click());
+            a11y::control(ui, &rr, Role::CheckBox, &tr!("Onion skin {name}", name = name), Some(layer.onion));
             if rr.on_hover_text(tr!("Onion skin this layer (Alt-click: this layer only, again: every layer)")).clicked() {
                 let solo = ui.input(|inp| inp.modifiers.alt);
                 if let Some(v) = app.run("layer.set_onion", json!({"layer": layer.id.0, "solo": solo})) {
@@ -794,13 +794,13 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         }
         // The colour chip on the row's edge: a click opens the layer's colour (ADR 0061).
         let chip = Rect::from_min_size(left.left_top(), vec2(8.0, rh));
-        let chip_r = ui.interact(chip, ui.id().with(("lcolor", layer.id.0)), Sense::click());
-        a11y::control(ui, &chip_r, WidgetType::Button, &tr!("Colour of {name}", name = name), None);
+        let chip_r = ui.interact(chip, ui.scope_id().with(("lcolor", layer.id.0)), Sense::click());
+        a11y::control(ui, &chip_r, Role::Button, &tr!("Colour of {name}", name = name), None);
         if chip_r.hovered() {
             painter.rect_filled(Rect::from_min_size(left.left_top(), vec2(7.0, rh)), 0.0, to_color32(layer.color));
         }
         let chip_r = chip_r.on_hover_text(tr!("Layer colour: its outlines and its bar on the timeline"));
-        let menu_id = egui::Id::new(("layer_colour", layer.id.0));
+        let menu_id = egui::Id::unique(("layer_colour", layer.id.0));
         if app.tl_color_open == Some(layer.id) {
             app.tl_color_open = None;
             egui::Popup::open_id(ui.ctx(), menu_id);
@@ -816,8 +816,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             });
         }
         if let Some(sp) = speaker {
-            let rr = ui.interact(sp, ui.id().with(("mute", layer.id.0)), Sense::click());
-            a11y::control(ui, &rr, WidgetType::Checkbox, &tr!("Mute {name}", name = layer.name), Some(layer.muted));
+            let rr = ui.interact(sp, ui.scope_id().with(("mute", layer.id.0)), Sense::click());
+            a11y::control(ui, &rr, Role::CheckBox, &tr!("Mute {name}", name = layer.name), Some(layer.muted));
             let tip = if layer.muted { tr!("Unmute this layer's sounds") } else { tr!("Mute this layer's sounds (in playback and every export)") };
             if rr.on_hover_text(tip).clicked() {
                 app.run("layer.toggle_mute", json!({"layer": layer.id.0}));
@@ -840,8 +840,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         }
         // The folder chevron opens and closes the folder (on top of the name's click target).
         if is_folder {
-            let cr = ui.interact(chevron, ui.id().with(("fold", layer.id.0)), Sense::click());
-            a11y::control(ui, &cr, WidgetType::CollapsingHeader, &tr!("Open {name}", name = layer.name), Some(open));
+            let cr = ui.interact(chevron, ui.scope_id().with(("fold", layer.id.0)), Sense::click());
+            a11y::control(ui, &cr, Role::DisclosureTriangle, &tr!("Open {name}", name = layer.name), Some(open));
             if cr.on_hover_text(if open { tr!("Close folder") } else { tr!("Open folder") }).clicked() && !app.tl_collapsed.remove(&layer.id) {
                 app.tl_collapsed.insert(layer.id);
             }
@@ -932,8 +932,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         if is_folder {
             // A folder has no frames: its row is a plain band across the timeline.
             cp.rect_filled(cells, 0.0, if is_active { T.row_active } else { T.panel_alt });
-            let fr = ui.interact(cells, ui.id().with(("fcells", layer.id.0)), Sense::click() - Sense::FOCUSABLE);
-            a11y::control(ui, &fr, WidgetType::Button, &tr!("{name} folder row", name = layer.name), None);
+            let fr = ui.interact(cells, ui.scope_id().with(("fcells", layer.id.0)), Sense::click() - Sense::FOCUSABLE);
+            a11y::control(ui, &fr, Role::Button, &tr!("{name} folder row", name = layer.name), None);
             if fr.clicked() && app.s.layer != layer.id {
                 app.run("layer.select", json!({"layer": layer.id.0}));
             }
@@ -1091,12 +1091,12 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             painter.rect_stroke(bg, T.rc(), Stroke::new(1.0, T.border), StrokeKind::Inside);
             painter.galley(bg.min + vec2(3.0, 2.0), galley, T.text);
         }
-        let cr = ui.interact(cells, ui.id().with(("cells", layer.id.0)), a11y::pointer_only());
+        let cr = ui.interact(cells, ui.scope_id().with(("cells", layer.id.0)), a11y::pointer_only());
         if is_active {
             // Where the active row's frames are drawn, for tests that point at them.
-            ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("tl_geometry"), (cells, grid.left() + pad, cell_w, scroll)));
+            ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("tl_geometry"), (cells, grid.left() + pad, cell_w, scroll)));
         }
-        a11y::control(ui, &cr, WidgetType::Button, &tr!("Frames of {name}", name = layer.name), None);
+        a11y::control(ui, &cr, Role::Button, &tr!("Frames of {name}", name = layer.name), None);
         if is_active {
             // Its keyframes and spans, one by one, for screen readers (ADR 0064).
             frame_nodes(app, ui, &cr, layer, x_of, y);
@@ -1433,7 +1433,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                 T.icon
             };
             icons::paint(ui.painter(), Rect::from_center_size(r.center(), vec2(16.0, 16.0)), icon, colour);
-            a11y::control(ui, &resp, WidgetType::Button, tip, None);
+            a11y::control(ui, &resp, Role::Button, tip, None);
             resp.on_hover_text(tip).clicked()
         };
         let mut child =
@@ -1475,8 +1475,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
     let max_s = (content - visible_cols as f32).max(0.0);
     let t = if max_s > 0.0 { (app.tl_scroll / max_s).clamp(0.0, 1.0) } else { 0.0 };
     let thumb = Rect::from_min_size(pos2(track.left() + t * travel, track.top()), vec2(thumb_w, track.height()));
-    let sr = ui.interact(bar, ui.id().with("tl_hscroll"), a11y::pointer_only());
-    a11y::control(ui, &sr, WidgetType::ScrollBar, tr!("Scroll the timeline"), None);
+    let sr = ui.interact(bar, ui.scope_id().with("tl_hscroll"), a11y::pointer_only());
+    a11y::control(ui, &sr, Role::ScrollBar, tr!("Scroll the timeline"), None);
     if sr.dragged() && max_s > 0.0 {
         app.tl_scroll = (app.tl_scroll + sr.drag_delta().x / travel * max_s).clamp(0.0, max_s);
     } else if sr.clicked()
@@ -1527,7 +1527,7 @@ fn color_menu(app: &mut App, ui: &mut egui::Ui, layer: LayerId, color: anima_eng
             } else if resp.hovered() {
                 ui.painter().rect_stroke(r, T.rc(), Stroke::new(1.0, T.text_dim), StrokeKind::Outside);
             }
-            a11y::control(ui, &resp, WidgetType::Button, &tr!("Layer colour {hex}", hex = c.to_hex()), Some(c.to_hex() == color.to_hex()));
+            a11y::control(ui, &resp, Role::Button, &tr!("Layer colour {hex}", hex = c.to_hex()), Some(c.to_hex() == color.to_hex()));
             if resp.clicked() {
                 app.run("layer.set_color", json!({"layer": layer.0, "color": c.to_hex()}));
             }
@@ -1536,7 +1536,7 @@ fn color_menu(app: &mut App, ui: &mut egui::Ui, layer: LayerId, color: anima_eng
     ui.separator();
     // Any other colour: typed as hex, or picked in Layer Properties.
     ui.horizontal(|ui| {
-        let id = ui.id().with(("layer_hex", layer.0));
+        let id = ui.scope_id().with(("layer_hex", layer.0));
         let mut hex = ui.data_mut(|d| d.get_temp::<String>(id)).unwrap_or_else(|| color.to_hex());
         let r = with_type(ui, Type::Data, |ui| ui.add(egui::TextEdit::singleline(&mut hex).desired_width(72.0).char_limit(9)))
             .named(tr!("Layer colour as hex"));
@@ -1560,12 +1560,12 @@ const FRAME_VIEW_MENU: &str = "tl_frame_view";
 /// The timeline's Frame View menu (ADR 0061), as in Animate: frame widths Tiny to Large (the
 /// zoom slider beside it sets any width between) and Short rows. View state.
 fn frame_view_button(app: &mut App, ui: &mut egui::Ui) {
-    let id = egui::Id::new(FRAME_VIEW_MENU);
+    let id = egui::Id::unique(FRAME_VIEW_MENU);
     let (rect, resp) = ui.allocate_exact_size(vec2(TARGET, TARGET), Sense::click());
     let hot = resp.hovered() || egui::Popup::is_id_open(ui.ctx(), id);
     ui.painter().rect_filled(rect, T.rc(), if hot { T.header } else { Color32::TRANSPARENT });
     icons::paint(ui.painter(), Rect::from_center_size(rect.center(), vec2(16.0, 16.0)), Icon::Layer, if hot { T.icon_hot } else { T.icon });
-    a11y::control(ui, &resp, WidgetType::Button, tr!("Frame view"), None);
+    a11y::control(ui, &resp, Role::Button, tr!("Frame view"), None);
     let resp = resp.on_hover_text(tr!("Frame view: frame width and row height"));
     if std::mem::take(&mut app.tl_frame_view_open) {
         egui::Popup::open_id(ui.ctx(), id);

@@ -41,7 +41,7 @@ fn confirm_modal(app: &mut App, ctx: &egui::Context) {
     let Some(p) = &mut app.confirm else { return };
     let mut decision: Option<bool> = None;
     let irreversible = p.conf.irreversible;
-    egui::Modal::new(egui::Id::new("confirm")).show(ctx, |ui| {
+    egui::Modal::new(egui::Id::unique("confirm")).show(ctx, |ui| {
         ui.set_width(420.0);
         ui.add_space(4.0);
         // The engine's English, translated when a catalog has that exact text.
@@ -110,7 +110,7 @@ fn close_modal(app: &mut App, ctx: &egui::Context) {
     }
     let mut choice = None;
     let name = app.s.path.as_ref().and_then(|p| p.file_name()).map_or_else(|| tr!("Untitled").to_string(), |n| n.to_string_lossy().into_owned());
-    egui::Modal::new(egui::Id::new("close_guard")).show(ctx, |ui| {
+    egui::Modal::new(egui::Id::unique("close_guard")).show(ctx, |ui| {
         ui.set_width(440.0);
         ui.label(text(Type::Title, tr!("Save changes to “{name}” before closing?", name = name)));
         ui.add_space(6.0);
@@ -305,7 +305,7 @@ fn palette(app: &mut App, ctx: &egui::Context) {
     let mut run: Option<Entry> = None;
     let mut close = esc;
     let selected = p.selected;
-    egui::Area::new(egui::Id::new("palette")).order(egui::Order::Foreground).anchor(egui::Align2::CENTER_TOP, [0.0, 70.0]).show(ctx, |ui| {
+    egui::Area::new(egui::Id::unique("palette")).order(egui::Order::Foreground).anchor(egui::Align2::CENTER_TOP, [0.0, 70.0]).show(ctx, |ui| {
         egui::Frame::popup(ui.style()).fill(T.panel_alt).inner_margin(egui::Margin::same(10)).show(ui, |ui| {
             ui.set_width(560.0);
             let r = ui
@@ -366,7 +366,7 @@ fn palette(app: &mut App, ctx: &egui::Context) {
 /// A font picker: the bundled default plus every installed family, filterable.
 fn font_picker(ui: &mut egui::Ui, id: &str, name: &str, current: &FontChoice, families: Option<&[String]>, bundled: &str) -> Option<FontChoice> {
     let mut picked = None;
-    let filter_id = egui::Id::new(("font_filter", id));
+    let filter_id = egui::Id::unique(("font_filter", id));
     let shown = match current {
         FontChoice::Bundled => tr!("Default ({font})", font = bundled),
         FontChoice::System(name) => name.clone(),
@@ -419,7 +419,7 @@ fn preferences(app: &mut App, ctx: &egui::Context) {
     let title = if crate::platform::OS == crate::platform::Os::Mac { tr!("Settings") } else { tr!("Preferences") };
     let shown = egui::Window::new(title)
         // An id of its own: the window keeps its place when the language changes.
-        .id(egui::Id::new("prefs_window"))
+        .id(egui::Id::unique("prefs_window"))
         .open(&mut open)
         .collapsible(false)
         .resizable(false)
@@ -725,7 +725,7 @@ fn licenses(app: &mut App, ctx: &egui::Context) {
     let mut open = true;
     let title = tr!("Licenses & Notices");
     let shown = egui::Window::new(title)
-        .id(egui::Id::new("licenses_window"))
+        .id(egui::Id::unique("licenses_window"))
         .open(&mut open)
         .collapsible(false)
         .pivot(egui::Align2::CENTER_CENTER)
@@ -881,7 +881,7 @@ fn shortcut_sheet(app: &mut App, ctx: &egui::Context) {
         app.key_capture = None;
         return;
     }
-    let state_id = egui::Id::new("shortcut_editor");
+    let state_id = egui::Id::unique("shortcut_editor");
     let mut st: SheetState = ctx.data_mut(|d| d.get_temp(state_id).unwrap_or_default());
     let key = crate::platform::shortcut_label;
 
@@ -922,7 +922,7 @@ fn shortcut_sheet(app: &mut App, ctx: &egui::Context) {
     let changed = app.prefs.shortcuts.len();
     let title = tr!("Keyboard Shortcuts");
     let shown = egui::Window::new(title)
-        .id(egui::Id::new("shortcuts_window"))
+        .id(egui::Id::unique("shortcuts_window"))
         .open(&mut open)
         .collapsible(false)
         .pivot(egui::Align2::CENTER_CENTER)

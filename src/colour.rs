@@ -98,7 +98,7 @@ struct Recent {
 }
 
 fn recent_id() -> Id {
-    Id::new("anima.colour.recent")
+    Id::unique("anima.colour.recent")
 }
 
 fn remember(ctx: &egui::Context, popup: Id, c: [u8; 3]) {
@@ -136,7 +136,7 @@ pub fn button_alpha(ui: &mut egui::Ui, c: &mut [u8; 4]) -> Response {
 fn button_inner(ui: &mut egui::Ui, c: &mut [u8; 4], alpha: bool) -> Response {
     let size = ui.spacing().interact_size;
     let (rect, mut resp) = ui.allocate_exact_size(size, Sense::click());
-    resp.widget_info(|| egui::WidgetInfo::new(egui::WidgetType::ColorButton));
+    resp.widget_info(|| egui::WidgetInfo::new(egui::Role::ColorWell));
     let popup = resp.id.with("colour_popup");
     let open = egui::Popup::is_id_open(ui.ctx(), popup);
     if ui.is_rect_visible(rect) {
@@ -178,7 +178,7 @@ pub(crate) fn name_popup(r: &Response, name: &str) {
 
 /// The picker itself: swatches or mixer, then the colour, its hex and its alpha.
 pub(crate) fn picker(ui: &mut egui::Ui, popup: Id, c: &mut [u8; 4], alpha: bool, none: Option<&mut bool>) -> bool {
-    let view_id = Id::new("anima.colour.view");
+    let view_id = Id::unique("anima.colour.view");
     let mut view: View = ui.data(|d| d.get_temp(view_id)).unwrap_or_default();
     let mut changed = false;
     ui.horizontal(|ui| {
@@ -361,7 +361,7 @@ fn swatches(ui: &mut egui::Ui, current: [u8; 3]) -> Option<[u8; 3]> {
     crate::a11y::control(
         ui,
         &resp,
-        egui::WidgetType::Button,
+        egui::Role::Button,
         if doc.is_empty() { tr!("Colour swatches") } else { tr!("Colour swatches and the document's swatches") },
         None,
     );
@@ -412,7 +412,7 @@ mod tests {
     #[test]
     fn recent_colours_keep_one_entry_per_popup_session() {
         let ctx = egui::Context::default();
-        let (a, b) = (Id::new("a"), Id::new("b"));
+        let (a, b) = (Id::unique("a"), Id::unique("b"));
         let list = |ctx: &egui::Context| ctx.data(|d| d.get_temp::<Recent>(recent_id())).map(|r| r.colours).unwrap_or_default();
         // A drag in the mixer: one entry, the last colour.
         for v in [10, 20, 30] {
