@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* **A new sample animation**: an evening landscape in flat colours, with the ball bouncing
+  across the meadow, the evening star turning and the sun breathing over the ridges. The README's
+  screenshots and GIF show it.
 * **Sound output polish** (ADR 0095, M5).
   * The playhead follows the sound being **heard**: the device's latency is taken off and slow
     frames are dropped rather than drifting (within a frame over an hour of play in tests).
