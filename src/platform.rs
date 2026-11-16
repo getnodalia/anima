@@ -619,6 +619,12 @@ fn app_icon() -> egui::IconData {
     eframe::icon_data::from_png_bytes(png).unwrap_or_default()
 }
 
+/// Whether the editor draws Nodalia's window controls in its top bar and has no title bar of the
+/// system's: on Linux, unless Preferences chose the desktop's (NDL).
+pub fn nodalia_controls(choice: crate::prefs::WindowControls) -> bool {
+    OS == Os::Linux && choice == crate::prefs::WindowControls::Nodalia
+}
+
 /// Space left of the menu row for the macOS traffic-light buttons.
 pub fn menu_inset() -> f32 {
     if OS == Os::Mac { 72.0 } else { 0.0 }

@@ -6,7 +6,7 @@ default-members = [".", "crates/*"]
 [workspace.package]
 # 0.1.0 is the early alpha (release stage in src/app.rs, RELEASE_STAGE); see CHANGELOG.md
 # and docs/release.md.
-version = "0.3.0-dev"
+version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 # An application, not a library: not published to crates.io.
@@ -49,14 +49,14 @@ rayon = "1"
 # wgpu is the primary renderer; glow (OpenGL) is the fallback for GPUs/VMs where wgpu fails.
 # Default features off: we skip `links` (opening web links pulls in url/idna/ICU Unicode
 # tables we don't use) and the web-only screen-reader shim. Same set as PhotoCraft, plus glow.
-eframe = { version = "0.36", default-features = false, features = ["accesskit", "default_fonts", "wgpu", "glow", "wayland", "x11"] }
+eframe = { version = "0.37", default-features = false, features = ["accesskit", "default_fonts", "wgpu", "glow", "wayland", "x11"] }
 # Native file dialogs: Windows common dialogs, macOS NSOpenPanel, Linux XDG desktop portal.
 rfd = "0.17"
 # Lists and loads the OS's installed fonts for Preferences › Appearance (MIT).
 # Without the `fontconfig` feature, Linux scans the standard font folders directly
 # (/usr/share/fonts, /usr/local/share/fonts, ~/.local/share/fonts, ~/.fonts).
 fontdb = { version = "0.23", default-features = false, features = ["std", "fs", "memmap"] }
-egui = "0.36"
+egui = "0.37"
 # `Instant` and `SystemTime` that work in the browser too (std's panic on wasm32-unknown-unknown);
 # on other targets a re-export of std::time (MIT OR Apache-2.0; already in the tree via winit).
 web-time = "1"
@@ -109,13 +109,15 @@ serde_json.workspace = true
 web-time.workspace = true
 # The system's interface language, for the default language (ADR 0040; MIT OR Apache-2.0).
 sys-locale = "0.3"
+# The Nodalia Design Language (MIT): palette, creator-suite parts, icons and window controls.
+nodalia-theme = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "07e63775aca14bc13f98e72e3c67be978f2f7fc3", features = ["creator"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # The user guide, bundled for Help › User Guide (ADR 0069). The web build serves it as pages instead.
 anima-guide.workspace = true
 # Release checks and in-place updates, shared by the Nodalia apps (MIT). Without its egui windows:
 # Ánima draws its own with the egui it already uses.
-nodalia-update = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "6d94e9c17c1767260bcb020f00c71eddd105561f" }
+nodalia-update = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "07e63775aca14bc13f98e72e3c67be978f2f7fc3" }
 
 eframe = { workspace = true, features = ["links"] }
 rfd.workspace = true
@@ -127,6 +129,11 @@ cpal = { version = "0.18", optional = true }
 # open-documents and quit handlers with AppKit and hands us plain paths, so our code stays free of
 # `unsafe`. Pinned exactly: it is young, and a new version is read again before it comes in. Its
 # objc2 / objc2-app-kit / objc2-foundation are the versions wgpu already brings on macOS.
+# The global menu (dbusmenu over the session bus) on Linux desktops with a top-bar menu. The zbus
+# the portal file dialogs (rfd) and accesskit already bring (MIT).
+[target.'cfg(target_os = "linux")'.dependencies]
+zbus = "5.19"
+
 [target.'cfg(target_os = "macos")'.dependencies]
 fmv-macos-events = "=0.1.0"
 
@@ -139,7 +146,7 @@ winreg = "0.55"
 # smaller. The browser glue is wasm-bindgen's (MIT OR Apache-2.0), already under eframe's web
 # backend.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-eframe = { version = "0.36", default-features = false, features = ["accesskit", "default_fonts", "glow"] }
+eframe = { version = "0.37", default-features = false, features = ["accesskit", "default_fonts", "glow"] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"

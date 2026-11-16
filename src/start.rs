@@ -9,7 +9,7 @@ use crate::a11y::{self, Named};
 use crate::app::App;
 use crate::icons::{self, Icon};
 use crate::theme::{T, TARGET, Type, color, font, text};
-use egui::{Align2, Rect, Sense, Stroke, StrokeKind, Vec2, WidgetType, pos2, vec2};
+use egui::{Align2, Rect, Role, Sense, Stroke, StrokeKind, Vec2, pos2, vec2};
 use serde_json::json;
 
 /// A New preset: its name (English, translated where drawn), stage width and height.
@@ -59,61 +59,56 @@ pub fn open(app: &mut App) {
     app.status_ok(tr!("Pick a size to start a new animation, or open one you made. Esc goes back to the document."));
 }
 
-/// The start screen in the space the workspace normally takes.
+/// The start screen in the space the workspace normally takes: the creator suite's Home (NDL),
+/// with New file, Open… and the user guide in its rail and the presets, recent files and
+/// templates on its page.
 pub fn show(app: &mut App, ui: &mut egui::Ui) {
     if ui.input(|i| i.key_pressed(egui::Key::Escape)) && !app.modal_open() {
         app.start = None;
         return;
     }
     let ctx = ui.ctx().clone();
-    egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
+    let look = crate::theme::creator();
+    let links = [nodalia_theme::creator::home::Link { icon: "globe", label: tr!("Website"), url: "https://getnodalia.com/anima" }];
+    let rail = nodalia_theme::creator::home::Rail {
+        new_file: tr!("New file"),
+        open: tr!("Open…"),
+        home: tr!("Home"),
+        learn: Some(tr!("User guide")),
+        links: &links,
+    };
+    let mark_tex = crate::app::app_mark(&ctx);
+    let mark = |p: &egui::Painter, r: Rect| {
+        p.image(mark_tex.id(), r, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), egui::Color32::WHITE);
+    };
+    let rect = ui.max_rect();
+    let picked = nodalia_theme::creator::home::view(ui, &look, rect, "Ánima", &mark, &rail, |ui| {
         let width = ui.available_width().min(1120.0);
-        let pad = ((ui.available_width() - width) / 2.0).max(24.0);
-        ui.add_space(28.0);
-        ui.horizontal(|ui| {
-            ui.add_space(pad);
-            ui.vertical(|ui| {
-                ui.set_width(width - 48.0);
-                header(app, ui, &ctx);
-                ui.add_space(20.0);
-                ui.columns(2, |cols| {
-                    if let [left, right] = cols {
-                        new_column(app, left);
-                        open_column(app, right, &ctx);
-                    }
-                });
-                ui.add_space(20.0);
-                let head = crate::templates::section(app, ui, &ctx);
-                if let Some(st) = app.start.as_mut().filter(|s| s.show_templates) {
-                    st.show_templates = false;
-                    ui.scroll_to_rect(head, Some(egui::Align::TOP));
-                }
-                ui.add_space(16.0);
-                footer(app, ui);
-            });
-        });
-        ui.add_space(28.0);
+        ui.set_width(width);
+        new_section(app, ui, &look);
+        ui.add_space(24.0);
+        open_section(app, ui, &ctx, &look);
+        ui.add_space(24.0);
+        let head = crate::templates::section(app, ui, &ctx);
+        if let Some(st) = app.start.as_mut().filter(|s| s.show_templates) {
+            st.show_templates = false;
+            ui.scroll_to_rect(head, Some(egui::Align::TOP));
+        }
+        ui.add_space(16.0);
+        footer(app, ui);
     });
-}
-
-fn header(app: &mut App, ui: &mut egui::Ui, ctx: &egui::Context) {
-    ui.horizontal(|ui| {
-        ui.add(egui::Image::new((crate::app::app_mark(ctx).id(), vec2(44.0, 44.0))));
-        ui.add_space(8.0);
-        ui.vertical(|ui| {
-            ui.label(text(Type::Title, "Ánima")); // i18n-exempt: the product name
-            ui.label(text(
-                Type::Caption,
-                tr!("Version {version} · {stage}", version = env!("CARGO_PKG_VERSION"), stage = crate::i18n::t(crate::app::RELEASE_STAGE)),
-            ));
-        });
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let back = ui.add(egui::Button::new(tr!("Back to the document")).shortcut_text(text(Type::Key, "Esc"))); // i18n-exempt: a key name
-            if back.on_hover_text(tr!("The document that is open stays as it is")).clicked() {
-                app.start = None;
-            }
-        });
-    });
+    use nodalia_theme::creator::home::Pick;
+    match picked {
+        Some(Pick::NewFile) => {
+            let st = app.start.as_ref().map_or_else(StartScreen::default, |s| StartScreen { show_templates: false, ..*s });
+            app.request("file.new", new_params(st.width, st.height, st.fps));
+        }
+        Some(Pick::Open) => app.invoke("file.open"),
+        Some(Pick::Home) => app.start = None,
+        Some(Pick::Learn) => app.open_user_guide(),
+        Some(Pick::Link(_)) => ctx.open_url(egui::OpenUrl::new_tab("https://getnodalia.com/anima")),
+        None => {}
+    }
 }
 
 /// A preset tile: the stage's shape drawn to scale, its name and size.
@@ -121,7 +116,7 @@ fn tile(ui: &mut egui::Ui, name: &str, w: u32, h: u32) -> egui::Response {
     let size = vec2(118.0, 112.0);
     let (r, resp) = ui.allocate_exact_size(size, Sense::click());
     let size_text = format!("{w} × {h}");
-    a11y::control(ui, &resp, WidgetType::Button, &tr!("New {name}, {size}", name = name, size = size_text), None);
+    a11y::control(ui, &resp, Role::Button, &tr!("New {name}, {size}", name = name, size = size_text), None);
     let p = ui.painter();
     let hot = resp.hovered() || resp.has_focus();
     p.rect_filled(r, T.rc(), if hot { T.hover } else { T.panel_alt });
@@ -138,9 +133,9 @@ fn tile(ui: &mut egui::Ui, name: &str, w: u32, h: u32) -> egui::Response {
     resp
 }
 
-fn new_column(app: &mut App, ui: &mut egui::Ui) {
-    ui.label(text(Type::Heading, tr!("Create new")));
-    ui.add_space(6.0);
+fn new_section(app: &mut App, ui: &mut egui::Ui, look: &nodalia_theme::creator::Look) {
+    nodalia_theme::creator::home::section_heading(ui, look, tr!("Quickly start a new animation"));
+    ui.add_space(10.0);
     let fps = app.start.as_ref().map_or(24.0, |s| s.fps);
     ui.horizontal_wrapped(|ui| {
         ui.spacing_mut().item_spacing = vec2(10.0, 10.0);
@@ -179,17 +174,8 @@ fn new_column(app: &mut App, ui: &mut egui::Ui) {
     }
 }
 
-fn open_column(app: &mut App, ui: &mut egui::Ui, ctx: &egui::Context) {
-    ui.label(text(Type::Heading, tr!("Open")));
-    ui.add_space(6.0);
+fn open_section(app: &mut App, ui: &mut egui::Ui, ctx: &egui::Context, look: &nodalia_theme::creator::Look) {
     ui.horizontal(|ui| {
-        if ui
-            .add(egui::Button::new(tr!("Open…")).min_size(vec2(0.0, TARGET)))
-            .on_hover_text(tr!("An Ánima document, or an Animate .fla or .xfl"))
-            .clicked()
-        {
-            app.invoke("file.open");
-        }
         if ui
             .add(egui::Button::new(tr!("Sample animation")).min_size(vec2(0.0, TARGET)))
             .on_hover_text(tr!("A short animation to look at and take apart"))
@@ -198,10 +184,10 @@ fn open_column(app: &mut App, ui: &mut egui::Ui, ctx: &egui::Context) {
             app.request("file.new_sample", json!({}));
         }
     });
-    ui.label(text(Type::Caption, tr!("Or drop a document anywhere on this window.")));
-    ui.add_space(14.0);
-    ui.label(text(Type::Heading, tr!("Recent")));
-    ui.add_space(6.0);
+    ui.label(text(Type::Caption, tr!("Open… also opens Animate .fla and .xfl files. Or drop a document anywhere on this window.")));
+    ui.add_space(24.0);
+    nodalia_theme::creator::home::section_heading(ui, look, tr!("Recent files"));
+    ui.add_space(10.0);
     let list = crate::recent::entries(app);
     if list.is_empty() {
         ui.label(text(Type::Caption, tr!("Documents you open or save show here, with a picture of their first frame.")));
@@ -242,7 +228,7 @@ fn card(
         } else {
             tr!("Open {name}", name = name)
         };
-        a11y::control(ui, &resp, WidgetType::Button, &label, None);
+        a11y::control(ui, &resp, Role::Button, &label, None);
         let hot = !missing && (resp.hovered() || resp.has_focus());
         let p = ui.painter();
         p.rect_filled(r, T.rc(), T.panel_alt);

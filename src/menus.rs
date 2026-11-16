@@ -19,7 +19,8 @@ pub(crate) const TOP_MENUS: [&str; 9] = [
     tr_noop!("Help"),
 ];
 
-pub fn bar(app: &mut App, ui: &mut egui::Ui) {
+/// Returns the right edge of the last menu title, where the bar's free space starts.
+pub fn bar(app: &mut App, ui: &mut egui::Ui) -> f32 {
     let cmds = commands();
     let ctx = ui.ctx().clone();
     let labels = top_labels();
@@ -27,6 +28,7 @@ pub fn bar(app: &mut App, ui: &mut egui::Ui) {
     app.menu_keys.before(&ctx);
     let underline = app.menu_keys.show_keys;
     let mut tops = Vec::with_capacity(TOP_MENUS.len());
+    let mut end = ui.max_rect().left();
     egui::MenuBar::new().ui(ui, |ui| {
         // macOS: leave room for the traffic lights over the unified title bar.
         ui.add_space(platform::menu_inset());
@@ -69,10 +71,12 @@ pub fn bar(app: &mut App, ui: &mut egui::Ui) {
                 let k = platform::shortcut_label(&format!("Alt+{c}"));
                 ctx.accesskit_node_builder(r.response.id, |n| n.set_access_key(k));
             }
+            end = end.max(r.response.rect.right());
             tops.push(r.response.id);
         }
     });
     app.menu_keys.after(&ctx, tops);
+    end
 }
 
 /// The top menus' titles in the interface language.
@@ -434,6 +438,16 @@ impl MenuKeys {
         }
         self.show_keys = show;
     }
+}
+
+/// Whether the command `id` can run now, for the desktop's global menu.
+pub(crate) fn enabled_for(app: &App, id: &str) -> bool {
+    enabled(app, id)
+}
+
+/// Whether the setting `id` is on, for the desktop's global menu.
+pub(crate) fn checked_for(app: &App, id: &str) -> Option<bool> {
+    checked(app, id)
 }
 
 fn enabled(app: &App, id: &str) -> bool {

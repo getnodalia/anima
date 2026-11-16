@@ -313,7 +313,7 @@ fn settings_window(app: &mut App, ctx: &egui::Context) {
     let mut open = true;
     let at = ctx.content_rect().center() - egui::vec2(330.0, 260.0);
     let shown = egui::Window::new(tr!("Publish Settings"))
-        .id(egui::Id::new("publish_settings"))
+        .id(egui::Id::unique("publish_settings"))
         .open(&mut open)
         .default_pos(at)
         .default_width(660.0)
@@ -355,7 +355,7 @@ fn settings(app: &mut App, ui: &mut egui::Ui) {
                         font,
                         crate::theme::color(Type::Body),
                     );
-                    crate::a11y::control(ui, &resp, egui::WidgetType::SelectableLabel, label(f), Some(sel));
+                    crate::a11y::control(ui, &resp, egui::Role::Button, label(f), Some(sel));
                     if resp.on_hover_text(about(f)).clicked() {
                         app.publish.selected = f;
                         app.publish.output_edit = None;
@@ -788,7 +788,7 @@ fn progress_window(app: &mut App, ctx: &egui::Context) {
     let title = if running { tr!("Publishing") } else { tr!("Publish report") };
     let at = ctx.content_rect().center() - egui::vec2(220.0, 160.0);
     let shown = egui::Window::new(title)
-        .id(egui::Id::new("publish_progress"))
+        .id(egui::Id::unique("publish_progress"))
         .open(&mut open)
         .default_pos(at)
         .default_width(460.0)

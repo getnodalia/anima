@@ -62,7 +62,7 @@ const NOT_UI: &[&str] = &[
     "panic!(",
     "assert",
     "unreachable!(",
-    "Id::new(",
+    "Id::unique(",
     "id_salt(",
     "persistent_id(",
     "json!(",
@@ -515,8 +515,20 @@ fn strings_in(v: &serde_json::Value, out: &mut BTreeSet<String>) {
     }
 }
 
-/// Names egui gives its own parts.
-const EGUI_OWN: [&str; 1] = ["Close window"];
+/// Names egui gives its own parts: the window close button and, since egui 0.37, the resize
+/// handles of windows and panels.
+const EGUI_OWN: [&str; 10] = [
+    "Close window",
+    "Resize panel",
+    "Resize window left edge",
+    "Resize window right edge",
+    "Resize window top edge",
+    "Resize window bottom edge",
+    "Resize window top-left corner",
+    "Resize window top-right corner",
+    "Resize window bottom-left corner",
+    "Resize window bottom-right corner",
+];
 
 /// Names a screen reader would announce that are still plain English in the pseudo-locale,
 /// for the window after `setup` (a few frames to settle).
@@ -547,11 +559,14 @@ fn plain_names(what: &str, app: &crate::app::App, nodes: Vec<(egui::accesskit::N
     let mut found = BTreeSet::new();
     for (_, n) in nodes {
         for name in [n.label(), n.description()].into_iter().flatten() {
-            // egui names its own window close button; it offers no way to name it ourselves
+            // egui names its own window close button and resize handles; it offers no way to name it ourselves
             // (docs/localisation.md › Not yet). The product name stays as it is in every
             // language (the macOS app menu is titled with it, ADR 0006), as the source scan allows.
             let translated = name.chars().any(pseudo::is_accented) || EGUI_OWN.contains(&name) || name == "Ánima";
-            let ours = scan::is_prose(name) && !doc_text.contains(name) && !doc_text.iter().any(|d| name.contains(d.as_str()));
+            // File paths are data, not prose: since egui 0.37 a tooltip becomes the control's
+            // description, so the recent-file and template rows announce their paths.
+            let path = name.ends_with(".anima") || name.ends_with(".anicraft"); // rebrand: keep
+            let ours = !path && scan::is_prose(name) && !doc_text.contains(name) && !doc_text.iter().any(|d| name.contains(d.as_str()));
             if ours && !translated {
                 found.insert(format!("[{what}] {:?} {name:?}", n.role()));
             }
