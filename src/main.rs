@@ -44,10 +44,12 @@ mod ease_editor;
 mod envelope;
 mod erasertool;
 mod find_panel;
+mod global_menu;
 mod gpu_stage;
 #[cfg(not(target_arch = "wasm32"))]
 mod gpu_watch;
 mod gradient_tool;
+mod header;
 mod icons;
 mod keymap;
 mod layer_depth;
@@ -84,6 +86,7 @@ mod swatches_panel;
 mod templates;
 mod test_movie;
 mod theme;
+mod titlebar;
 mod timeline;
 #[cfg(not(target_arch = "wasm32"))]
 mod updates;
@@ -151,7 +154,11 @@ struct Look {
 fn run(attempt: startup::Attempt, file: Option<&Path>, shot: Option<PathBuf>, open: Option<String>, look: Look) -> eframe::Result {
     let options = attempt.options(eframe::NativeOptions {
         viewport: platform::viewport(
-            egui::ViewportBuilder::default().with_title("Ánima").with_inner_size([1600.0, 940.0]).with_min_inner_size([960.0, 600.0]),
+            egui::ViewportBuilder::default()
+                .with_title("Ánima")
+                .with_inner_size([1600.0, 940.0])
+                .with_min_inner_size([960.0, 600.0])
+                .with_decorations(!platform::nodalia_controls(prefs::Prefs::load().window_controls)),
         ),
         ..Default::default()
     });
@@ -176,6 +183,11 @@ fn run(attempt: startup::Attempt, file: Option<&Path>, shot: Option<PathBuf>, op
             }
             if a.shot.is_none() {
                 a.show_update_outcome_on_start();
+                // Linux: the menus go to the desktop's top bar when it has one.
+                #[cfg(target_os = "linux")]
+                {
+                    a.global_menu = global_menu::install(&cc.egui_ctx, &global_menu::items(&a));
+                }
             }
             // No document to open: the start screen, unless it was switched off (ADR 0059).
             if starting_fresh && a.prefs.start_screen {

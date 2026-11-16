@@ -22,7 +22,7 @@ use crate::a11y::{self, Named};
 use crate::app::App;
 use crate::theme::{SQUARE, T, TARGET, Type, color, font, text, with_type};
 use anima_engine::doc::{ColorStyle, Easing, Element, ElementKind, MotionTween, Pin, Property, Props, Track, filter_properties, own_value};
-use egui::{Align2, Color32, Pos2, Rect, Sense, Stroke, WidgetType, pos2, vec2};
+use egui::{Align2, Color32, Pos2, Rect, Role, Sense, Stroke, pos2, vec2};
 use serde_json::json;
 
 /// Property list width (the timeline's layer column).
@@ -278,7 +278,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         if track.is_some() {
             painter.text(pos2(row.left() + 84.0, row.center().y), Align2::LEFT_CENTER, tr!("keyed"), font(Type::Caption), T.tween_motion);
         }
-        let rr = ui.interact(row, ui.id().with(("me_row", p.key())), Sense::click());
+        let rr = ui.interact(row, ui.scope_id().with(("me_row", p.key())), Sense::click());
         let label = match p.filter() {
             // Named with its filter for screen readers and tips ("Blur: Blur X").
             Some(f) => tr!("{filter}: {property}", filter = crate::i18n::t(filter_name(&target, f.slot)), property = label),
@@ -288,7 +288,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         a11y::control(
             ui,
             &rr,
-            WidgetType::SelectableLabel,
+            Role::Button,
             &if track.is_some() { tr!("{property} · keyed", property = label) } else { label.to_string() },
             Some(selected),
         );
@@ -319,7 +319,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         // Key toggle: a filled diamond where this property has a key at the playhead.
         let keyed = track.is_some_and(|t| t.key_at(offset).is_some());
         let toggle = Rect::from_center_size(pos2(row.right() - 20.0, row.center().y), vec2(24.0, 24.0));
-        let tr = ui.interact(toggle, ui.id().with(("me_key", p.key())), Sense::click());
+        let tr = ui.interact(toggle, ui.scope_id().with(("me_key", p.key())), Sense::click());
         if tr.hovered() {
             painter.rect_filled(toggle, T.rc(), T.hover);
         }
@@ -339,13 +339,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             (true, _) => tr!("Remove the {property} keyframe at frame {frame}", property = label, frame = app.s.frame + 1),
             (false, _) => tr!("Add a {property} keyframe at frame {frame}", property = label, frame = app.s.frame + 1),
         };
-        a11y::control(
-            ui,
-            &tr,
-            WidgetType::Checkbox,
-            &tr!("{property} keyframe at frame {frame}", property = label, frame = app.s.frame + 1),
-            Some(keyed),
-        );
+        a11y::control(ui, &tr, Role::CheckBox, &tr!("{property} keyframe at frame {frame}", property = label, frame = app.s.frame + 1), Some(keyed));
         if tr.on_hover_text(tip).clicked() {
             app.me_prop = p;
             if keyed {
@@ -503,9 +497,9 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
     // ---- graph interaction -------------------------------------------------------------------
     // Pointer work; the keyboard route to the same values is the property list and its fields.
     // Focusable: with the curve focused, Left and Right move the picked keys (ADR 0083).
-    let gr = ui.interact(graph_full, ui.id().with("me_graph"), Sense::click_and_drag());
+    let gr = ui.interact(graph_full, ui.scope_id().with("me_graph"), Sense::click_and_drag());
     // Where frames and values are drawn, for tests that point at keys.
-    ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new("me_geometry"), (inner, lane, last, lo, hi)));
+    ui.ctx().data_mut(|d| d.insert_temp(egui::Id::unique("me_geometry"), (inner, lane, last, lo, hi)));
     a11y::surface(ui, &gr, &tr!("{property} curve: Left and Right move the picked keys a frame", property = label));
     keyboard(app, ui, &gr, start);
     let hover = gr.hover_pos();

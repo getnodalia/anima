@@ -1,4 +1,5 @@
-//! Interface icons: Lucide (ISC licence, `assets/icons/`, see ATTRIBUTION.md).
+//! Interface icons: the Nodalia Design Language's (NDL, bold, MIT) where it has one, and Lucide
+//! (ISC licence, `assets/icons/`, see ATTRIBUTION.md) or Ánima's own for the rest.
 //!
 //! Lucide icons are 24 × 24 outlines made of a few SVG shapes. Rather than pull in an SVG
 //! rasterizer, the shapes are parsed once with the engine's own SVG path reader
@@ -173,6 +174,83 @@ impl Icon {
     /// hollow, the way animators tell the two apart at a glance.
     fn solid(self) -> bool {
         matches!(self, Icon::Select | Icon::InsertKeyframe | Icon::Ellipsis)
+    }
+
+    /// The Nodalia Design Language's icon for this one (NDL, bold), when it has one; the rest
+    /// keep their own drawing below.
+    fn ndl(self) -> Option<&'static str> {
+        Some(match self {
+            Icon::Select => "select",
+            Icon::Subselect => "anchor-point",
+            Icon::Transform => "transform",
+            Icon::Pen => "pen",
+            Icon::Pencil => "pencil",
+            Icon::Brush => "brush",
+            Icon::PaintBrush => "blob-brush",
+            Icon::Eraser => "eraser",
+            Icon::Eyedropper => "eyedropper",
+            Icon::Rect => "rectangle",
+            Icon::Oval => "ellipse",
+            Icon::PolyStar => "polygon",
+            Icon::Line => "line",
+            Icon::Bucket => "fill",
+            Icon::Ink => "stroke-weight",
+            Icon::Hand => "pan",
+            Icon::Zoom => "zoom",
+            Icon::First => "skip-previous",
+            Icon::Last => "skip-next",
+            Icon::Prev => "chevron-left",
+            Icon::Next => "chevron-right",
+            Icon::Play => "play",
+            Icon::Pause => "pause",
+            Icon::Loop => "repeat",
+            Icon::Onion => "onion-skin",
+            Icon::Eye => "view",
+            Icon::EyeOff => "eye-off",
+            Icon::Lock => "lock",
+            Icon::Unlock => "unlock",
+            Icon::ChevronRight => "chevron-right",
+            Icon::ChevronDown => "chevron-down",
+            Icon::ChevronUp => "chevron-up",
+            Icon::AlignLeft => "align-objects-left",
+            Icon::AlignHCenter => "align-objects-center",
+            Icon::AlignRight => "align-objects-right",
+            Icon::AlignTop => "align-objects-top",
+            Icon::AlignVCenter => "align-objects-middle",
+            Icon::AlignBottom => "align-objects-bottom",
+            Icon::DistributeH => "distribute-hcenter",
+            Icon::DistributeV => "distribute-vcenter",
+            Icon::Mask => "clip-mask",
+            Icon::Folder | Icon::FolderOpen => "folder",
+            Icon::FolderPlus => "folder-plus",
+            Icon::Image => "image",
+            Icon::Type => "text",
+            Icon::Width => "width",
+            Icon::GradientTransform => "gradient",
+            Icon::Sound => "volume",
+            Icon::SoundOff => "mute",
+            Icon::Camera => "video-camera",
+            Icon::Magnet => "magnet",
+            Icon::Bone => "bone",
+            Icon::Bind => "link",
+            Icon::Warp => "puppet-warp",
+            Icon::InsertFrame => "frame-insert",
+            Icon::InsertKeyframe => "keyframe-insert",
+            Icon::InsertBlankKeyframe => "keyframe-blank-insert",
+            Icon::ClipStage => "crop",
+            Icon::Plus => "plus",
+            Icon::Trash => "delete",
+            Icon::Copy => "copy",
+            Icon::Ellipsis => "more-horizontal",
+            Icon::PanelProperties => "properties",
+            Icon::PanelSwatches => "swatches",
+            Icon::PanelLibrary => "library",
+            Icon::PanelExplorer => "navigator",
+            Icon::PanelHistory => "history",
+            Icon::PanelOutput => "terminal",
+            Icon::PanelActions => "code",
+            Icon::Masked | Icon::Guide | Icon::EditMultiple | Icon::Layer => return None,
+        })
     }
 
     /// Lucide icon file and whether it is drawn mirrored.
@@ -426,6 +504,11 @@ fn library() -> &'static HashMap<&'static str, Vec<Path>> {
 /// rounded to whole device pixels, so lines land on the pixel grid the way the set is drawn
 /// (at 24 px it is exact; other sizes stay consistent instead of smearing across pixels).
 pub fn paint(p: &egui::Painter, rect: Rect, icon: Icon, color: Color32) {
+    // NDL first: the suite's bold icons, the same as every Nodalia app's.
+    if let Some(glyph) = icon.ndl().and_then(nodalia_theme::icons::get) {
+        nodalia_theme::icons::paint(p, rect, glyph, nodalia_theme::icons::Style::bold(color));
+        return;
+    }
     let (name, flip) = icon.source();
     let Some(paths) = library().get(name) else { return };
     let ppp = p.pixels_per_point().max(0.25);
@@ -528,6 +611,15 @@ fn triangulate(pts: &[Pos2]) -> (Vec<Pos2>, Vec<[u32; 3]>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn every_ndl_icon_exists() {
+        for icon in Icon::ALL {
+            if let Some(name) = icon.ndl() {
+                assert!(nodalia_theme::icons::get(name).is_some(), "{icon:?}: NDL has no {name}");
+            }
+        }
+    }
 
     #[test]
     fn every_icon_is_embedded_and_parses() {

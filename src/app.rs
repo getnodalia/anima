@@ -462,6 +462,8 @@ pub struct Shot {
     pub requested: bool,
     /// Scaled down to this width when written (`--shot-width`).
     pub width: Option<u32>,
+    /// Where the renderer's callback leaves the captured frame.
+    pub image: std::sync::Arc<std::sync::Mutex<Option<std::sync::Arc<egui::ColorImage>>>>,
 }
 
 pub const SHOT_FRAMES: u32 = 120;
@@ -730,6 +732,15 @@ pub struct App {
     look_asked: Option<f64>,
     /// The start screen, while it is up (ADR 0059).
     pub start: Option<crate::start::StartScreen>,
+    /// Linux with Nodalia's window controls (NDL): the top bar is the title bar, with the round
+    /// controls at its end and resize zones along the window's edges. Fixed at start-up.
+    pub custom_titlebar: bool,
+    /// The menus exported to the desktop's top bar (Linux with a global menu).
+    #[cfg(target_os = "linux")]
+    pub global_menu: Option<crate::global_menu::GlobalMenu>,
+    /// When the global menu's items were last sent, so they go at most twice a second.
+    #[cfg(target_os = "linux")]
+    pub global_menu_sent: f64,
     /// Files dragged over and dropped onto the window (ADR 0059).
     pub drop: crate::drop::DropState,
     /// Recent files' pictures for the start screen.
@@ -793,6 +804,7 @@ impl App {
         let shot_mode = shot.is_some();
         // Screenshot runs use defaults so automated checks are reproducible.
         let prefs = if shot_mode { prefs::Prefs::default() } else { prefs::Prefs::load() };
+        let custom_titlebar = crate::platform::nodalia_controls(prefs.window_controls);
         let keymap = keymap::Keymap::new(&prefs.shortcuts);
         let shortcuts = keymap.table();
         let library_sel = crate::library::first_item(&session.doc);
@@ -841,7 +853,7 @@ impl App {
             show_about: false,
             show_files: false,
             show_licenses: false,
-            shot: shot.map(|path| Shot { path, frames: 0, requested: false, width: None }),
+            shot: shot.map(|path| Shot { path, frames: 0, requested: false, width: None, image: Default::default() }),
             cursor_stage: None,
             tl_scroll: 0.0,
             tl_cell_w: timeline::CELL_DEFAULT,
@@ -951,6 +963,11 @@ impl App {
             look_probe: None,
             look_asked: None,
             start: None,
+            custom_titlebar,
+            #[cfg(target_os = "linux")]
+            global_menu: None,
+            #[cfg(target_os = "linux")]
+            global_menu_sent: 0.0,
             drop: Default::default(),
             thumbs: Default::default(),
             templates: Default::default(),
@@ -3879,12 +3896,7 @@ impl App {
         let Some(shot) = &mut self.shot else { return };
         shot.frames += 1;
         ctx.request_repaint();
-        let image = ctx.input(|i| {
-            i.raw.events.iter().find_map(|e| match e {
-                egui::Event::Screenshot { image, .. } => Some(image.clone()),
-                _ => None,
-            })
-        });
+        let image = shot.image.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take();
         if let Some(img) = image {
             let img = match shot.width {
                 Some(w) => shrink(&img, w as usize),
@@ -3899,7 +3911,12 @@ impl App {
         }
         if shot.frames >= SHOT_FRAMES && !shot.requested {
             shot.requested = true;
-            ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::default()));
+            let slot = shot.image.clone();
+            let repaint = ctx.clone();
+            ctx.request_screenshot(move |image| {
+                *slot.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(image);
+                repaint.request_repaint();
+            });
         }
         if shot.frames > SHOT_FRAMES + 600 {
             eprintln!("screenshot: the renderer never delivered a frame");
@@ -3922,7 +3939,7 @@ impl App {
         let mut cancel = false;
         let title = crate::i18n::t(p.title);
         egui::Window::new(title)
-            .id(egui::Id::new(("prompt", p.title)))
+            .id(egui::Id::unique(("prompt", p.title)))
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, -80.0])
@@ -3962,23 +3979,47 @@ impl App {
     }
 
     fn about_window(&mut self, ctx: &egui::Context) {
-        let mut open = self.show_about;
-        let shown = egui::Window::new(tr!("About Ánima")).id(egui::Id::new("about_window")).open(&mut open).collapsible(false).resizable(false).show(
-            ctx,
-            |ui| {
-                ui.add(egui::Image::new((app_mark(ctx).id(), egui::vec2(64.0, 64.0))));
-                ui.heading("Ánima");
-                ui.label(tr!("Version {version} · {stage}", version = env!("CARGO_PKG_VERSION"), stage = crate::i18n::t(RELEASE_STAGE)));
-                ui.label(tr!("Open-source 2D vector animation studio, written in Rust."));
-                ui.label(trn!(
-                    "{n} engine command — all available headless via anima-cli.",
-                    "{n} engine commands — all available headless via anima-cli.",
-                    commands().len()
-                ));
-                ui.colored_label(T.text_dim, "MIT OR Apache-2.0"); // i18n-exempt: licence identifiers
-                ui.label(theme::text(theme::Type::Caption, tr!("Typefaces: {fonts}", fonts = theme::font_summary())));
-            },
-        );
+        if !self.show_about {
+            return;
+        }
+        let mut open = true;
+        // NDL's About: the mark, the name and version centred, Nodalia's close button only.
+        let shown = egui::Window::new(tr!("About Ánima"))
+            .id(egui::Id::unique("about_window"))
+            .title_bar(false)
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+            .fixed_size([360.0, 0.0])
+            .show(ctx, |ui| {
+                if theme::dialog_header(ui, None) || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                    open = false;
+                }
+                ui.vertical_centered(|ui| {
+                    ui.add(egui::Image::new((app_mark(ctx).id(), egui::vec2(96.0, 96.0))).corner_radius(22));
+                    ui.add_space(10.0);
+                    ui.label(theme::text(theme::Type::Display, "Ánima")); // i18n-exempt: the product name
+                    ui.label(theme::text(
+                        theme::Type::Label,
+                        tr!("Version {version} · {stage}", version = env!("CARGO_PKG_VERSION"), stage = crate::i18n::t(RELEASE_STAGE)),
+                    ));
+                    ui.add_space(10.0);
+                    ui.label(tr!("Open-source 2D vector animation studio, written in Rust."));
+                    ui.label(theme::text(
+                        theme::Type::Caption,
+                        trn!(
+                            "{n} engine command — all available headless via anima-cli.",
+                            "{n} engine commands — all available headless via anima-cli.",
+                            commands().len()
+                        ),
+                    ));
+                    ui.add_space(10.0);
+                    ui.hyperlink_to("getnodalia.com/anima", "https://getnodalia.com/anima"); // i18n-exempt: an address
+                    ui.colored_label(T.text_dim, "MIT OR Apache-2.0"); // i18n-exempt: licence identifiers
+                    ui.label(theme::text(theme::Type::Caption, tr!("Typefaces: {fonts}", fonts = theme::font_summary())));
+                    ui.add_space(6.0);
+                });
+            });
         crate::a11y::name_title_bar(&shown, tr!("About Ánima"));
         self.show_about = open;
     }
@@ -4003,7 +4044,7 @@ impl App {
         ];
         let mut opened: Option<Result<(), String>> = None;
         let shown = egui::Window::new(tr!("Project Files"))
-            .id(egui::Id::new("files_window"))
+            .id(egui::Id::unique("files_window"))
             .open(&mut open)
             .collapsible(false)
             .resizable(false)
@@ -4045,7 +4086,7 @@ impl App {
 /// first use and kept in the context. 128 px stays sharp at 64 pt on a 2× display.
 pub(crate) fn app_mark(ctx: &egui::Context) -> egui::TextureHandle {
     const PNG: &[u8] = include_bytes!("../assets/app-icon/hicolor/128x128/apps/dev.danielmiguelt.Anima.png");
-    let id = egui::Id::new("anima-app-mark");
+    let id = egui::Id::unique("anima-app-mark");
     if let Some(tex) = ctx.data(|d| d.get_temp::<egui::TextureHandle>(id)) {
         return tex;
     }
@@ -4178,6 +4219,7 @@ impl eframe::App for App {
                     delta: egui::vec2(0.0, -2000.0),
                     modifiers: Modifiers::NONE,
                     phase: egui::TouchPhase::Move,
+                    source: egui::MouseWheelSource::Unknown,
                 });
                 self.shot_click.set(None);
                 self.shot_step = 0;
@@ -4207,6 +4249,25 @@ impl eframe::App for App {
 }
 
 impl App {
+    /// Runs what was picked in the desktop's top-bar menu and keeps its items current.
+    #[cfg(target_os = "linux")]
+    fn serve_global_menu(&mut self, ctx: &egui::Context) {
+        let Some(menu) = self.global_menu.as_ref() else { return };
+        let picked: Vec<String> = menu.commands.try_iter().collect();
+        for id in &picked {
+            crate::global_menu::run(self, ctx, id);
+        }
+        let now = ctx.input(|i| i.time);
+        if picked.is_empty() && now - self.global_menu_sent < 0.5 {
+            return;
+        }
+        self.global_menu_sent = now;
+        let items = crate::global_menu::items(self);
+        if let Some(menu) = self.global_menu.as_mut() {
+            menu.update(&items);
+        }
+    }
+
     /// One frame of the whole interface. Needs no window, so tests run it headless.
     pub fn frame(&mut self, ui: &mut egui::Ui) {
         let ctx = ui.ctx().clone();
@@ -4223,6 +4284,8 @@ impl App {
         if let Some(p) = platform::picked_file() {
             self.open_picked(p);
         }
+        #[cfg(target_os = "linux")]
+        self.serve_global_menu(&ctx);
         // Documents the system handed over while running (macOS: Finder, the Dock; ADR 0062).
         for r in platform::take_requests() {
             self.system_request(&ctx, r);
@@ -4267,23 +4330,34 @@ impl App {
 
         let bar = |fill| egui::Frame::NONE.fill(fill).inner_margin(egui::Margin::symmetric(8, 2));
         crate::drop::begin_frame(self);
-        egui::Panel::top("menu_bar").frame(bar(T.chrome)).show(ui, |ui| menus::bar(self, ui));
+        // The window colour: the frame around the islands (NDL).
+        ui.painter().rect_filled(ui.max_rect(), 0.0, T.chrome);
+        egui::Panel::top("top_bar").exact_size(crate::header::HEIGHT).frame(egui::Frame::NONE).show(ui, |ui| {
+            let r = ui.max_rect();
+            crate::header::show(self, ui, r);
+        });
+        egui::Panel::bottom("status_bar").exact_size(28.0).frame(bar(T.chrome)).show(ui, |ui| panels::status_bar(self, ui));
+        // Islands sit a gap from the window's sides: half from here, half from their own margin.
+        let room = ui.available_rect_before_wrap();
+        let half = crate::theme::ISLAND_GAP / 2.0;
+        let inner = egui::Rect::from_min_max(room.min + egui::vec2(half, 0.0), room.max - egui::vec2(half, 0.0));
+        let mut ui = ui.new_child(egui::UiBuilder::new().max_rect(inner));
         if self.start.is_some() {
             // The start screen takes the workspace's place (ADR 0059); the menus stay.
-            egui::Panel::bottom("status_bar").exact_size(28.0).frame(bar(T.chrome)).show(ui, |ui| panels::status_bar(self, ui));
-            egui::CentralPanel::default().frame(egui::Frame::NONE.fill(T.pasteboard)).show(ui, |ui| crate::start::show(self, ui));
+            let margin = egui::Margin::same((crate::theme::ISLAND_GAP / 2.0) as i8);
+            egui::CentralPanel::default().frame(egui::Frame::NONE.outer_margin(margin)).show(&mut ui, |ui| crate::start::show(self, ui));
         } else {
-            self.workspace(ui);
+            self.workspace(&mut ui);
         }
+        crate::titlebar::resize_zones(self, &mut ui);
         self.windows(&ctx);
     }
 
     /// The editor's panels (ADR 0075): the edit bar and status bar, then the tools, the docks
     /// and the stage.
     fn workspace(&mut self, ui: &mut egui::Ui) {
-        let bar = |fill| egui::Frame::NONE.fill(fill).inner_margin(egui::Margin::symmetric(8, 2));
-        egui::Panel::top("edit_bar").exact_size(theme::TARGET + 8.0).frame(bar(T.panel)).show(ui, |ui| panels::edit_bar(self, ui));
-        egui::Panel::bottom("status_bar").exact_size(28.0).frame(bar(T.chrome)).show(ui, |ui| panels::status_bar(self, ui));
+        let bar = egui::Frame::NONE.fill(T.chrome).inner_margin(egui::Margin::symmetric(8, 2));
+        egui::Panel::top("edit_bar").exact_size(theme::TARGET + 8.0).frame(bar).show(ui, |ui| panels::edit_bar(self, ui));
         crate::dock_ui::workspace(self, ui);
     }
 

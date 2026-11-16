@@ -21,7 +21,7 @@ use crate::theme::{SQUARE, T, Type, font, text, with_type};
 use anima_engine::cmds_ease::{ease_target, read, saved_name};
 use anima_engine::doc::{CustomEase, Document, EaseDir, EaseFamily, EaseGroup, Easing, Handle, Property, TweenKind};
 use anima_engine::params::easing_json;
-use egui::{Align2, Key, Modifiers, Pos2, Rect, Sense, Stroke, WidgetType, pos2, vec2};
+use egui::{Align2, Key, Modifiers, Pos2, Rect, Role, Sense, Stroke, pos2, vec2};
 use serde_json::{Value, json};
 
 /// The graph's height, and the room around the curve inside it.
@@ -267,7 +267,7 @@ fn thumb(ui: &mut egui::Ui, e: &Easing, on: bool, name: &str) -> egui::Response 
         },
     );
     plot(p, rect.shrink(4.0), e, -0.35, 1.35, Stroke::new(1.5, if on { T.accent_text } else { T.tween }));
-    a11y::control(ui, &resp, WidgetType::SelectableLabel, name, Some(on));
+    a11y::control(ui, &resp, Role::Button, name, Some(on));
     resp.on_hover_text(name)
 }
 
@@ -293,7 +293,7 @@ pub fn preview(app: &mut App, ui: &mut egui::Ui, e: &Easing) {
     let y = |v: f32| inner.bottom() - (v - lo) / (hi - lo) * inner.height();
     p.line_segment([pos2(inner.left(), y(0.0)), pos2(inner.right(), y(1.0))], Stroke::new(1.0, T.border));
     plot(p, inner, e, lo, hi, Stroke::new(2.0, T.tween));
-    a11y::control(ui, &resp, WidgetType::Button, tr!("Edit Ease…"), None);
+    a11y::control(ui, &resp, Role::Button, tr!("Edit Ease…"), None);
     if resp.on_hover_text(tr!("Edit the ease: drag its points and handles")).clicked() {
         open_here(app);
     }
@@ -325,7 +325,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
     let mut open = true;
     let title = tr!("Custom Ease");
     let shown = egui::Window::new(title)
-        .id(egui::Id::new("ease_editor"))
+        .id(egui::Id::unique("ease_editor"))
         .open(&mut open)
         .collapsible(false)
         .resizable(true)
