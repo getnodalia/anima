@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **Spanish interface.** Release builds are made with craft-i18n, which now has a Spanish
+  catalog for Ánima, so Preferences › Appearance › Language offers Español.
 * **A new sample animation**: an evening landscape in flat colours, with the ball bouncing
   across the meadow, the evening star turning and the sun breathing over the ridges. The README's
   screenshots and GIF show it.

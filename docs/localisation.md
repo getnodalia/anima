@@ -26,8 +26,9 @@ English. A change shows at once. For one run, without saving: `anima --lang de`
 (`--lang auto`, `--lang pseudo`).
 
 Which languages a build offers depends on the catalogs it was built with (below). Today
-craft-i18n has no Ánima catalog yet, so builds offer English, and the **pseudo-locale**
-(`--lang pseudo`; listed in Preferences in debug builds) for testing.
+craft-i18n has an Ánima catalog for **Spanish**, and release builds are made with it, so they
+offer English and Spanish. Every build also has the **pseudo-locale** (`--lang pseudo`; listed
+in Preferences in debug builds) for testing.
 
 ## The pseudo-locale
 
