@@ -305,13 +305,20 @@ fn svg_frame_export_writes_vectors_and_asks_before_replacing() {
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("frame.svg");
     let _ = std::fs::remove_file(&path);
-    let mut s = Session::new(sample::demo());
+    // The demo is drawn in flat colours: give its sky a gradient so the export has one to keep.
+    let mut doc = sample::demo();
+    let sky = std::sync::Arc::make_mut(doc.timeline_mut(0).layers.last_mut().unwrap());
+    let sky = std::sync::Arc::make_mut(&mut std::sync::Arc::make_mut(&mut sky.keyframes[0]).elements[0]);
+    let anima_doc::ElementKind::Shape(shape) = &mut sky.kind else { panic!("the sky is a shape") };
+    let stops = [(0.0, 0x27407a), (1.0, 0xf7b98b)].map(|(offset, c)| anima_doc::GradientStop { offset, color: anima_doc::Rgba::hex(c) });
+    shape.fill = Some(anima_doc::Paint::linear(anima_geom::Vec2::new(0.0, 0.0), anima_geom::Vec2::new(0.0, 720.0), stops.to_vec()));
+    let mut s = Session::new(doc);
     let p = json!({"path": path.display().to_string(), "frame": 10});
     let v = run(&mut s, "file.export_svg", p.clone());
     let text = std::fs::read_to_string(&path).unwrap();
     assert_eq!(v["bytes"].as_u64().unwrap() as usize, text.len());
     assert!(text.starts_with("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1280\" height=\"720\""));
-    assert!(text.contains("radialGradient") || text.contains("linearGradient"), "the sample's gradients stay vector");
+    assert!(text.contains("radialGradient") || text.contains("linearGradient"), "gradients stay vector");
     assert_eq!(text, crate::cmds_file::frame_svg(&s.doc, 10));
     assert!(s.execute("file.export_svg", &p).is_err(), "replacing a file needs consent");
     run(&mut s, "file.export_svg", json!({"path": path.display().to_string(), "frame": 10, "confirm": true}));

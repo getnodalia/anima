@@ -1,17 +1,13 @@
 //! Generated documents: the demo scene (first launch, tests, `anima-cli --sample`) and a
 //! deterministic stress document for benchmarks. All artwork is simple generated geometry
-//! (no third-party assets).
+//! (no third-party assets): the demo's flat palette and ridges are original to Ánima.
 
 use crate::{
-    ColorEffect, Document, Easing, Element, ElementId, ElementKind, GradientStop, Keyframe, Layer, LayerId, LoopMode, Paint, Rgba, Shape, Stage,
-    Symbol, SymbolId, SymbolKind, Timeline, Tween,
+    ColorEffect, Document, Easing, Element, ElementId, ElementKind, Keyframe, Layer, LayerId, LoopMode, Paint, Rgba, Shape, Stage, Symbol, SymbolId,
+    SymbolKind, Timeline, Tween,
 };
 use anima_geom::{Affine, Decomposed, Path, Vec2};
 use std::sync::Arc;
-
-fn stops(cs: &[(f32, u32)]) -> Vec<GradientStop> {
-    cs.iter().map(|&(offset, c)| GradientStop { offset, color: Rgba::hex(c) }).collect()
-}
 
 fn el(doc: &mut Document, name: &str, transform: Affine, kind: ElementKind) -> Arc<Element> {
     Arc::new(Element { id: ElementId(doc.alloc_id()), name: name.into(), transform, color: ColorEffect::default(), kind })
@@ -46,10 +42,28 @@ fn key(start: u32, duration: u32, elements: Vec<Arc<Element>>, tween: Option<Eas
     k
 }
 
-/// Builds the demo document: a bouncing ball, a spinning star, a pulsing sun over hills.
+/// A ridge line through `points` (Catmull-Rom, as cubics), closed down to `bottom`.
+fn ridge(points: &[(f32, f32)], bottom: f32) -> Path {
+    let pts: Vec<Vec2> = points.iter().map(|&(x, y)| Vec2::new(x, y)).collect();
+    let mut p = Path::new();
+    let (Some(&first), Some(&last)) = (pts.first(), pts.last()) else { return p };
+    p.move_to(Vec2::new(first.x, bottom)).line_to(first);
+    for i in 0..pts.len().saturating_sub(1) {
+        let at = |j: usize| pts.get(j).copied().unwrap_or(last);
+        let (p0, p1, p2, p3) = (at(i.saturating_sub(1)), at(i), at(i + 1), at(i + 2));
+        let c1 = Vec2::new(p1.x + (p2.x - p0.x) / 6.0, p1.y + (p2.y - p0.y) / 6.0);
+        let c2 = Vec2::new(p2.x - (p3.x - p1.x) / 6.0, p2.y - (p3.y - p1.y) / 6.0);
+        p.cubic_to(c1, c2, p2);
+    }
+    p.line_to(Vec2::new(last.x, bottom)).close();
+    p
+}
+
+/// Builds the demo document: an evening landscape in flat colours, with a ball bouncing across
+/// the meadow, the evening star turning and the setting sun breathing over the ridges.
 pub fn demo() -> Document {
     let mut d = Document {
-        stage: Stage { width: 1280, height: 720, fps: 24.0, background: Rgba::WHITE },
+        stage: Stage { width: 1280, height: 720, fps: 24.0, background: Rgba::hex(PAPER) },
         scenes: vec![Arc::new(crate::Scene::new("Scene 1"))],
         library: Vec::new(),
         bitmaps: Vec::new(),
@@ -63,14 +77,11 @@ pub fn demo() -> Document {
         next_id: 1,
     };
     let (w, h) = (1280.0, 720.0);
+    let solid = |c: u32| Paint::Solid(Rgba::hex(c));
 
     // --- library -------------------------------------------------------------------------
     let ball_id = SymbolId(d.alloc_id());
-    let ball_shape = Shape::filled(
-        Path::ellipse(0.0, 0.0, 48.0, 48.0),
-        Paint::radial(Vec2::new(-16.0, -18.0), 70.0, stops(&[(0.0, 0xfff1c4), (0.35, 0xff8a3d), (1.0, 0xb3261e)])),
-    )
-    .with_stroke(Rgba::hex(0x5a1410), 3.0);
+    let ball_shape = Shape::filled(Path::ellipse(0.0, 0.0, 48.0, 48.0), solid(OCHRE));
     let ball_el = el(&mut d, "ball body", Affine::IDENTITY, ElementKind::Shape(ball_shape));
     let ball_layer = layer(d.alloc_id(), "body", 0x4fa3ff, vec![key(0, 1, vec![ball_el], None)]);
     d.library.push(Arc::new(Symbol {
@@ -84,7 +95,7 @@ pub fn demo() -> Document {
     }));
 
     let star_id = SymbolId(d.alloc_id());
-    let star_shape = Shape::filled(Path::star(0.0, 0.0, 60.0, 26.0, 5), Paint::Solid(Rgba::hex(0xfff6a8))).with_stroke(Rgba::hex(0xe0a400), 2.5);
+    let star_shape = Shape::filled(Path::star(0.0, 0.0, 60.0, 14.0, 4), solid(INK));
     let star_el_id = ElementId(d.alloc_id()); // same id across keyframes: one instance over time
     let star_keys = [0.0f32, 120.0, 240.0, 360.0]
         .into_iter()
@@ -114,7 +125,7 @@ pub fn demo() -> Document {
     // --- main timeline (index 0 = top) ---------------------------------------------------
     const LEN: u32 = 48;
 
-    // Ball: bounces across the stage with squash at each impact.
+    // Ball: bounces across the meadow with squash at each impact.
     let ball_layer_id = d.alloc_id();
     let ball_inst = ElementId(d.alloc_id());
     let poses = [
@@ -144,24 +155,21 @@ pub fn demo() -> Document {
 
     // Star: a nested, self-animating graphic symbol.
     let star_layer_id = d.alloc_id();
-    let star_el = el(&mut d, "star", pose(640.0, 110.0, 0.7, 0.7, 0.0), instance(star_id));
+    let star_el = el(&mut d, "star", pose(330.0, 130.0, 0.6, 0.6, 0.0), instance(star_id));
     let star = layer(star_layer_id, "Star", 0xffd54a, vec![key(0, LEN, vec![star_el], None)]);
 
-    // Sun: pulses with an ease in-out.
+    // Sun: low over the ridges, breathing with an ease in-out.
     let sun_layer_id = d.alloc_id();
     let sun_inst = ElementId(d.alloc_id());
-    let sun_shape = Shape::filled(
-        Path::ellipse(0.0, 0.0, 90.0, 90.0),
-        Paint::radial(Vec2::ZERO, 90.0, stops(&[(0.0, 0xfffbe0), (0.6, 0xffd36b), (1.0, 0xffa94d)])),
-    );
-    let sun_keys = [(0u32, 24u32, 1.0f32), (24, 23, 1.15), (47, 1, 1.0)]
+    let sun_shape = Shape::filled(Path::ellipse(0.0, 0.0, 104.0, 104.0), solid(VERMILION));
+    let sun_keys = [(0u32, 24u32, 1.0f32), (24, 23, 1.06), (47, 1, 1.0)]
         .into_iter()
         .enumerate()
         .map(|(i, (start, dur, s))| {
             let e = Element {
                 id: sun_inst,
                 name: "sun".into(),
-                transform: pose(1040.0, 150.0, s, s, 0.0),
+                transform: pose(960.0, 225.0, s, s, 0.0),
                 color: ColorEffect::default(),
                 kind: ElementKind::Shape(sun_shape.clone()),
             };
@@ -170,35 +178,39 @@ pub fn demo() -> Document {
         .collect();
     let sun = layer(sun_layer_id, "Sun", 0xffa726, sun_keys);
 
-    // Hills and ground.
+    // Hills: two ridges and the meadow the ball lands on.
     let hills_id = d.alloc_id();
     let mut hill_els = Vec::new();
     for (name, path, c) in [
-        ("far hill", Path::ellipse(330.0, 700.0, 520.0, 220.0), 0x4f8f6a),
-        ("near hill", Path::ellipse(1010.0, 730.0, 560.0, 230.0), 0x3d7a58),
-        ("ground", Path::rect(0.0, 620.0, w, h - 620.0), 0x2f6247),
+        (
+            "far hill",
+            ridge(&[(0.0, 470.0), (180.0, 418.0), (400.0, 452.0), (640.0, 392.0), (900.0, 446.0), (1110.0, 404.0), (1280.0, 436.0)], h),
+            SAGE,
+        ),
+        ("near hill", ridge(&[(0.0, 548.0), (260.0, 500.0), (560.0, 540.0), (850.0, 492.0), (1080.0, 530.0), (1280.0, 506.0)], h), MOSS),
+        ("ground", Path::rect(0.0, 608.0, w, h - 608.0), INK),
     ] {
-        hill_els.push(el(&mut d, name, Affine::IDENTITY, ElementKind::Shape(Shape::filled(path, Paint::Solid(Rgba::hex(c))))));
+        hill_els.push(el(&mut d, name, Affine::IDENTITY, ElementKind::Shape(Shape::filled(path, solid(c)))));
     }
     let hills = layer(hills_id, "Hills", 0x66bb6a, vec![key(0, LEN, hill_els, None)]);
 
     // Sky.
     let sky_id = d.alloc_id();
-    let sky_el = el(
-        &mut d,
-        "sky",
-        Affine::IDENTITY,
-        ElementKind::Shape(Shape::filled(
-            Path::rect(0.0, 0.0, w, h),
-            Paint::linear(Vec2::new(0.0, 0.0), Vec2::new(0.0, h), stops(&[(0.0, 0x27407a), (0.55, 0x8a79c9), (1.0, 0xf7b98b)])),
-        )),
-    );
+    let sky_el = el(&mut d, "sky", Affine::IDENTITY, ElementKind::Shape(Shape::filled(Path::rect(0.0, 0.0, w, h), solid(PAPER))));
     let mut sky = layer(sky_id, "Sky", 0x7e57c2, vec![key(0, LEN, vec![sky_el], None)]);
     Arc::make_mut(&mut sky).locked = true;
 
     d.timeline_mut(0).layers = vec![ball, star, sun, hills, sky];
     d
 }
+
+// The demo's palette: flat, print-like colours, original to Ánima.
+const PAPER: u32 = 0xede3d1;
+const VERMILION: u32 = 0xd6553b;
+const OCHRE: u32 = 0xe8a73a;
+const SAGE: u32 = 0xbfc8b6;
+const MOSS: u32 = 0x6e8c7c;
+const INK: u32 = 0x2c4549;
 
 /// A small interactive movie (ADR 0024): a menu that stops on its first frame with a Play
 /// button; clicking it plays a short show (a spinning movie clip and a ball rolling across),
