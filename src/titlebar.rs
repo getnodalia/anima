@@ -56,7 +56,8 @@ pub fn window_controls(ui: &mut Ui, bar: Rect) {
     let ctx = ui.ctx().clone();
     let rect = Rect::from_min_max(pos2(bar.right() - WIDTH, bar.top()), pos2(bar.right() - EDGE_GAP, bar.bottom()));
     let focused = ctx.input(|i| i.viewport().focused.unwrap_or(true));
-    let labels = nodalia_theme::window_controls::Labels { minimize: tr!("Minimize"), maximize: tr!("Maximize"), restore: tr!("Restore"), close: tr!("Close") };
+    let labels =
+        nodalia_theme::window_controls::Labels { minimize: tr!("Minimize"), maximize: tr!("Maximize"), restore: tr!("Restore"), close: tr!("Close") };
     use nodalia_theme::window_controls::Action;
     let palette = crate::theme::ndl_palette();
     match nodalia_theme::window_controls::show(ui, rect, &palette, crate::theme::ndl_mode(), focused, maximized(&ctx), labels) {

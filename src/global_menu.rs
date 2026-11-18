@@ -38,14 +38,14 @@ pub struct Item {
 /// The window's own entries, which are not engine commands: id, label, top menu.
 pub const OWN: [(&str, &str, &str); 9] = [
     ("ui.prefs", tr_noop!("Preferences…"), "Edit"), // i18n-exempt: a top menu's key, translated where drawn
-    ("ui.exit", tr_noop!("Exit"), "File"), // i18n-exempt: a top menu's key, translated where drawn
+    ("ui.exit", tr_noop!("Exit"), "File"),          // i18n-exempt: a top menu's key, translated where drawn
     ("ui.start", tr_noop!("Start Screen"), "File"), // i18n-exempt: a top menu's key, translated where drawn
-    ("ui.zoom_in", tr_noop!("Zoom In"), "View"), // i18n-exempt: a top menu's key, translated where drawn
-    ("ui.zoom_out", tr_noop!("Zoom Out"), "View"), // i18n-exempt: a top menu's key, translated where drawn
-    ("ui.fit", tr_noop!("Fit in Window"), "View"), // i18n-exempt: a top menu's key, translated where drawn
+    ("ui.zoom_in", tr_noop!("Zoom In"), "View"),    // i18n-exempt: a top menu's key, translated where drawn
+    ("ui.zoom_out", tr_noop!("Zoom Out"), "View"),  // i18n-exempt: a top menu's key, translated where drawn
+    ("ui.fit", tr_noop!("Fit in Window"), "View"),  // i18n-exempt: a top menu's key, translated where drawn
     ("ui.shortcuts", tr_noop!("Keyboard Shortcuts"), "Help"), // i18n-exempt: a top menu's key, translated where drawn
-    ("ui.guide", tr_noop!("User Guide"), "Help"), // i18n-exempt: a top menu's key, translated where drawn
-    ("ui.about", tr_noop!("About Ánima"), "Help"), // i18n-exempt: a top menu's key, translated where drawn
+    ("ui.guide", tr_noop!("User Guide"), "Help"),   // i18n-exempt: a top menu's key, translated where drawn
+    ("ui.about", tr_noop!("About Ánima"), "Help"),  // i18n-exempt: a top menu's key, translated where drawn
 ];
 
 /// The menus as the desktop shows them: the engine's commands with a menu path, then the
@@ -66,7 +66,13 @@ pub fn items(app: &crate::app::App) -> Vec<Item> {
         });
     }
     for (id, label, top) in OWN {
-        out.push(Item { id: id.to_string(), label: crate::i18n::t(label).to_string(), path: vec![crate::i18n::t(top).to_string()], enabled: true, checked: None });
+        out.push(Item {
+            id: id.to_string(),
+            label: crate::i18n::t(label).to_string(),
+            path: vec![crate::i18n::t(top).to_string()],
+            enabled: true,
+            checked: None,
+        });
     }
     out
 }
@@ -456,9 +462,14 @@ mod dbus {
         fn a_click_sends_the_id_and_a_disabled_item_nothing() {
             let (rows, root) = Shared::rows_of(&items());
             let (tx, rx) = channel();
-            let object =
-                MenuObject { shared: Arc::new(Mutex::new(Shared { rows, root, ..Default::default() })), commands: Mutex::new(tx), ctx: egui::Context::default() };
-            let id_of = |command: &str| object.lock().rows.iter().find_map(|(k, r)| matches!(r, Row::Item { id, .. } if id == command).then_some(*k)).unwrap_or(-1);
+            let object = MenuObject {
+                shared: Arc::new(Mutex::new(Shared { rows, root, ..Default::default() })),
+                commands: Mutex::new(tx),
+                ctx: egui::Context::default(),
+            };
+            let id_of = |command: &str| {
+                object.lock().rows.iter().find_map(|(k, r)| matches!(r, Row::Item { id, .. } if id == command).then_some(*k)).unwrap_or(-1)
+            };
             let (save, gif) = (id_of("file.save"), id_of("file.export.gif"));
             object.chosen(save, "clicked");
             object.chosen(gif, "clicked");
