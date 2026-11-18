@@ -28,7 +28,7 @@ pub fn bar(app: &mut App, ui: &mut egui::Ui) {
     let underline = app.menu_keys.show_keys;
     let mut tops = Vec::with_capacity(TOP_MENUS.len());
     egui::MenuBar::new().ui(ui, |ui| {
-        // macOS: leave room for the traffic lights over the unified title bar.
+        // Keep platform-specific spacing here if the menu row ever shares the title bar again.
         ui.add_space(platform::menu_inset());
         if platform::OS == Os::Mac {
             // The application menu, as every Mac app has (About, Settings, Quit).
@@ -447,6 +447,12 @@ fn enabled(app: &App, id: &str) -> bool {
         "edit.delete" | "edit.duplicate" | "modify.convert_to_symbol" | "modify.break_apart" | "arrange.bring_to_front" | "arrange.send_to_back" => {
             !app.s.selection.is_empty()
         }
+        // Modify › Shape (ADR 0109): what the selection has for them.
+        "modify.lines_to_fills" => selected_shape(app, |sh| sh.stroke.is_some()),
+        "modify.expand_fill" => selected_shape(app, |sh| sh.fill.is_some()),
+        "modify.soften_fill_edges" => {
+            selected_shape(app, |sh| sh.fill.as_ref().is_some_and(|f| !matches!(f, anima_engine::doc::Paint::Bitmap { .. })))
+        }
         "layer.delete" => app.s.timeline().layers.len() > 1,
         "scene.delete" => app.s.doc.scenes.len() > 1,
         // Ctrl+E opens the selected instance, or goes back to the document (ADR 0045).
@@ -475,6 +481,11 @@ fn enabled(app: &App, id: &str) -> bool {
         }
         _ => true,
     }
+}
+
+/// Whether a selected shape passes `has` (looked at only while a menu is open).
+fn selected_shape(app: &App, has: impl Fn(&anima_engine::doc::Shape) -> bool) -> bool {
+    app.s.selected_elements().iter().any(|(_, e)| matches!(&e.kind, anima_engine::doc::ElementKind::Shape(sh) if has(sh)))
 }
 
 /// Whether a registry command that switches a setting has it on (`None`: not a setting).
@@ -771,6 +782,14 @@ pub(crate) fn menu_contents(app: &mut App, ui: &mut egui::Ui, top: &str, cmds: &
             if ui_item(ui, tr!("User Guide"), "", None) {
                 app.open_user_guide();
             }
+            // The guide at the section for the dialog in front, the focused panel or the tool
+            // in hand (F1 also counts what the pointer is over; ADR 0096).
+            if ui_item(ui, tr!("Help for This"), "F1", None) {
+                crate::context_help::help_for_this(app, ui.ctx(), false);
+            }
+            if ui_item(ui, tr!("Search the User Guide"), "", None) {
+                app.open_guide_search();
+            }
             ui.separator();
             #[cfg(not(target_arch = "wasm32"))]
             if ui_item(ui, tr!("Check for Updates…"), "", None) {
@@ -779,7 +798,7 @@ pub(crate) fn menu_contents(app: &mut App, ui: &mut egui::Ui, top: &str, cmds: &
             if ui_item(ui, tr!("Command Palette…"), "Ctrl+K", None) {
                 app.palette = Some(crate::dialogs::Palette::default());
             }
-            if ui_item(ui, tr!("Keyboard Shortcuts"), "F1", None) {
+            if ui_item(ui, tr!("Keyboard Shortcuts"), "Ctrl+Alt+Shift+K", None) {
                 app.show_shortcuts = true;
             }
             ui.separator();

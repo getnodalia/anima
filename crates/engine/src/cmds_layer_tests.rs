@@ -164,7 +164,7 @@ fn layer_properties_set_everything_as_one_step_or_nothing() {
     );
     assert_eq!(
         r,
-        json!({"layer": bottom.0, "name": "Sky", "type": "guide", "mask": null, "color": "#123456", "outline": true, "height": 200, "visible": false, "locked": true, "onion": false})
+        json!({"layer": bottom.0, "name": "Sky", "type": "guide", "mask": null, "color": "#123456", "outline": true, "height": 200, "opacity": 100.0, "visible": false, "locked": true, "onion": false})
     );
     assert_eq!(s.history.undo_len(), undo + 1, "one undo step");
     assert_eq!(run(&mut s, "layer.properties", json!({"layer": bottom.0})), r);

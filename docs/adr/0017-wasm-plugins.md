@@ -30,12 +30,12 @@ crash or hang the app, touch files, or leave half an edit behind.
 1. **Crate `anima-plugins` (L0)**: the sandbox. It knows WebAssembly, the manifest and the
    limits, not the document. The engine implements its `Host` trait.
 2. **ABI v1** (`docs/plugins.md`): exports `ac_abi_version`, `ac_manifest`, `ac_alloc`,
-   `ac_run`, `memory`; the only imports allowed are `anima.call(ptr, len) -> len` and
-   `anima.response(ptr, cap) -> n`. A request is `{"op": …}`: `command` (any registry
+   `ac_run`, `memory`; the only imports allowed are `anicraft.call(ptr, len) -> len` and
+   `anicraft.response(ptr, cap) -> n`. A request is `{"op": …}`: `command` (any registry
    command by id with JSON params), `document` (a compact view), `elements` (the active
    layer's elements, optionally with paths) and `log`. Answers are `{"ok", "result"|"error"}`.
    New ops are additive; the version changes only when an existing contract does.
-3. **Host calls are resumable traps.** `anima.call` copies the request out and traps with a
+3. **Host calls are resumable traps.** `anicraft.call` copies the request out and traps with a
    marker; the run loop answers it through the `Host` (which borrows the session mutably, so it
    can't live inside wasmi's `'static` store) and resumes. Fuel runs out the same way, in
    10 M-instruction slices, which is where the wall-clock deadline is checked.

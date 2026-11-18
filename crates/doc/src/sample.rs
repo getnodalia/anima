@@ -25,6 +25,7 @@ fn instance(symbol: SymbolId) -> ElementKind {
         blend: crate::BlendMode::Normal,
         filters: Vec::new(),
         events: Vec::new(),
+        pivot: None,
     }
 }
 

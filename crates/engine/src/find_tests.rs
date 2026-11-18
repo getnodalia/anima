@@ -57,6 +57,7 @@ impl Build {
             box_height: 10.0,
             field: None,
             on_path: None,
+            ..Default::default()
         };
         Element {
             id: ElementId(self.id()),
@@ -92,6 +93,7 @@ impl Build {
                 blend: Default::default(),
                 filters: Vec::new(),
                 events: Vec::new(),
+                pivot: None,
             },
         }
     }

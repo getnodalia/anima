@@ -14,7 +14,7 @@
 use serde_json::{Value, json};
 
 #[cfg(target_arch = "wasm32")]
-#[link(wasm_import_module = "anima")]
+#[link(wasm_import_module = "anicraft")]
 unsafe extern "C" {
     /// Sends `len` bytes of JSON at `ptr`; returns the length of the response.
     #[link_name = "call"]

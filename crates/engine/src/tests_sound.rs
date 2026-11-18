@@ -357,6 +357,7 @@ fn sounds_inside_symbols_are_in_the_exported_soundtrack_at_their_offset_and_loop
             blend: Default::default(),
             filters: Vec::new(),
             events: Vec::new(),
+            pivot: None,
         },
     }));
     let mut outer = Layer::new(LayerId(503), "puppet");

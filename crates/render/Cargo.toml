@@ -8,6 +8,8 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
+craft-lottie.workspace = true
+craft-html.workspace = true
 anima-geom.workspace = true
 anima-doc.workspace = true
 rayon.workspace = true

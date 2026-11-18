@@ -128,7 +128,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
     }
     let mut open = true;
     let at = ctx.content_rect().right_top() + vec2(-620.0, 90.0);
-    let shown = egui::Window::new(tr!("Brush Library"))
+    let shown = crate::windows::new(ctx, tr!("Brush Library"))
         .id(egui::Id::new("brush_library"))
         .open(&mut open)
         .default_pos(at)

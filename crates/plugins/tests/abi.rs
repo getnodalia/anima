@@ -161,7 +161,7 @@ fn modules_are_validated_at_load() {
             wat(&format!(
                 r#"(module (import "anicraft" "open_file" (func (param i32) (result i32))) {base_exports} (func (export "ac_run") (param i32 i32) (result i32) i32.const 0))"#
             )),
-            "anima.open_file",
+            "anicraft.open_file",
         ),
         (
             "wrong import type",
@@ -170,7 +170,7 @@ fn modules_are_validated_at_load() {
             )),
             "must be a function",
         ),
-        ("imported memory", wat(r#"(module (import "anicraft" "memory" (memory 1)))"#), "anima.memory"),
+        ("imported memory", wat(r#"(module (import "anicraft" "memory" (memory 1)))"#), "anicraft.memory"),
         ("missing ac_run", wat(&format!("(module {base_exports})")), "ac_run"),
         ("wrong ac_run type", wat(&format!(r#"(module {base_exports} (func (export "ac_run") (result i32) i32.const 0))"#)), "ac_run"),
         ("no memory export", wat(r#"(module (func (export "ac_abi_version") (result i32) i32.const 1))"#), "memory"),

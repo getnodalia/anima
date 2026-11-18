@@ -230,6 +230,7 @@ fn nested(
                     blend: Default::default(),
                     filters: Vec::new(),
                     events: Vec::new(),
+                    pivot: None,
                 },
             }));
             Arc::new(k)

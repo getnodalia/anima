@@ -44,6 +44,12 @@ anima-cli exec --sample plugin.run '{"id":"org.anima.star-field","params":{"coun
     --plugins examples/plugins/dist --save stars.anima
 ```
 
+## Saved commands share the rule
+
+A saved command (ADR 0097, History › Save As Command) may call exactly the commands a plug-in
+may (`plugin_may_call`), and no `macro.*` command. Plug-ins may not call any `macro.*` command
+either, so the two can never call each other.
+
 ## The sandbox
 
 The host is [`wasmi`](https://github.com/wasmi-labs/wasmi), a pure-Rust WebAssembly interpreter
@@ -53,7 +59,7 @@ module, which would abort the process). Limits (`anima_plugins::Limits`, default
 
 | Limit | Default | On violation |
 |---|---|---|
-| Host imports | only `anima.call` and `anima.response` (no WASI, files, clock, randomness or network) | module rejected at install |
+| Host imports | only `anicraft.call` and `anicraft.response` (no WASI, files, clock, randomness or network) | module rejected at install |
 | Module size | 16 MiB | rejected |
 | Linear memory | 256 MiB per instance | `memory.grow` returns −1; an oversized initial memory fails to load |
 | Instructions (fuel) | 1,000,000,000 per run (a tenth for loading) | the run stops: "exceeded its instruction budget" |
@@ -115,8 +121,10 @@ first). A refused or failed request is an answer, not a trap: the plug-in decide
 |---|---|
 | `{"op":"command","id":"draw.star","params":{…}}` | The command's result (see `anima-cli commands` for ids and params). |
 | `{"op":"document"}` | `{abi, stage: {width, height, fps, background}, scene, scenes, frame, frames, layer, layers: [{id, name, kind, visible, locked, parent}], selection: [ids]}` (the selection on every layer, ADR 0044) |
-| `{"op":"elements","selected"?:bool,"paths"?:bool}` | The elements on the active layer at the playhead (tweens applied): `{layer, frame, elements: [{id, kind: shape\|symbol\|text, name, selected, transform: [a,b,c,d,e,f], bounds: [x,y,w,h] (stage), alpha, fill, stroke, path (SVG path data, local space, with "paths")}]}` (at most 10,000). |
+| `{"op":"elements","selected"?:bool,"paths"?:bool}` | The elements on the active layer at the playhead (tweens applied): `{layer, frame, elements: [{id, kind: shape\|symbol\|text\|camera\|group, name, selected, transform: [a,b,c,d,e,f], bounds: [x,y,w,h]\|null (stage), alpha, fill, stroke, path (SVG path data, local space, with "paths")}]}` (at most 10,000). |
 | `{"op":"log","message":"…"}` | `null`; the line goes into the run's report, and the last one explains a failure. |
+
+`bounds` is `null` for cameras and for any element whose evaluated bounds are empty.
 
 Unknown ops answer `{"ok":false,"error":"unknown op '…'"}`, so a plug-in can feature-detect.
 New ops and plug-in kinds are added without changing version 1; the version changes only

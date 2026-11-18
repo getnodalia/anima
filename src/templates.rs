@@ -258,7 +258,7 @@ pub fn save_window(app: &mut App, ctx: &egui::Context) {
         d.picture = Some(picture_png(doc).and_then(|png| texture(ctx, "save-preview", &png)));
     }
     let (mut submit, mut cancel) = (false, false);
-    egui::Window::new(tr!("Save as Template"))
+    crate::windows::new(ctx, tr!("Save as Template"))
         .id(egui::Id::new("save_template"))
         .collapsible(false)
         .resizable(false)

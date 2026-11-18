@@ -24,6 +24,7 @@ mod cmds_group;
 mod cmds_hints;
 mod cmds_layer;
 pub mod cmds_library;
+pub mod cmds_macro;
 mod cmds_modify;
 mod cmds_motion;
 pub mod cmds_paint;
@@ -37,6 +38,7 @@ mod cmds_recovery;
 mod cmds_retime;
 mod cmds_scene;
 mod cmds_script;
+pub mod cmds_shape;
 pub mod cmds_sound;
 mod cmds_stroke;
 pub mod cmds_swatch;
@@ -56,7 +58,11 @@ pub mod history;
 mod merge;
 pub mod multi;
 pub mod onion;
+#[cfg(test)]
+mod origin_tests;
 pub mod params;
+#[cfg(test)]
+mod pivot_tests;
 pub mod player;
 pub mod plugin_export;
 pub mod publish;
@@ -84,6 +90,7 @@ pub use anima_text as text;
 /// Whether a path is an Animate document (`.fla`, `.xfl`, or an XFL folder) that `file.open`
 /// imports.
 pub use cmds_file::is_animate;
+pub use cmds_modify::{Item as SelectedItem, transform_origins};
 
 #[derive(Debug, thiserror::Error)]
 pub enum EngineError {
@@ -178,10 +185,12 @@ pub fn commands() -> Vec<CommandSpec> {
     v.extend(cmds_text::specs());
     v.extend(cmds_width::specs());
     v.extend(cmds_stroke::specs());
+    v.extend(cmds_shape::specs());
     v.extend(cmds_plugin::specs());
     v.extend(cmds_sound::specs());
     v.extend(cmds_actions::specs());
     v.extend(cmds_script::specs());
+    v.extend(cmds_macro::specs());
     v
 }
 
@@ -197,11 +206,24 @@ pub const SHORTCUT_ALIASES: &[(&str, &str)] = &[
 ];
 
 pub fn find_command(id: &str) -> Option<CommandSpec> {
-    commands().into_iter().find(|c| c.id == id)
+    // Built once: every command run looks itself up, and a saved command checks each of its
+    // steps (ADR 0097), so this must not rebuild the registry per call.
+    static INDEX: std::sync::OnceLock<std::collections::HashMap<&'static str, CommandSpec>> = std::sync::OnceLock::new();
+    INDEX
+        .get_or_init(|| {
+            let mut m = std::collections::HashMap::new();
+            for c in commands() {
+                // The first of a repeated id wins, as a search in registry order finds it.
+                m.entry(c.id).or_insert(c);
+            }
+            m
+        })
+        .get(id)
+        .copied()
 }
 
 pub use cmds_layer::LAYER_COLORS;
-pub use history::{Snapshot, StateId};
+pub use history::{Recorded, Snapshot, StateId};
 pub use selection::Selection;
 pub use snap::{Accuracy, SnapTo, ViewAids};
 
@@ -263,6 +285,47 @@ pub struct ToolStyle {
     /// Snap to Objects (Animate's magnet, ADR 0042): dragged points and selections snap to
     /// points, lines and fill edges nearby. On by default; off, the `snap` params do nothing.
     pub snap_objects: bool,
+    /// What several selected objects turn, scale and skew about with Free Transform and
+    /// Modify › Transform (ADR 0109). The whole selection's point by default, as in Animate.
+    pub transform_origin: TransformOrigin,
+}
+
+/// What several selected objects are transformed about (ADR 0109, issue #296).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum TransformOrigin {
+    /// One point for the whole selection: the objects turn and scale as one arrangement.
+    #[default]
+    Selection,
+    /// Each object about its own point: a symbol instance's or a group's registration point,
+    /// and the centre of anything else (a shape, a drawing, a bitmap, text).
+    Registration,
+    /// Each object about the centre of its own box, wherever its registration point is.
+    Center,
+}
+
+impl TransformOrigin {
+    pub const ALL: [TransformOrigin; 3] = [TransformOrigin::Selection, TransformOrigin::Registration, TransformOrigin::Center];
+
+    pub fn key(self) -> &'static str {
+        match self {
+            TransformOrigin::Selection => "selection",
+            TransformOrigin::Registration => "registration",
+            TransformOrigin::Center => "center",
+        }
+    }
+
+    pub fn from_key(key: &str) -> Option<TransformOrigin> {
+        TransformOrigin::ALL.into_iter().find(|m| m.key() == key)
+    }
+
+    /// The mode after this one (the cycling shortcut).
+    pub fn next(self) -> TransformOrigin {
+        match self {
+            TransformOrigin::Selection => TransformOrigin::Registration,
+            TransformOrigin::Registration => TransformOrigin::Center,
+            TransformOrigin::Center => TransformOrigin::Selection,
+        }
+    }
 }
 
 impl Default for ToolStyle {
@@ -280,6 +343,7 @@ impl Default for ToolStyle {
             line: anima_doc::StrokeStyle::default(),
             object_drawing: true,
             snap_objects: true,
+            transform_origin: TransformOrigin::Selection,
         }
     }
 }
@@ -367,6 +431,10 @@ pub struct Session {
     pub(crate) step_label: Option<String>,
     /// A marquee's cut that nothing has used yet (ADR 0041).
     provisional: Option<Provisional>,
+    /// Fills and strokes turned off in this session, for turning them on again (#292, #393).
+    pub(crate) paint_memory: PaintMemory,
+    /// Raw shapes a paste left floating (`edit.paste {float: true}`, as the editor pastes).
+    pub(crate) floating: Option<Floating>,
     /// Set by `raw.select_rect` when it cut: each piece and the shape it was cut from, and the
     /// pieces inside the marquee.
     pub(crate) pending_cut: Option<(CutOrigin, Vec<ElementId>)>,
@@ -396,10 +464,51 @@ pub struct Session {
     pub filter_clipboard: Option<Vec<anima_doc::FilterEntry>>,
     /// The open envelope (ADR 0080): view state over the shapes it bends, like a gesture.
     pub(crate) envelope: Option<cmds_envelope::Envelope>,
+    /// The commands run since the last undo step was recorded, which the next step keeps so it
+    /// can be saved as a command (ADR 0097).
+    rec: history::Recording,
+    /// How many commands were recorded when the open gesture began (a revert goes back there).
+    gesture_rec: usize,
+    /// What the running command records instead of itself (`macro.run` records its steps).
+    pub(crate) record_as: Option<Vec<Recorded>>,
 }
 
 /// Each piece of a marquee's cut, with the shape it was cut from.
 pub(crate) type CutOrigin = Vec<(ElementId, ElementId)>;
+
+/// The fill and the stroke each shape had when it was turned off (the Fill and Stroke
+/// checkboxes in Properties), so turning it on again brings back that colour, gradient or line
+/// rather than a default (#292). A convenience of the session: it is not saved or undone.
+#[derive(Default)]
+pub(crate) struct PaintMemory {
+    pub(crate) fills: std::collections::HashMap<ElementId, anima_doc::Paint>,
+    pub(crate) strokes: std::collections::HashMap<ElementId, anima_doc::Stroke>,
+}
+
+impl PaintMemory {
+    /// Bounded: past this many shapes it starts over.
+    const MAX: usize = 10_000;
+    pub(crate) fn remember_fill(&mut self, id: ElementId, fill: anima_doc::Paint) {
+        if self.fills.len() >= Self::MAX {
+            self.fills.clear();
+        }
+        self.fills.insert(id, fill);
+    }
+    pub(crate) fn remember_stroke(&mut self, id: ElementId, stroke: anima_doc::Stroke) {
+        if self.strokes.len() >= Self::MAX {
+            self.strokes.clear();
+        }
+        self.strokes.insert(id, stroke);
+    }
+}
+
+/// Raw shapes a paste put on top of the drawing without merging them (#391): each with its
+/// layer, and the frame they were pasted on. They merge when none of them is selected any more.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Floating {
+    pub(crate) items: Vec<(LayerId, ElementId)>,
+    pub(crate) frame: u32,
+}
 
 /// A marquee's cut that nothing has used yet (ADR 0041). In Animate a marquee only selects: the
 /// drawing is cut where it crosses once the selection is moved or changed. Here the cut happens
@@ -460,6 +569,8 @@ impl Session {
             plugins: anima_plugins::Registry::default(),
             step_label: None,
             provisional: None,
+            paint_memory: PaintMemory::default(),
+            floating: None,
             pending_cut: None,
             gesture_cut: None,
             hit_area: None,
@@ -471,6 +582,9 @@ impl Session {
             filter_presets: filter_library::FilterLibrary::default(),
             filter_clipboard: None,
             envelope: None,
+            rec: history::Recording::default(),
+            gesture_rec: 0,
+            record_as: None,
         }
     }
 
@@ -513,6 +627,7 @@ impl Session {
         }
         // On a marquee's cut, the step (if the gesture makes one) starts from before the cut.
         let cut = self.live_cut().map(|p| (history::Snapshot { label: label.to_string(), ..p.before.clone() }, p.cut.clone()));
+        self.gesture_rec = self.rec.cmds.len();
         match cut {
             Some((before, doc)) => {
                 self.gesture_cut = Some(doc);
@@ -536,8 +651,17 @@ impl Session {
             }
             self.provisional = None;
         }
+        self.record(before);
+    }
+
+    /// Records `before` as the undo step to the current document, with the commands run since
+    /// the last step; an unchanged document records nothing and forgets them.
+    fn record(&mut self, mut before: Snapshot) {
         if self.doc != before.doc {
+            before.commands = self.rec.take();
             self.history.record(before, &self.doc);
+        } else {
+            self.rec.clear();
         }
     }
 
@@ -581,15 +705,13 @@ impl Session {
         {
             return Err(EngineError::NeedsConfirmation(format!("{} {} (pass \"confirm\": true to proceed)", c.title, c.message)));
         }
-        // A group open for editing is one layer and one frame (ADR 0073).
-        if spec.mutates && self.editing_group() && GROUP_REFUSES.iter().any(|ns| if ns.ends_with('.') { id.starts_with(ns) } else { id == *ns }) {
-            return Err(EngineError::State("a group has one layer and one frame: close it (Edit › Edit Document) to change the timeline, or convert it to a symbol (F8) to animate inside it".into()));
-        }
+        self.group_allows(&spec)?;
         self.settle_cut(id, params);
         if !spec.mutates {
             let r = (spec.run)(self, params);
             self.settle_cut(id, params);
             self.hold_group_frame();
+            self.settle_floating();
             return r;
         }
         // An edit on a marquee's cut records its step from before the cut (ADR 0041).
@@ -604,7 +726,9 @@ impl Session {
         self.pending_cut = None;
         self.motion_edit = None;
         self.step_label = None;
+        self.record_as = None;
         let result = (spec.run)(self, params);
+        let record_as = self.record_as.take();
         // Edits to a motion tween's target become property keys (auto-key).
         if let Some(edit) = self.motion_edit.take()
             && result.is_ok()
@@ -626,6 +750,10 @@ impl Session {
                 if changed {
                     self.state = history::fresh_state();
                     self.revision += 1;
+                    match record_as {
+                        Some(steps) => steps.into_iter().for_each(|r| self.rec.push(r)),
+                        None => self.rec.push(Recorded::new(id, params)),
+                    }
                     match pending.filter(|_| self.gesture.is_none()) {
                         // A marquee's cut: provisional, no step (yet).
                         Some((origin, inside)) => self.begin_cut(before, cut.is_some(), origin, inside),
@@ -633,14 +761,15 @@ impl Session {
                             if cut.is_some() {
                                 self.provisional = None;
                             }
-                            if self.gesture.is_none() && self.doc != before.doc {
-                                self.history.record(before, &self.doc);
+                            if self.gesture.is_none() {
+                                self.record(before);
                             }
                         }
                     }
                 }
                 self.fix_selection();
                 self.hold_group_frame();
+                self.settle_floating();
                 Ok(v)
             }
             Err(e) => {
@@ -649,6 +778,55 @@ impl Session {
                 Err(e)
             }
         }
+    }
+
+    /// Merges floating pasted shapes into the drawing once the selection has let go of them
+    /// (#391; in Animate pasted raw artwork stays apart until it is deselected). The merge is
+    /// part of the step around it: undoing the paste brings back the drawing from before it,
+    /// and undoing a command that deselected them brings them back floating and selected.
+    fn settle_floating(&mut self) {
+        let Some(f) = self.floating.as_ref() else { return };
+        if self.gesture.is_some() || f.items.iter().any(|&(layer, id)| self.selection.contains(layer, id)) {
+            return;
+        }
+        let Some(f) = self.floating.take() else { return };
+        let (doc, frame, layer, selection) = (self.doc.clone(), self.frame, self.layer, self.selection.clone());
+        self.frame = f.frame;
+        let mut layers: Vec<LayerId> = Vec::new();
+        for &(l, _) in &f.items {
+            if !layers.contains(&l) && self.timeline().layer(l).is_some() {
+                layers.push(l);
+            }
+        }
+        let mut ok = true;
+        for l in layers {
+            let ids: Vec<ElementId> = f.items.iter().filter(|i| i.0 == l).map(|i| i.1).collect();
+            ok &= self.with_layer(l, |s| merge::settle(s, &ids)).is_ok();
+        }
+        self.frame = frame;
+        if self.timeline().layer(layer).is_some() {
+            self.layer = layer;
+        }
+        self.selection = selection;
+        if !ok {
+            // They stay as they are, on top: a move merges them where they land.
+            self.doc = doc;
+        } else if self.doc != doc {
+            self.state = history::fresh_state();
+            self.revision += 1;
+        }
+        self.dl_cache.replace(None);
+        self.fix_selection();
+    }
+
+    /// A group open for editing is one layer and one frame (ADR 0073): commands that change
+    /// the timeline are refused inside it.
+    fn group_allows(&self, spec: &CommandSpec) -> Result<()> {
+        let id = spec.id;
+        if spec.mutates && self.editing_group() && GROUP_REFUSES.iter().any(|ns| if ns.ends_with('.') { id.starts_with(ns) } else { id == *ns }) {
+            return Err(EngineError::State("a group has one layer and one frame: close it (Edit › Edit Document) to change the timeline, or convert it to a symbol (F8) to animate inside it".into()));
+        }
+        Ok(())
     }
 
     /// Inside a group (ADR 0073) the playhead stays on its only frame.
@@ -715,6 +893,8 @@ impl Session {
         if self.saved_state == Some(p.state) {
             self.saved_state = Some(p.before.state);
         }
+        // The cut's commands went with it.
+        self.rec.clear();
         self.doc = p.before.doc;
         self.state = p.before.state;
         self.selection = sel;
@@ -736,9 +916,19 @@ impl Session {
         if !spec.mutates {
             return (spec.run)(self, params);
         }
+        self.group_allows(&spec)?;
         let before = self.snapshot("");
         self.dl_cache.replace(None);
+        // Each command's edits to a motion tween's target become its keys, as when it runs on
+        // its own (the next one may work at another frame).
+        let outer = self.motion_edit.take();
         let result = (spec.run)(self, params);
+        if let Some(edit) = self.motion_edit.take()
+            && result.is_ok()
+        {
+            cmds_motion::finish_edit(self, edit);
+        }
+        self.motion_edit = outer;
         self.dl_cache.replace(None);
         self.pending_cut = None;
         match result {
@@ -777,8 +967,11 @@ impl Session {
             frame: g.frame,
             layer: g.layer,
             selection: g.selection.clone(),
+            floating: self.floating.clone(),
             bytes: 0,
+            commands: None,
         };
+        self.rec.truncate(self.gesture_rec);
         self.restore(back);
         self.revision += 1;
         self.fix_selection();
@@ -794,7 +987,9 @@ impl Session {
             frame: self.frame,
             layer: self.layer,
             selection: self.selection.clone(),
+            floating: self.floating.clone(),
             bytes: 0,
+            commands: None,
         }
     }
 
@@ -807,6 +1002,7 @@ impl Session {
         self.frame = s.frame;
         self.layer = s.layer;
         self.selection = s.selection;
+        self.floating = s.floating;
         self.dl_cache.replace(None);
     }
 
@@ -826,6 +1022,7 @@ impl Session {
     pub fn undo(&mut self) -> Result<Value> {
         self.end_gesture();
         self.heal_cut();
+        self.rec.clear();
         let cur = self.snapshot("");
         let s = self.history.undo(cur).ok_or_else(|| EngineError::State("nothing to undo".into()))?;
         let label = s.label.clone();
@@ -838,6 +1035,7 @@ impl Session {
     pub fn redo(&mut self) -> Result<Value> {
         self.end_gesture();
         self.heal_cut();
+        self.rec.clear();
         let cur = self.snapshot("");
         let s = self.history.redo(cur).ok_or_else(|| EngineError::State("nothing to redo".into()))?;
         let label = s.label.clone();
@@ -1212,6 +1410,10 @@ mod group_tests;
 #[cfg(test)]
 mod hint_tests;
 #[cfg(test)]
+mod layer_order_tests;
+#[cfg(test)]
+mod macro_tests;
+#[cfg(test)]
 mod merge_tests;
 #[cfg(test)]
 mod motion_path_tests;
@@ -1236,6 +1438,8 @@ mod rawsub_tests;
 #[cfg(test)]
 mod retime_tests;
 #[cfg(test)]
+mod rich_text_tests;
+#[cfg(test)]
 mod scale_grid_tests;
 #[cfg(test)]
 mod selection_tests;
@@ -1256,7 +1460,11 @@ mod tests_camera;
 #[cfg(test)]
 mod tests_filter;
 #[cfg(test)]
+mod tests_filter_colour;
+#[cfg(test)]
 mod tests_filter_tracks;
+#[cfg(test)]
+mod tests_mixed_bone;
 #[cfg(test)]
 mod tests_script;
 #[cfg(test)]

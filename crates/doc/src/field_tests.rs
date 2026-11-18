@@ -18,6 +18,7 @@ fn block(text: &str, f: TextField) -> TextBlock {
         box_height: 24.0,
         field: Some(f),
         on_path: None,
+        ..Default::default()
     }
 }
 

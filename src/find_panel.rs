@@ -252,7 +252,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
     }
     let mut open = app.find.open;
     let at = ctx.content_rect().right_top() + vec2(-720.0, 110.0);
-    let shown = egui::Window::new(tr!("Find and Replace"))
+    let shown = crate::windows::new(ctx, tr!("Find and Replace"))
         .id(egui::Id::new("find_replace"))
         .open(&mut open)
         .default_pos(at)

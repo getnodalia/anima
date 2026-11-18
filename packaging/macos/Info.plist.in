@@ -7,11 +7,11 @@
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleDisplayName</key>
-  <string>Ánima</string>
+  <string>Anima</string>
   <key>CFBundleName</key>
-  <string>Ánima</string>
+  <string>Anima</string>
   <key>CFBundleExecutable</key>
-  <string>Ánima</string>
+  <string>Anima</string>
   <key>CFBundleIdentifier</key>
   <string>dev.danielmiguelt.Anima</string>
   <key>CFBundleInfoDictionaryVersion</key>
@@ -24,12 +24,12 @@
   <string>@SHORT_VERSION@</string>
   <key>CFBundleVersion</key>
   <string>@SHORT_VERSION@</string>
-  <key>ÁnimaVersion</key>
+  <key>AnimaVersion</key>
   <string>@VERSION@</string>
-  <key>ÁnimaBuildCommit</key>
+  <key>AnimaBuildCommit</key>
   <string>@BUILD_SHA@</string>
   <key>CFBundleIconFile</key>
-  <string>Ánima</string>
+  <string>Anima</string>
   <key>LSApplicationCategoryType</key>
   <string>public.app-category.graphics-design</string>
   <!-- Must match MACOSX_DEPLOYMENT_TARGET in package.sh. Big Sur is the first release on
@@ -59,7 +59,7 @@
         <string>public.content</string>
       </array>
       <key>UTTypeIconFile</key>
-      <string>Ánima</string>
+      <string>Anima</string>
       <key>UTTypeTagSpecification</key>
       <dict>
         <key>public.filename-extension</key>
@@ -111,7 +111,7 @@
       <key>LSHandlerRank</key>
       <string>Owner</string>
       <key>CFBundleTypeIconFile</key>
-      <string>Ánima</string>
+      <string>Anima</string>
       <key>LSItemContentTypes</key>
       <array><string>dev.danielmiguelt.anima.document</string></array>
     </dict>

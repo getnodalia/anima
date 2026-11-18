@@ -91,7 +91,7 @@
         <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\SupportedTypes" Name=".fla" Value="" Type="string" />
         <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\SupportedTypes" Name=".xfl" Value="" Type="string" />
         <RegistryValue Root="HKMU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\anima.exe" Value="[#AnimaExe]" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Ánima" Name="InstallDir" Value="[INSTALLFOLDER]" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Anima" Name="InstallDir" Value="[INSTALLFOLDER]" Type="string" />
       </Component>
 
       <!-- The headless CLI and MCP server, next to the app. -->
