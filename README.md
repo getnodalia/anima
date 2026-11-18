@@ -25,7 +25,7 @@
 </div>
 
 <p align="center">
-  <img src="docs/images/ui-dark.png" width="100%" alt="Ánima in its dark theme with the sample animation open: an evening landscape in flat colours, with a ball, a star and the sun over the ridges on the stage, the tools on the left, the timeline with five layers and their tweens below, and the Properties and Library panels on the right">
+  <img src="https://raw.githubusercontent.com/getnodalia/nodalia-web/main/assets/screens/anima/anima-dark.jpg" width="100%" alt="Ánima in its dark theme with the sample animation open: an evening landscape in flat colours, with a ball, a star and the sun over the ridges on the stage, the tools on the left, the timeline with five layers and their tweens below, and the Properties and Library panels on the right">
   <br><sub><b>The sample animation</b> in the dark theme: stage, tools, timeline with classic tweens, Properties and Library.</sub>
 </p>
 
@@ -48,7 +48,7 @@ scripts and agents can run too.
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/ui-light.png" alt="Ánima in its light theme with the same sample animation open"></td>
+    <td width="50%"><img src="https://raw.githubusercontent.com/getnodalia/nodalia-web/main/assets/screens/anima/anima-light.jpg" alt="Ánima in its light theme with the same sample animation open"></td>
     <td width="50%"><img src="docs/images/sample-animation.gif" alt="The sample animation: a ball bounces and squashes across the meadow while the evening star turns and the sun breathes over the ridges"></td>
   </tr>
   <tr>
