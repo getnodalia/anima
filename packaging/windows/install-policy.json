@@ -1,57 +1,57 @@
 {
-  "id": "anima",
-  "name": "Anima",
-  "upgradeCode": "507CD152-9AD3-4F22-92A7-F8C44F1F84D0",
+  "id": "anicraft",
+  "name": "AniCraft",
+  "upgradeCode": "95D4D208-47EF-42CD-9127-28D9A7BA88A2",
   "sources": [
-    "anima.wxs"
+    "anicraft.wxs"
   ],
-  "icon": "assets/app-icon/anima.ico",
+  "icon": "assets/app-icon/anicraft.ico",
   "localization": [
-    "anima.en-us.wxl"
+    "anicraft.en-us.wxl"
   ],
   "extensions": [
     "UI",
     "Util"
   ],
   "payloads": [
-    "anima-cli.exe",
-    "anima.exe"
+    "anicraft-cli.exe",
+    "anicraft.exe"
   ],
   "registry": [
     [
       "-1",
-      "Software\\Classes\\Anima.Import\\shell\\open\\command",
+      "Software\\Classes\\Anicraft.Import\\shell\\open\\command",
       "",
-      "\"[#AnimaExe]\" \"%1\""
+      "\"[#AnicraftExe]\" \"%1\""
     ],
     [
       "-1",
       "Software\\Classes\\.fla\\OpenWithProgids",
-      "Anima.Import",
+      "Anicraft.Import",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.xfl\\OpenWithProgids",
-      "Anima.Import",
+      "Anicraft.Import",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\anima.exe",
+      "Software\\Classes\\Applications\\anicraft.exe",
       "FriendlyAppName",
-      "Ánima"
+      "AniCraft"
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\anima.exe\\shell\\open\\command",
+      "Software\\Classes\\Applications\\anicraft.exe\\shell\\open\\command",
       "",
-      "\"[#AnimaExe]\" \"%1\""
+      "\"[#AnicraftExe]\" \"%1\""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\anima.exe\\SupportedTypes",
-      ".anima",
+      "Software\\Classes\\Applications\\anicraft.exe\\SupportedTypes",
+      ".anicraft",
       ""
     ],
     [
@@ -68,15 +68,15 @@
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\anima.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\anicraft.exe\\SupportedTypes",
       ".xfl",
       ""
     ],
     [
       "-1",
-      "Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\anima.exe",
+      "Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\anicraft.exe",
       "",
-      "[#AnimaExe]"
+      "[#AnicraftExe]"
     ],
     [
       "-1",

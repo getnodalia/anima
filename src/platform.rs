@@ -426,6 +426,7 @@ pub fn places() -> Vec<(&'static str, Option<PathBuf>)> {
         (tr_noop!("Logs"), log_dir()),
         (tr_noop!("Plug-ins"), plugins_dir()),
         (tr_noop!("Templates"), templates_dir()),
+        (tr_noop!("Saved commands"), commands_dir()),
     ];
     #[cfg(not(target_arch = "wasm32"))]
     v.push((tr_noop!("User guide"), Some(guide_dir())));
@@ -439,6 +440,34 @@ pub fn recovery_dir() -> Option<PathBuf> {
         Some(d) => Some(PathBuf::from(d)),
         None => config_dir().map(|d| d.join("Recovery")), // i18n-exempt: a folder name
     }
+}
+
+/// Writes a file only this user may read (the control port's token, ADR 0104), making its folder
+/// first. On Windows the settings folder (%APPDATA%) is already private to the user; elsewhere
+/// the file is made owner-only (0600). The file is always a new one: an older file (or a link
+/// someone left under its name) is removed first, never written through, and the new file is
+/// made exclusively, so it has this mode from the start.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn write_private_file(path: &std::path::Path, contents: &[u8]) -> std::io::Result<()> {
+    use std::io::Write;
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir)?;
+    }
+    match std::fs::remove_file(path) {
+        Ok(()) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => return Err(e),
+    }
+    let mut options = std::fs::OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    let mut f = options.open(path)?;
+    f.write_all(contents)?;
+    f.sync_all()
 }
 
 /// Whether the recovery folder was chosen explicitly (screenshot runs only touch it then).
@@ -477,6 +506,29 @@ pub fn open_user_guide() -> Result<(), String> {
     #[cfg(target_arch = "wasm32")]
     {
         crate::web::open_page("guide/index.html")
+    }
+}
+
+/// Context help and search (ADR 0096): the bundled book at `page` (a page of the book with its
+/// anchor, `timeline.html#onion-skin`). A `file://` page opened by the system loses its anchor
+/// on some systems, so the desktop writes a page beside the book that sends the browser on.
+pub fn open_user_guide_at(page: &str) -> Result<(), String> {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        // Tests press F1 and click every control: they never write to the cache or open a browser.
+        if cfg!(test) {
+            return Ok(());
+        }
+        let dir = guide_dir();
+        anima_guide::write_site(&dir).map_err(|e| tr!("could not write the user guide to {path}: {e}", path = dir.display(), e = e))?;
+        let help = dir.join(anima_guide::HELP_PAGE);
+        std::fs::write(&help, anima_guide::redirect_page(page))
+            .map_err(|e| tr!("could not write the user guide to {path}: {e}", path = dir.display(), e = e))?;
+        crate::app::open_in_system(&help)
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        crate::web::open_page(&format!("guide/{page}"))
     }
 }
 
@@ -569,6 +621,19 @@ pub fn templates_dir() -> Option<PathBuf> {
     }
 }
 
+/// Where saved commands live (ADR 0097): `Commands` in the settings folder, one small JSON file
+/// each. `ANIMA_COMMANDS_DIR` points it elsewhere (tests, screenshots). None in a browser,
+/// which has no folders to keep them in.
+pub fn commands_dir() -> Option<PathBuf> {
+    if WEB {
+        return None;
+    }
+    match std::env::var_os("ANIMA_COMMANDS_DIR").filter(|v| !v.is_empty()) {
+        Some(d) => Some(PathBuf::from(d)),
+        None => config_dir().map(|d| d.join("Commands")), // i18n-exempt: a folder name
+    }
+}
+
 /// Where installed plug-ins live: a `plugins` folder in the settings folder (ADR 0017).
 pub fn plugins_dir() -> Option<PathBuf> {
     config_dir().map(|d| d.join("plugins"))
@@ -578,8 +643,8 @@ pub fn plugins_dir() -> Option<PathBuf> {
 /// Linux desktop entry, AppStream and MIME package names, the Flatpak id and the macOS bundle id.
 pub const APP_ID: &str = "dev.danielmiguelt.Anima";
 
-/// Main-window chrome. macOS gets the unified look (content under a transparent title bar,
-/// traffic lights over our menu row); Windows and Linux keep their native frames.
+/// Main-window chrome. Keep the native title bar on macOS so it cannot cover the egui menu row.
+/// Windows and Linux use their native frames too.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn viewport(b: egui::ViewportBuilder) -> egui::ViewportBuilder {
     // The Wayland app_id / X11 class: docks match it to the installed desktop entry
@@ -587,20 +652,16 @@ pub fn viewport(b: egui::ViewportBuilder) -> egui::ViewportBuilder {
     chrome(OS, b.with_app_id(APP_ID).with_icon(app_icon()))
 }
 
-/// The window chrome for `os`. On macOS the content runs under the title bar, so the bar must be
-/// transparent too: an opaque one covers the menu row (File, Edit, …) and swallows its clicks,
-/// which left Mac users with no menus at all (#247).
+/// The window chrome for `os`. The egui menu row is ordinary window content, below the native
+/// title bar on macOS. Full-size content view put that row behind the title bar on real Macs
+/// (#187), so use the standard frame until we can position the native traffic lights explicitly.
 #[cfg_attr(target_arch = "wasm32", allow(dead_code))]
-fn chrome(os: Os, b: egui::ViewportBuilder) -> egui::ViewportBuilder {
-    match os {
-        Os::Mac => b.with_fullsize_content_view(true).with_titlebar_shown(false).with_title_shown(false).with_titlebar_buttons_shown(true),
-        _ => b,
-    }
+fn chrome(_os: Os, b: egui::ViewportBuilder) -> egui::ViewportBuilder {
+    b
 }
 
 /// Another window of the app (Test Movie, ADR 0062): the same app id, so docks and taskbars group
-/// it with the editor, and the same icon. Native frames everywhere (the editor's unified macOS
-/// title bar is for its menu row, which this window doesn't have).
+/// it with the editor, and the same icon. Native frames everywhere.
 pub fn secondary_window(b: egui::ViewportBuilder) -> egui::ViewportBuilder {
     #[cfg(not(target_arch = "wasm32"))]
     return b.with_app_id(APP_ID).with_icon(app_icon());
@@ -627,7 +688,7 @@ pub fn nodalia_controls(choice: crate::prefs::WindowControls) -> bool {
 
 /// Space left of the menu row for the macOS traffic-light buttons.
 pub fn menu_inset() -> f32 {
-    if OS == Os::Mac { 72.0 } else { 0.0 }
+    0.0
 }
 
 // ----- more than one window (ADR 0062) ---------------------------------------------------------
@@ -805,6 +866,18 @@ pub fn is_system_argument(arg: &str) -> bool {
     arg.starts_with("-psn_")
 }
 
+/// Memory the stage keeps drawn frames in on `os` (the frames around the playhead, so scrubbing
+/// and playing don't draw them again). A browser tab's memory is one block that only grows and
+/// is small next to a computer's (#314: a 24-frame document took 900 MB in the web version,
+/// most of it this cache filling to the desktop's budget), so the web keeps a third of it:
+/// 30 frames of a 1920 x 1080 stage.
+pub fn stage_cache_bytes(os: Os) -> usize {
+    match os {
+        Os::Web => 256 * 1024 * 1024,
+        _ => anima_engine::render_service::DEFAULT_CACHE_BYTES,
+    }
+}
+
 /// The window's graphics asked for by `--renderer` / `ANIMA_RENDERER`, if any: `gl`,
 /// `wgpu` (automatic), `vulkan`, `dx12` or `metal`. Before #207 the last three all meant `wgpu`.
 #[cfg(not(target_arch = "wasm32"))]
@@ -872,6 +945,7 @@ pub fn filters(cmd: &str) -> (&'static str, &'static [&'static str]) {
         // Opening also imports .fla archives and .xfl packages.
         "file.open" => (tr_noop!("Documents"), &["anima", "anicraft", "fla", "xfl"]), // rebrand: keep (older documents)
         "plugin.install" => (tr_noop!("WebAssembly plug-in"), &["wasm"]),
+        "macro.run" | "macro.import" => (tr_noop!("Saved command"), &["json"]),
         "brush.preset_export" | "brush.preset_import" => (tr_noop!("Brush set"), &["json"]),
         "filter.preset_export" | "filter.preset_import" => (tr_noop!("Filter preset file"), &["json"]),
         "swatch.export" => (tr_noop!("Swatch file"), &["json"]),
@@ -884,7 +958,15 @@ pub fn filters(cmd: &str) -> (&'static str, &'static [&'static str]) {
 pub fn reads_file(cmd: &str) -> bool {
     matches!(
         cmd,
-        "file.open" | "plugin.install" | "file.import" | "file.import_to_library" | "brush.preset_import" | "filter.preset_import" | "swatch.import"
+        "file.open"
+            | "plugin.install"
+            | "file.import"
+            | "file.import_to_library"
+            | "brush.preset_import"
+            | "filter.preset_import"
+            | "swatch.import"
+            | "macro.run"
+            | "macro.import"
     )
 }
 
@@ -952,23 +1034,100 @@ pub fn set_unsaved(unsaved: bool) {
     crate::web::set_unsaved(unsaved);
 }
 
+/// A picture on the system clipboard, as other apps copy one: 8-bit RGBA rows, top first.
+pub struct ClipboardImage {
+    pub width: u32,
+    pub height: u32,
+    pub rgba: Vec<u8>,
+}
+
+/// The longest side of a pasted picture, in pixels (a guard against a broken clipboard).
+const CLIPBOARD_IMAGE_SIDE: u32 = 16_384;
+
+/// The picture the system clipboard holds, if it holds one (a screenshot, or pixels copied in a
+/// paint program). `None` in a browser, where the page cannot read the clipboard unasked.
+pub fn clipboard_image() -> Option<ClipboardImage> {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let image = arboard::Clipboard::new().ok()?.get_image().ok()?;
+        let (width, height) = (u32::try_from(image.width).ok()?, u32::try_from(image.height).ok()?);
+        let bytes = usize::try_from(u64::from(width) * u64::from(height) * 4).ok()?;
+        (width > 0 && height > 0 && width <= CLIPBOARD_IMAGE_SIDE && height <= CLIPBOARD_IMAGE_SIDE && image.bytes.len() == bytes)
+            .then(|| ClipboardImage { width, height, rgba: image.bytes.into_owned() })
+    }
+    #[cfg(target_arch = "wasm32")]
+    None
+}
+
+/// The text the system clipboard holds, if it holds text.
+pub fn clipboard_text() -> Option<String> {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        arboard::Clipboard::new().ok()?.get_text().ok()
+    }
+    #[cfg(target_arch = "wasm32")]
+    None
+}
+
+/// Ctrl/⌘+V that the desktop layer swallowed. egui-winit turns that key into a paste event
+/// only when the clipboard holds text; with a picture on it nothing arrives at all, except the
+/// key's release. So: a release of V that had no press and no paste event before it, with
+/// Ctrl/⌘ held then or a moment ago, was a paste the app never heard of (#263).
+#[derive(Default)]
+pub struct SwallowedPaste {
+    /// A press of V or a paste event came since V was last released.
+    heard: bool,
+    /// When Ctrl/⌘ was last seen held.
+    command_at: Option<f64>,
+}
+
+impl SwallowedPaste {
+    /// Feeds one frame's input; `true` when it held such a paste.
+    pub fn frame(&mut self, input: &egui::InputState) -> bool {
+        if input.modifiers.command {
+            self.command_at = Some(input.time);
+        }
+        let mut swallowed = false;
+        for event in &input.events {
+            match event {
+                egui::Event::Paste(_) | egui::Event::Key { key: egui::Key::V, pressed: true, .. } => self.heard = true,
+                egui::Event::Key { key: egui::Key::V, pressed: false, modifiers, .. } => {
+                    let command = modifiers.command || self.command_at.is_some_and(|t| input.time - t < 0.5);
+                    swallowed |= !self.heard && command;
+                    self.heard = false;
+                }
+                _ => {}
+            }
+        }
+        swallowed
+    }
+}
+
+/// The longest pause between the two clicks of a double-click, in seconds: the half second
+/// Windows and macOS use unless the user changed it. egui's default (0.3 s) is shorter than what
+/// the desktop itself accepts, so a relaxed double-click on the stage or the timeline counted as
+/// two clicks (#192).
+pub const DOUBLE_CLICK_SECONDS: f64 = 0.5;
+
+/// How the pointer feels in this app, the same as in the desktop around it.
+pub fn pointer_feel(ctx: &egui::Context) {
+    ctx.options_mut(|o| o.input_options.max_double_click_delay = DOUBLE_CLICK_SECONDS);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn the_mac_menu_row_is_never_under_an_opaque_title_bar() {
-        // #247: content under the title bar (full-size content view) with the bar still drawn
-        // hid File, Edit and the rest on macOS. Whenever content goes under it, it is see-through.
-        for os in [Os::Mac, Os::Windows, Os::Linux] {
-            let b = chrome(os, egui::ViewportBuilder::default());
-            if b.fullsize_content_view == Some(true) {
-                assert_eq!(b.titlebar_shown, Some(false), "{os:?}: the title bar would cover the menus");
-                assert_ne!(b.titlebar_buttons_shown, Some(false), "{os:?}: keep the traffic lights");
-            }
-        }
-        assert_eq!(chrome(Os::Mac, egui::ViewportBuilder::default()).fullsize_content_view, Some(true));
+        // #187: real Macs drew the native title bar over the egui menu row. Keep the standard
+        // frame so that content starts below it instead of depending on title-bar transparency.
+        let mac = chrome(Os::Mac, egui::ViewportBuilder::default());
+        assert_eq!(mac.fullsize_content_view, None);
+        assert_eq!(mac.titlebar_shown, None);
+        assert_eq!(mac.title_shown, None);
         assert_eq!(chrome(Os::Windows, egui::ViewportBuilder::default()).fullsize_content_view, None, "native frame");
+        assert_eq!(menu_inset(), 0.0);
     }
 
     #[test]
@@ -1078,6 +1237,19 @@ mod tests {
         assert_eq!(forced_backend(Some("dx12")), Some(WindowBackend::Dx12));
         assert_eq!(forced_backend(Some("vulkan")), Some(WindowBackend::Vulkan));
         assert_eq!(forced_backend(Some("metal")), Some(WindowBackend::Metal));
+    }
+
+    /// #314: the web version keeps far fewer drawn frames than the desktop (a tab's memory only
+    /// grows), though still a second of a full-HD stage; the desktop's budget is unchanged.
+    #[test]
+    fn the_web_keeps_a_smaller_frame_cache() {
+        let desktop = anima_engine::render_service::DEFAULT_CACHE_BYTES;
+        let web = stage_cache_bytes(Os::Web);
+        assert!(web * 3 <= desktop, "{web} of {desktop}");
+        assert!(web >= 24 * 1920 * 1080 * 4, "a second of full HD at 24 fps still fits");
+        for os in [Os::Windows, Os::Mac, Os::Linux, Os::Other] {
+            assert_eq!(stage_cache_bytes(os), desktop, "{os:?}");
+        }
     }
 
     #[test]

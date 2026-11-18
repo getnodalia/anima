@@ -11,7 +11,9 @@ On macOS, press ⌘ where this guide says Ctrl, and ⌥ where it says Alt.
 Metal or DirectX 12). If that fails to start, which happens on some older cards, laptops with two
 graphics chips, virtual machines and Linux setups, Ánima tries the next way by itself: on
 Windows, DirectX 12 on the built-in graphics chip, and then OpenGL everywhere. If a graphics
-driver crashes or hangs while Ánima starts, the next start tries that way last.
+driver crashes or hangs while Ánima starts, start Ánima again: it tries that way last,
+for the next five starts, then gives it one more chance (a driver update may have fixed it) and
+holds it back for longer if it fails again.
 
 If no way works, Ánima says so in a message and names its **start-up log**, a text file that
 records each way it tried and why it failed. Please attach it to your bug report. It is
@@ -149,7 +151,8 @@ damaged preferences file never stops Ánima from starting: it falls back to the 
 * **An old `.fla`**: files saved by Flash CS4 or earlier use an older format. Ánima says so;
   open the file in Animate, save it again, then open that copy.
 * **A damaged `.fla`**: Ánima refuses it with a sentence that says what is wrong, and never
-  writes anything from it to your disk.
+  writes anything from it to your disk. Version 0.2.1 said "the central directory is outside the
+  archive" about most files saved by Flash and Animate, which were not damaged: that is fixed.
 
 ## Other desktop quirks
 
@@ -160,7 +163,7 @@ damaged preferences file never stops Ánima from starting: it falls back to the 
   where windows go. To keep the movie inside the editor, turn off **Preferences › Test Movie ›
   Play Test Movie in a window of its own**.
 * **A shortcut doesn't do anything.** Check what the key is bound to in **Help › Keyboard
-  Shortcuts** (**F1**): type the key in the filter. See
+  Shortcuts** (**Ctrl+Alt+Shift+K**): type the key in the filter. See
   [Preferences, shortcuts, accessibility and languages](preferences-shortcuts-accessibility.md).
 
 ## The web version

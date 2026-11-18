@@ -27,6 +27,7 @@ fn inst(id: u64, symbol: u64, name: &str, x: f32, y: f32, events: Vec<EventHandl
             blend: Default::default(),
             filters: Vec::new(),
             events,
+            pivot: None,
         },
     })
 }
@@ -932,6 +933,7 @@ fn field(id: u64, name: &str, text: &str, kind: TextKind, x: f32, y: f32) -> Arc
         box_height: 14.0,
         field: Some(TextField { border: true, ..TextField::new(kind) }),
         on_path: None,
+        ..Default::default()
     };
     Arc::new(Element {
         id: ElementId(id),

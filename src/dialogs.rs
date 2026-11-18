@@ -22,6 +22,8 @@ pub struct PendingConfirm {
 pub struct Palette {
     pub query: String,
     pub selected: usize,
+    /// What F1 opens the guide at: the chosen entry (ADR 0096), as of the last frame.
+    pub help: Option<crate::context_help::Subject>,
 }
 
 pub fn show_all(app: &mut App, ctx: &egui::Context) {
@@ -176,6 +178,17 @@ enum Entry {
 }
 
 impl Entry {
+    /// What F1 on it opens in the guide (ADR 0096); view entries have no section of their own.
+    fn help(&self) -> Option<crate::context_help::Subject> {
+        use crate::context_help::Subject;
+        match self {
+            Entry::Command(c) => Some(Subject::Command(c.id.to_string())),
+            Entry::Tool(t) => Some(Subject::Tool(*t)),
+            Entry::View(..) => None,
+            Entry::Plugin(..) => Some(Subject::Topic("plugins.md#running-a-plug-in")),
+        }
+    }
+
     /// The menu path to the entry, in the interface language (`local`) or in English, so
     /// either finds it.
     fn title(&self, local: bool) -> String {
@@ -243,8 +256,9 @@ fn entries() -> Vec<Entry> {
     v.push(Entry::View(tr_noop!("Onion Skin"), "", crate::onion::toggle_ghosts));
     v.push(Entry::View(tr_noop!("Preview Through Camera"), "", App::toggle_camera_preview));
     v.push(Entry::View(tr_noop!("Fit Stage in Window"), "Ctrl+0", |a| a.view.fit = true));
-    v.push(Entry::View(tr_noop!("Keyboard Shortcuts"), "F1", |a| a.show_shortcuts = true));
+    v.push(Entry::View(tr_noop!("Keyboard Shortcuts"), "Ctrl+Alt+Shift+K", |a| a.show_shortcuts = true));
     v.push(Entry::View(tr_noop!("User Guide"), "", App::open_user_guide));
+    v.push(Entry::View(tr_noop!("Search the User Guide"), "", App::open_guide_search));
     v.push(Entry::View(tr_noop!("Project Files & Docs"), "", |a| a.show_files = true));
     v.push(Entry::View(tr_noop!("Licenses & Notices"), "", |a| a.show_licenses = true));
     v.push(Entry::View(tr_noop!("Preferences"), "Ctrl+U", App::open_prefs));
@@ -305,6 +319,7 @@ fn palette(app: &mut App, ctx: &egui::Context) {
     let mut run: Option<Entry> = None;
     let mut close = esc;
     let selected = p.selected;
+    p.help = matches.get(selected).and_then(|(_, e, _)| e.help());
     egui::Area::new(egui::Id::unique("palette")).order(egui::Order::Foreground).anchor(egui::Align2::CENTER_TOP, [0.0, 70.0]).show(ctx, |ui| {
         egui::Frame::popup(ui.style()).fill(T.panel_alt).inner_margin(egui::Margin::same(10)).show(ui, |ui| {
             ui.set_width(560.0);
@@ -417,7 +432,7 @@ fn preferences(app: &mut App, ctx: &egui::Context) {
     let mut about_act: Option<crate::desktop_ui::Act> = None;
     let to_about = std::mem::take(&mut app.prefs_to_about);
     let title = if crate::platform::OS == crate::platform::Os::Mac { tr!("Settings") } else { tr!("Preferences") };
-    let shown = egui::Window::new(title)
+    let shown = crate::windows::new(ctx, title)
         // An id of its own: the window keeps its place when the language changes.
         .id(egui::Id::unique("prefs_window"))
         // NDL: the dialog's own header, with Nodalia's close button and no title bar of egui's.
@@ -742,7 +757,7 @@ fn licenses(app: &mut App, ctx: &egui::Context) {
     }
     let mut open = true;
     let title = tr!("Licenses & Notices");
-    let shown = egui::Window::new(title)
+    let shown = crate::windows::new(ctx, title)
         .id(egui::Id::unique("licenses_window"))
         .open(&mut open)
         .collapsible(false)
@@ -809,7 +824,8 @@ pub(crate) fn fixed_rows() -> Vec<(&'static str, &'static str, Vec<&'static str>
     // Keys in registry notation; the words among them are translated by `fixed_key`.
     vec![
         (essentials, tr_noop!("Command palette"), vec!["Ctrl+K"]),
-        (essentials, tr_noop!("Keyboard shortcuts (this editor)"), vec!["F1", "Ctrl+Alt+Shift+K"]),
+        (essentials, tr_noop!("Help for what you are pointing at"), vec!["F1"]),
+        (essentials, tr_noop!("Keyboard shortcuts (this editor)"), vec!["Ctrl+Alt+Shift+K"]),
         (essentials, tr_noop!("Play / Stop"), vec!["Enter"]),
         (essentials, tr_noop!("Preferences"), vec!["Ctrl+U", "Ctrl+,"]),
         (essentials, quit, vec!["Ctrl+Q"]),
@@ -894,6 +910,20 @@ fn take_key_press(ctx: &egui::Context) -> Option<(egui::Modifiers, Key)> {
     })
 }
 
+/// Opens the shortcut editor filtered to `filter` and waiting for a new key for `id` (Manage
+/// Saved Commands' Shortcut…, ADR 0097).
+pub(crate) fn shortcuts_for(app: &mut App, ctx: &egui::Context, filter: &str, id: &'static str) {
+    let state_id = egui::Id::unique("shortcut_editor");
+    let mut st: SheetState = ctx.data_mut(|d| d.get_temp(state_id).unwrap_or_default());
+    st.filter = filter.to_string();
+    st.notice = None;
+    st.steal = None;
+    ctx.data_mut(|d| d.insert_temp(state_id, st));
+    app.show_shortcuts = true;
+    let replace = (!app.keymap.keys(id).is_empty()).then_some(0);
+    app.key_capture = Some(KeyCapture { id, replace });
+}
+
 fn shortcut_sheet(app: &mut App, ctx: &egui::Context) {
     if !app.show_shortcuts {
         app.key_capture = None;
@@ -939,7 +969,7 @@ fn shortcut_sheet(app: &mut App, ctx: &egui::Context) {
     let capture = app.key_capture;
     let changed = app.prefs.shortcuts.len();
     let title = tr!("Keyboard Shortcuts");
-    let shown = egui::Window::new(title)
+    let shown = crate::windows::new(ctx, title)
         .id(egui::Id::unique("shortcuts_window"))
         .open(&mut open)
         .collapsible(false)

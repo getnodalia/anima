@@ -188,7 +188,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
     let (mut go, mut replace, mut close) = (false, false, false);
     let running = e.running.is_some();
     let at = ctx.content_rect().center() - egui::vec2(200.0, 180.0);
-    let shown = egui::Window::new(title.clone())
+    let shown = crate::windows::new(ctx, title.clone())
         .id(egui::Id::unique("plugin_export"))
         .open(&mut open)
         .default_pos(at)

@@ -81,7 +81,7 @@ fn a_blur_tweens_by_commands_with_eases_and_retiming() {
     // What can't be keyed says why.
     for (p, want) in [
         (json!({"property": "filter.1.blur_x", "value": 3}), "no filter 1"),
-        (json!({"property": "filter.0.angle", "value": 3}), "has no Angle"),
+        (json!({"property": "filter.0.angle", "value": 3}), "has no angle"),
         (json!({"property": "filter.0.blur_x", "value": 900}), "between"),
         (json!({"property": "filter.0.sparkle", "value": 1}), "unknown property"),
     ] {

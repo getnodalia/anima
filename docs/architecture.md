@@ -66,7 +66,7 @@ Document
 ├── timeline: Timeline                 (main scene; scenes list arrives in M2)
 │   └── layers: [Layer]                (index 0 = top of the stack, as in the timeline panel)
 │       ├── name, visible, locked, outline, depth, volume, muted, kind (Normal | Guide | Mask | Folder | Camera | Armature),
-│       │   armature?: bones joining symbol instances (armature layer; ADR 0043)
+│       │   armature?: bones joining symbol instances and shapes (armature layer; ADR 0043, 0098)
 │       └── keyframes: [Keyframe]      (sorted by start, spans do not overlap)
 │           ├── start, duration        (frames covered by this keyframe)
 │           ├── elements: [Element]
@@ -105,7 +105,11 @@ parent, the child turning about it) and each keyframe's `pose` holds joint angle
 the span's eased time. `evaluate_layer_elements` places the instances by forward kinematics
 (`W_child = R_joint(angle) · W_parent · rest`), so every export and the player see poses;
 `armature::solve` finds a pose from a dragged bone end by cyclic coordinate descent with joint
-limits and pins.
+limits and pins. An armature may be **mixed** (ADR 0098): a bone marked with a shape
+(`Bone.shape`) is inside it and bends its outline through that shape's skin (`Armature.skins`,
+ADR 0071); any other bone moves an element, an instance or a whole shape. One pose, solver and
+tween serve both. A document with a mixed armature is written as format version 4; every other
+document as version 3, as before.
 
 **The camera** (ADR 0027): a scene's top layer may be its camera layer. `evaluate` (every
 export), `evaluate_player` and `evaluate_scene_camera` draw each top-level layer through
@@ -162,7 +166,8 @@ frame changes), and `doc::sound::trigger` turns them into voices for Test Movie.
 DisplayList ──► for each item:
                   flatten Bézier path under (view × item) transform, tolerance 0.1 px
                   ├─ fill:   lines ──► signed-area coverage accumulator (bbox-sized)
-                  └─ stroke: polylines ──► stroker (segment quads + joins/caps, dashes; ADR 0046) ──► accumulator
+                  └─ stroke: polylines ──► stroker (one outline per run of segments with its joins and
+                             caps, dashes; ADR 0046) ──► union of the outlines (ADR 0110) ──► accumulator
                 coverage ──► fill rule (non-zero / even-odd) ──► paint shader ──► src-over blend
                            (rows of the bbox in parallel with rayon)
 ```
