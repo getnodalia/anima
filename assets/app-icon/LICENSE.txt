@@ -1,8 +1,8 @@
 Ánima app icon (anima.svg and every file derived from it in this directory: anima-1024.png,
 anima-padded-1024.png, anima-macos-512.png, anima.ico, hicolor/).
 
-The source photograph of Émile Reynaud (unknown photographer, before 1918) is in the public
-domain: https://commons.wikimedia.org/wiki/File:%C3%89mile_Reynaud.png
+The source photograph of Émile Cohl (unidentified photographer, circa 1885) is in the public
+domain: https://commons.wikimedia.org/wiki/File:Emile_Cohl_portrait.jpg
 
 The icon made from it (the cut-out, black-and-white portrait on Ánima's violet tile) is licensed
 like the rest of Ánima, under either of

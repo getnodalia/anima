@@ -169,8 +169,8 @@ Lienzo and Pluma, an independent software project developed in public by
 `MIT OR Apache-2.0`. See [`LICENSE-MIT`](LICENSE-MIT), [`LICENSE-APACHE`](LICENSE-APACHE) and
 [`NOTICE`](NOTICE), which keeps the copyright notices of everyone whose work Ánima's code contains.
 Every bundled font, icon, image and sample is listed with its author, source and licence in
-[ATTRIBUTION.md](ATTRIBUTION.md). The app icon is Émile Reynaud, the inventor of the
-Théâtre Optique, from a public-domain photograph ([`assets/app-icon/`](assets/app-icon/)).
+[ATTRIBUTION.md](ATTRIBUTION.md). The app icon is Émile Cohl, who drew
+*Fantasmagorie* (1908), the first hand-drawn animated cartoon, from a public-domain photograph ([`assets/app-icon/`](assets/app-icon/)).
 
 <sub>Adobe, Animate and Flash are trademarks of Adobe Inc. Ánima is an independent project, not
 affiliated with or endorsed by Adobe; the names are used only to describe compatibility.</sub>

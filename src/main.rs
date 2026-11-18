@@ -86,8 +86,8 @@ mod swatches_panel;
 mod templates;
 mod test_movie;
 mod theme;
-mod titlebar;
 mod timeline;
+mod titlebar;
 #[cfg(not(target_arch = "wasm32"))]
 mod updates;
 mod warp_tool;
