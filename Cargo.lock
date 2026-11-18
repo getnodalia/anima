@@ -226,7 +226,7 @@ dependencies = [
 
 [[package]]
 name = "anima"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anima-audio",
  "anima-doc",
@@ -259,7 +259,7 @@ dependencies = [
 
 [[package]]
 name = "anima-actions"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -267,14 +267,14 @@ dependencies = [
 
 [[package]]
 name = "anima-audio"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "craft-audio",
 ]
 
 [[package]]
 name = "anima-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anima-doc",
  "anima-engine",
@@ -287,7 +287,7 @@ dependencies = [
 
 [[package]]
 name = "anima-doc"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anima-actions",
  "anima-audio",
@@ -299,7 +299,7 @@ dependencies = [
 
 [[package]]
 name = "anima-engine"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anima-doc",
  "anima-geom",
@@ -325,7 +325,7 @@ dependencies = [
 
 [[package]]
 name = "anima-geom"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -333,7 +333,7 @@ dependencies = [
 
 [[package]]
 name = "anima-gpu"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anima-doc",
  "anima-geom",
@@ -349,14 +349,14 @@ dependencies = [
 
 [[package]]
 name = "anima-guide"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "pulldown-cmark",
 ]
 
 [[package]]
 name = "anima-plugins"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -367,7 +367,7 @@ dependencies = [
 
 [[package]]
 name = "anima-render"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anima-doc",
  "anima-geom",
@@ -380,7 +380,7 @@ dependencies = [
 
 [[package]]
 name = "anima-svg"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anima-doc",
  "anima-geom",
@@ -391,7 +391,7 @@ dependencies = [
 
 [[package]]
 name = "anima-text"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anima-geom",
  "fontdb",
@@ -401,7 +401,7 @@ dependencies = [
 
 [[package]]
 name = "anima-xfl"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anima-doc",
  "anima-geom",
@@ -415,7 +415,7 @@ dependencies = [
 
 [[package]]
 name = "anima-xml"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "craft-xml",
  "thiserror 2.0.21",
