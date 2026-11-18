@@ -6,7 +6,7 @@ default-members = [".", "crates/*"]
 [workspace.package]
 # 0.1.0 is the early alpha (release stage in src/app.rs, RELEASE_STAGE); see CHANGELOG.md
 # and docs/release.md.
-version = "0.1.2"
+version = "0.1.3"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 # An application, not a library: not published to crates.io.
@@ -130,7 +130,7 @@ anima-guide.workspace = true
 anima-cli = { path = "crates/cli" }
 # Release checks and in-place updates, shared by the Nodalia apps (MIT). Without its egui windows:
 # Ánima draws its own with the egui it already uses.
-nodalia-update = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "07e63775aca14bc13f98e72e3c67be978f2f7fc3" }
+nodalia-update = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "114848a2ff1a7c29c9a5432fb12e955fbe0aeef2" }
 
 eframe = { workspace = true, features = ["links"] }
 rfd.workspace = true
