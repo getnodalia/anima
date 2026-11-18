@@ -117,10 +117,10 @@ impl Format {
 
     /// Told apart by content, not by file name.
     pub fn sniff(data: &[u8]) -> Option<Format> {
-        match craft_audio::detect_container(data, None)? {
-            craft_audio::Container::Wav => Some(Format::Wav),
-            craft_audio::Container::Ogg => Some(Format::Vorbis),
-            craft_audio::Container::MpegAudio => Some(Format::Mp3),
+        match nodalia_audio::detect_container(data, None)? {
+            nodalia_audio::Container::Wav => Some(Format::Wav),
+            nodalia_audio::Container::Ogg => Some(Format::Vorbis),
+            nodalia_audio::Container::MpegAudio => Some(Format::Mp3),
             _ => None,
         }
     }
@@ -158,11 +158,11 @@ impl std::error::Error for AudioError {}
 /// Decodes a WAV, Ogg Vorbis or MP3 file (told apart by content).
 pub fn decode(data: &[u8]) -> Result<Pcm, AudioError> {
     let _ = Format::sniff(data).ok_or(AudioError::UnknownFormat)?;
-    let opts = craft_audio::DecodeOptions::default().with_max_samples(MAX_SAMPLES as u64);
-    let (_, buf) = craft_audio::decode_with(data, None, &opts).map_err(|e| match e {
-        craft_audio::AudioError::TooLarge(_) => AudioError::TooLong,
-        craft_audio::AudioError::Unsupported(what) => AudioError::Unsupported(what),
-        craft_audio::AudioError::Malformed(_) | craft_audio::AudioError::Encode(_) | craft_audio::AudioError::Io(_) => AudioError::Unreadable,
+    let opts = nodalia_audio::DecodeOptions::default().with_max_samples(MAX_SAMPLES as u64);
+    let (_, buf) = nodalia_audio::decode_with(data, None, &opts).map_err(|e| match e {
+        nodalia_audio::AudioError::TooLarge(_) => AudioError::TooLong,
+        nodalia_audio::AudioError::Unsupported(what) => AudioError::Unsupported(what),
+        nodalia_audio::AudioError::Malformed(_) | nodalia_audio::AudioError::Encode(_) | nodalia_audio::AudioError::Io(_) => AudioError::Unreadable,
         _ => AudioError::Unreadable,
     })?;
     let frames = buf.frames();

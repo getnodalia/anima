@@ -134,7 +134,7 @@ impl WindowControls {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Prefs {
-    /// The interface language (ADR 0040): a craft-i18n locale code (`de`, `pt-br`), or
+    /// The interface language (ADR 0040): a nodalia-i18n locale code (`de`, `pt-br`), or
     /// `auto` to follow the system's. A code this build has no catalog for follows the system
     /// too, and is kept, so a newer build that has it shows it again.
     pub language: String,

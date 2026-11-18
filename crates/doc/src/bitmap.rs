@@ -106,10 +106,10 @@ impl Bitmap {
 
 /// Decodes PNG data to straight RGBA8, whatever its colour type and bit depth.
 pub fn decode_png(data: &[u8]) -> Option<Pixels> {
-    let mut opts = craft_image_codecs::DecodeOptions::default();
+    let mut opts = nodalia_image_codecs::DecodeOptions::default();
     opts.limits.max_width = MAX_BITMAP_EDGE;
     opts.limits.max_height = MAX_BITMAP_EDGE;
-    let img = craft_image_codecs::decode_as_with(craft_image_codecs::Format::Png, data, &opts).ok()?;
+    let img = nodalia_image_codecs::decode_as_with(nodalia_image_codecs::Format::Png, data, &opts).ok()?;
     let (width, height) = img.dimensions();
     if width == 0 || height == 0 || width > MAX_BITMAP_EDGE || height > MAX_BITMAP_EDGE {
         return None;
@@ -148,10 +148,10 @@ pub fn image_to_png(data: Vec<u8>) -> Result<Vec<u8>, ImageError> {
     if !data.starts_with(&[0xff, 0xd8, 0xff]) {
         return Err(ImageError::UnknownFormat);
     }
-    let mut opts = craft_image_codecs::DecodeOptions::default();
+    let mut opts = nodalia_image_codecs::DecodeOptions::default();
     opts.limits.max_width = MAX_BITMAP_EDGE;
     opts.limits.max_height = MAX_BITMAP_EDGE;
-    let img = craft_image_codecs::decode_as_with(craft_image_codecs::Format::Jpeg, &data, &opts).map_err(|_| ImageError::Unreadable)?;
+    let img = nodalia_image_codecs::decode_as_with(nodalia_image_codecs::Format::Jpeg, &data, &opts).map_err(|_| ImageError::Unreadable)?;
     let (w, h) = img.dimensions();
     if w == 0 || h == 0 || w > MAX_BITMAP_EDGE || h > MAX_BITMAP_EDGE {
         return Err(ImageError::BadSize);
@@ -161,8 +161,8 @@ pub fn image_to_png(data: Vec<u8>) -> Result<Vec<u8>, ImageError> {
 
 /// Straight RGBA8 pixels as PNG.
 fn encode_png(w: u32, h: u32, rgba: &[u8]) -> Option<Vec<u8>> {
-    let img = craft_image_codecs::Image::from_u8(w, h, craft_image_codecs::ChannelLayout::Rgba, rgba.to_vec()).ok()?;
-    craft_image_codecs::encode(&img, craft_image_codecs::Format::Png, &craft_image_codecs::EncodeOptions::default()).ok()
+    let img = nodalia_image_codecs::Image::from_u8(w, h, nodalia_image_codecs::ChannelLayout::Rgba, rgba.to_vec()).ok()?;
+    nodalia_image_codecs::encode(&img, nodalia_image_codecs::Format::Png, &nodalia_image_codecs::EncodeOptions::default()).ok()
 }
 
 /// Bytes as base64 text in files.
@@ -172,7 +172,7 @@ pub(crate) mod base64_bytes {
     const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
     pub fn encode(data: &[u8]) -> String {
-        craft_mime::base64::STANDARD.encode(data)
+        nodalia_mime::base64::STANDARD.encode(data)
     }
 
     pub fn decode(text: &str) -> Option<Vec<u8>> {

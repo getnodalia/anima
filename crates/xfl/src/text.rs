@@ -42,7 +42,7 @@ struct Flags {
 
 /// One run's character and paragraph style, as `DOMTextAttrs` gives it (the face still a
 /// PostScript name).
-fn run_style(attrs: Option<craft_xfl::text::TextStyle<'_, X>>, url: &str, flags: &mut Flags) -> (CharStyle, ParagraphStyle) {
+fn run_style(attrs: Option<nodalia_xfl::text::TextStyle<'_, X>>, url: &str, flags: &mut Flags) -> (CharStyle, ParagraphStyle) {
     let Some(a) = attrs else {
         return (CharStyle { size: 12.0, ..CharStyle::default() }, ParagraphStyle::default());
     };
@@ -97,7 +97,7 @@ struct Styled {
 /// the report.
 fn read_runs(
     el: &X,
-    native: &craft_xfl::text::TextField<'_, X>,
+    native: &nodalia_xfl::text::TextField<'_, X>,
     fonts: &Fonts,
     faces: &mut HashMap<String, FaceMatch>,
     report: &mut Report,
@@ -232,7 +232,7 @@ fn lay_out(fonts: &Fonts, block: &mut TextBlock, shown: &str, wrap: Option<f32>)
 
 /// Lays out one text field: one block with the field's runs.
 pub fn field(el: &X, fonts: &Fonts, faces: &mut HashMap<String, FaceMatch>, report: &mut Report) -> Vec<Placed> {
-    let Some(native) = craft_xfl::text::TextField::new(el) else { return Vec::new() };
+    let Some(native) = nodalia_xfl::text::TextField::new(el) else { return Vec::new() };
     if native.orientation().is_some_and(|o| o != "horizontal") {
         report.skip("vertical text (drawn horizontal)");
     }
@@ -242,7 +242,7 @@ pub fn field(el: &X, fonts: &Fonts, faces: &mut HashMap<String, FaceMatch>, repo
     if flags.justified {
         report.skip("justified text (drawn left-aligned)");
     }
-    if native.kind() != craft_xfl::text::TextFieldKind::Static {
+    if native.kind() != nodalia_xfl::text::TextFieldKind::Static {
         return text_field(native, fonts, report, styled).into_iter().collect();
     }
     // Trailing empty lines draw nothing.
@@ -283,8 +283,8 @@ pub fn field(el: &X, fonts: &Fonts, faces: &mut HashMap<String, FaceMatch>, repo
 /// A dynamic or input field (ADR 0066): one block with the field's runs, its box from the
 /// field's `width` and `height` (or the text's size, for an auto-size field), its text laid out
 /// inside the gutter. Empty fields are kept (an empty input field is the usual kind).
-fn text_field(native: craft_xfl::text::TextField<'_, X>, fonts: &Fonts, report: &mut Report, styled: Styled) -> Option<Placed> {
-    let kind = if native.kind() == craft_xfl::text::TextFieldKind::Input { TextKind::Input } else { TextKind::Dynamic };
+fn text_field(native: nodalia_xfl::text::TextField<'_, X>, fonts: &Fonts, report: &mut Report, styled: Styled) -> Option<Placed> {
+    let kind = if native.kind() == nodalia_xfl::text::TextFieldKind::Input { TextKind::Input } else { TextKind::Dynamic };
     report.run(if kind == TextKind::Input { "input text fields" } else { "dynamic text fields" });
     let keep = styled.text.trim_end_matches('\n').chars().count();
     let text: String = styled.text.chars().take(keep).collect();

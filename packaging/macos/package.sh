@@ -132,8 +132,8 @@ done
 iconutil -c icns -o "$APP/Contents/Resources/Anima.icns" "$ICONSET"
 # Licences and notices, inside the bundle before it is signed.
 cp "$ROOT/NOTICE" "$ROOT/ATTRIBUTION.md" "$ROOT/LICENSE-MIT" "$ROOT/LICENSE-APACHE" "$APP/Contents/Resources/"
-# Licences of the embedded craft-fonts fonts (only when built with CRAFT_FONTS_DIR).
-if [[ -n "${CRAFT_FONTS_DIR:-}" ]]; then
+# Licences of the embedded nodalia-fonts fonts (only when built with NODALIA_FONTS_DIR).
+if [[ -n "${NODALIA_FONTS_DIR:-}" ]]; then
   mkdir -p "$APP/Contents/Resources/Licenses"
   copy_font_licences "$APP/Contents/Resources/Licenses"
 fi

@@ -34,15 +34,15 @@ values.
 ## How they are delivered
 
 As in PhotoCraft: **no font files are committed.** `build.rs` reads the optional
-`CRAFT_FONTS_DIR` (a checkout of the shared craft-fonts repository) and embeds
+`NODALIA_FONTS_DIR` (a checkout of the shared nodalia-fonts repository) and embeds
 `Inter-Regular.ttf` and `JetBrainsMono-Regular.ttf` when present. Official releases build with
 it. Without it the app uses the egui defaults and still works (CI, Craft Anything checks,
 contributors). Help › About shows which typefaces are active.
 
 ## Consequences
 
-* Release packaging ships `OFL-Inter.txt` and `OFL-JetBrainsMono.txt` from craft-fonts next to
+* Release packaging ships `OFL-Inter.txt` and `OFL-JetBrainsMono.txt` from nodalia-fonts next to
   the binary (`docs/legal/compliance.md`, release checklist).
 * Footprint budget for embedded fonts: ≤ 2.5 MB total (today 2.0 MB with fallbacks). A later
-  `slim-fonts` build can drop the egui text fonts once craft-fonts is mandatory for releases.
+  `slim-fonts` build can drop the egui text fonts once nodalia-fonts is mandatory for releases.
 * Changing typefaces touches only `theme::font` and `build.rs`.

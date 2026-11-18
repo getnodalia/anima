@@ -110,8 +110,8 @@ cargo run --release -- my-film.anima    # or a document of yours
 
 Linux needs the usual windowing and audio headers (Debian and Ubuntu: `libxkbcommon-dev
 libwayland-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libgtk-3-dev libasound2-dev`).
-The interface font (Inter) comes from the optional `CRAFT_FONTS_DIR` build input, a checkout of
-[getnodalia/foundation's `vendor/craft-fonts/main`](https://github.com/getnodalia/foundation/tree/vendor/craft-fonts/main)
+The interface font (Inter) comes from the optional `NODALIA_FONTS_DIR` build input, a checkout of
+[getnodalia/foundation's `nodalia/fonts`](https://github.com/getnodalia/foundation/tree/nodalia/fonts)
 branch; without it Ánima uses egui's built-in fonts. Setup, tests and build hygiene are in
 [docs/development.md](docs/development.md).
 

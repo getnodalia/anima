@@ -199,7 +199,7 @@ pub fn title(markdown: &str) -> String {
 }
 
 fn escape(s: &str) -> String {
-    craft_html::escape(s)
+    nodalia_html::escape(s)
 }
 
 /// `../` once per folder the page is in, to reach the book's root.

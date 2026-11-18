@@ -327,7 +327,7 @@ impl std::fmt::Display for TextError {
 
 impl std::error::Error for TextError {}
 
-/// The fonts Ánima can use: the system's, those in `CRAFT_FONTS_DIR`, and faces the app
+/// The fonts Ánima can use: the system's, those in `NODALIA_FONTS_DIR`, and faces the app
 /// registered (its embedded interface font).
 pub struct Fonts {
     db: fontdb::Database,
@@ -355,7 +355,7 @@ impl Fonts {
             // registered (ADR 0036).
             #[cfg(not(target_arch = "wasm32"))]
             {
-                if let Some(dir) = std::env::var_os("CRAFT_FONTS_DIR") {
+                if let Some(dir) = std::env::var_os("NODALIA_FONTS_DIR") {
                     db.load_fonts_dir(dir);
                 }
                 db.load_system_fonts();

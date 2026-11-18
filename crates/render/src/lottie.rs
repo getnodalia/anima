@@ -144,7 +144,7 @@ impl Bez {
         let (i, o) = rest.split_at(k.min(rest.len()));
         // Geometry/easing stay application-owned; the shared path schema uses our
         // existing compact numeric policy without a second rounding pass.
-        craft_lottie::Bezier { closed, vertices: v.to_vec(), in_tangents: i.to_vec(), out_tangents: o.to_vec() }.to_json_with(num)
+        nodalia_lottie::Bezier { closed, vertices: v.to_vec(), in_tangents: i.to_vec(), out_tangents: o.to_vec() }.to_json_with(num)
     }
 }
 
@@ -378,7 +378,7 @@ fn gradient_values(stops: &[(f32, Rgba)]) -> Vec<f64> {
         (f64::from(o.clamp(0.0, 1.0)), [f64::from(c.r), f64::from(c.g), f64::from(c.b)])
     });
     let opacities = stops.iter().map(|(o, c)| (f64::from(o.clamp(0.0, 1.0)), f64::from(c.sanitized().a)));
-    craft_lottie::flat_gradient_values(colors, opacities).collect()
+    nodalia_lottie::flat_gradient_values(colors, opacities).collect()
 }
 
 fn rgb(c: Rgba) -> Vec<f64> {

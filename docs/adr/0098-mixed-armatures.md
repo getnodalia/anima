@@ -64,7 +64,7 @@ help pages and from watching the program. The mixed form is our own design; noth
    Ánima (supports 3)") instead of opening with bones that move nothing. Removing the bones
    that mix the kinds takes a document back to version 3. The alternative, bumping the version
    for every document, would have locked users of the released build out of files that use
-   nothing new. The envelope lives in the shared `craft-anicraft-format` crate, which writes one
+   nothing new. The envelope lives in the shared `nodalia-anima-format` crate, which writes one
    fixed version. For version 4 the engine writes the same envelope itself (same fields, order
    and compact-or-pretty rule) until that crate takes a version argument.
 7. **Repair on load** (`Armature::sanitize`). On top of ADR 0043's rules: one skin per shape

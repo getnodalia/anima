@@ -89,7 +89,7 @@ A build that compiles can still trap on the first clock call, so "it builds" is 
    smaller.
 
 9. **Fonts.** A page can't see the computer's fonts, so text uses the faces the app embeds
-   (Inter and JetBrains Mono when built with craft-fonts), or egui's own Ubuntu face when
+   (Inter and JetBrains Mono when built with nodalia-fonts), or egui's own Ubuntu face when
    there are none, so the Text tool always has a face to draw with.
 
 10. **Build: `wasm-bindgen` CLI, not trunk.** `scripts/build-web.sh` and `.ps1` run cargo for

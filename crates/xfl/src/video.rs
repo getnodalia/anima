@@ -97,7 +97,7 @@ fn flv(data: &[u8]) -> Option<Video> {
 /// pixels, bottom row first. A key frame has every block.
 fn screen_video(p: &[u8]) -> Option<Video> {
     let max_rgba_bytes = (MAX_BITMAP_EDGE as usize).checked_mul(MAX_BITMAP_EDGE as usize)?.checked_mul(4)?;
-    let frame = craft_video::screen_video::decode_keyframe(p, MAX_BITMAP_EDGE, max_rgba_bytes)?;
+    let frame = nodalia_video::screen_video::decode_keyframe(p, MAX_BITMAP_EDGE, max_rgba_bytes)?;
     Some(Video::Frame { width: frame.width, height: frame.height, rgba: frame.rgba })
 }
 

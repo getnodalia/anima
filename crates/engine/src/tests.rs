@@ -449,7 +449,7 @@ fn animated_gif_export() {
     let bytes = std::fs::read(&path).unwrap();
     assert_eq!(&bytes[..6], b"GIF89a");
     // decode: 48 frames, 160×90, total delay ≈ 2 s at 24 fps
-    let info = craft_gif::scan(&bytes, 1024).unwrap();
+    let info = nodalia_gif::scan(&bytes, 1024).unwrap();
     assert_eq!((info.width, info.height), (160, 90));
     let n = info.frames.len();
     let total: u32 = info.frames.iter().map(|f| u32::from(f.delay_cs)).sum();
@@ -2207,7 +2207,7 @@ fn sprite_sheet_export_lays_frames_in_a_grid_with_a_frame_map() {
     let total: u64 = frames.values().map(|f| f["duration"].as_u64().unwrap()).sum();
     assert!((200..=220).contains(&total), "5 frames at 24 fps ≈ 208 ms: {total}");
     // The PNG is that size, transparent between frames, and each cell matches a plain render.
-    let img = craft_image_codecs::decode_as(craft_image_codecs::Format::Png, &std::fs::read(&sheet).unwrap()).unwrap();
+    let img = nodalia_image_codecs::decode_as(nodalia_image_codecs::Format::Png, &std::fs::read(&sheet).unwrap()).unwrap();
     assert_eq!(img.dimensions(), (388, 146));
     let buf = img.to_rgba8();
     let at = |x: usize, y: usize| buf[(y * 388 + x) * 4 + 3];
