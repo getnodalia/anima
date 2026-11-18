@@ -14,8 +14,9 @@ parameters, the `.anima` format, `anima-cli`, `serve` and MCP (scripts and agent
 the same English everywhere), log output, and the `--help` text.
 
 Not yet: engine messages (errors, import reports and the body of confirmations stay English;
-their titles and buttons are translated), default names of new layers and symbols, and
-plug-in names.
+their titles and buttons are translated), default names of new layers and symbols,
+plug-in names, and the names egui gives screen readers for its own window close button and
+resize handles.
 
 ## Choosing a language
 
@@ -25,8 +26,9 @@ English. A change shows at once. For one run, without saving: `anima --lang de`
 (`--lang auto`, `--lang pseudo`).
 
 Which languages a build offers depends on the catalogs it was built with (below). Today
-craft-i18n has no Ánima catalog yet, so builds offer English, and the **pseudo-locale**
-(`--lang pseudo`; listed in Preferences in debug builds) for testing.
+craft-i18n has an Ánima catalog for **Spanish**, and release builds are made with it, so they
+offer English and Spanish. Every build also has the **pseudo-locale** (`--lang pseudo`; listed
+in Preferences in debug builds) for testing.
 
 ## The pseudo-locale
 

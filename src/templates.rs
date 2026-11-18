@@ -10,7 +10,7 @@ use crate::icons::{self, Icon};
 use crate::theme::{FORM_LABEL_DOCK, T, Type, form_row, text};
 use anima_engine::cmds_template::{self, UserTemplate};
 use anima_engine::doc::templates::{TEMPLATES, Template};
-use egui::{Align2, Rect, Sense, Stroke, StrokeKind, Vec2, WidgetType, pos2, vec2};
+use egui::{Align2, Rect, Role, Sense, Stroke, StrokeKind, Vec2, pos2, vec2};
 use serde_json::json;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -124,7 +124,7 @@ fn tile(ui: &mut egui::Ui, tex: Option<egui::TextureHandle>, name: &str, note: &
         ui.set_width(THUMB.x);
         ui.spacing_mut().item_spacing.y = 2.0;
         let (r, resp) = ui.allocate_exact_size(THUMB, Sense::click());
-        a11y::control(ui, &resp, WidgetType::Button, &tr!("New from template {name}", name = name), None);
+        a11y::control(ui, &resp, Role::Button, &tr!("New from template {name}", name = name), None);
         let hot = resp.hovered() || resp.has_focus();
         let p = ui.painter();
         p.rect_filled(r, T.rc(), T.panel_alt);
@@ -259,7 +259,7 @@ pub fn save_window(app: &mut App, ctx: &egui::Context) {
     }
     let (mut submit, mut cancel) = (false, false);
     egui::Window::new(tr!("Save as Template"))
-        .id(egui::Id::new("save_template"))
+        .id(egui::Id::unique("save_template"))
         .collapsible(false)
         .resizable(false)
         .anchor(Align2::CENTER_CENTER, [0.0, -60.0])

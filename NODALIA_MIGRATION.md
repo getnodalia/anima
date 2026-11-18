@@ -1,12 +1,12 @@
 # Nodalia migration: Ánima
 
 Category: Creator suite app (2D animation).
-Status: renamed to Ánima and building from Nodalia sources, as of 2026-11-14. The full NDL
-interface is still to come (below). Evidence: the pull request that adds this file.
+Status: on the full Nodalia Design Language (Creator suite) as of 2026-11-15. Evidence: the
+pull request that moves the interface to NDL (light and dark screenshots there).
 
 ## Current state
 
-Pure-Rust 2D animation studio (egui/eframe 0.36, wgpu), MIT OR Apache-2.0. Every name is Ánima's
+Pure-Rust 2D animation studio (egui/eframe 0.37, wgpu), MIT OR Apache-2.0. Every name is Ánima's
 (`anima`, `dev.danielmiguelt.Anima`); upstream's history is kept and its weekly changes arrive
 renamed (`docs/upstream.md`). Cargo git dependencies come from getnodalia/foundation (craft-libs at
 `vendor/craft-libs/pin-f0f4758`) and nodalia-design (`nodalia-update`). CI calls Foundation's
@@ -23,33 +23,34 @@ Nodalia icon family, `assets/app-icon/`), Nodalia's violet accent and a Nodalia 
   them. `.github/rebrand.toml` keeps them.
 - `build.rs` reads `anicraft.tsv` from a craft-i18n checkout when there is no `anima.tsv`.
 
-## NDL: what is left
+## NDL: done
 
-Ánima belongs to the Creator suite (shared top bar with workspace selector, Home, dialogs). The
-shared pieces are `nodalia_theme::creator` in nodalia-design (`packages/egui`), which needs egui
-0.37; Ánima is on 0.36. In order:
+Ánima is a Creator suite app and uses `nodalia-theme` (nodalia-design, pinned by rev, feature
+`creator`):
 
-1. **egui 0.37.** Move `egui` and `eframe` (and the wgpu they bring) to 0.37 in one pull
-   request, with no visual change, and fix what the upgrade breaks (the screenshot and pseudo-locale
-   tests in `src/` catch most of it). Then switch `nodalia-update` to its `egui` feature for the
-   update windows.
-2. **Theme.** Depend on `nodalia-theme` (`packages/egui/crate`, pinned by rev) and build
-   `theme::DARK`/`LIGHT` from its tokens with Ánima's accent `#6B4CE8`, keeping High Contrast as
-   it is (ADR 0022). Colours stay in `src/theme.rs` tokens.
-3. **Window.** Draw the window without OS decorations on Linux and add NDL's round window
-   controls (`nodalia_theme::window_controls`), switchable to the desktop's in Preferences; keep
-   native controls on macOS (full-size content view, already in `src/platform.rs`) and Windows.
-4. **Top bar and hamburger menu.** The Creator top bar with the workspace selector (Essentials,
-   Animator and Designer: Ánima's existing workspaces) and a hamburger menu holding About,
-   Preferences and Keyboard Shortcuts. Light/dark only in Preferences.
-5. **Panels as islands** (`creator::island`) for the toolbar, timeline, stage and the Properties
-   and Library panels, with the Creator buttons, tabs and fields.
-6. **Home** (`creator::home`): recent documents, templates and samples, replacing the start screen.
-7. **Dialogs** on the Creator look, with integrated close controls.
-8. **Global menu.** On Linux, export the menus over D-Bus to the shell's top-bar menu and show the
-   in-window menu bar only when the desktop has none.
+- **Theme.** `theme::GRAPHITE` and `theme::LIGHT` take their surfaces, text, controls and accent
+  from NDL's palette with Ánima's accent (`Accent::Anima`); High Contrast stays Ánima's own
+  (ADR 0022). Corner radii follow NDL (8 / 10 / 16).
+- **Islands.** The tools bar, the docks, the timeline and the stage are rounded islands on the
+  window colour, 8 pt apart.
+- **Top bar.** NDL's 44 pt Creator bar (`src/header.rs`): the hamburger menu (About, Preferences,
+  Keyboard Shortcuts, Quit), Home, the in-window menus when the desktop shows none, the
+  document's name and the workspace selector (Essentials, Animator, Designer and saved ones, with
+  Reset, Save and Manage).
+- **Window.** On Linux the window has no system title bar: the top bar drags it and NDL's round
+  controls sit at its end (`src/titlebar.rs`), switchable to the desktop's own in Preferences ▸
+  Window controls. macOS and Windows keep their native controls.
+- **Home** is `creator::home`: New file, Open, Home, User guide and the website in the rail;
+  presets, the sample, recent files and templates in the body.
+- **Dialogs.** Preferences and About have NDL's integrated close button and no system title bar;
+  light and dark are chosen only in Preferences.
+- **Icons.** Interface icons are NDL's bold set (`Icon::ndl`); the few NDL lacks keep Ánima's
+  own drawings.
+- **Global menu.** On Linux the menus are exported over D-Bus (dbusmenu) to the desktop's
+  top-bar menu (`src/global_menu.rs`); the in-window menus show only when nothing took them.
 
-Each step comes with light and dark screenshots from the app (`cargo run -- --screenshot`).
+Left for later: the remaining dialogs (Shortcuts, Publish, Licences…) still use egui windows in
+NDL colours rather than the Creator dialog frame.
 
 ## Inherited pieces still pending
 
@@ -68,6 +69,6 @@ Colloid size).
 
 ## Recommended order
 
-1. The NDL steps above, one pull request each.
-2. A first release (`0.3.0`): version bump plus `docs/release-notes/v0.3.0.md`.
-3. Ánima's page on getnodalia.com.
+1. The first release, `0.1.0`: version bump plus `docs/release-notes/v0.1.0.md`.
+2. Ánima's page on getnodalia.com (`/anima`).
+3. The remaining dialogs on the Creator dialog frame.

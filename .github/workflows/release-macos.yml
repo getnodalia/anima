@@ -52,6 +52,8 @@ jobs:
     env:
       CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
       CRAFT_FONTS_REQUIRED: "1"
+      CRAFT_I18N_DIR: ${{ github.workspace }}/craft-i18n
+      CRAFT_I18N_REQUIRED: "1"
       DIST: ${{ github.workspace }}/dist
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -85,6 +87,14 @@ jobs:
           repository: getnodalia/foundation # craft-fonts, kept at vendor/craft-fonts/main
           ref: 37827adc41fd165f9a9234ac40f94dbad353aa69
           path: craft-fonts
+          persist-credentials: false
+
+      - name: Check out craft-i18n
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: getnodalia/foundation # craft-i18n, kept at vendor/craft-i18n/main
+          ref: b7ded328e490d056ca7f216060c88db6830950c5 # vendor/craft-i18n/main
+          path: craft-i18n
           persist-credentials: false
 
 

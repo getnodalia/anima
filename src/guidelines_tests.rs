@@ -168,16 +168,17 @@ fn palette_meets_contrast_and_target_minimums() {
         }
     }
     // Light is designed for light, not the dark look inverted (ADR 0077): dark text on light
-    // surfaces, fields the lightest of them, the frame (chrome) darker than the panels, and egui
-    // told it is a light look. Graphite and high contrast are the other way round.
+    // surfaces, fields and the panels' white islands the lightest of them, alternate rows and the
+    // frame (chrome) darker than the panels, and egui told it is a light look. Graphite and high
+    // contrast are the other way round.
     for (name, t) in [("Graphite", GRAPHITE), ("High contrast", HIGH_CONTRAST), ("Light", LIGHT)] {
         let lum = |c: egui::Color32| contrast(c, egui::Color32::BLACK);
         assert_eq!(t.dark, lum(t.text) > lum(t.panel), "{name}: `dark` says which way text goes");
     }
     let lum = |c: egui::Color32| contrast(c, egui::Color32::BLACK);
     assert!(
-        lum(LIGHT.field) >= lum(LIGHT.panel_alt) && lum(LIGHT.panel_alt) > lum(LIGHT.panel) && lum(LIGHT.panel) > lum(LIGHT.chrome),
-        "light surfaces step down from fields to the frame"
+        lum(LIGHT.field) >= lum(LIGHT.panel) && lum(LIGHT.panel) > lum(LIGHT.panel_alt) && lum(LIGHT.panel) > lum(LIGHT.chrome),
+        "light surfaces step down from fields and islands to the frame"
     );
     const { assert!(LIGHT.control_hairline && !GRAPHITE.control_hairline, "light controls carry a hairline") };
     // Every palette the preferences offer is checked, once each.
