@@ -29,7 +29,7 @@ use anima_engine::doc::{
     Channel, ColorStyle, Easing, Element, FilterColor, FilterParam, FilterProp, MotionTween, Pin, Property, Props, Rgba, Track, filter_properties,
     own_value,
 };
-use egui::{Align2, Color32, Pos2, Rect, Sense, Stroke, Role, pos2, vec2};
+use egui::{Align2, Color32, Pos2, Rect, Role, Sense, Stroke, pos2, vec2};
 use serde_json::json;
 
 /// Property list width (the timeline's layer column).
