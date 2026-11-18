@@ -1840,7 +1840,7 @@ fn header(app: &mut App, ui: &mut egui::Ui) {
     }
     match in_tween.filter(|_| !in_motion) {
         Some(tw) => {
-            match crate::ease_editor::picker(app, ui, "tl_ease", &tw.easing, 104.0, tr!("Easing")) {
+            match crate::ease_editor::picker(app, ui, "tl_ease", &tw.easing, 96.0, tr!("Easing")) {
                 Some(crate::ease_editor::Picked::Ease(e)) => {
                     app.run("timeline.set_easing", json!({"easing": e}));
                 }
