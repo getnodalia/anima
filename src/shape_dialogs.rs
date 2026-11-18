@@ -89,11 +89,16 @@ pub fn window(app: &mut App, ctx: &egui::Context) {
         Kind::Soften => (tr!("Soften Fill Edges"), "soften_fill_edges"),
     };
     crate::windows::new(ctx, title)
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false)
         .id(egui::Id::unique(id))
         .collapsible(false)
         .resizable(false)
         .anchor(egui::Align2::CENTER_CENTER, [0.0, -80.0])
         .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&*title)) {
+                cancel = true;
+            }
             ui.set_min_width(340.0);
             form_row(ui, FORM_LABEL_DIALOG, tr!("Distance"), |ui| {
                 let tip = match d.kind {

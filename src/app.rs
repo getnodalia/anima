@@ -4452,11 +4452,16 @@ impl App {
         let mut cancel = false;
         let title = crate::i18n::t(p.title);
         crate::windows::new(ctx, title)
+            // NDL: its own header (the title and the round close button) instead of egui's title bar.
+            .title_bar(false)
             .id(egui::Id::unique(("prompt", p.title)))
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, -80.0])
             .show(ctx, |ui| {
+                if crate::theme::dialog_header(ui, Some(&*title)) {
+                    cancel = true;
+                }
                 ui.set_min_width(360.0);
                 let r = ui.add(egui::TextEdit::singleline(&mut p.text).desired_width(f32::INFINITY)).named(title);
                 if p.focus {
@@ -4558,12 +4563,17 @@ impl App {
         ];
         let mut opened: Option<Result<(), String>> = None;
         let shown = crate::windows::new(ctx, tr!("Project Files"))
+            // NDL: its own header (the title and the round close button) instead of egui's title bar.
+            .title_bar(false)
+            .open(&mut { open })
             .id(egui::Id::unique("files_window"))
-            .open(&mut open)
             .collapsible(false)
             .resizable(false)
             .default_width(620.0)
             .show(ctx, |ui| {
+                if crate::theme::dialog_header(ui, Some(&*tr!("Project Files"))) {
+                    open = false;
+                }
                 ui.label(theme::text(theme::Type::Label, tr!("Where Ánima's documents and files are on this computer")));
                 ui.add_space(4.0);
                 egui::Grid::new("files").num_columns(3).spacing([10.0, 6.0]).striped(true).show(ui, |ui| {

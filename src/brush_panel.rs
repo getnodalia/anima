@@ -129,13 +129,20 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
     let mut open = true;
     let at = ctx.content_rect().right_top() + vec2(-620.0, 90.0);
     let shown = crate::windows::new(ctx, tr!("Brush Library"))
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false)
+        .open(&mut { open })
         .id(egui::Id::unique("brush_library"))
-        .open(&mut open)
         .default_pos(at)
         .default_width(300.0)
         .resizable(true)
         .collapsible(false)
-        .show(ctx, |ui| panel(app, ui));
+        .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&*tr!("Brush Library"))) {
+                open = false;
+            }
+            panel(app, ui)
+        });
     a11y::name_title_bar(&shown, tr!("Brush Library"));
     app.brush_lib.open &= open;
 }

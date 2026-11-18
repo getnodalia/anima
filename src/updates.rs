@@ -170,13 +170,18 @@ impl Updates {
             let mut install = false;
             let mut again = false;
             crate::windows::new(ctx, tr!("Check for Updates"))
-                .open(&mut open)
+                // NDL: its own header (the title and the round close button) instead of egui's title bar.
+                .title_bar(false)
+                .open(&mut { open })
                 .collapsible(false)
                 .resizable(false)
                 .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
                 .default_width(440.0)
                 .max_width((ctx.content_rect().width() - 32.0).max(160.0))
                 .show(ctx, |ui| {
+                    if crate::theme::dialog_header(ui, Some(&*tr!("Check for Updates"))) {
+                        open = false;
+                    }
                     ui.label(tr!("Ánima {version}", version = VERSION));
                     ui.label(&self.message);
                     if !safe_to_install && self.release.is_some() {
