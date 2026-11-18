@@ -44,6 +44,8 @@ mod ease_editor;
 mod envelope;
 mod erasertool;
 mod find_panel;
+// Served only on Linux; its tests run everywhere.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 mod global_menu;
 mod gpu_stage;
 #[cfg(not(target_arch = "wasm32"))]

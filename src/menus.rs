@@ -441,11 +441,13 @@ impl MenuKeys {
 }
 
 /// Whether the command `id` can run now, for the desktop's global menu.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 pub(crate) fn enabled_for(app: &App, id: &str) -> bool {
     enabled(app, id)
 }
 
 /// Whether the setting `id` is on, for the desktop's global menu.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 pub(crate) fn checked_for(app: &App, id: &str) -> Option<bool> {
     checked(app, id)
 }
