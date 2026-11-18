@@ -378,14 +378,19 @@ pub fn window(app: &mut App, ctx: &egui::Context) {
     let btn = egui::vec2(96.0, crate::theme::TARGET + 4.0);
     let title = tr!("Recover unsaved work");
     let shown = crate::windows::new(ctx, title)
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false)
+        .open(&mut { open })
         .id(egui::Id::unique("recover_window"))
-        .open(&mut open)
         .collapsible(false)
         .resizable(false)
         .pivot(egui::Align2::CENTER_CENTER)
         .default_pos(ctx.content_rect().center())
         .default_width(520.0)
         .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&*title)) {
+                open = false;
+            }
             ui.set_width(520.0);
             let lead = trn!(
                 "Ánima didn't close properly last time. This document had changes that weren't saved:",

@@ -146,11 +146,16 @@ fn grid_window(app: &mut App, ctx: &egui::Context) {
     let Some(d) = &mut app.aids_dialogs.grid else { return };
     let (mut ok, mut cancel) = (false, false);
     crate::windows::new(ctx, tr!("Edit Grid"))
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false)
         .id(egui::Id::unique("edit_grid"))
         .collapsible(false)
         .resizable(false)
         .anchor(egui::Align2::CENTER_CENTER, [0.0, -80.0])
         .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&*tr!("Edit Grid"))) {
+                cancel = true;
+            }
             ui.set_min_width(380.0);
             form_row(ui, FORM_LABEL_DIALOG, tr!("Colour"), |ui| {
                 crate::colour::button_alpha(ui, &mut d.color).named(tr!("Grid colour"));
@@ -166,7 +171,9 @@ fn grid_window(app: &mut App, ctx: &egui::Context) {
             form_row(ui, FORM_LABEL_DIALOG, tr!("Spacing ↔"), |ui| spacing_field(ui, &mut d.spacing_x, tr!("Horizontal spacing")));
             form_row(ui, FORM_LABEL_DIALOG, tr!("Spacing ↕"), |ui| spacing_field(ui, &mut d.spacing_y, tr!("Vertical spacing")));
             form_row(ui, FORM_LABEL_DIALOG, tr!("Snap accuracy"), |ui| accuracy_combo(ui, "grid_accuracy", &mut d.accuracy, &Accuracy::ALL));
-            (ok, cancel) = buttons(ui);
+            let (o, c) = buttons(ui);
+            ok = o;
+            cancel |= c;
         });
     if ok {
         accept_grid(app);
@@ -186,11 +193,16 @@ fn guides_window(app: &mut App, ctx: &egui::Context) {
     let Some(d) = &mut app.aids_dialogs.guides else { return };
     let (mut ok, mut cancel) = (false, false);
     crate::windows::new(ctx, tr!("Edit Guides"))
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false)
         .id(egui::Id::unique("edit_guides"))
         .collapsible(false)
         .resizable(false)
         .anchor(egui::Align2::CENTER_CENTER, [0.0, -80.0])
         .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&*tr!("Edit Guides"))) {
+                cancel = true;
+            }
             ui.set_min_width(420.0);
             form_row(ui, FORM_LABEL_DIALOG, tr!("Colour"), |ui| {
                 crate::colour::button_alpha(ui, &mut d.color).named(tr!("Guide colour"));
@@ -281,7 +293,9 @@ fn guides_window(app: &mut App, ctx: &egui::Context) {
                     d.guides.push(g);
                 }
             });
-            (ok, cancel) = buttons(ui);
+            let (o, c) = buttons(ui);
+            ok = o;
+            cancel |= c;
         });
     if ok {
         accept_guides(app);

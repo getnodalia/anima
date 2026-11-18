@@ -82,11 +82,16 @@ pub fn window(app: &mut App, ctx: &egui::Context) {
     let (mut submit, mut cancel) = (false, false);
     let title = tr!("Convert to Symbol");
     crate::windows::new(ctx, title)
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false)
         .id(egui::Id::unique("convert_symbol"))
         .collapsible(false)
         .resizable(false)
         .anchor(egui::Align2::CENTER_CENTER, [0.0, -80.0])
         .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&*title)) {
+                cancel = true;
+            }
             ui.set_min_width(380.0);
             form_row(ui, FORM_LABEL_DOCK, tr!("Name"), |ui| {
                 let r = ui.add(egui::TextEdit::singleline(&mut d.name).desired_width(f32::INFINITY)).named(tr!("Symbol name"));

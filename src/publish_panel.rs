@@ -313,13 +313,20 @@ fn settings_window(app: &mut App, ctx: &egui::Context) {
     let mut open = true;
     let at = ctx.content_rect().center() - egui::vec2(330.0, 260.0);
     let shown = crate::windows::new(ctx, tr!("Publish Settings"))
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false)
+        .open(&mut { open })
         .id(egui::Id::unique("publish_settings"))
-        .open(&mut open)
         .default_pos(at)
         .default_width(660.0)
         .resizable(true)
         .collapsible(false)
-        .show(ctx, |ui| settings(app, ui));
+        .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&*tr!("Publish Settings"))) {
+                open = false;
+            }
+            settings(app, ui)
+        });
     crate::a11y::name_title_bar(&shown, tr!("Publish Settings"));
     if !open {
         app.publish.open = false;
@@ -788,13 +795,18 @@ fn progress_window(app: &mut App, ctx: &egui::Context) {
     let title = if running { tr!("Publishing") } else { tr!("Publish report") };
     let at = ctx.content_rect().center() - egui::vec2(220.0, 160.0);
     let shown = crate::windows::new(ctx, title)
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false)
+        .open(&mut { open })
         .id(egui::Id::unique("publish_progress"))
-        .open(&mut open)
         .default_pos(at)
         .default_width(460.0)
         .resizable(true)
         .collapsible(false)
         .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&*title)) {
+                open = false;
+            }
             if let Some(job) = &app.publish.job {
                 job_rows(ui, job);
             } else if let Some(r) = &app.publish.report {

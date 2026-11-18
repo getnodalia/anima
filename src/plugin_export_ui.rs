@@ -189,13 +189,18 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
     let running = e.running.is_some();
     let at = ctx.content_rect().center() - egui::vec2(200.0, 180.0);
     let shown = crate::windows::new(ctx, title.clone())
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false)
+        .open(&mut { open })
         .id(egui::Id::unique("plugin_export"))
-        .open(&mut open)
         .default_pos(at)
         .default_width(400.0)
         .resizable(false)
         .collapsible(false)
         .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&title)) {
+                open = false;
+            }
             let m = p.manifest();
             let by = [m.author.as_str(), m.version.as_str()].iter().filter(|s| !s.is_empty()).copied().collect::<Vec<_>>().join(" · ");
             ui.label(text(Type::Caption, if by.is_empty() { tr!("Plug-in").to_string() } else { tr!("Plug-in · {by}", by = by) }));

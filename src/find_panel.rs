@@ -253,13 +253,20 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
     let mut open = app.find.open;
     let at = ctx.content_rect().right_top() + vec2(-720.0, 110.0);
     let shown = crate::windows::new(ctx, tr!("Find and Replace"))
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false)
+        .open(&mut { open })
         .id(egui::Id::unique("find_replace"))
-        .open(&mut open)
         .default_pos(at)
         .default_width(400.0)
         .resizable(true)
         .collapsible(false)
-        .show(ctx, |ui| panel(app, ui));
+        .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&*tr!("Find and Replace"))) {
+                open = false;
+            }
+            panel(app, ui)
+        });
     a11y::name_title_bar(&shown, tr!("Find and Replace"));
     app.find.open = open;
 }
