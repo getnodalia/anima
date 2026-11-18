@@ -19,3 +19,5 @@ scripts/rebrand.py
 scripts/icons.sh
 scripts/icon-svg.py
 scripts/check-release-notes.sh
+# Ánima's installer inventory (see .github/rebrand.toml).
+packaging/windows/install-policy.json
