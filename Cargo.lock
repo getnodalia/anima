@@ -226,7 +226,7 @@ dependencies = [
 
 [[package]]
 name = "anima"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anima-audio",
  "anima-cli",
@@ -261,7 +261,7 @@ dependencies = [
 
 [[package]]
 name = "anima-actions"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -269,14 +269,14 @@ dependencies = [
 
 [[package]]
 name = "anima-audio"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "craft-audio",
 ]
 
 [[package]]
 name = "anima-cli"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anima-doc",
  "anima-engine",
@@ -290,7 +290,7 @@ dependencies = [
 
 [[package]]
 name = "anima-doc"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anima-actions",
  "anima-audio",
@@ -304,7 +304,7 @@ dependencies = [
 
 [[package]]
 name = "anima-engine"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anima-doc",
  "anima-geom",
@@ -331,7 +331,7 @@ dependencies = [
 
 [[package]]
 name = "anima-geom"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "i_overlay",
  "serde",
@@ -340,7 +340,7 @@ dependencies = [
 
 [[package]]
 name = "anima-gpu"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anima-doc",
  "anima-geom",
@@ -356,7 +356,7 @@ dependencies = [
 
 [[package]]
 name = "anima-guide"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "craft-html",
  "pulldown-cmark",
@@ -365,7 +365,7 @@ dependencies = [
 
 [[package]]
 name = "anima-plugins"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -376,7 +376,7 @@ dependencies = [
 
 [[package]]
 name = "anima-render"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anima-doc",
  "anima-geom",
@@ -391,7 +391,7 @@ dependencies = [
 
 [[package]]
 name = "anima-svg"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anima-doc",
  "anima-geom",
@@ -402,7 +402,7 @@ dependencies = [
 
 [[package]]
 name = "anima-text"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anima-geom",
  "fontdb",
@@ -412,7 +412,7 @@ dependencies = [
 
 [[package]]
 name = "anima-xfl"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anima-doc",
  "anima-geom",
@@ -428,7 +428,7 @@ dependencies = [
 
 [[package]]
 name = "anima-xml"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "craft-xfl",
  "craft-xml 0.1.0 (git+https://github.com/getnodalia/foundation?rev=b67b9f90c50091a3090f93fa054c34e409edba11)",
@@ -3034,7 +3034,7 @@ dependencies = [
 [[package]]
 name = "nodalia-update"
 version = "0.1.0-alpha.1"
-source = "git+https://github.com/danielmigueltejedor/nodalia-design?rev=07e63775aca14bc13f98e72e3c67be978f2f7fc3#07e63775aca14bc13f98e72e3c67be978f2f7fc3"
+source = "git+https://github.com/danielmigueltejedor/nodalia-design?rev=114848a2ff1a7c29c9a5432fb12e955fbe0aeef2#114848a2ff1a7c29c9a5432fb12e955fbe0aeef2"
 dependencies = [
  "serde_json",
  "sha2",
