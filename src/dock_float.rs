@@ -115,7 +115,7 @@ fn inside(app: &mut App, ctx: &egui::Context, f: &Float, layout: &Layout, acts: 
     let title = crate::i18n::t(p.label());
     let mut open = true;
     let size = vec2(f.size[0], f.size[1]);
-    let mut w = egui::Window::new(title)
+    let mut w = crate::windows::new(ctx, title)
         .id(id)
         .open(&mut open)
         .collapsible(false)
@@ -160,6 +160,8 @@ fn own_window(app: &mut App, ctx: &egui::Context, f: &Float, layout: &Layout, ac
     }
     let builder = crate::platform::secondary_window(builder);
     let shortcuts = app.shortcuts.clone();
+    // The window's surface is set up and drawn inside the call (ADR 0105).
+    let paused = crate::gpu_stage::paused();
     let (close, commands) = ctx.show_viewport_immediate(egui::ViewportId::from_hash_of(("dock_float", f.id)), builder, |ui, class| {
         let (close, outer, inner) = ui.input(|i| (i.viewport().close_requested(), i.viewport().outer_rect, i.viewport().inner_rect));
         if let (Some(o), Some(i)) = (outer, inner) {
@@ -202,6 +204,7 @@ fn own_window(app: &mut App, ctx: &egui::Context, f: &Float, layout: &Layout, ac
         };
         (close, commands)
     });
+    drop(paused);
     for id in commands {
         app.invoke(id);
     }

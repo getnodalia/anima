@@ -46,6 +46,7 @@ fn panel(sx: f32, sy: f32, guides: bool) -> Document {
             blend: Default::default(),
             filters: Vec::new(),
             events: Vec::new(),
+            pivot: None,
         },
     };
     let mut k = Keyframe::new(0, 1);

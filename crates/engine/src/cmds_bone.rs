@@ -25,14 +25,14 @@ pub fn specs() -> Vec<CommandSpec> {
         c(
             "bone.add",
             "Add Bone",
-            "{from (instance id: the bone starts on it), to (instance id: the bone moves it), head?: [x, y] (the joint on a root instance, stage px, default its registration point; from an instance that hangs from a bone the joint is always that bone's end, so chains stay joined), tail?: [x, y] (default `to`'s registration point), name?} → {bone, layer}. Both instances go to an armature layer (made for the first bone)",
+            "{from? (instance or shape id: the bone starts on it) | parent? (bone id: the bone starts on its end; for a bone inside a shape, on its joint), to (instance or shape id: the bone moves it as a whole), head?: [x, y] (the joint on a root, stage px, default its registration point; from something that hangs from a bone the joint is always that bone's end, so chains stay joined), tail?: [x, y] (default `to`'s registration point), name?} → {bone, layer}. Both go to an armature layer (made for the first bone). Instances and shapes mix in one armature: a bone inside a shape can carry an instance (parent), and a bone can end on a shape that then gets bones of its own (bone.add_in_shape with parent)",
             true,
             add as crate::RunFn,
         ),
         c(
             "bone.add_in_shape",
             "Add Bone in Shape",
-            "{shape? (shape id: the first bone, or another bone from the shape), parent? (bone id: continue the chain from its end), head?: [x, y] (the joint, stage px; default the parent bone's end), tail: [x, y] (stage px), name?} → {bone, layer, created, points}. The first bone moves the shape to an armature layer of its own, as an object (merge drawing leaves it alone); the shape's points are bound to the nearest bones",
+            "{shape? (shape id: the first bone, or another bone from the shape), parent? (bone id: continue the chain from its end; a bone that ends on a shape starts that shape's first bone inside it), head?: [x, y] (the joint, stage px; default the parent bone's end), tail: [x, y] (stage px), name?} → {bone, layer, created, points, shape}. The first bone moves the shape to an armature layer of its own, as an object (merge drawing leaves it alone), unless a bone already moves it; the shape's points are bound to the nearest bones inside it. An armature may hold several shapes with bones",
             true,
             add_in_shape,
         ),
@@ -60,7 +60,7 @@ pub fn specs() -> Vec<CommandSpec> {
         c(
             "bone.remove",
             "Remove Bone",
-            "{bone} removes it and the bones below it; the instances they moved go to a layer of their own as they look at the playhead (with the last bone, the whole armature does); asks first when the armature has more than one pose",
+            "{bone} removes it and the bones below it → {removed, freed, unbound, layer, armature_removed}; the instances and shapes they moved go to a layer of their own as they look at the playhead (with the last bone, the whole armature does); a shape left with no bones inside stays as it looks there; asks first when the armature has more than one pose",
             true,
             remove,
         ),
@@ -116,7 +116,7 @@ pub fn specs() -> Vec<CommandSpec> {
         c(
             "bone.info",
             "Armatures",
-            "{frame?, layer?, points?: bool} → every armature on the scene at the frame: its bones with joint and end (stage px, as keyed), joint angle and limits (°), slide and translation limits (px), spring (0–100) and its swing at the frame (°, what the spring adds to the angle), pinned; whether springs are on; a shape armature's shape, how many points each bone moves, and with points the shape's points (stage px) and the bones each follows",
+            "{frame?, layer?, points?: bool} → every armature on the scene at the frame: its bones with joint and end (stage px, as keyed), joint angle and limits (°), slide and translation limits (px), spring (0–100) and its swing at the frame (°, what the spring adds to the angle), pinned; whether springs are on; the armature's members and whether it is mixed; each shape with bones (shapes: its bones, how many points, and with points every point on the stage with the bones it follows), the shape each bone is inside and how many points it moves; `shape` and `points` are the first shape's",
             false,
             info,
         ),
@@ -233,83 +233,163 @@ fn armature_layer(s: &mut Session, from: LayerId, index: usize, elements: Vec<Ar
     Ok(lid)
 }
 
+/// What a new bone starts on: an element (an instance or a shape), or the joint node at the end
+/// of a bone inside a shape (ADR 0098).
+struct Start {
+    layer: LayerId,
+    index: usize,
+    /// The element or joint node the bone hangs from.
+    node: ElementId,
+    /// Its transform at the playhead (as posed).
+    world: Affine,
+    /// The armature it is part of already.
+    arm: Option<Arc<Armature>>,
+    /// The element itself, when the bone starts on one.
+    el: Option<Arc<Element>>,
+    /// The end of the bone it hangs from (stage px): every bone from it starts there.
+    joint: Option<Vec2>,
+}
+
+/// Whether a bone can move `el` as a whole: a symbol instance, or a shape (which bones inside
+/// it may then bend).
+fn rigid(el: &Element) -> bool {
+    matches!(el.kind, ElementKind::Symbol { .. } | ElementKind::Shape(_))
+}
+
+/// `el` as it goes onto an armature layer: a shape there is an object (merge drawing, ADR 0031,
+/// leaves it alone).
+fn as_member(el: &Arc<Element>) -> Arc<Element> {
+    match &el.kind {
+        ElementKind::Shape(x) if x.merge => {
+            let mut e = (**el).clone();
+            if let ElementKind::Shape(x) = &mut e.kind {
+                x.merge = false;
+            }
+            Arc::new(e)
+        }
+        _ => el.clone(),
+    }
+}
+
+/// The start of a bone on element `x` (found at the playhead).
+fn start_on(s: &Session, x: Found) -> Result<Start> {
+    let arm = (x.kind == LayerKind::Armature).then(|| s.timeline().layer(x.layer).and_then(|l| l.armature.clone()).unwrap_or_default());
+    // An element that already hangs from a bone has one joint, that bone's end: every bone from
+    // it starts there, wherever on it the drag began, so the chain stays joined end to start and
+    // turns about the joints it shows, as in Animate (#239).
+    let joint = arm.as_ref().and_then(|a| a.bone_into(x.el.id)).map(|b| x.el.transform.apply(b.tail));
+    Ok(Start { layer: x.layer, index: x.index, node: x.el.id, world: x.el.transform, arm, el: Some(x.el), joint })
+}
+
+/// The start of a bone on the end of bone `b`: the element it moves, or for a bone inside a
+/// shape its joint node.
+fn start_on_bone(s: &Session, b: BoneId) -> Result<Start> {
+    let (lid, arm) = find_bone(s, b)?;
+    let bone = arm.bone(b).ok_or_else(|| EngineError::State("no such bone".into()))?;
+    let off = || EngineError::State(format!("the bone isn't on the stage at frame {}", s.frame + 1));
+    if bone.shape.is_none() {
+        return start_on(s, find_instance(s, bone.child).ok_or_else(off)?);
+    }
+    let tl = s.timeline();
+    let index = tl.layers.iter().position(|l| l.id == lid).ok_or_else(off)?;
+    let l = tl.layer(lid).ok_or_else(off)?;
+    let (_, els) = evaluate_layer_elements(l, s.frame).ok_or_else(off)?;
+    let pose = armature::pose_at(l, s.frame).unwrap_or_default();
+    let world = armature::place(&arm, &els, &pose).get(&bone.child).copied().ok_or_else(off)?;
+    Ok(Start { layer: lid, index, node: bone.child, world, joint: Some(world.apply(bone.tail)), arm: Some(arm), el: None })
+}
+
 fn add(s: &mut Session, p: &Value) -> Result<Value> {
-    let req = |k: &str| opt_u64(p, k)?.map(ElementId).ok_or_else(|| EngineError::Param(format!("param '{k}' (an instance id) is required")));
-    let (from, to) = (req("from")?, req("to")?);
+    let from = opt_u64(p, "from")?.map(ElementId);
+    let parent = opt_u64(p, "parent")?.map(BoneId);
+    let to = opt_u64(p, "to")?
+        .map(ElementId)
+        .ok_or_else(|| EngineError::Param("param 'to' (the id of the instance or shape the bone moves) is required".into()))?;
     let (head, tail) = (opt_point(p, "head")?, opt_point(p, "tail")?);
     let name = opt_str(p, "name")?.unwrap_or("").trim().to_string();
     if name.len() > MAX_NAME {
         return Err(EngineError::Param(format!("param 'name' must be at most {MAX_NAME} bytes")));
     }
-    if from == to {
-        return Err(EngineError::Param("a bone joins two different instances".into()));
-    }
-    let missing = |id: ElementId| EngineError::State(format!("no instance with id {} on the stage at frame {}", id.0, s.frame + 1));
-    let f = find_instance(s, from).ok_or_else(|| missing(from))?;
-    let t = find_instance(s, to).ok_or_else(|| missing(to))?;
-    for x in [&f, &t] {
-        if !matches!(x.el.kind, ElementKind::Symbol { .. }) {
-            return Err(EngineError::State(
-                "bones join symbol instances: convert the artwork to a symbol first (Modify › Convert to Symbol, F8)".into(),
+    let missing = |id: ElementId| EngineError::State(format!("no instance or shape with id {} on the stage at frame {}", id.0, s.frame + 1));
+    let f = match (parent, from) {
+        (Some(_), Some(_)) => {
+            return Err(EngineError::Param("give 'from' (an instance or shape) or 'parent' (a bone to continue from its end), not both".into()));
+        }
+        (Some(b), None) => start_on_bone(s, b)?,
+        (None, Some(id)) => start_on(s, find_instance(s, id).ok_or_else(|| missing(id))?)?,
+        (None, None) => {
+            return Err(EngineError::Param(
+                "param 'from' (the id of the instance or shape the bone starts on) or 'parent' (a bone to continue from its end) is required".into(),
             ));
         }
-        if !matches!(x.kind, LayerKind::Normal | LayerKind::Armature) {
-            return Err(EngineError::State("bones join instances on normal layers (not on guide or mask layers)".into()));
-        }
-        unlocked(s, x.layer)?;
+    };
+    if f.node == to {
+        return Err(EngineError::Param("a bone joins two different things".into()));
     }
-    let tl = s.timeline();
-    let arm_of = |x: &Found| (x.kind == LayerKind::Armature).then(|| tl.layer(x.layer).and_then(|l| l.armature.clone()).unwrap_or_default());
-    let (fa, ta) = (arm_of(&f), arm_of(&t));
-    match (&fa, &ta) {
+    let t = find_instance(s, to).ok_or_else(|| missing(to))?;
+    for (el, kind, layer) in
+        [(f.el.as_ref(), s.timeline().layer(f.layer).map_or(LayerKind::Normal, |l| l.kind), f.layer), (Some(&t.el), t.kind, t.layer)]
+    {
+        if el.is_some_and(|e| !rigid(e)) {
+            return Err(EngineError::State(
+                "bones join symbol instances and shapes: convert other artwork to a symbol first (Modify › Convert to Symbol, F8)".into(),
+            ));
+        }
+        if !matches!(kind, LayerKind::Normal | LayerKind::Armature) {
+            return Err(EngineError::State("bones join artwork on normal layers (not on guide or mask layers)".into()));
+        }
+        unlocked(s, layer)?;
+    }
+    let ta = (t.kind == LayerKind::Armature).then(|| s.timeline().layer(t.layer).and_then(|l| l.armature.clone()).unwrap_or_default());
+    match (&f.arm, &ta) {
         (_, Some(a)) if f.layer == t.layer && a.bone_into(to).is_some() => {
-            return Err(EngineError::State("that instance already hangs from a bone; each instance has one bone into it".into()));
+            return Err(EngineError::State("that already hangs from a bone; each instance or shape has one bone into it".into()));
         }
         (_, Some(_)) if f.layer == t.layer => {
-            return Err(EngineError::State("that instance is the armature's root: drag from the root to the other instances instead".into()));
+            return Err(EngineError::State("that is the armature's root: drag from the root to the others instead".into()));
         }
-        (None, Some(_)) => return Err(EngineError::State("start the bone on the armature: drag from one of its instances to the new one".into())),
-        (Some(_), Some(_)) => return Err(EngineError::State("those instances are in different armatures".into())),
+        (None, Some(_)) => {
+            return Err(EngineError::State("start the bone on the armature: drag from one of its bones, instances or shapes to the new one".into()));
+        }
+        (Some(_), Some(_)) => return Err(EngineError::State("those are in different armatures".into())),
         _ => {}
     }
-    if fa.as_ref().is_some_and(|a| a.bones.len() >= MAX_BONES) {
+    if f.arm.as_ref().is_some_and(|a| a.bones.len() >= MAX_BONES) {
         return Err(EngineError::State(format!("an armature has at most {MAX_BONES} bones")));
     }
-    let (wf, wt) = (f.el.transform, t.el.transform);
-    let singular = || EngineError::State("an instance scaled to nothing can't hold a bone".into());
+    let (wf, wt) = (f.world, t.el.transform);
+    let singular = || EngineError::State("artwork scaled to nothing can't hold a bone".into());
     let (inv_f, inv_t) = (wf.inverse().ok_or_else(singular)?, wt.inverse().ok_or_else(singular)?);
-    // The joint. An instance that already hangs from a bone has one joint, that bone's end: every
-    // bone from it starts there, wherever on the instance the drag began, so the chain stays
-    // joined end to start and turns about the joints it shows, as in Animate (#239). A root's
+    // The joint: the end of the bone the start hangs from, when it hangs from one; a root's
     // bones start where given (a torso's shoulders and hips), else at its registration point.
-    let into_from = fa.as_ref().and_then(|a| a.bone_into(from)).map(|b| wf.apply(b.tail));
-    let head = into_from.or(head).unwrap_or(wf.translation());
+    let head = f.joint.or(head).unwrap_or(wf.translation());
     let tail = tail.unwrap_or(wt.translation());
     let rest = inv_f.mul(&wt);
     if !rest.is_finite() || rest.inverse().is_none() {
         return Err(singular());
     }
     let id = BoneId(s.doc.alloc_id());
-    let bone = Bone { name, ..Bone::new(id, from, to, inv_f.apply(head), inv_t.apply(tail), rest) };
+    let bone = Bone { name, ..Bone::new(id, f.node, to, inv_f.apply(head), inv_t.apply(tail), rest) };
+    let moved = as_member(&t.el);
     take_off(s, t.layer, to)?;
-    let lid = match fa {
-        Some(_) => {
-            // Another bone on this armature: the new instance joins every pose, at angle 0.
+    let lid = match (&f.arm, &f.el) {
+        (None, Some(root)) => {
+            // The first bone: both go to a new armature layer above them.
+            take_off(s, f.layer, f.node)?;
+            let arm = Armature { bones: vec![bone], ..Default::default() };
+            armature_layer(s, f.layer, f.index.min(t.index), vec![as_member(root), moved], arm)?
+        }
+        _ => {
+            // Another bone on this armature: what it moves joins every pose, at angle 0.
             let l = s.layer_mut(Some(f.layer))?;
             let mut arm = l.armature.as_deref().cloned().unwrap_or_default();
             arm.bones.push(bone);
             l.armature = Some(Arc::new(arm));
             for k in &mut l.keyframes {
-                Arc::make_mut(k).elements.push(t.el.clone());
+                Arc::make_mut(k).elements.push(moved.clone());
             }
             rebake(l);
             f.layer
-        }
-        None => {
-            // The first bone: both instances move to a new armature layer above them.
-            take_off(s, f.layer, from)?;
-            let arm = Armature { bones: vec![bone], ..Default::default() };
-            armature_layer(s, f.layer, f.index.min(t.index), vec![f.el.clone(), t.el.clone()], arm)?
         }
     };
     s.layer = lid;
@@ -331,24 +411,30 @@ fn remove(s: &mut Session, p: &Value) -> Result<Value> {
     let mut left = (*arm).clone();
     left.bones.retain(|b| !gone.contains(&b.id));
     let dissolve = left.is_empty();
-    // A shape armature's bones move no instances: only without bones does its shape go.
-    let skinned = arm.skin.is_some();
+    // A shape left with no bones inside it has no skin: it stays as it looks at the playhead.
+    let unbound: Vec<ElementId> = left.skins.iter().map(|k| k.shape).filter(|sh| left.bones_in(*sh).next().is_none()).collect();
+    left.skins.retain(|k| !unbound.contains(&k.shape));
     skin::rebind(&mut left);
-    let freed: Vec<ElementId> = if dissolve {
-        arm.members()
-    } else if skinned {
-        Vec::new()
-    } else {
-        arm.bones.iter().filter(|b| gone.contains(&b.id)).map(|b| b.child).collect()
-    };
+    // What no bone holds any more leaves the armature: the instances and shapes the removed
+    // bones moved (a bone inside a shape moves no element), and with the last bone everything.
+    let stay = left.members();
+    let freed: Vec<ElementId> = arm.members().into_iter().filter(|m| !stay.contains(m)).collect();
     let tl = s.timeline();
     let index = tl.layers.iter().position(|l| l.id == lid).ok_or_else(|| EngineError::State("the armature layer went away".into()))?;
     let layer = tl.layer(lid).ok_or_else(|| EngineError::State("the armature layer went away".into()))?;
     let (start, end) = (layer.keyframes.first().map_or(0, |k| k.start), layer.end_frame());
-    // The freed instances as they look at the playhead (or at the armature's first frame).
+    // The freed elements as they look at the playhead (or at the armature's first frame).
     let at = s.frame.clamp(start, end.saturating_sub(1).max(start));
-    let shown: Vec<Arc<Element>> =
-        evaluate_layer_elements(layer, at).map(|(_, e)| e.iter().filter(|e| freed.contains(&e.id)).cloned().collect()).unwrap_or_default();
+    let now: Vec<Arc<Element>> = evaluate_layer_elements(layer, at).map(|(_, e)| e.to_vec()).unwrap_or_default();
+    let shown: Vec<Arc<Element>> = now.iter().filter(|e| freed.contains(&e.id)).cloned().collect();
+    let held: Vec<(ElementId, Arc<anima_geom::Path>)> = now
+        .iter()
+        .filter(|e| unbound.contains(&e.id) && stay.contains(&e.id))
+        .filter_map(|e| match &e.kind {
+            ElementKind::Shape(x) => Some((e.id, x.path.clone())),
+            _ => None,
+        })
+        .collect();
     let folder = layer.parent.filter(|p| tl.layer(*p).is_some_and(|x| x.kind == LayerKind::Folder));
     let new_id = LayerId(s.doc.alloc_id());
     let mut freed_layer = Layer::new(new_id, fresh_name(s, "Layer "));
@@ -357,6 +443,7 @@ fn remove(s: &mut Session, p: &Value) -> Result<Value> {
     k.elements = shown;
     freed_layer.keyframes = vec![Arc::new(k)];
     let tl = crate::editing::edited_mut(&mut s.doc, s.scene, &s.editing)?;
+    let own_layer = dissolve || !freed.is_empty();
     if dissolve {
         tl.layers.retain(|l| l.id != lid);
         tl.layers.insert(index.min(tl.layers.len()), Arc::new(freed_layer));
@@ -366,19 +453,26 @@ fn remove(s: &mut Session, p: &Value) -> Result<Value> {
             let k = Arc::make_mut(k);
             k.elements.retain(|e| !freed.contains(&e.id));
             k.pose.retain(|b| !gone.contains(&b));
+            for e in &mut k.elements {
+                if let Some((_, path)) = held.iter().find(|h| h.0 == e.id)
+                    && let ElementKind::Shape(x) = &mut Arc::make_mut(e).kind
+                {
+                    x.path = path.clone();
+                }
+            }
         }
         l.armature = Some(Arc::new(left));
         rebake(l);
-        if !skinned {
+        if own_layer {
             tl.layers.insert((index + 1).min(tl.layers.len()), Arc::new(freed_layer));
         }
     }
     tl.repair_masks();
     s.layer = if dissolve { new_id } else { lid };
     s.selection.clear();
-    let layer = if dissolve || !skinned { new_id } else { lid };
+    let layer = if own_layer { new_id } else { lid };
     Ok(
-        json!({"removed": gone.iter().map(|b| b.0).collect::<Vec<_>>(), "freed": freed.iter().map(|e| e.0).collect::<Vec<_>>(), "layer": layer.0, "armature_removed": dissolve}),
+        json!({"removed": gone.iter().map(|b| b.0).collect::<Vec<_>>(), "freed": freed.iter().map(|e| e.0).collect::<Vec<_>>(), "unbound": unbound.iter().filter(|u| stay.contains(u)).map(|e| e.0).collect::<Vec<_>>(), "layer": layer.0, "armature_removed": dissolve}),
     )
 }
 
@@ -682,13 +776,27 @@ fn info(s: &mut Session, p: &Value) -> Result<Value> {
                         "slide_x": limits(b.slide_x), "slide_y": limits(b.slide_y),
                         "spring": b.spring.map(|sp| json!({"strength": sp.strength * 100.0, "damping": sp.damping * 100.0})),
                         "swing": deg(shown.angle(b.id) - b.allow(pose.angle(b.id))),
-                        "points": arm.skin.as_ref().map(|k| k.points.iter().filter(|x| x.weight(b.id) > 0.0).count()),
+                        "shape": b.shape.map(|e| e.0),
+                        "points": b.shape.map(|_| arm.bound_count(b.id)),
                     })
                 })
                 .collect();
-            let mut out = json!({"layer": l.id.0, "name": l.name, "roots": arm.roots().iter().map(|e| e.0).collect::<Vec<_>>(), "poses": poses(l), "bones": bones, "shape": arm.skin_shape().map(|e| e.0), "springs": !arm.springs_off});
-            if with_points && let Some(k) = &arm.skin {
-                out["points"] = json!(skin::points_shown(arm, &els).iter().zip(&k.points).map(|(at, b)| json!({"at": pt(*at), "bones": b.bones.iter().map(|i| json!([i.0.0, i.1])).collect::<Vec<_>>(), "manual": b.manual})).collect::<Vec<_>>());
+            let points = |k: &Skin| skin::points_shown(k, &els).iter().zip(&k.points).map(|(at, b)| json!({"at": pt(*at), "bones": b.bones.iter().map(|i| json!([i.0.0, i.1])).collect::<Vec<_>>(), "manual": b.manual})).collect::<Vec<_>>();
+            let shapes: Vec<Value> = arm
+                .skins
+                .iter()
+                .map(|k| {
+                    let mut v = json!({"shape": k.shape.0, "bones": arm.bones_in(k.shape).map(|b| b.id.0).collect::<Vec<_>>(), "count": k.points.len()});
+                    if with_points {
+                        v["points"] = json!(points(k));
+                    }
+                    v
+                })
+                .collect();
+            let first = arm.skins.first();
+            let mut out = json!({"layer": l.id.0, "name": l.name, "roots": arm.roots().iter().map(|e| e.0).collect::<Vec<_>>(), "members": arm.members().iter().map(|e| e.0).collect::<Vec<_>>(), "poses": poses(l), "bones": bones, "shape": first.map(|k| k.shape.0), "shapes": shapes, "mixed": arm.is_mixed(), "springs": !arm.springs_off});
+            if with_points && let Some(k) = first {
+                out["points"] = json!(points(k));
             }
             Some(out)
         })
@@ -711,13 +819,20 @@ fn add_in_shape(s: &mut Session, p: &Value) -> Result<Value> {
     let (existing, found, from, head) = match (parent, shape) {
         (Some(b), _) => {
             let (lid, arm) = find_bone(s, b)?;
-            let sh = arm.skin_shape().ok_or_else(|| EngineError::State("that bone joins symbol instances: continue it with bone.add".into()))?;
+            let pb = arm.bone(b).ok_or_else(|| EngineError::State("no such bone".into()))?;
+            // A bone inside a shape continues inside it from its joint node; a bone that ends on
+            // a shape (ADR 0098) continues with that shape's first bone inside it.
+            let (sh, node) = match pb.shape {
+                Some(sh) => (sh, pb.child),
+                None => (pb.child, pb.child),
+            };
             if shape.is_some_and(|x| x != sh) {
                 return Err(EngineError::Param("that bone is in another shape".into()));
             }
-            let f =
-                find_instance(s, sh).ok_or_else(|| EngineError::State(format!("the armature's shape isn't on the stage at frame {}", frame + 1)))?;
-            let node = arm.bone(b).map(|x| x.child).ok_or_else(|| EngineError::State("no such bone".into()))?;
+            let f = find_instance(s, sh).ok_or_else(|| EngineError::State(format!("the bone's shape isn't on the stage at frame {}", frame + 1)))?;
+            if !matches!(f.el.kind, ElementKind::Shape(_)) {
+                return Err(EngineError::State("that bone ends on a symbol instance: continue it to another instance or shape with bone.add".into()));
+            }
             let end = s.timeline().layer(lid).and_then(|l| {
                 let (_, els) = evaluate_layer_elements(l, frame)?;
                 let pose = armature::pose_at(l, frame).unwrap_or_default();
@@ -743,7 +858,7 @@ fn add_in_shape(s: &mut Session, p: &Value) -> Result<Value> {
                         .timeline()
                         .layer(f.layer)
                         .and_then(|l| l.armature.clone())
-                        .filter(|a| a.skin_shape() == Some(sh))
+                        .filter(|a| a.contains(sh))
                         .ok_or_else(|| EngineError::State("that shape isn't the armature's".into()))?;
                     Some((f.layer, arm))
                 }
@@ -767,6 +882,7 @@ fn add_in_shape(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(EngineError::Param("a bone needs a length: drag from its joint to its end".into()));
     }
     let ElementKind::Shape(shp) = &found.el.kind else { return Err(EngineError::State("that isn't a shape".into())) };
+    let sh = found.el.id;
     // The node the bone starts on, as placed at the playhead: the bone's points go back through
     // it to the shape as drawn (a new bone is at rest in every pose).
     let node = match &existing {
@@ -786,18 +902,25 @@ fn add_in_shape(s: &mut Session, p: &Value) -> Result<Value> {
     if existing.as_ref().is_some_and(|(_, a)| a.bones.len() >= MAX_BONES) {
         return Err(EngineError::State(format!("an armature has at most {MAX_BONES} bones")));
     }
-    if existing.is_none() && skin::anchors(&shp.path).len() > MAX_SKIN_POINTS {
+    // The shape's first bone binds its points: the outline as it is drawn is its rest outline.
+    let first = existing.as_ref().is_none_or(|(_, a)| a.skin(sh).is_none());
+    if first && skin::anchors(&shp.path).len() > MAX_SKIN_POINTS {
         return Err(EngineError::State(format!(
             "bones go inside shapes of at most {MAX_SKIN_POINTS} points: simplify it first (Modify › Shape › Optimize)"
         )));
     }
     let id = BoneId(s.doc.alloc_id());
     let child = ElementId(s.doc.alloc_id());
-    let bone = Bone { name, ..Bone::new(id, from, child, h, t, Affine::IDENTITY) };
+    let bone = Bone { name, ..Bone::in_shape(id, sh, from, child, h, t) };
     let (lid, created) = match existing {
         Some((lid, arm)) => {
             let mut arm = (*arm).clone();
             arm.bones.push(bone);
+            if first {
+                // A shape a bone already moves as a whole (ADR 0098): it has never been bent, so
+                // every keyframe holds the outline as drawn.
+                arm.skins.push(Skin::new(sh, shp.path.clone()));
+            }
             skin::rebind(&mut arm);
             let l = s.layer_mut(Some(lid))?;
             l.armature = Some(Arc::new(arm));
@@ -806,25 +929,23 @@ fn add_in_shape(s: &mut Session, p: &Value) -> Result<Value> {
         }
         None => {
             // An armature's shape is an object: merge drawing (ADR 0031) no longer cuts it.
-            let mut el = (*found.el).clone();
-            if let ElementKind::Shape(x) = &mut el.kind {
-                x.merge = false;
-            }
-            let mut arm = Armature { bones: vec![bone], skin: Some(Skin::new(found.el.id, shp.path.clone())), ..Default::default() };
+            let mut arm = Armature { bones: vec![bone], skins: vec![Skin::new(sh, shp.path.clone())], ..Default::default() };
             skin::rebind(&mut arm);
-            take_off(s, found.layer, found.el.id)?;
-            (armature_layer(s, found.layer, found.index, vec![Arc::new(el)], arm)?, true)
+            take_off(s, found.layer, sh)?;
+            (armature_layer(s, found.layer, found.index, vec![as_member(&found.el)], arm)?, true)
         }
     };
     s.layer = lid;
     s.selection.clear();
-    let bound = s
-        .timeline()
-        .layer(lid)
-        .and_then(|l| l.armature.as_ref())
-        .and_then(|a| a.skin.as_ref())
-        .map_or(0, |k| k.points.iter().filter(|b| b.weight(id) > 0.0).count());
-    Ok(json!({"bone": id.0, "layer": lid.0, "created": created, "points": bound}))
+    let bound = s.timeline().layer(lid).and_then(|l| l.armature.as_ref()).map_or(0, |a| a.bound_count(id));
+    Ok(json!({"bone": id.0, "layer": lid.0, "created": created, "points": bound, "shape": sh.0}))
+}
+
+/// The shape bone `id` is inside; an error for a bone that moves an instance or a whole shape.
+fn shape_of(arm: &Armature, id: BoneId, what: &str) -> Result<ElementId> {
+    arm.bone(id)
+        .and_then(|b| b.shape)
+        .ok_or_else(|| EngineError::State(format!("that bone joins symbol instances: only bones inside a shape {what}")))
 }
 
 fn bind(s: &mut Session, p: &Value) -> Result<Value> {
@@ -835,11 +956,8 @@ fn bind(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let (lid, arm) = find_bone(s, id)?;
     unlocked(s, lid)?;
-    let n = arm
-        .skin
-        .as_ref()
-        .map(|k| k.points.len())
-        .ok_or_else(|| EngineError::State("that bone joins symbol instances: only bones inside a shape bind its points".into()))?;
+    let sh = shape_of(&arm, id, "bind its points")?;
+    let n = arm.skin(sh).map_or(0, |k| k.points.len());
     let bad = || EngineError::Param(format!("param 'points' must be a list of point indices below {n} (see bone.info with points)"));
     let points: Vec<usize> = match p.get("points") {
         None | Some(Value::Null) => (0..n).collect(),
@@ -849,8 +967,8 @@ fn bind(s: &mut Session, p: &Value) -> Result<Value> {
         Some(_) => return Err(bad()),
     };
     let mut arm = (*arm).clone();
-    let segments = skin::rest_segments(&arm);
-    let Some(k) = arm.skin.as_mut() else { return Err(EngineError::State("that bone isn't inside a shape".into())) };
+    let segments = skin::rest_segments(&arm, sh);
+    let Some(k) = arm.skin_mut(sh) else { return Err(EngineError::State("that bone isn't inside a shape".into())) };
     let anchors = skin::anchors(&k.rest);
     let mut changed = 0usize;
     for i in points {
@@ -882,7 +1000,7 @@ fn bind(s: &mut Session, p: &Value) -> Result<Value> {
     let l = s.layer_mut(Some(lid))?;
     l.armature = Some(Arc::new(arm));
     rebake(l);
-    Ok(json!({"bone": id.0, "changed": changed, "bound": bound}))
+    Ok(json!({"bone": id.0, "changed": changed, "bound": bound, "shape": sh.0}))
 }
 
 /// The point indices in param `key`, each below `n`.
@@ -896,19 +1014,12 @@ fn point_list(p: &Value, key: &str, n: usize) -> Result<Vec<usize>> {
     }
 }
 
-/// How many points bone `id` moves.
-fn bound_count(arm: &Armature, id: BoneId) -> usize {
-    arm.skin.as_ref().map_or(0, |k| k.points.iter().filter(|b| b.weight(id) > 0.0).count())
-}
-
-/// A bone inside a shape, its unlocked armature layer and the armature.
-fn shape_bone(s: &Session, id: BoneId) -> Result<(LayerId, Arc<Armature>)> {
+/// A bone inside a shape, its unlocked armature layer, the armature and the shape.
+fn shape_bone(s: &Session, id: BoneId) -> Result<(LayerId, Arc<Armature>, ElementId)> {
     let (lid, arm) = find_bone(s, id)?;
     unlocked(s, lid)?;
-    if arm.skin.is_none() {
-        return Err(EngineError::State("that bone joins symbol instances: only bones inside a shape have weights on its points".into()));
-    }
-    Ok((lid, arm))
+    let sh = shape_of(&arm, id, "have weights on its points")?;
+    Ok((lid, arm, sh))
 }
 
 fn paint_weights(s: &mut Session, p: &Value) -> Result<Value> {
@@ -938,20 +1049,25 @@ fn paint_weights(s: &mut Session, p: &Value) -> Result<Value> {
         Some(m) => Brush::parse(m).ok_or_else(|| EngineError::Param("param 'mode' must be \"add\", \"subtract\" or \"smooth\"".into()))?,
     };
     let frame = opt_u32(p, "frame")?.unwrap_or(s.frame).min(MAX_FRAME);
-    let (lid, arm) = shape_bone(s, id)?;
+    let (lid, arm, sh) = shape_bone(s, id)?;
     // The points where the stage shows them at the frame: the brush paints what the artist sees.
-    let shown =
-        s.timeline().layer(lid).and_then(|l| evaluate_layer_elements(l, frame)).map(|(_, els)| skin::points_shown(&arm, &els)).unwrap_or_default();
+    let shown = s
+        .timeline()
+        .layer(lid)
+        .and_then(|l| evaluate_layer_elements(l, frame))
+        .zip(arm.skin(sh))
+        .map(|((_, els), k)| skin::points_shown(k, &els))
+        .unwrap_or_default();
     if shown.is_empty() {
         return Err(EngineError::State(format!("the bone's shape isn't on the stage at frame {}", frame + 1)));
     }
     let mut arm = (*arm).clone();
-    let segments = skin::rest_segments(&arm);
-    let changed = match arm.skin.as_mut() {
+    let segments = skin::rest_segments(&arm, sh);
+    let changed = match arm.skin_mut(sh) {
         Some(k) => weights::paint(k, &segments, &shown, id, &dabs, Dab { brush, radius, strength: strength / 100.0 }),
         None => 0,
     };
-    let bound = bound_count(&arm, id);
+    let bound = arm.bound_count(id);
     if changed > 0 {
         let l = s.layer_mut(Some(lid))?;
         l.armature = Some(Arc::new(arm));
@@ -966,12 +1082,12 @@ fn set_weight(s: &mut Session, p: &Value) -> Result<Value> {
     if !(0.0..=100.0).contains(&w) {
         return Err(EngineError::Param("param 'weight' must be between 0 and 100".into()));
     }
-    let (lid, arm) = shape_bone(s, id)?;
-    let n = arm.skin.as_ref().map_or(0, |k| k.points.len());
+    let (lid, arm, sh) = shape_bone(s, id)?;
+    let n = arm.skin(sh).map_or(0, |k| k.points.len());
     let points = point_list(p, "points", n)?;
     let mut arm = (*arm).clone();
-    let segments = skin::rest_segments(&arm);
-    let Some(k) = arm.skin.as_mut() else { return Err(EngineError::State("that bone isn't inside a shape".into())) };
+    let segments = skin::rest_segments(&arm, sh);
+    let Some(k) = arm.skin_mut(sh) else { return Err(EngineError::State("that bone isn't inside a shape".into())) };
     let rest = skin::anchors(&k.rest);
     let mut changed = 0usize;
     for &i in &points {
@@ -986,17 +1102,17 @@ fn set_weight(s: &mut Session, p: &Value) -> Result<Value> {
         .iter()
         .map(|&i| json!(k.points.get(i).map(|b| b.bones.iter().map(|x| json!([x.0.0, x.1 * 100.0])).collect::<Vec<_>>()).unwrap_or_default()))
         .collect();
-    let bound = bound_count(&arm, id);
+    let bound = arm.bound_count(id);
     let l = s.layer_mut(Some(lid))?;
     l.armature = Some(Arc::new(arm));
     rebake(l);
     Ok(json!({"bone": id.0, "changed": changed, "bound": bound, "weights": shares}))
 }
 
-/// Whether element `id` is the shape of the shape armature on the active layer (so point edits
-/// reshape the skin instead of a keyframe's artwork).
+/// Whether element `id` is a shape with bones inside it on the active layer (so point edits
+/// reshape its skin instead of a keyframe's artwork).
 pub(crate) fn is_skin_shape(s: &Session, id: ElementId) -> bool {
-    s.timeline().layer(s.layer).is_some_and(|l| l.kind == LayerKind::Armature && l.armature.as_ref().and_then(|a| a.skin_shape()) == Some(id))
+    s.timeline().layer(s.layer).is_some_and(|l| l.kind == LayerKind::Armature && l.armature.as_ref().is_some_and(|a| a.skin(id).is_some()))
 }
 
 /// Reshaping a bound shape (ADR 0090): `edit` changes the shape's outline as drawn (its rest
@@ -1010,9 +1126,9 @@ pub(crate) fn reshape<T>(s: &mut Session, id: ElementId, edit: impl FnOnce(&mut 
     let tl = s.timeline();
     let l = tl.layer(lid).ok_or_else(|| EngineError::State("the armature layer went away".into()))?;
     let arm = l.armature.clone().ok_or_else(|| EngineError::State("that is not an armature layer".into()))?;
-    let k = arm.skin.as_ref().filter(|k| k.shape == id).ok_or_else(|| EngineError::State("that shape isn't the armature's".into()))?;
+    let k = arm.skin(id).ok_or_else(|| EngineError::State("that shape isn't the armature's".into()))?;
     let pose = armature::pose_at(l, frame).ok_or_else(|| EngineError::State(format!("the armature isn't on frame {}", frame + 1)))?;
-    if skin::matrices(&arm, &pose).values().any(|m| *m != Affine::IDENTITY) {
+    if skin::matrices(&arm, k, &pose).values().any(|m| *m != Affine::IDENTITY) {
         return Err(EngineError::State(
             "reshape a shape with bones at its rest pose: go to a frame where every bone is as drawn (angle 0, no slide), or pose them back".into(),
         ));
@@ -1031,9 +1147,11 @@ pub(crate) fn reshape<T>(s: &mut Session, id: ElementId, edit: impl FnOnce(&mut 
     if n > MAX_SKIN_POINTS {
         return Err(EngineError::State(format!("a shape with bones has at most {MAX_SKIN_POINTS} points")));
     }
-    let skin = weights::reshaped(k, shape.path.clone(), &skin::rest_segments(&arm));
+    let skin = weights::reshaped(k, shape.path.clone(), &skin::rest_segments(&arm, id));
     let mut arm = (*arm).clone();
-    arm.skin = Some(skin);
+    if let Some(slot) = arm.skin_mut(id) {
+        *slot = skin;
+    }
     let l = s.layer_mut(Some(lid))?;
     l.armature = Some(Arc::new(arm));
     rebake(l);

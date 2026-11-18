@@ -59,6 +59,7 @@ pub(crate) fn three_bars() -> Session {
                 blend: BlendMode::Normal,
                 filters: Vec::new(),
                 events: Vec::new(),
+                pivot: None,
             },
         })
     };
@@ -129,7 +130,6 @@ fn bone_add_refuses_what_cant_be_joined() {
     let mut s = three_bars();
     let bad = |s: &mut Session, p: Value| s.execute("bone.add", &p).unwrap_err().to_string();
     assert!(bad(&mut s, json!({"from": ROOT, "to": ROOT})).contains("two different"));
-    assert!(bad(&mut s, json!({"from": ROOT, "to": SHAPE})).contains("symbol"));
     assert!(bad(&mut s, json!({"from": ROOT, "to": 999})).contains("no instance"));
     assert!(bad(&mut s, json!({"from": ROOT})).contains("required"));
     assert!(bad(&mut s, json!({"from": ROOT, "to": ARM, "head": [1, "x"]})).contains("[x, y]"));

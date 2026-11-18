@@ -24,6 +24,7 @@ fn instance(of: SymbolId, transform: Affine) -> Element {
             blend: Default::default(),
             filters: Vec::new(),
             events: Vec::new(),
+            pivot: None,
         },
     )
 }

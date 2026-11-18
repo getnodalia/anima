@@ -23,6 +23,7 @@ fn instance(id: ElementId, x: f32, y: f32) -> Arc<Element> {
         blend: BlendMode::Normal,
         filters: Vec::new(),
         events: Vec::new(),
+        pivot: None,
     };
     Arc::new(Element { id, name: String::new(), transform: Affine::translate(x, y), color: ColorEffect::default(), kind })
 }

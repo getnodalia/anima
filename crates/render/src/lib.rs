@@ -561,6 +561,7 @@ fn filter_setup(dl: &DisplayList, run: &FilteredRun, view: &View, surface: IRect
         clip_parents: dl.clip_parents.iter().map(|p| p.filter(|c| inner.contains(c))).collect(),
         clip_modes: dl.clip_modes.clone(),
         groups,
+        links: Vec::new(),
     };
     let sub_view = View {
         transform: Affine::translate(-b.x0 as f32, -b.y0 as f32).mul(&view.transform),
@@ -999,6 +1000,9 @@ fn composite(cov: &Coverage, op: &Prepared, b: IRect, band_y0: i32, w: usize, ro
 mod nine_slice_tests;
 
 #[cfg(test)]
+mod layer_opacity_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use anima_doc::{ElementId, LayerId, sample};
@@ -1027,7 +1031,7 @@ mod tests {
     }
 
     fn list(items: Vec<DisplayItem>) -> DisplayList {
-        DisplayList { clip_modes: Vec::new(), items, clip_parents: Vec::new(), groups: Vec::new() }
+        DisplayList { links: Vec::new(), clip_modes: Vec::new(), items, clip_parents: Vec::new(), groups: Vec::new() }
     }
 
     /// A 40 × 40 opaque blue square masked by `art` in `mode`, on transparent.
@@ -1125,7 +1129,7 @@ mod tests {
         let mut mask = item(Path::ellipse(20.0, 20.0, 10.0, 10.0), Paint::Solid(Rgba::new(1.0, 0.0, 0.0, 0.2)));
         mask.masks = Some(0);
         mask.stroke = Some(anima_doc::Stroke::new(Rgba::BLACK, 8.0));
-        let dl = DisplayList { clip_modes: Vec::new(), items: vec![square, mask], clip_parents: vec![None], groups: Vec::new() };
+        let dl = DisplayList { links: Vec::new(), clip_modes: Vec::new(), items: vec![square, mask], clip_parents: vec![None], groups: Vec::new() };
         let (pm, _) = render(&dl, &view(40, 40)).unwrap();
         // Pixel for pixel, the same as the circle drawn in the square's colour.
         let circle = item(Path::ellipse(20.0, 20.0, 10.0, 10.0), Paint::Solid(Rgba::new(0.0, 0.0, 1.0, 1.0)));
@@ -1194,6 +1198,7 @@ mod tests {
         red.group = Some(0);
         blue.group = Some(0);
         let grouped = DisplayList {
+            links: Vec::new(),
             clip_modes: Vec::new(),
             items: vec![red.clone(), blue.clone()],
             clip_parents: vec![],
@@ -1215,6 +1220,7 @@ mod tests {
         let mut inner = item(Path::rect(0.0, 0.0, 12.0, 4.0), Paint::Solid(Rgba::BLACK));
         inner.group = Some(1);
         let nested = DisplayList {
+            links: Vec::new(),
             clip_modes: Vec::new(),
             items: vec![inner],
             clip_parents: vec![],
@@ -1234,6 +1240,7 @@ mod tests {
         tall.group = Some(0);
         let (t, _) = render(
             &DisplayList {
+                links: Vec::new(),
                 clip_modes: Vec::new(),
                 items: vec![tall],
                 clip_parents: vec![],
@@ -1272,6 +1279,7 @@ mod tests {
         let mut lost = clipped.clone();
         lost.clip = Some(2);
         let dl = DisplayList {
+            links: Vec::new(),
             clip_modes: Vec::new(),
             items: vec![clipped, outer, inner, lost],
             clip_parents: vec![None, Some(0), Some(9)],
@@ -1292,7 +1300,13 @@ mod tests {
         let mut grouped = sq.clone();
         grouped.group = Some(1);
         let g = |parent, alpha| anima_doc::Group { parent, alpha, blend: BlendMode::Multiply, filters: Default::default(), clip: None };
-        let dl = DisplayList { clip_modes: Vec::new(), items: vec![grouped], clip_parents: vec![], groups: vec![g(None, 2.0), g(Some(0), f32::NAN)] };
+        let dl = DisplayList {
+            links: Vec::new(),
+            clip_modes: Vec::new(),
+            items: vec![grouped],
+            clip_parents: vec![],
+            groups: vec![g(None, 2.0), g(Some(0), f32::NAN)],
+        };
         let (scene, _) = prepare_scene(&dl, &view(16, 16)).unwrap();
         assert!(scene.fills.iter().all(|f| f.group == Some(1)));
         assert_eq!(
@@ -1338,7 +1352,13 @@ mod tests {
         clipped.clip = Some(0);
         let free = item(Path::rect(0.0, 0.0, 2.0, 2.0), Paint::Solid(Rgba::BLACK));
         let (pm, st) = render(
-            &DisplayList { clip_modes: Vec::new(), items: vec![clipped, free.clone()], clip_parents: vec![None], groups: Vec::new() },
+            &DisplayList {
+                links: Vec::new(),
+                clip_modes: Vec::new(),
+                items: vec![clipped, free.clone()],
+                clip_parents: vec![None],
+                groups: Vec::new(),
+            },
             &view(8, 8),
         )
         .unwrap();
@@ -1357,16 +1377,18 @@ mod tests {
         let items = vec![fill, outer, inner];
         // Clip 1 lies inside clip 0: a 32 × 32 square across two render bands survives.
         let (pm, _) = render(
-            &DisplayList { clip_modes: Vec::new(), items: items.clone(), clip_parents: vec![None, Some(0)], groups: Vec::new() },
+            &DisplayList { links: Vec::new(), clip_modes: Vec::new(), items: items.clone(), clip_parents: vec![None, Some(0)], groups: Vec::new() },
             &view(64, 64),
         )
         .unwrap();
         assert!((alpha_sum(&pm) - 32.0 * 32.0).abs() < 1e-2, "{}", alpha_sum(&pm));
         // A parent link pointing forward (malformed) or out of range masks everything out.
         for parents in [vec![Some(1), Some(1)], vec![None, Some(9)]] {
-            let (pm, _) =
-                render(&DisplayList { clip_modes: Vec::new(), items: items.clone(), clip_parents: parents, groups: Vec::new() }, &view(64, 64))
-                    .unwrap();
+            let (pm, _) = render(
+                &DisplayList { links: Vec::new(), clip_modes: Vec::new(), items: items.clone(), clip_parents: parents, groups: Vec::new() },
+                &view(64, 64),
+            )
+            .unwrap();
             assert_eq!(alpha_sum(&pm), 0.0);
         }
     }
@@ -1594,6 +1616,7 @@ mod tests {
         let mut top = item(Path::rect(0.0, 0.0, 10.0, 10.0), Paint::Solid(Rgba::new(1.0, 0.0, 0.0, 1.0)));
         top.group = Some(0);
         let dl = DisplayList {
+            links: Vec::new(),
             clip_modes: Vec::new(),
             items: vec![bg, top],
             clip_parents: vec![],

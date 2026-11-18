@@ -312,7 +312,7 @@ fn settings_window(app: &mut App, ctx: &egui::Context) {
     }
     let mut open = true;
     let at = ctx.content_rect().center() - egui::vec2(330.0, 260.0);
-    let shown = egui::Window::new(tr!("Publish Settings"))
+    let shown = crate::windows::new(ctx, tr!("Publish Settings"))
         .id(egui::Id::unique("publish_settings"))
         .open(&mut open)
         .default_pos(at)
@@ -787,7 +787,7 @@ fn progress_window(app: &mut App, ctx: &egui::Context) {
     let mut open = true;
     let title = if running { tr!("Publishing") } else { tr!("Publish report") };
     let at = ctx.content_rect().center() - egui::vec2(220.0, 160.0);
-    let shown = egui::Window::new(title)
+    let shown = crate::windows::new(ctx, title)
         .id(egui::Id::unique("publish_progress"))
         .open(&mut open)
         .default_pos(at)

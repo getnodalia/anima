@@ -326,6 +326,7 @@ fn lip_sync() -> Document {
             blend: crate::BlendMode::Normal,
             filters: Vec::new(),
             events: Vec::new(),
+            pivot: None,
         },
     });
     let layers = vec![
