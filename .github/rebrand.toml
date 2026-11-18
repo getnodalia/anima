@@ -69,6 +69,12 @@ pattern = '^version = "[^"]*"'
 # Identity: app id, publisher, installer identities (a product of its own, never AniCraft's).
 # Cargo sources: the shared libraries come from getnodalia/foundation, which vendors them at the
 # same commits (standards/shared-libraries.md there). Before the broader link rules below.
+# The guide's heading "Install Ánima" has the anchor `install-ánima` (headings keep the accent;
+# anchors are made from them, as on GitHub), so links to it carry the accent too.
+[[replace]]
+from = "#install-anicraft"
+to = "#install-ánima"
+
 [[replace]]
 from = 'git = "https://github.com/storytold/craft-libs.git"'
 to = 'git = "https://github.com/getnodalia/foundation"'

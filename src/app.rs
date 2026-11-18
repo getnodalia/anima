@@ -1468,8 +1468,8 @@ impl App {
                     // i18n-exempt: sample names a user would type
                     for (name, steps) in [
                         ("Turn, Fade and Nudge", json!([n.saturating_sub(3), n.saturating_sub(2), n.saturating_sub(1)])),
-                        ("Quarter Turn", json!([n.saturating_sub(3)])),
-                        ("Fade to 60 %", json!([n.saturating_sub(2)])),
+                        ("Quarter Turn", json!([n.saturating_sub(3)])), // i18n-exempt: a sample name
+                        ("Fade to 60 %", json!([n.saturating_sub(2)])), // i18n-exempt: a sample name
                     ] {
                         let _ = self.s.execute("macro.save", &json!({"folder": f, "name": name, "history": steps, "confirm": true}));
                     }

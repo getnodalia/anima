@@ -173,7 +173,7 @@ impl Dialog {
             Dialog::EaseEditor => "tweens.md#custom-eases",
             Dialog::SoundEnvelope => "images-and-sound.md#effects-and-the-envelope",
             Dialog::Recover => "getting-started.md#autosave-and-crash-recovery",
-            Dialog::Updates => "getting-started.md#install-anima",
+            Dialog::Updates => "getting-started.md#install-ánima",
             Dialog::ManageWorkspaces => "workspace.md#workspaces",
             Dialog::SaveAsCommand => "saved-commands.md#saving-steps-as-a-command",
             Dialog::ManageSavedCommands => "saved-commands.md#managing-saved-commands",
