@@ -32,7 +32,7 @@ use anima_doc::{
 };
 use anima_geom::{Affine, FillRule, Path, Vec2};
 use anima_text::{FaceMatch, Fonts};
-use craft_xfl::filters::{Filter as NativeFilter, FilterKind as NativeFilterKind, FilterList as NativeFilterList, FilterSide as NativeFilterSide};
+use nodalia_xfl::filters::{Filter as NativeFilter, FilterKind as NativeFilterKind, FilterList as NativeFilterList, FilterSide as NativeFilterSide};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
@@ -50,7 +50,7 @@ struct PendingSymbol {
     kind: SymbolKind,
     linkage: Option<Linkage>,
     item: X,
-    timeline: Option<craft_xfl::document::TimelineModel>,
+    timeline: Option<nodalia_xfl::document::TimelineModel>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -277,7 +277,7 @@ fn filter_side(side: Option<NativeFilterSide>, default: FilterSide) -> FilterSid
     }
 }
 
-fn rgba(color: craft_xfl::shape::Color) -> Rgba {
+fn rgba(color: nodalia_xfl::shape::Color) -> Rgba {
     Rgba::hex(color.rgb).with_alpha(color.alpha)
 }
 
@@ -294,12 +294,12 @@ fn ramp(filter: &NativeFilter<'_, X>) -> Vec<GradientStop> {
 }
 
 pub(crate) fn color(el: &X, key: &str, alpha_key: &str) -> Rgba {
-    let parsed = craft_xfl::shape::color(el, key, alpha_key);
+    let parsed = nodalia_xfl::shape::color(el, key, alpha_key);
     Rgba::hex(parsed.rgb).with_alpha(parsed.alpha)
 }
 
 fn matrix(el: &X) -> Affine {
-    let m = craft_xfl::shape::matrix(el);
+    let m = nodalia_xfl::shape::matrix(el);
     Affine { m: [m.a, m.b, m.c, m.d, m.tx, m.ty] }
 }
 
@@ -309,10 +309,10 @@ const GRADIENT_HALF: f32 = 819.2;
 /// A fill definition (`SolidColor`, `LinearGradient`, `RadialGradient`, `BitmapFill`) as a
 /// paint.
 fn paint(def: &X, bitmaps: &HashMap<String, BitmapId>, report: &mut Report) -> Option<Paint> {
-    let fill = craft_xfl::shape::Fill::new(def);
+    let fill = nodalia_xfl::shape::Fill::new(def);
     match fill.kind() {
-        craft_xfl::shape::FillKind::SolidColor => Some(Paint::Solid(color(def, "color", "alpha"))),
-        craft_xfl::shape::FillKind::LinearGradient | craft_xfl::shape::FillKind::RadialGradient => {
+        nodalia_xfl::shape::FillKind::SolidColor => Some(Paint::Solid(color(def, "color", "alpha"))),
+        nodalia_xfl::shape::FillKind::LinearGradient | nodalia_xfl::shape::FillKind::RadialGradient => {
             let m = matrix(def);
             let stops: Vec<GradientStop> = fill
                 .gradient_entries()
@@ -328,7 +328,7 @@ fn paint(def: &X, bitmaps: &HashMap<String, BitmapId>, report: &mut Report) -> O
             let spread = fill.spread_method().and_then(|s| Spread::from_key(s.trim())).unwrap_or_default();
             let linear_rgb = fill.interpolation_method().is_some_and(|s| s.trim() == "linearRGB");
             let frame = m.mul(&Affine::scale(GRADIENT_HALF, GRADIENT_HALF));
-            let mut p = if fill.kind() == craft_xfl::shape::FillKind::LinearGradient {
+            let mut p = if fill.kind() == nodalia_xfl::shape::FillKind::LinearGradient {
                 Paint::linear(Vec2::new(-1.0, 0.0), Vec2::new(1.0, 0.0), stops)
             } else {
                 Paint::radial(Vec2::ZERO, 1.0, stops)
@@ -347,7 +347,7 @@ fn paint(def: &X, bitmaps: &HashMap<String, BitmapId>, report: &mut Report) -> O
             }
             Some(p.with_frame(&frame, None))
         }
-        craft_xfl::shape::FillKind::Bitmap => {
+        nodalia_xfl::shape::FillKind::Bitmap => {
             let Some(&bitmap) = fill.bitmap_path().and_then(|n| bitmaps.get(n)) else {
                 report.skip("bitmap fills of missing bitmaps");
                 return None;
@@ -358,7 +358,7 @@ fn paint(def: &X, bitmaps: &HashMap<String, BitmapId>, report: &mut Report) -> O
             // which Ánima draws as the image shown once).
             Some(Paint::Bitmap { bitmap, repeat: !fill.bitmap_is_clipped().unwrap_or(false), matrix })
         }
-        craft_xfl::shape::FillKind::Other => None,
+        nodalia_xfl::shape::FillKind::Other => None,
     }
 }
 
@@ -366,8 +366,8 @@ fn paint(def: &X, bitmaps: &HashMap<String, BitmapId>, report: &mut Report) -> O
 /// joints and miter limit, and the dashes of `DashedStroke` and dots of `DottedStroke`
 /// (ADR 0046). Ragged, stipple and hatched strokes are drawn solid.
 pub(crate) fn stroke(def: &X, bitmaps: &HashMap<String, BitmapId>, report: &mut Report) -> Option<Stroke> {
-    let native = craft_xfl::shape::Stroke::new(def);
-    use craft_xfl::shape::StrokeKind as NativeStroke;
+    let native = nodalia_xfl::shape::Stroke::new(def);
+    use nodalia_xfl::shape::StrokeKind as NativeStroke;
     if native.kind() == NativeStroke::Other {
         return None;
     }
@@ -396,7 +396,7 @@ pub(crate) fn stroke(def: &X, bitmaps: &HashMap<String, BitmapId>, report: &mut 
     let width = native.weight().unwrap_or(1.0).clamp(0.05, 1000.0);
     let fill = native.fill();
     let c = fill.map_or(Rgba::BLACK, |f| {
-        if f.kind() == craft_xfl::shape::FillKind::SolidColor {
+        if f.kind() == nodalia_xfl::shape::FillKind::SolidColor {
             let value = f.color_value();
             Rgba::hex(value.rgb).with_alpha(value.alpha)
         } else {
@@ -417,7 +417,7 @@ impl<'a> Builder<'a> {
     /// not a drawing object) is raw artwork: its shapes are marked to merge (ADR 0042), and the
     /// engine merges each keyframe's raw shapes into one drawing when it opens the file.
     fn shape(&mut self, el: &X, parent: &Affine, out: &mut Vec<Arc<Element>>, loose: bool) {
-        let Some(schema) = craft_xfl::shape::Shape::new(el) else { return };
+        let Some(schema) = nodalia_xfl::shape::Shape::new(el) else { return };
         let m = parent.mul(&matrix(el));
         let merge = loose && !schema.is_drawing_object().unwrap_or(false);
         let fills: Vec<(u32, Option<Paint>)> = schema
@@ -469,13 +469,13 @@ impl<'a> Builder<'a> {
 
     /// Rectangle and oval primitives.
     fn primitive(&mut self, el: &X, parent: &Affine, out: &mut Vec<Arc<Element>>) {
-        let Some(primitive) = craft_xfl::shape::Primitive::new(el) else { return };
+        let Some(primitive) = nodalia_xfl::shape::Primitive::new(el) else { return };
         let (x, y) = (primitive.x().unwrap_or(0.0), primitive.y().unwrap_or(0.0));
         let (w, h) = (primitive.width().unwrap_or(0.0), primitive.height().unwrap_or(0.0));
         if !(w > 0.0 && h > 0.0) {
             return;
         }
-        let path = if primitive.kind() == craft_xfl::shape::PrimitiveKind::Oval {
+        let path = if primitive.kind() == nodalia_xfl::shape::PrimitiveKind::Oval {
             Path::ellipse(x + w / 2.0, y + h / 2.0, w / 2.0, h / 2.0)
         } else {
             Path::rounded_rect(x, y, w, h, primitive.top_left_radius().unwrap_or(0.0).max(0.0))
@@ -665,7 +665,7 @@ impl<'a> Builder<'a> {
     /// channel's multiplier other than 1 or an offset, −255..255), or alpha alone. Values are
     /// clamped into Animate's ranges.
     fn color_effect(&mut self, c: &X) -> ColorEffect {
-        let native = craft_xfl::shape::NativeColorEffect::new(c);
+        let native = nodalia_xfl::shape::NativeColorEffect::new(c);
         let multipliers = native.multipliers();
         let alpha = multipliers[3];
         let fx = if let Some(t) = native.tint_multiplier() {
@@ -764,7 +764,7 @@ impl<'a> Builder<'a> {
         }
     }
 
-    fn timeline(&mut self, tl: &X, schema: &craft_xfl::document::TimelineModel) -> Timeline {
+    fn timeline(&mut self, tl: &X, schema: &nodalia_xfl::document::TimelineModel) -> Timeline {
         let mut layers = Vec::new();
         // Layers by their position in the file's layer list: `parentLayerIndex` points at a
         // layer's folder or mask. Links that don't fit Ánima's rules are dropped by
@@ -772,10 +772,10 @@ impl<'a> Builder<'a> {
         let mut by_index: Vec<LayerId> = Vec::new();
         for (l, schema_layer) in tl.list("layers").iter().filter(|l| l.name == "DOMLayer").take(MAX_LAYERS).zip(&schema.layers) {
             let kind = match schema_layer.layer_type {
-                craft_xfl::document::LayerType::Folder => LayerKind::Folder,
-                craft_xfl::document::LayerType::Guide => LayerKind::Guide,
-                craft_xfl::document::LayerType::Mask => LayerKind::Mask,
-                craft_xfl::document::LayerType::Normal | craft_xfl::document::LayerType::Other => LayerKind::Normal,
+                nodalia_xfl::document::LayerType::Folder => LayerKind::Folder,
+                nodalia_xfl::document::LayerType::Guide => LayerKind::Guide,
+                nodalia_xfl::document::LayerType::Mask => LayerKind::Mask,
+                nodalia_xfl::document::LayerType::Normal | nodalia_xfl::document::LayerType::Other => LayerKind::Normal,
             };
             let id = LayerId(self.doc.alloc_id());
             by_index.push(id);
@@ -811,10 +811,10 @@ impl<'a> Builder<'a> {
                     k.label = f.attr("name").unwrap_or("").chars().take(256).collect();
                 }
                 match schema_frame.tween_type {
-                    craft_xfl::document::TweenType::Motion | craft_xfl::document::TweenType::Shape => {
+                    nodalia_xfl::document::TweenType::Motion | nodalia_xfl::document::TweenType::Shape => {
                         let kind =
-                            if schema_frame.tween_type == craft_xfl::document::TweenType::Shape { TweenKind::Shape } else { TweenKind::Classic };
-                        let native_tween = craft_xfl::tween::FrameTween::new(f);
+                            if schema_frame.tween_type == nodalia_xfl::document::TweenType::Shape { TweenKind::Shape } else { TweenKind::Classic };
+                        let native_tween = nodalia_xfl::tween::FrameTween::new(f);
                         let orient = native_tween.orient_to_path().unwrap_or(false);
                         if kind == TweenKind::Classic && native_tween.rotate().is_some_and(|r| matches!(r.trim(), "clockwise" | "counter-clockwise"))
                         {
@@ -823,11 +823,11 @@ impl<'a> Builder<'a> {
                         let (easing, groups) = self.easing(f);
                         k.tween = Some(Tween { easing, kind, orient, groups });
                     }
-                    craft_xfl::document::TweenType::MotionObject => self.report.skip("motion tweens (kept as keyframes)"),
-                    craft_xfl::document::TweenType::Other => {}
+                    nodalia_xfl::document::TweenType::MotionObject => self.report.skip("motion tweens (kept as keyframes)"),
+                    nodalia_xfl::document::TweenType::Other => {}
                 }
                 // Shape hints sit on both keyframes of a shape tween; they are paired up below.
-                let shape_hints = craft_xfl::shape_hints::ShapeHints::new(f);
+                let shape_hints = nodalia_xfl::shape_hints::ShapeHints::new(f);
                 if !shape_hints.is_empty() {
                     raw_hints.insert(start, self.raw_hints(f));
                 }
@@ -835,7 +835,7 @@ impl<'a> Builder<'a> {
                 if let Some(a) = f.child("Actionscript") {
                     k.script = self.frame_script(a);
                 }
-                if craft_xfl::sound::FrameSound::new(f).name().is_some_and(|name| !name.trim().is_empty()) {
+                if nodalia_xfl::sound::FrameSound::new(f).name().is_some_and(|name| !name.trim().is_empty()) {
                     k.sound = self.frame_sound(f);
                 }
                 let mut els = Vec::new();
@@ -890,7 +890,7 @@ impl<'a> Builder<'a> {
     /// `useSingleEaseCurve="false"` each property group (`position`, `rotation`, `scale`,
     /// `color`, `filters`) has its own curve, and `all` (or the slider) eases the rest.
     fn easing(&mut self, f: &X) -> (Easing, Vec<(EaseGroup, Easing)>) {
-        let native_tween = craft_xfl::tween::FrameTween::new(f);
+        let native_tween = nodalia_xfl::tween::FrameTween::new(f);
         let acc = native_tween.acceleration().unwrap_or(0.0).clamp(-100.0, 100.0);
         let classic = if acc == 0.0 { Easing::Linear } else { Easing::Classic(acc) };
         if native_tween.has_custom_ease() != Some(true) {
@@ -930,7 +930,7 @@ impl<'a> Builder<'a> {
     }
 
     /// One `<CustomEase>` curve; `None` (reported) when its points don't make a curve.
-    fn ease_curve(&mut self, c: &craft_xfl::tween::CustomEase<'_, X>) -> Option<Easing> {
+    fn ease_curve(&mut self, c: &nodalia_xfl::tween::CustomEase<'_, X>) -> Option<Easing> {
         // Far more than a curve keeps (longer ones are thinned), and one more to tell.
         const MAX_READ: usize = anima_doc::MAX_EASE_POINTS * 3 * 16 + 1;
         let pts: Vec<Vec2> = c.points().take(MAX_READ + 1).map(|point| Vec2::new(point.x().unwrap_or(0.0), point.y().unwrap_or(0.0))).collect();
@@ -961,8 +961,8 @@ impl<'a> Builder<'a> {
     /// otherwise the end comes from the same hint on the next keyframe. Points are in pixels.
     /// The order is `index` (or a letter `name`), else the order in the file.
     fn raw_hints(&mut self, frame: &X) -> Vec<RawHint> {
-        let hints = craft_xfl::shape_hints::ShapeHints::new(frame);
-        let to_vec = |point: Option<craft_xfl::shape_hints::Point>| {
+        let hints = nodalia_xfl::shape_hints::ShapeHints::new(frame);
+        let to_vec = |point: Option<nodalia_xfl::shape_hints::Point>| {
             point.map(|point| Vec2::new(point.x, point.y)).filter(|point| point.x.abs() < 1e6 && point.y.abs() < 1e6)
         };
         let mut out: Vec<RawHint> = Vec::new();
@@ -1017,14 +1017,14 @@ impl<'a> Builder<'a> {
     /// `bin/`; either is used when it is a PNG or JPEG. Animate's own encodings of the data
     /// file are not public, so those bitmaps are reported instead.
     fn register_bitmaps(&mut self, root: &X) -> Result<(), XflError> {
-        for item in craft_xfl::media::Catalog::new(root).bitmaps().take(MAX_BITMAPS) {
+        for item in nodalia_xfl::media::Catalog::new(root).bitmaps().take(MAX_BITMAPS) {
             let Some(name) = item.name().filter(|n| !self.bitmaps.contains_key(*n)) else { continue };
             let mut candidates = Vec::new();
             if let Some(href) = item.href() {
-                candidates.push(craft_xfl::media::library_member(href));
+                candidates.push(nodalia_xfl::media::library_member(href));
             }
             if let Some(data) = item.data_href() {
-                candidates.push(craft_xfl::media::data_member(data));
+                candidates.push(nodalia_xfl::media::data_member(data));
             }
             let short: String = name.rsplit('/').next().unwrap_or(name).chars().take(256).collect();
             let (mut found_data, mut unreadable) = (false, false);
@@ -1069,14 +1069,14 @@ impl<'a> Builder<'a> {
     /// own encoding of the data file is not public, so those sounds are reported by name, as is
     /// every other sound that doesn't come across, with its format and why (ADR 0039).
     fn register_sounds(&mut self, root: &X) -> Result<(), XflError> {
-        for item in craft_xfl::media::Catalog::new(root).sounds().take(MAX_SOUNDS) {
+        for item in nodalia_xfl::media::Catalog::new(root).sounds().take(MAX_SOUNDS) {
             let Some(name) = item.name().filter(|n| !self.sounds.contains_key(*n)) else { continue };
             let mut candidates = Vec::new();
             if let Some(href) = item.href() {
-                candidates.push((craft_xfl::media::library_member(href), false));
+                candidates.push((nodalia_xfl::media::library_member(href), false));
             }
             if let Some(data) = item.data_href() {
-                candidates.push((craft_xfl::media::data_member(data), true));
+                candidates.push((nodalia_xfl::media::data_member(data), true));
             }
             let short: String = name.rsplit('/').next().unwrap_or(name).chars().take(256).collect();
             let shown: String = name.chars().take(256).collect();
@@ -1129,17 +1129,17 @@ impl<'a> Builder<'a> {
     /// original file (`href`, or `sourceExternalFilepath` inside the package) in `LIBRARY/`, then
     /// as its data file in `bin/` (`videoDataHRef`).
     fn register_videos(&mut self, root: &X) {
-        for item in craft_xfl::media::Catalog::new(root).videos().take(MAX_VIDEOS) {
+        for item in nodalia_xfl::media::Catalog::new(root).videos().take(MAX_VIDEOS) {
             let Some(name) = item.name().filter(|n| !self.videos.contains_key(*n)) else { continue };
             let mut candidates = Vec::new();
             if let Some(href) = item.href() {
-                candidates.push(craft_xfl::media::library_member(href));
+                candidates.push(nodalia_xfl::media::library_member(href));
             }
-            if let Some(path) = item.external_path().and_then(craft_xfl::media::packaged_external_member) {
+            if let Some(path) = item.external_path().and_then(nodalia_xfl::media::packaged_external_member) {
                 candidates.push(path);
             }
             if let Some(data) = item.data_href() {
-                candidates.push(craft_xfl::media::data_member(data));
+                candidates.push(nodalia_xfl::media::data_member(data));
             }
             let shown: String = name.chars().take(256).collect();
             let short: String = name.rsplit('/').next().unwrap_or(name).chars().take(240).collect();
@@ -1204,7 +1204,7 @@ impl<'a> Builder<'a> {
     /// effect (`soundEffect`, and the volume points of a custom one in `SoundEnvelope`).
     /// Buttons' frames included: they play as the pointer changes the button's state.
     fn frame_sound(&mut self, f: &X) -> Option<FrameSound> {
-        let native = craft_xfl::sound::FrameSound::new(f);
+        let native = nodalia_xfl::sound::FrameSound::new(f);
         let name = native.name()?;
         let Some(id) = self.sounds.get(name).copied() else {
             self.report.skip("frame sounds whose sound isn't in the package");
@@ -1212,10 +1212,10 @@ impl<'a> Builder<'a> {
         };
         let mut fs = FrameSound::new(id);
         fs.sync = match native.sync_mode() {
-            craft_xfl::sound::SyncMode::Start => SoundSync::Start,
-            craft_xfl::sound::SyncMode::Stop => SoundSync::Stop,
-            craft_xfl::sound::SyncMode::Stream => SoundSync::Stream,
-            craft_xfl::sound::SyncMode::Event => SoundSync::Event,
+            nodalia_xfl::sound::SyncMode::Start => SoundSync::Start,
+            nodalia_xfl::sound::SyncMode::Stop => SoundSync::Stop,
+            nodalia_xfl::sound::SyncMode::Stream => SoundSync::Stream,
+            nodalia_xfl::sound::SyncMode::Event => SoundSync::Event,
         };
         fs.looping = native.looping();
         fs.repeat = native.repeat().unwrap_or(1).clamp(1, anima_doc::sound::MAX_REPEAT);
@@ -1230,7 +1230,7 @@ impl<'a> Builder<'a> {
     /// volume points of its envelope (`SoundEnvelope`; each `SoundEnvelopePoint` a time in
     /// samples at 44.1 kHz, `mark44`, and a level per channel, `level0` left and `level1` right,
     /// `0..=32768`, as the SWF format's `SOUNDENVELOPE` keeps them).
-    fn sound_effect(&mut self, frame: &craft_xfl::sound::FrameSound<'_, X>) -> SoundEffect {
+    fn sound_effect(&mut self, frame: &nodalia_xfl::sound::FrameSound<'_, X>) -> SoundEffect {
         let key = frame.effect_key();
         let preset = match key.as_str() {
             "" | "none" => Some(SoundEffect::None),
@@ -1265,7 +1265,7 @@ impl<'a> Builder<'a> {
     /// Allocates ids for every symbol the document lists, parsing their files.
     fn register_symbols(&mut self, root: &X) -> Result<(), XflError> {
         let mut seen = HashSet::new();
-        for inc in craft_xfl::document::symbol_includes(root).take(MAX_SYMBOLS) {
+        for inc in nodalia_xfl::document::symbol_includes(root).take(MAX_SYMBOLS) {
             let Some(href) = inc.href() else { continue };
             if !seen.insert(href.to_string()) {
                 continue;
@@ -1283,15 +1283,15 @@ impl<'a> Builder<'a> {
                     continue;
                 }
             };
-            let parsed = match craft_xfl::document::Document::parse(&bytes) {
+            let parsed = match nodalia_xfl::document::Document::parse(&bytes) {
                 Ok(parsed) => parsed,
                 Err(_) => {
                     self.report.skip("library files that couldn't be read");
                     continue;
                 }
             };
-            let (model, xml_root) = parsed.into_parts(craft_xfl::document::ModelLimits { max_timelines: 0, max_layers_per_timeline: MAX_LAYERS });
-            let item = match xml::from_craft_xml_owned_local_names(xml_root) {
+            let (model, xml_root) = parsed.into_parts(nodalia_xfl::document::ModelLimits { max_timelines: 0, max_layers_per_timeline: MAX_LAYERS });
+            let item = match xml::from_nodalia_xml_owned_local_names(xml_root) {
                 Ok(item) => item,
                 Err(_) => {
                     self.report.skip("library files that couldn't be read");
@@ -1301,7 +1301,7 @@ impl<'a> Builder<'a> {
             if item.name != "DOMSymbolItem" {
                 continue;
             }
-            let symbol = craft_xfl::document::SymbolItem::new(&item);
+            let symbol = nodalia_xfl::document::SymbolItem::new(&item);
             let name = symbol.name().map(str::to_string).unwrap_or_else(|| href.trim_end_matches(".xml").to_string());
             // The format leaves out default values, and a symbol's default type is movie clip:
             // only graphics and buttons say what they are.
@@ -1320,7 +1320,7 @@ impl<'a> Builder<'a> {
 
     /// A library symbol's script class (`linkageClassName`, or an older document's
     /// `linkageIdentifier`, when `linkageExportForAS` doesn't turn it off) and its base class.
-    fn linkage(&mut self, item: craft_xfl::document::SymbolItem<'_, X>) -> Option<Linkage> {
+    fn linkage(&mut self, item: nodalia_xfl::document::SymbolItem<'_, X>) -> Option<Linkage> {
         if item.linkage_export_for_action_script().is_some_and(|v| v.trim() != "true") {
             return None;
         }
@@ -1338,7 +1338,7 @@ impl<'a> Builder<'a> {
     /// A symbol's 9-slice guides (ADR 0055): `scaleGridLeft`, `scaleGridRight`, `scaleGridTop`
     /// and `scaleGridBottom` on the `DOMSymbolItem`, in the symbol's space, written when its
     /// guides are on. All four or none; guides given the wrong way round are put in order.
-    fn scale_grid(&mut self, item: craft_xfl::document::SymbolItem<'_, X>) -> Option<ScaleGrid> {
+    fn scale_grid(&mut self, item: nodalia_xfl::document::SymbolItem<'_, X>) -> Option<ScaleGrid> {
         if !item.has_scale_grid() {
             return None;
         }
@@ -1363,7 +1363,7 @@ impl<'a> Builder<'a> {
     fn publish_settings(&mut self) -> Result<(), XflError> {
         // Optional: settings that can't be read leave the defaults (#226).
         let Ok(Some(bytes)) = (self.read)("PublishSettings.xml") else { return Ok(()) };
-        let Ok(document) = craft_xfl::document::Document::parse(&bytes) else { return Ok(()) };
+        let Ok(document) = nodalia_xfl::document::Document::parse(&bytes) else { return Ok(()) };
         let settings = document.publish_settings();
         self.language = match settings.action_script_version.as_deref() {
             Some("1" | "2") => Language::ActionScript1or2,
@@ -1387,7 +1387,7 @@ impl<'a> Builder<'a> {
                 None => Timeline { layers: vec![Arc::new(Layer::new(LayerId(self.doc.alloc_id()), "Layer 1"))] },
             };
             let short = name.rsplit('/').next().unwrap_or(&name).to_string();
-            let scale_grid = self.scale_grid(craft_xfl::document::SymbolItem::new(&item));
+            let scale_grid = self.scale_grid(nodalia_xfl::document::SymbolItem::new(&item));
             self.doc.library.push(Arc::new(Symbol { id, name: short, kind, linkage, scale_grid, scale_grid_kept: None, timeline }));
             self.place_in_folder(&name, anima_doc::LibraryItem::Symbol(id));
         }
@@ -1396,7 +1396,7 @@ impl<'a> Builder<'a> {
     /// The Library's folders (`<folders>`, so empty ones come across too), each a path such as
     /// `Characters/Hero` (ADR 0050).
     fn register_folders(&mut self, root: &X) {
-        for folder in craft_xfl::document::library_folders(root).take(anima_doc::library::MAX_FOLDERS) {
+        for folder in nodalia_xfl::document::library_folders(root).take(anima_doc::library::MAX_FOLDERS) {
             if let Some(path) = folder.name() {
                 self.doc.ensure_folder_path(path);
             }
@@ -1428,10 +1428,10 @@ pub fn import_with_fonts(read: &Reader<'_>, fonts: &Fonts) -> Result<(Document, 
 
 fn import_from<'a>(read: &'a Reader<'a>, fonts: Option<&'a Fonts>) -> Result<(Document, Report), XflError> {
     let bytes = read("DOMDocument.xml")?.ok_or_else(|| XflError::NotXfl("no DOMDocument.xml".into()))?;
-    let parsed = craft_xfl::document::Document::parse(&bytes).map_err(xml::from_craft_error)?;
+    let parsed = nodalia_xfl::document::Document::parse(&bytes).map_err(xml::from_nodalia_error)?;
     let (schema, xml_root) =
-        parsed.into_parts(craft_xfl::document::ModelLimits { max_timelines: anima_doc::MAX_SCENES, max_layers_per_timeline: MAX_LAYERS });
-    let root = xml::from_craft_xml_owned_local_names(xml_root)?;
+        parsed.into_parts(nodalia_xfl::document::ModelLimits { max_timelines: anima_doc::MAX_SCENES, max_layers_per_timeline: MAX_LAYERS });
+    let root = xml::from_nodalia_xml_owned_local_names(xml_root)?;
     if root.name != "DOMDocument" {
         return Err(XflError::NotXfl(format!("the root element is <{}>", root.name)));
     }

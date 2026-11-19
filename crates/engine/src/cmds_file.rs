@@ -971,22 +971,22 @@ fn export_gif(s: &mut Session, p: &Value) -> Result<Value> {
     let doc = &s.doc;
     let job = s.job.as_deref();
     let delays = gif_delays(n as usize, doc.stage.fps);
-    let frames: Vec<(craft_gif::write::PreparedFrame, u16)> = (from..to.saturating_add(1))
+    let frames: Vec<(nodalia_gif::write::PreparedFrame, u16)> = (from..to.saturating_add(1))
         .into_par_iter()
         .zip(delays.into_par_iter())
         .map(|(f, delay)| {
             let (pm, _) = render(&anima_doc::evaluate(doc, f), &view)?;
             let rgba = pm.to_rgba8();
-            let frame = craft_gif::write::prepare_frame(u32::from(w), u32::from(h), rgba, 10).map_err(|e| EngineError::Format(e.to_string()))?;
+            let frame = nodalia_gif::write::prepare_frame(u32::from(w), u32::from(h), rgba, 10).map_err(|e| EngineError::Format(e.to_string()))?;
             crate::publish::tick(job, 1)?;
             Ok((frame, delay))
         })
         .collect::<Result<Vec<_>>>()?;
     let mut bytes = Vec::new();
     {
-        let opts = craft_gif::write::Options { loop_forever: looping, ..Default::default() };
+        let opts = nodalia_gif::write::Options { loop_forever: looping, ..Default::default() };
         let mut enc =
-            craft_gif::write::AnimationWriter::new(&mut bytes, u32::from(w), u32::from(h), opts).map_err(|e| EngineError::Format(e.to_string()))?;
+            nodalia_gif::write::AnimationWriter::new(&mut bytes, u32::from(w), u32::from(h), opts).map_err(|e| EngineError::Format(e.to_string()))?;
         for (fr, delay) in frames {
             enc.write_prepared_frame(fr, delay).map_err(|e| EngineError::Format(e.to_string()))?;
         }

@@ -352,9 +352,9 @@ fn big_fla() -> (Vec<u8>, usize) {
     for b in 0..24 {
         let (w, h) = (1024u32, 512u32);
         let pixels: Vec<u8> = (0..w * h * 4).map(|_| rng.next() as u8).collect();
-        let img = craft_image_codecs::Image::from_u8(w, h, craft_image_codecs::ChannelLayout::Rgba, pixels).unwrap();
-        let opts = craft_image_codecs::EncodeOptions { png_compression: craft_image_codecs::PngCompression::Fast, ..Default::default() };
-        let png = craft_image_codecs::encode(&img, craft_image_codecs::Format::Png, &opts).unwrap();
+        let img = nodalia_image_codecs::Image::from_u8(w, h, nodalia_image_codecs::ChannelLayout::Rgba, pixels).unwrap();
+        let opts = nodalia_image_codecs::EncodeOptions { png_compression: nodalia_image_codecs::PngCompression::Fast, ..Default::default() };
+        let png = nodalia_image_codecs::encode(&img, nodalia_image_codecs::Format::Png, &opts).unwrap();
         files.insert(format!("LIBRARY/Images/noise {b}.png"), png);
         media.push_str(&format!("<DOMBitmapItem name=\"Images/noise {b}.png\" href=\"Images/noise {b}.png\"/>"));
     }

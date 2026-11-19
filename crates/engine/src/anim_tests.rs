@@ -121,7 +121,7 @@ fn decode_apng(bytes: &[u8]) -> Apng {
         push_chunk(&mut frame_png, b"IHDR", &f_ihdr);
         push_chunk(&mut frame_png, b"IDAT", &fc.idat);
         push_chunk(&mut frame_png, b"IEND", &[]);
-        let img = craft_image_codecs::decode_as(craft_image_codecs::Format::Png, &frame_png).unwrap();
+        let img = nodalia_image_codecs::decode_as(nodalia_image_codecs::Format::Png, &frame_png).unwrap();
         assert_eq!(img.dimensions(), (r.w, r.h));
         let buf = img.to_rgba8();
         for y in 0..r.h {
@@ -170,9 +170,9 @@ struct Webp {
 }
 
 fn decode_webp(bytes: &[u8]) -> Webp {
-    let info = craft_webp::scan(bytes, 1024).unwrap();
+    let info = nodalia_webp::scan(bytes, 1024).unwrap();
     assert!(!info.frames.is_empty());
-    let decoded = craft_image_codecs::decode_webp_frames(bytes, &craft_image_codecs::DecodeOptions::default()).unwrap();
+    let decoded = nodalia_image_codecs::decode_webp_frames(bytes, &nodalia_image_codecs::DecodeOptions::default()).unwrap();
     let frames = decoded.into_iter().map(|f| (f.image.to_rgba8(), f.delay_ms)).collect();
     Webp { frames, loop_count: info.loop_count.unwrap_or(0), size: (info.width, info.height), alpha: info.alpha }
 }

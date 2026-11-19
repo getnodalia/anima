@@ -15,9 +15,9 @@ repository = "https://github.com/getnodalia/anima"
 rust-version = "1.95"
 
 [workspace.dependencies]
-craft-video = { git = "https://github.com/getnodalia/foundation", rev = "fd91be74f078d7062945ff6512cf65afea0c73ac", default-features = false, features = ["screen-video"] }
-craft-palette = { git = "https://github.com/getnodalia/foundation", rev = "de97c35f2b2af01c62371647e57a6affeab456fd" }
-craft-lottie = { git = "https://github.com/getnodalia/foundation", rev = "83cb1133dd2bdd0d655ba2300f88863f0f53db0b" }
+nodalia-video = { git = "https://github.com/getnodalia/foundation", rev = "c91e7e5d2081e94a5c8ac48e48ab00008a1842e7", default-features = false, features = ["screen-video"] }
+nodalia-palette = { git = "https://github.com/getnodalia/foundation", rev = "d6ba152de9691955180f2938502ddbd010ef45ea" }
+nodalia-lottie = { git = "https://github.com/getnodalia/foundation", rev = "5cbd1543e9c006064904465d2503bbd223e7e3a6" }
 anima-geom = { path = "crates/geom" }
 anima-doc = { path = "crates/doc" }
 anima-render = { path = "crates/render" }
@@ -30,17 +30,17 @@ anima-plugins = { path = "crates/plugins" }
 anima-audio = { path = "crates/audio" }
 anima-gpu = { path = "crates/gpu" }
 anima-guide = { path = "crates/guide" }
-craft-anicraft-format = { git = "https://github.com/getnodalia/foundation", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18" }
-craft-mime = { version = "0.1.0", git = "https://github.com/getnodalia/foundation", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18" }
-craft-html = { version = "0.1.0", git = "https://github.com/getnodalia/foundation", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18", default-features = false }
-craft-audio = { git = "https://github.com/getnodalia/foundation", rev = "e2bf53f2bdba4828e21097774a568ed9c74b0004", default-features = false, features = ["decode", "pcm-encode"] }
-craft-gif = { git = "https://github.com/getnodalia/foundation", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18" }
+nodalia-anima-format = { git = "https://github.com/getnodalia/foundation", rev = "7d584fd1c6d974f2728edf467a9582f923c1cf13" }
+nodalia-mime = { version = "0.1.0", git = "https://github.com/getnodalia/foundation", rev = "7d584fd1c6d974f2728edf467a9582f923c1cf13" }
+nodalia-html = { version = "0.1.0", git = "https://github.com/getnodalia/foundation", rev = "7d584fd1c6d974f2728edf467a9582f923c1cf13", default-features = false }
+nodalia-audio = { git = "https://github.com/getnodalia/foundation", rev = "b0128030e39b29167ff747cc2225dfabeb99160f", default-features = false, features = ["decode", "pcm-encode"] }
+nodalia-gif = { git = "https://github.com/getnodalia/foundation", rev = "7d584fd1c6d974f2728edf467a9582f923c1cf13" }
 # Isolate the already-merged APNG container from the existing raster-codec pin.
-craft-apng-container = { package = "craft-image-codecs", version = "0.1.0", git = "https://github.com/getnodalia/foundation", rev = "55b1d7f3c598b600a130ae63f4a40334a230ae7b", default-features = false }
-craft-image-codecs = { git = "https://github.com/getnodalia/foundation", rev = "f0f4758c01581d79577b9bf5046c06f4e77b1f18" }
-craft-webp = { git = "https://github.com/getnodalia/foundation", rev = "0c144b7d983899d4b5b281046dd03a8b1ab35fbb" }
-craft-xfl = { git = "https://github.com/getnodalia/foundation", rev = "b67b9f90c50091a3090f93fa054c34e409edba11" }
-craft-xml = { git = "https://github.com/getnodalia/foundation", rev = "b67b9f90c50091a3090f93fa054c34e409edba11" }
+nodalia-apng-container = { package = "nodalia-image-codecs", version = "0.1.0", git = "https://github.com/getnodalia/foundation", rev = "4199c47f5dc9f8dac749c4609a8aa132219036b1", default-features = false }
+nodalia-image-codecs = { git = "https://github.com/getnodalia/foundation", rev = "7d584fd1c6d974f2728edf467a9582f923c1cf13" }
+nodalia-webp = { git = "https://github.com/getnodalia/foundation", rev = "5fecd8b44f86c7cf801944d5ea4142f16f1fe747" }
+nodalia-xfl = { git = "https://github.com/getnodalia/foundation", rev = "0a1aedecb96656dd966f7bd88fd49ddd3a70e2e4" }
+nodalia-xml = { git = "https://github.com/getnodalia/foundation", rev = "0a1aedecb96656dd966f7bd88fd49ddd3a70e2e4" }
 # The GPU stage (ADR 0019) uses the wgpu that eframe's egui-wgpu brings, with the same
 # (default) features, so the tree keeps one wgpu build.
 wgpu = "30"

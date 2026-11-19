@@ -94,9 +94,9 @@ impl Pixmap {
 
 /// Encodes straight-alpha RGBA8 as PNG.
 pub fn encode_png(width: u32, height: u32, rgba: &[u8]) -> Result<Vec<u8>, RenderError> {
-    let img = craft_image_codecs::Image::from_u8(width, height, craft_image_codecs::ChannelLayout::Rgba, rgba.to_vec())
+    let img = nodalia_image_codecs::Image::from_u8(width, height, nodalia_image_codecs::ChannelLayout::Rgba, rgba.to_vec())
         .map_err(|e| RenderError::Png(e.to_string()))?;
-    craft_image_codecs::encode(&img, craft_image_codecs::Format::Png, &craft_image_codecs::EncodeOptions::default())
+    nodalia_image_codecs::encode(&img, nodalia_image_codecs::Format::Png, &nodalia_image_codecs::EncodeOptions::default())
         .map_err(|e| RenderError::Png(e.to_string()))
 }
 

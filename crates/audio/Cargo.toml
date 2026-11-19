@@ -1,6 +1,6 @@
 [package]
 name = "anima-audio"
-description = "Ánima L0: sound decoding (via craft-audio), deterministic mixing and resampling, WAV writing, waveform peaks"
+description = "Ánima L0: sound decoding (via nodalia-audio), deterministic mixing and resampling, WAV writing, waveform peaks"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,7 +8,7 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
-craft-audio.workspace = true
+nodalia-audio.workspace = true
 
 [lints]
 workspace = true

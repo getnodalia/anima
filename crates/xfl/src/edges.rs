@@ -36,12 +36,12 @@ pub struct Edge {
     pub segs: Vec<Seg>,
 }
 
-/// Decodes an `edges` attribute through craft-libs and maps its neutral geometry to Ánima.
+/// Decodes an `edges` attribute through nodalia-libs and maps its neutral geometry to Ánima.
 pub fn parse(s: &str) -> Vec<Seg> {
-    craft_xfl::edges::parse_edge_segments(s)
+    nodalia_xfl::edges::parse_edge_segments(s)
         .into_iter()
         .map(|segment| {
-            let point = |p: craft_xfl::edges::Point| Vec2::new(p.x, p.y);
+            let point = |p: nodalia_xfl::edges::Point| Vec2::new(p.x, p.y);
             Seg { from: point(segment.from), ctrl: segment.control.map(point), to: point(segment.to) }
         })
         .collect()

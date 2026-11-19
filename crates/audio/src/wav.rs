@@ -1,17 +1,17 @@
-//! WAV (RIFF WAVE) writing via `craft-audio`.
+//! WAV (RIFF WAVE) writing via `nodalia-audio`.
 
-pub use craft_audio::wav_stream::{Bits, append, header};
+pub use nodalia_audio::wav_stream::{Bits, append, header};
 
 /// A whole WAV file in memory (empty when it would not fit a WAV's 4 GB limit).
 pub fn encode(rate: u32, channels: u16, samples: &[f32], bits: Bits) -> Vec<u8> {
     let depth = match bits {
-        Bits::Int16 => craft_audio::BitDepth::Int16,
-        Bits::Int24 => craft_audio::BitDepth::Int24,
-        Bits::Float32 => craft_audio::BitDepth::Float32,
+        Bits::Int16 => nodalia_audio::BitDepth::Int16,
+        Bits::Int24 => nodalia_audio::BitDepth::Int24,
+        Bits::Float32 => nodalia_audio::BitDepth::Float32,
     };
-    let buf = craft_audio::AudioBuffer::from_interleaved(rate, channels, samples);
-    let opts = craft_audio::EncodeOptions::new(craft_audio::EncodeFormat::Wav).with_bit_depth(depth);
-    craft_audio::encode(&buf, &opts).unwrap_or_default()
+    let buf = nodalia_audio::AudioBuffer::from_interleaved(rate, channels, samples);
+    let opts = nodalia_audio::EncodeOptions::new(nodalia_audio::EncodeFormat::Wav).with_bit_depth(depth);
+    nodalia_audio::encode(&buf, &opts).unwrap_or_default()
 }
 
 #[cfg(test)]

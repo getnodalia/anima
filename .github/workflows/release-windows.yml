@@ -40,10 +40,10 @@ jobs:
     outputs:
       version: ${{ steps.ver.outputs.version }}
     env:
-      CRAFT_FONTS_DIR: ${{ github.workspace }}\craft-fonts
-      CRAFT_FONTS_REQUIRED: "1"
-      CRAFT_I18N_DIR: ${{ github.workspace }}\craft-i18n
-      CRAFT_I18N_REQUIRED: "1"
+      NODALIA_FONTS_DIR: ${{ github.workspace }}\nodalia-fonts
+      NODALIA_FONTS_REQUIRED: "1"
+      NODALIA_I18N_DIR: ${{ github.workspace }}\nodalia-i18n
+      NODALIA_I18N_REQUIRED: "1"
       DIST: ${{ github.workspace }}\dist
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -72,20 +72,20 @@ jobs:
           TAG: ${{ inputs.tag }}
         run: scripts/check-release-notes.sh "$TAG"
 
-      - name: Check out craft-fonts
+      - name: Check out nodalia-fonts
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: getnodalia/foundation # craft-fonts, kept at vendor/craft-fonts/main
-          ref: 37827adc41fd165f9a9234ac40f94dbad353aa69
-          path: craft-fonts
+          repository: getnodalia/foundation # nodalia-fonts, kept at nodalia/fonts
+          ref: b91919f28edcf74c9e10583110460b79b2385cae
+          path: nodalia-fonts
           persist-credentials: false
 
-      - name: Check out craft-i18n
+      - name: Check out nodalia-i18n
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: getnodalia/foundation # craft-i18n, kept at vendor/craft-i18n/main
-          ref: b7ded328e490d056ca7f216060c88db6830950c5 # vendor/craft-i18n/main
-          path: craft-i18n
+          repository: getnodalia/foundation # nodalia-i18n, kept at nodalia/i18n
+          ref: 191fd213e20d6c1e8667782e93f9e1b5e68e7b3b # nodalia/i18n
+          path: nodalia-i18n
           persist-credentials: false
 
 

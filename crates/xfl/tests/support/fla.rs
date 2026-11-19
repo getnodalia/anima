@@ -2,7 +2,7 @@
 //! zip writers lay one out (ADR 0054), and writes hand-made entries for hostile archives.
 //!
 //! Written from the published format (PKWARE APPNOTE 6.3), independently of the shared
-//! `craft-xfl` reader (it has its own checksum), so a misreading in one is caught by the other.
+//! `nodalia-xfl` reader (it has its own checksum), so a misreading in one is caught by the other.
 //! Shared by the xfl crate's unit and corpus tests and the engine's golden tests (`#[path]`).
 #![allow(dead_code)]
 

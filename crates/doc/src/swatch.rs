@@ -182,14 +182,14 @@ pub fn is_default_set(v: &[Swatch]) -> bool {
 }
 
 /// Largest palette file read, in bytes.
-pub const MAX_PALETTE_BYTES: usize = craft_palette::MAX_BYTES;
+pub const MAX_PALETTE_BYTES: usize = nodalia_palette::MAX_BYTES;
 
 /// Reads a GIMP palette (`.gpl`): a `GIMP Palette` line, optional `Name:` and `Columns:`
 /// lines and `#` comments, then one colour per line, `R G B` (0 to 255) and an optional name.
 /// Lines that aren't colours are skipped; at most [`MAX_SWATCHES`] colours are read. The
 /// palette's own name comes back with the colours.
 pub fn parse_gpl(text: &str) -> Result<(String, Vec<Swatch>), String> {
-    let palette = craft_palette::parse_gpl(text)?;
+    let palette = nodalia_palette::parse_gpl(text)?;
     let colors = palette
         .colors
         .into_iter()
@@ -259,7 +259,7 @@ mod tests {
 
     #[test]
     fn gpl_adapter_preserves_name_limit_and_display_policy() {
-        assert_eq!(MAX_SWATCHES, craft_palette::MAX_COLORS);
+        assert_eq!(MAX_SWATCHES, nodalia_palette::MAX_COLORS);
         let title = format!(" {}", "é".repeat(MAX_SWATCH_NAME + 1));
         let text = format!("GIMP Palette\nName:{title}\n1 2 3 Untitled\n4 5 6   Named   colour\n");
         let (name, swatches) = parse_gpl(&text).unwrap();

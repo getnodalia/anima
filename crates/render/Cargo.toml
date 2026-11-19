@@ -8,12 +8,12 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
-craft-lottie.workspace = true
-craft-html.workspace = true
+nodalia-lottie.workspace = true
+nodalia-html.workspace = true
 anima-geom.workspace = true
 anima-doc.workspace = true
 rayon.workspace = true
-craft-image-codecs.workspace = true
+nodalia-image-codecs.workspace = true
 thiserror.workspace = true
 # Lottie export writes JSON.
 serde_json.workspace = true

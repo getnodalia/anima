@@ -98,7 +98,7 @@ widgets, and no keyboard navigation of its menu bar.
 5. **Following the system's contrast setting** (`platform::system_high_contrast`), each system
    read without `unsafe`:
    * Windows: the `HighContrast` `Flags` value in the user's registry (`HCF_HIGHCONTRASTON`),
-     through `winreg` (MIT, already in the tree through craft-update).
+     through `winreg` (MIT, already in the tree through nodalia-update).
    * macOS: `defaults read com.apple.universalaccess increaseContrast`.
    * Linux and the BSDs: the XDG desktop portal's `org.freedesktop.appearance contrast` through
      `gdbus` (1 s timeout), else GNOME's `high-contrast` through `gsettings`.

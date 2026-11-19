@@ -115,7 +115,7 @@ if has appimage; then
   cp "$ROOT/assets/app-icon/hicolor/256x256/apps/$APP_ID.png" "$APPDIR/$APP_ID.png"
   ln -s "$APP_ID.png" "$APPDIR/.DirIcon"
 
-  # Digests from the official GitHub release asset metadata (the same pins as the other Craft apps):
+  # Digests from the official GitHub release asset metadata (the same pins as the other Nodalia apps):
   # https://github.com/AppImage/appimagetool/releases/tag/1.9.1
   # https://github.com/AppImage/type2-runtime/releases/tag/20251108
   # Keep both pins together: appimagetool otherwise downloads the mutable latest type2 runtime.

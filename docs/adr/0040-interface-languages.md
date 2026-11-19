@@ -7,13 +7,13 @@
 ## Context
 
 M8 lists localisation. Artists coming from Animate use it in their own language, and the
-Craft family already has a shared translation repository, **getnodalia/foundation (vendor/craft-i18n)**
+Craft family already has a shared translation repository, **getnodalia/foundation (vendor/nodalia-i18n)**
 (MIT OR Apache-2.0): TSV catalogs keyed by the English text (`context<TAB>English<TAB>translation`,
 `@plural`, `@id`, `@msg` rows), a `common.tsv` per locale with the strings the apps share
 (about 1 200 rows in 50 locales today) and a `<app>.tsv` per app, consumed as an optional build
-input (`CRAFT_I18N_DIR`), like craft-fonts. It has **no Ánima catalog yet**.
+input (`NODALIA_I18N_DIR`), like nodalia-fonts. It has **no Ánima catalog yet**.
 
-The lookup code the other apps use lives in craft-libs, which is a git dependency; Ánima
+The lookup code the other apps use lives in nodalia-libs, which is a git dependency; Ánima
 takes dependencies from crates.io only (`deny.toml`). Outside PR #38 built localisation on that
 crate and on storytold's egui and winit forks (for Arabic), so it could not be taken as it is,
 but its design was sound and several of its ideas are used here.
@@ -38,28 +38,28 @@ Georgian need no shaping, only a font the app doesn't bundle.
    stay English. Menus are generated from the registry and translate each label when drawn
    (`@id <command id>` rows first, then the label's own row), so ids stay stable.
 
-2. **Catalogs are craft-i18n's, read by our own parser.** We read the craft-i18n format as
+2. **Catalogs are nodalia-i18n's, read by our own parser.** We read the nodalia-i18n format as
    specified in its `docs/catalog-format.md` (rows, escapes, placeholders, `@plural` form
    counts, `@id`, `language.name`) in under 300 lines with its tests (`catalog.rs`) instead of depending on
-   craft-libs. build.rs follows craft-i18n's `docs/integration.md`: `CRAFT_I18N_DIR=<checkout>`
+   nodalia-libs. build.rs follows nodalia-i18n's `docs/integration.md`: `NODALIA_I18N_DIR=<checkout>`
    embeds `locales/<locale>/common.tsv` and `anima.tsv` with `include_str!` for every locale
    that has Ánima's own catalog (plus a regional locale's base language, for fallback);
-   unset, the interface is English; `CRAFT_I18N_REQUIRED=1` makes a missing checkout an error
+   unset, the interface is English; `NODALIA_I18N_REQUIRED=1` makes a missing checkout an error
    for releases. Fallback order for `pt-br`: pt-br app → pt-br shared → pt app → pt shared →
-   English. No catalog files are committed here, and craft-i18n is never a Cargo dependency.
-   One format means our strings go to craft-i18n without conversion, and every translation the
+   English. No catalog files are committed here, and nodalia-i18n is never a Cargo dependency.
+   One format means our strings go to nodalia-i18n without conversion, and every translation the
    family already has (its shared catalog) applies to Ánima as soon as a locale has its
    `anima.tsv`.
 
 3. **Which languages are offered.** A locale is offered when it has its own Ánima catalog
    (a locale with only shared strings is a fallback, so the app never offers a language it is
-   barely translated into, as craft-i18n's integration rule says) **and** is in `i18n::READY`:
+   barely translated into, as nodalia-i18n's integration rule says) **and** is in `i18n::READY`:
    left-to-right languages in Latin, Greek or Cyrillic script, which the bundled faces cover and
    egui draws correctly. Right-to-left (Arabic, Hebrew, Persian, Urdu, Kurdish, Dhivehi),
    shaped scripts (Indic, Thai, Lao) and CJK/Georgian (font) catalogs are embedded but not
    offered until the shell can draw them (consequences).
 
-4. **A pseudo-locale ships instead of a real language** while craft-i18n has no Ánima
+4. **A pseudo-locale ships instead of a real language** while nodalia-i18n has no Ánima
    catalog. `--lang pseudo` (and Preferences in debug builds) draws every string accented,
    about a third longer and bracketed (`Save` → `[Šàvé ~~]`), with placeholders kept: untranslated
    text stands out, truncation loses the `]`, and layouts are tested for German-length text.
@@ -85,13 +85,13 @@ Georgian need no shaping, only a font the app doesn't bundle.
    comparisons, match patterns) or it is marked `// i18n-exempt: why`. The accessibility audit
    runs the whole window in the pseudo-locale and fails on a screen-reader name that wasn't
    translated, which also catches strings passed through variables. `scripts/i18n-extract.sh`
-   writes the template for translators and, with a craft-i18n checkout, the coverage of every
+   writes the template for translators and, with a nodalia-i18n checkout, the coverage of every
    locale and stale rows.
 
 ## Consequences
 
 * Every interface string in the shell is translatable today, and a translation needs only a
-  craft-i18n PR: `locales/<locale>/anima.tsv`, then a build with that checkout.
+  nodalia-i18n PR: `locales/<locale>/anima.tsv`, then a build with that checkout.
 * Text from below the shell stays English in this slice: engine error messages, import
   reports, the body of confirmations (their titles and buttons are translated on an exact
   match), default document names (`Layer 2`, `Symbol 1`) and plug-in names. `@msg` templates
@@ -99,7 +99,7 @@ Georgian need no shaping, only a font the app doesn't bundle.
 * **Right to left needs upstream work**: text needs bidi and shaping in egui's text layout, and
   the widgets a mirrored mode. We don't fork egui (PR #38 used storytold's fork); we follow
   upstream and offer RTL languages when egui on crates.io can draw them. CJK and Georgian need
-  only a font from craft-fonts and a `READY` entry.
+  only a font from nodalia-fonts and a `READY` entry.
 * Per frame, a busy window looks up a few hundred strings: about 13 ns each from a catalog and
   16 ns in the pseudo-locale (made once, then cached), and English returns the key without a
   lookup (measured on the development machine, Windows 10, in
@@ -112,6 +112,6 @@ Georgian need no shaping, only a font the app doesn't bundle.
 From PR #38 (SoldierPePe): English source text as the key with a safe fallback; command labels
 by `@id` then by label; `trn`/`fmt`-style plural and one-pass placeholder helpers; a per-thread
 language for tests; `--lang` for one run and a pseudo mode that shows strings that skip
-translation; build.rs following craft-i18n's integration rules. Not taken: the git
+translation; build.rs following nodalia-i18n's integration rules. Not taken: the git
 dependencies, the egui/winit forks and their API moves, the MSRV raise, the Arabic font and
 the right-to-left mirroring helpers (they need the forked text layout).

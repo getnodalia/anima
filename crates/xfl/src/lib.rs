@@ -13,9 +13,9 @@ pub mod text;
 pub mod video;
 /// The shared XML reader (`anima-xml`), under its old path.
 pub use anima_xml as xml;
-/// XFL/FLA ZIP package reader, shared with other consumers through `craft-xfl`.
+/// XFL/FLA ZIP package reader, shared with other consumers through `nodalia-xfl`.
 pub mod zip {
-    pub use craft_xfl::{Archive, MAX_DEPTH, MAX_ENTRIES, MAX_ENTRY, MAX_RATIO, MAX_TOTAL, XflPackageRoot, ZipError, crc32};
+    pub use nodalia_xfl::{Archive, MAX_DEPTH, MAX_ENTRIES, MAX_ENTRY, MAX_RATIO, MAX_TOTAL, XflPackageRoot, ZipError, crc32};
 
     #[cfg(test)]
     pub(crate) use crate::pack;

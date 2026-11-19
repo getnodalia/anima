@@ -338,8 +338,8 @@ fn shape_tweens_come_across_as_shape_tweens() {
 }
 
 fn png_2x1() -> Vec<u8> {
-    let img = craft_image_codecs::Image::from_u8(2, 1, craft_image_codecs::ChannelLayout::Rgba, vec![255, 0, 0, 255, 0, 0, 255, 255]).unwrap();
-    craft_image_codecs::encode(&img, craft_image_codecs::Format::Png, &craft_image_codecs::EncodeOptions::default()).unwrap()
+    let img = nodalia_image_codecs::Image::from_u8(2, 1, nodalia_image_codecs::ChannelLayout::Rgba, vec![255, 0, 0, 255, 0, 0, 255, 255]).unwrap();
+    nodalia_image_codecs::encode(&img, nodalia_image_codecs::Format::Png, &nodalia_image_codecs::EncodeOptions::default()).unwrap()
 }
 
 const BITMAP_DOC: &str = r##"<DOMDocument width="200" height="100">

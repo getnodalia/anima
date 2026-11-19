@@ -87,7 +87,7 @@ Store) reject metadata errors at submission time, which is late.
 
 * Making `mimeapps.list` name Ánima the default for `.anima` (it is the only handler, so
   desktops pick it anyway); `.fla`/`.xfl` stay "Open with" as in ADR 0026.
-* Self-update inside a portable copy (craft-update keeps its own state folder) and moving
+* Self-update inside a portable copy (nodalia-update keeps its own state folder) and moving
   existing settings into a new portable copy.
 * Submitting to Flathub, winget or the Microsoft Store, and committing winget/MSIX manifests.
 * Running `flatpak-builder-lint` (needs the Flathub tooling on the runner).

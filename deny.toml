@@ -35,9 +35,9 @@ allow = ["OFL-1.1", "Ubuntu-font-1.0"]
 crate = "webpki-root-certs@=1.0.12"
 allow = ["CDLA-Permissive-2.0"]
 
-# Approved by the project lead (2026-11-17) for the shared Craft libraries: `craft-audio` decodes
+# Approved by the project lead (2026-11-17) for the shared Craft libraries: `nodalia-audio` decodes
 # through symphonia (MPL-2.0, file-level copyleft, used unmodified; its source is linked from
-# ATTRIBUTION.md) and `craft-image-codecs` encodes JPEG with jpeg-encoder (IJG, acknowledged in
+# ATTRIBUTION.md) and `nodalia-image-codecs` encodes JPEG with jpeg-encoder (IJG, acknowledged in
 # NOTICE). Scoped to these crates; the allowlist above is unchanged. Raised with the shared
 # libraries team: storytold/craft-libs#2100.
 [[licenses.exceptions]]

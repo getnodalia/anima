@@ -250,7 +250,7 @@ const HEADER: &str = "\
 # consulted or copied; add entries the same way.
 ";
 
-/// A craft-i18n locale's merged catalog, read from a checkout on disk: the base language's
+/// A nodalia-i18n locale's merged catalog, read from a checkout on disk: the base language's
 /// files, then the locale's, shared before Ánima's.
 fn disk_catalog(locales: &Path, code: &str) -> (Catalog, Vec<catalog::Row>) {
     let read = |c: &str, f: &str| std::fs::read_to_string(locales.join(c).join(f)).map(|t| catalog::parse(&t).0).unwrap_or_default();
@@ -276,13 +276,13 @@ fn translated(cat: &Catalog, k: &Key) -> bool {
 #[test]
 #[ignore = "a tool, run by scripts/i18n-extract.sh"]
 fn extract() {
-    // Writes every interface string as a craft-i18n catalog template (each row commented out,
-    // as craft-i18n's starter files are) to $ANIMA_I18N_OUT, or prints it. With
-    // $CRAFT_I18N_DIR, prints how much of Ánima each craft-i18n locale already translates
+    // Writes every interface string as a nodalia-i18n catalog template (each row commented out,
+    // as nodalia-i18n's starter files are) to $ANIMA_I18N_OUT, or prints it. With
+    // $NODALIA_I18N_DIR, prints how much of Ánima each nodalia-i18n locale already translates
     // (its shared catalog counts) and the stale rows of Ánima's own catalogs; with
     // $ANIMA_I18N_LOCALE too, the template lists only what that locale is missing.
     let keys = all_keys();
-    let checkout = std::env::var_os("CRAFT_I18N_DIR").map(|d| PathBuf::from(d).join("locales"));
+    let checkout = std::env::var_os("NODALIA_I18N_DIR").map(|d| PathBuf::from(d).join("locales"));
     let only = std::env::var("ANIMA_I18N_LOCALE").ok().map(|l| l.to_ascii_lowercase());
     let mut missing_in: Option<Catalog> = None;
     if let Some(locales) = &checkout {
@@ -371,10 +371,10 @@ fn georgian_is_offered_only_when_its_face_is_embedded() {
     assert!(offered(true));
     // The real build agrees with its own face.
     assert_eq!(ready_codes().contains(&"ka"), crate::theme::georgian_font().is_some());
-    // CRAFT_FONTS_REQUIRED=1 (release builds, CI with craft-fonts) makes a missing face a failure.
+    // NODALIA_FONTS_REQUIRED=1 (release builds, CI with nodalia-fonts) makes a missing face a failure.
     let face = crate::theme::georgian_font();
-    if std::env::var("CRAFT_FONTS_REQUIRED").is_ok_and(|v| v == "1") {
-        assert!(face.is_some(), "CRAFT_FONTS_REQUIRED=1 but this build embeds no valid NotoSansGeorgian.ttf (craft-fonts `Geor`)");
+    if std::env::var("NODALIA_FONTS_REQUIRED").is_ok_and(|v| v == "1") {
+        assert!(face.is_some(), "NODALIA_FONTS_REQUIRED=1 but this build embeds no valid NotoSansGeorgian.ttf (nodalia-fonts `Geor`)");
     }
     let Some(face) = face else {
         println!("georgian face test: skipped, this build embeds no Georgian face");
@@ -479,7 +479,7 @@ fn system_locales_and_preferences_resolve() {
 
 #[test]
 fn the_interface_language_changes_lookups_on_this_thread() {
-    // Built without catalogs (tests don't set CRAFT_I18N_DIR): English and the pseudo-locale.
+    // Built without catalogs (tests don't set NODALIA_I18N_DIR): English and the pseudo-locale.
     assert_eq!(set_language("xx"), "en");
     assert_eq!(tr!("Save"), "Save");
     assert_eq!(tr!("Saved {path}", path = "a.anima"), "Saved a.anima");

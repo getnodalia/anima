@@ -51,7 +51,7 @@ warn() {
 }
 
 # Copy the licence, notice and readme files into a package directory, plus the licences of the
-# craft-fonts fonts the build embedded.
+# nodalia-fonts fonts the build embedded.
 copy_docs() {
   local dest="$1" f
   for f in README.md LICENSE-MIT LICENSE-APACHE NOTICE ATTRIBUTION.md; do
@@ -61,12 +61,12 @@ copy_docs() {
   return 0
 }
 
-# Builds made with craft-fonts (CRAFT_FONTS_DIR, every official release) embed its OFL-1.1 fonts:
-# ship each font's licence as OFL-<family-dir>.txt. Does nothing without CRAFT_FONTS_DIR.
+# Builds made with nodalia-fonts (NODALIA_FONTS_DIR, every official release) embed its OFL-1.1 fonts:
+# ship each font's licence as OFL-<family-dir>.txt. Does nothing without NODALIA_FONTS_DIR.
 copy_font_licences() {
   local dest="$1" lic family
-  if [[ -z "${CRAFT_FONTS_DIR:-}" ]]; then return 0; fi
-  for lic in "$CRAFT_FONTS_DIR"/fonts/*/OFL.txt; do
+  if [[ -z "${NODALIA_FONTS_DIR:-}" ]]; then return 0; fi
+  for lic in "$NODALIA_FONTS_DIR"/fonts/*/OFL.txt; do
     [[ -f "$lic" ]] || continue
     family="$(basename "$(dirname "$lic")")"
     cp "$lic" "$dest/OFL-$family.txt"

@@ -44,11 +44,11 @@ tooltips' prose, error messages and anything a person reads as a sentence. Mixed
 their label proportional and their value monospace.
 
 Typefaces (ADR 0005): **Inter** (prose) and **JetBrains Mono** (data), both SIL OFL 1.1,
-embedded from the shared craft-fonts input (`CRAFT_FONTS_DIR`, or discovered next to the repo)
+embedded from the shared nodalia-fonts input (`NODALIA_FONTS_DIR`, or discovered next to the repo)
 as in PhotoCraft. Users can pick any **installed system font** for the interface and any
 installed **monospaced** font for data in Preferences › Appearance. Roles stay the same; only
 the family changes. Interface scale 75–200% is a preference too. The fallback
-is egui's bundled Ubuntu + Hack, so builds without craft-fonts still work. Fonts must be
+is egui's bundled Ubuntu + Hack, so builds without nodalia-fonts still work. Fonts must be
 permissive in use and small enough to bundle (≤ 2.5 MB embedded in total). Platform system fonts
 are not used for UI text, because they would change metrics per OS.
 

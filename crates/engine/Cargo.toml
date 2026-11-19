@@ -15,16 +15,16 @@ anima-xfl.workspace = true
 anima-svg.workspace = true
 anima-text.workspace = true
 anima-plugins.workspace = true
-craft-anicraft-format.workspace = true
+nodalia-anima-format.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 rayon.workspace = true
 web-time.workspace = true
-craft-gif.workspace = true
-craft-image-codecs.workspace = true
-craft-apng-container.workspace = true
-craft-webp.workspace = true
+nodalia-gif.workspace = true
+nodalia-image-codecs.workspace = true
+nodalia-apng-container.workspace = true
+nodalia-webp.workspace = true
 regex.workspace = true
 
 [dev-dependencies]

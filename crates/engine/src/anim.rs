@@ -225,7 +225,7 @@ fn idat(png: &[u8]) -> Result<Vec<u8>> {
     Ok(out)
 }
 
-/// A RIFF file's first chunk named `id`, payload only; craft-webp owns container framing.
+/// A RIFF file's first chunk named `id`, payload only; nodalia-webp owns container framing.
 fn riff_chunk<'a>(riff: &'a [u8], id: &[u8; 4]) -> Option<&'a [u8]> {
     let mut at = 12usize;
     while let Some(head) = riff.get(at..at + 8) {
@@ -242,16 +242,16 @@ fn riff_chunk<'a>(riff: &'a [u8], id: &[u8; 4]) -> Option<&'a [u8]> {
 /// Compresses `px` (`w` × `h` RGBA8) as one frame's data.
 fn compress(kind: Kind, px: &[u8], w: u32, h: u32) -> Result<Vec<u8>> {
     let fail = |e: String| EngineError::Format(format!("{} frame: {e}", kind.name()));
-    let img = craft_image_codecs::Image::from_u8(w, h, craft_image_codecs::ChannelLayout::Rgba, px.to_vec()).map_err(|e| fail(e.to_string()))?;
+    let img = nodalia_image_codecs::Image::from_u8(w, h, nodalia_image_codecs::ChannelLayout::Rgba, px.to_vec()).map_err(|e| fail(e.to_string()))?;
     match kind {
         Kind::Apng => {
-            let opts = craft_image_codecs::EncodeOptions { png_compression: craft_image_codecs::PngCompression::Best, ..Default::default() };
-            let buf = craft_image_codecs::encode(&img, craft_image_codecs::Format::Png, &opts).map_err(|e| fail(e.to_string()))?;
+            let opts = nodalia_image_codecs::EncodeOptions { png_compression: nodalia_image_codecs::PngCompression::Best, ..Default::default() };
+            let buf = nodalia_image_codecs::encode(&img, nodalia_image_codecs::Format::Png, &opts).map_err(|e| fail(e.to_string()))?;
             idat(&buf)
         }
         Kind::Webp => {
-            let opts = craft_image_codecs::EncodeOptions { webp_lossless: true, ..Default::default() };
-            let buf = craft_image_codecs::encode(&img, craft_image_codecs::Format::WebP, &opts).map_err(|e| fail(e.to_string()))?;
+            let opts = nodalia_image_codecs::EncodeOptions { webp_lossless: true, ..Default::default() };
+            let buf = nodalia_image_codecs::encode(&img, nodalia_image_codecs::Format::WebP, &opts).map_err(|e| fail(e.to_string()))?;
             riff_chunk(&buf, b"VP8L").map(<[u8]>::to_vec).ok_or_else(|| fail("the WebP encoder wrote no lossless image".into()))
         }
     }
@@ -273,7 +273,7 @@ fn still(kind: Kind) -> Result<Encoded> {
 /// The shared container owns PNG chunks, CRCs and APNG sequence validation.
 /// Frame selection, compression and exact rational timing remain Ánima policy.
 fn apng_file(w: u32, h: u32, plays: u32, frames: &[(&Encoded, (u16, u16))]) -> Result<Vec<u8>> {
-    use craft_apng_container::apng::Frame;
+    use nodalia_apng_container::apng::Frame;
     // Bound the output by the already-compressed payloads plus exact framing.
     // Pixel/frame budgets are enforced before rendering, unchanged by this adapter.
     let budget = frames
@@ -294,13 +294,13 @@ fn apng_file(w: u32, h: u32, plays: u32, frames: &[(&Encoded, (u16, u16))]) -> R
             data: &f.data,
         })
         .collect();
-    craft_apng_container::apng::encode(w, h, plays, &frames, budget).map_err(|e| EngineError::Format(e.to_string()))
+    nodalia_apng_container::apng::encode(w, h, plays, &frames, budget).map_err(|e| EngineError::Format(e.to_string()))
 }
 
 /// The animated WebP container is shared; frame selection, delta rectangles and timing
 /// remain application policy. `Encoded::data` is a raw VP8L payload, not a RIFF chunk.
 fn webp_file(w: u32, h: u32, plays: u32, alpha: bool, background: [u8; 4], frames: &[(&Encoded, u32)]) -> Result<Vec<u8>> {
-    use craft_webp::anim::{AnimFrame, AnimOptions, Payload};
+    use nodalia_webp::anim::{AnimFrame, AnimOptions, Payload};
     let frames: Vec<_> = frames
         .iter()
         .map(|(f, ms)| AnimFrame {
@@ -316,7 +316,7 @@ fn webp_file(w: u32, h: u32, plays: u32, alpha: bool, background: [u8; 4], frame
         .collect();
     let [r, g, b, a] = background;
     let opts = AnimOptions { loop_count: u16::try_from(plays).unwrap_or(u16::MAX), background_bgra: [b, g, r, a], alpha, ..Default::default() };
-    craft_webp::anim::animation(w, h, &frames, &opts).map_err(|e| EngineError::Format(e.to_string()))
+    nodalia_webp::anim::animation(w, h, &frames, &opts).map_err(|e| EngineError::Format(e.to_string()))
 }
 
 // ----- the command -------------------------------------------------------------------------

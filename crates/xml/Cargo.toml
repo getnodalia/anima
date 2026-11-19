@@ -8,8 +8,8 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
-craft-xfl.workspace = true
-craft-xml.workspace = true
+nodalia-xfl.workspace = true
+nodalia-xml.workspace = true
 thiserror.workspace = true
 
 [lints]

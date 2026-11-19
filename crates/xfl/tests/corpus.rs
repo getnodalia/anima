@@ -418,7 +418,7 @@ fn sounds_come_across_with_their_sync_repeats_and_effects() {
             (18, Some((beep, SoundSync::Stop, 1, SoundEffect::None))),
             // In and out points are reported; the sound plays whole.
             (20, Some((beep, SoundSync::Event, 1, SoundEffect::None))),
-            // IMA ADPCM WAV is now decoded by craft-audio.
+            // IMA ADPCM WAV is now decoded by nodalia-audio.
             (22, Some((voice, SoundSync::Event, 1, SoundEffect::None))),
         ]
     );

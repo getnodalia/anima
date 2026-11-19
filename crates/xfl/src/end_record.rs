@@ -3,7 +3,7 @@
 //! Flash CS5 to Animate write the end-of-central-directory record with a directory size larger
 //! than the directory is whenever `mimetype` isn't the archive's first entry: larger by exactly
 //! that entry's record (46 bytes and its 8-byte name). Animate and `unzip` read such files; the
-//! shared reader (`craft-xfl`) holds the record to its word and refuses them as damaged ("the
+//! shared reader (`nodalia-xfl`) holds the record to its word and refuses them as damaged ("the
 //! central directory is outside the archive"), which was most real `.fla` files.
 //!
 //! [`with_measured_directory`] corrects the size in a copy when, and only when, the directory
@@ -13,7 +13,7 @@
 //! published format (PKWARE APPNOTE 6.3, sections 4.3.12 and 4.3.16).
 //!
 //! This belongs in the shared reader (storytold/craft-libs#1986 proposes it there); it goes
-//! from here when the pinned `craft-xfl` has it.
+//! from here when the pinned `nodalia-xfl` has it.
 
 /// "PK\x05\x06": the end-of-central-directory record.
 const END: u32 = 0x0605_4b50;

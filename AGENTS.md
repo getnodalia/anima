@@ -53,7 +53,7 @@ a new crate needs a row here and in its `LAYERS` table.
   roles. Data (numbers, timecode, rulers, values, shortcuts, paths) is monospace; prose
   (labels, menus, buttons, names, dialog text) is proportional. No raw font sizes or colours
   outside `theme.rs` (enforced by `guidelines_tests`). Typefaces: Inter + JetBrains Mono via
-  `CRAFT_FONTS_DIR`, with egui defaults as fallback.
+  `NODALIA_FONTS_DIR`, with egui defaults as fallback.
 * **Interface text is translatable** (ADR 0040, `docs/localisation.md`): write English through
   `tr!` / `trn!` / `tr_noop!`, one template per sentence, and translate keys only where they are
   drawn. Command ids, the CLI, MCP and the file format stay English. Check with `--lang pseudo`.
@@ -95,7 +95,7 @@ a new crate needs a row here and in its `LAYERS` table.
   or source-available terms.
 * **Assets**: every font, icon, image, sound or sample file gets a row in `ATTRIBUTION.md`
   in the same change, with its licence text under `licenses/`. Never commit font files
-  (use the shared craft-fonts input). Never commit Adobe or other proprietary material.
+  (use the shared nodalia-fonts input). Never commit Adobe or other proprietary material.
 * **Patents**: implement only from public papers, open specifications and permissively
   licensed references; credit them in `ATTRIBUTION.md`. Never bundle encoders for
   patent-pool codecs (H.264/HEVC/AAC); use royalty-free formats or a user-installed ffmpeg.

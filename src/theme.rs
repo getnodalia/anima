@@ -514,7 +514,7 @@ pub fn apply_palette(ctx: &egui::Context, palette: Palette) {
     });
 }
 
-mod craft_fonts {
+mod nodalia_fonts {
     include!(concat!(env!("OUT_DIR"), "/fonts.rs"));
 }
 
@@ -538,16 +538,16 @@ pub fn stage_text_colour(c: anima_engine::doc::Rgba) -> Color32 {
 
 /// The typefaces embedded at build time (Inter, JetBrains Mono), for text on the stage.
 pub fn embedded_fonts() -> Vec<std::sync::Arc<[u8]>> {
-    [craft_fonts::UI_FONT, craft_fonts::MONO_FONT].into_iter().flatten().map(std::sync::Arc::from).collect()
+    [nodalia_fonts::UI_FONT, nodalia_fonts::MONO_FONT].into_iter().flatten().map(std::sync::Arc::from).collect()
 }
 
-/// Noto Sans Georgian (craft-fonts `Geor`) when this build embedded a face that parses and covers
+/// Noto Sans Georgian (nodalia-fonts `Geor`) when this build embedded a face that parses and covers
 /// the Georgian letters. The
 /// interface offers Georgian only then (`i18n::ready_codes`), and `install_fonts` loads the same
 /// face: epaint panics on bytes it cannot parse, so a damaged file must never reach it.
 pub fn georgian_font() -> Option<&'static [u8]> {
     static FACE: std::sync::OnceLock<Option<&'static [u8]>> = std::sync::OnceLock::new();
-    *FACE.get_or_init(|| craft_fonts::GEORGIAN_FONT.filter(|b| parses_as_font(b)))
+    *FACE.get_or_init(|| nodalia_fonts::GEORGIAN_FONT.filter(|b| parses_as_font(b)))
 }
 
 /// Whether `bytes` is a font file that draws every Georgian letter (U+10D0..U+10FA).
@@ -568,11 +568,11 @@ mod georgian_face_tests {
 
 /// Which typefaces are active (for About and diagnostics), in the interface language.
 pub fn font_summary() -> String {
-    match (craft_fonts::UI_FONT, craft_fonts::MONO_FONT) {
-        (Some(_), Some(_)) => tr!("Inter + JetBrains Mono (craft-fonts, {size} KB)", size = craft_fonts::CRAFT_FONT_BYTES / 1024),
+    match (nodalia_fonts::UI_FONT, nodalia_fonts::MONO_FONT) {
+        (Some(_), Some(_)) => tr!("Inter + JetBrains Mono (nodalia-fonts, {size} KB)", size = nodalia_fonts::NODALIA_FONT_BYTES / 1024),
         (Some(_), None) => tr!("Inter + Hack (fallback)").into(),
         (None, Some(_)) => tr!("Ubuntu (fallback) + JetBrains Mono").into(),
-        (None, None) => tr!("Ubuntu + Hack (built-in defaults; build with CRAFT_FONTS_DIR for Inter + JetBrains Mono)").into(),
+        (None, None) => tr!("Ubuntu + Hack (built-in defaults; build with NODALIA_FONTS_DIR for Inter + JetBrains Mono)").into(),
     }
 }
 
@@ -580,25 +580,26 @@ pub fn font_summary() -> String {
 pub type UserFont = (String, Vec<u8>, u32);
 
 /// Installs the UI typefaces (ADR 0005). Order in each family: the user's system font (from
-/// Preferences), then the craft-fonts pair (when embedded at build time), then egui's bundled
+/// Preferences), then the nodalia-fonts pair (when embedded at build time), then egui's bundled
 /// fonts, which stay as fallbacks for glyph coverage, then Noto Sans Georgian (when embedded)
 /// for the letters none of them has.
 pub fn install_fonts(ctx: &egui::Context, ui_font: Option<&UserFont>, data_font: Option<&UserFont>) {
     use egui::{FontData, FontDefinitions, FontFamily};
     use std::sync::Arc;
     let mut defs = FontDefinitions::default();
-    for (bytes, name, family) in
-        [(craft_fonts::UI_FONT, "craft-inter", FontFamily::Proportional), (craft_fonts::MONO_FONT, "craft-jetbrains-mono", FontFamily::Monospace)]
-    {
+    for (bytes, name, family) in [
+        (nodalia_fonts::UI_FONT, "nodalia-inter", FontFamily::Proportional),
+        (nodalia_fonts::MONO_FONT, "nodalia-jetbrains-mono", FontFamily::Monospace),
+    ] {
         if let Some(b) = bytes {
             defs.font_data.insert(name.to_owned(), Arc::new(FontData::from_static(b)));
             defs.families.entry(family).or_default().insert(0, name.to_owned());
         }
     }
     if let Some(b) = georgian_font() {
-        defs.font_data.insert("craft-noto-sans-georgian".to_owned(), Arc::new(FontData::from_static(b)));
+        defs.font_data.insert("nodalia-noto-sans-georgian".to_owned(), Arc::new(FontData::from_static(b)));
         for family in [FontFamily::Proportional, FontFamily::Monospace] {
-            defs.families.entry(family).or_default().push("craft-noto-sans-georgian".to_owned());
+            defs.families.entry(family).or_default().push("nodalia-noto-sans-georgian".to_owned());
         }
     }
     for (user, family) in [(ui_font, FontFamily::Proportional), (data_font, FontFamily::Monospace)] {
@@ -616,7 +617,7 @@ pub fn install_fonts(ctx: &egui::Context, ui_font: Option<&UserFont>, data_font:
 /// Names of the bundled typefaces actually embedded in this build.
 pub fn bundled_names() -> (&'static str, &'static str) {
     // i18n-exempt: font family names
-    (if craft_fonts::UI_FONT.is_some() { "Inter" } else { "Ubuntu" }, if craft_fonts::MONO_FONT.is_some() { "JetBrains Mono" } else { "Hack" })
+    (if nodalia_fonts::UI_FONT.is_some() { "Inter" } else { "Ubuntu" }, if nodalia_fonts::MONO_FONT.is_some() { "JetBrains Mono" } else { "Hack" })
 }
 
 /// Typographic roles (docs/ui-guidelines.md › Typography). **Prose is proportional; data is
