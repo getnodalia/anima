@@ -85,7 +85,16 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, rect: Rect) {
     }
     let cy = rect.center().y;
     // macOS: the traffic lights sit over the bar's start.
-    let mut x = rect.min.x + crate::platform::menu_inset().max(crate::theme::ISLAND_GAP + 2.0);
+    // Nodalia's window controls at the left (the desktop's choice on Linux) take the bar's first
+    // stretch and the right end is free.
+    let side = crate::titlebar::side(app);
+    let controls_left = side == Some(nodalia_theme::titlebar::Side::Left);
+    let mut x = rect.min.x
+        + if controls_left {
+            crate::titlebar::WIDTH + nodalia_theme::titlebar::CONTENT_GAP
+        } else {
+            crate::platform::menu_inset().max(crate::theme::ISLAND_GAP + 2.0)
+        };
     let square = |x: f32| Rect::from_min_size(pos2(x, cy - BUTTON / 2.0), vec2(BUTTON, BUTTON));
     main_menu(app, ui, square(x));
     x += BUTTON + 4.0;
@@ -113,9 +122,10 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, rect: Rect) {
         left_end = crate::menus::bar(app, &mut mu);
     }
     // Right group, from the right: window controls, then the workspace selector.
-    let mut rx = rect.max.x - if app.custom_titlebar { crate::titlebar::WIDTH + 4.0 } else { crate::theme::ISLAND_GAP + 2.0 };
-    if app.custom_titlebar {
-        crate::titlebar::window_controls(ui, rect);
+    let mut rx =
+        rect.max.x - if side == Some(nodalia_theme::titlebar::Side::Right) { crate::titlebar::WIDTH + 4.0 } else { crate::theme::ISLAND_GAP + 2.0 };
+    if let Some(side) = side {
+        crate::titlebar::window_controls(ui, rect, side);
     }
     workspace_selector(app, ui, &mut rx, cy);
     // The document's name, centred while the groups either side leave it room.
