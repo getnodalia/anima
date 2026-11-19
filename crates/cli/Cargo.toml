@@ -26,7 +26,7 @@ serde_json.workspace = true
 # MIT OR Apache-2.0, already in the tree. Not for the web: a page has no sockets, so the control
 # port (and `mcp --bridge`) is left out of wasm32 builds.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-getrandom = "0.3"
+getrandom = "0.4"
 
 [dev-dependencies]
 # Exporter plug-in fixtures written in WebAssembly text (Apache-2.0 WITH LLVM-exception).
