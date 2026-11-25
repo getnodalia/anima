@@ -325,13 +325,20 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
     let mut open = true;
     let title = tr!("Custom Ease");
     let shown = crate::windows::new(ctx, title)
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false)
+        .open(&mut { open })
         .id(egui::Id::unique("ease_editor"))
-        .open(&mut open)
         .collapsible(false)
         .resizable(true)
         .default_width(560.0)
         .min_width(420.0)
-        .show(ctx, |ui| body(app, &mut ed, ui, &ease));
+        .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&*title)) {
+                open = false;
+            }
+            body(app, &mut ed, ui, &ease)
+        });
     a11y::name_title_bar(&shown, title);
     let esc = ctx.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape));
     if open && !esc {

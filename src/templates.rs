@@ -271,11 +271,16 @@ pub fn save_window(app: &mut App, ctx: &egui::Context) {
     }
     let (mut submit, mut cancel) = (false, false);
     crate::windows::new(ctx, tr!("Save as Template"))
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false)
         .id(egui::Id::unique("save_template"))
         .collapsible(false)
         .resizable(false)
         .anchor(Align2::CENTER_CENTER, [0.0, -60.0])
         .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&*tr!("Save as Template"))) {
+                cancel = true;
+            }
             ui.set_min_width(420.0);
             if let Some(Some(tex)) = &d.picture {
                 let s = tex.size_vec2();

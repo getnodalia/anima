@@ -89,13 +89,20 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
     let mut open = true;
     let title = tr!("Edit Envelope — {name}", name = t.sound.name);
     let shown = crate::windows::new(ctx, title.clone())
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false)
+        .open(&mut { open })
         .id(egui::Id::unique("envelope_editor"))
-        .open(&mut open)
         .collapsible(false)
         .resizable(true)
         .default_size([780.0, 2.0 * LANE_H + RULER_H + 150.0])
         .min_size([420.0, 2.0 * LANE_H + RULER_H + 120.0])
-        .show(ctx, |ui| body(app, &mut ed, ui, &t));
+        .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&title)) {
+                open = false;
+            }
+            body(app, &mut ed, ui, &t)
+        });
     crate::a11y::name_title_bar(&shown, &title);
     let esc = ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape));
     if open && !esc {

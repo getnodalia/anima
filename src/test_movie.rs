@@ -416,14 +416,21 @@ fn inside(app: &mut App, ctx: &egui::Context, why: crate::platform::Inside) -> A
     let title = title(tm);
     let note = why.note().map(crate::i18n::t);
     let win = crate::windows::new(ctx, title.clone())
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false)
+        .open(&mut { shown })
         .id(egui::Id::unique("test_movie"))
-        .open(&mut shown)
         .collapsible(false)
         .resizable(true)
         .default_size([default_w, default_h])
         .default_pos(ctx.content_rect().center() - egui::vec2(default_w * 0.5 + 120.0, default_h * 0.5))
         .min_size([320.0, 260.0])
-        .show(ctx, |ui| restart = body(tm, plugins, out, ui, note));
+        .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&title)) {
+                shown = false;
+            }
+            restart = body(tm, plugins, out, ui, note)
+        });
     crate::a11y::name_title_bar(&win, &title);
     // Esc closes it from anywhere in the editor, as it always has; Ctrl+W (⌘W) while the movie
     // has the keyboard.

@@ -177,13 +177,18 @@ fn save_window(app: &mut App, ctx: &egui::Context) {
     let mut cancel = false;
     let title = tr!("Save As Command");
     let shown = crate::windows::new(ctx, title)
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false)
+        .open(&mut { open })
         .id(egui::Id::unique("save_as_command"))
-        .open(&mut open)
         .collapsible(false)
         .resizable(false)
         .pivot(egui::Align2::CENTER_CENTER)
         .default_pos(ctx.content_rect().center())
         .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&*title)) {
+                open = false;
+            }
             ui.set_min_width(380.0);
             ui.horizontal(|ui| {
                 ui.label(text(Type::Label, tr!("Name")));
@@ -317,7 +322,10 @@ fn manage_window(app: &mut App, ctx: &egui::Context) {
     let mut open = true;
     let mut acts: Vec<Act> = Vec::new();
     let title = tr!("Manage Saved Commands");
-    let shown = crate::windows::new(ctx, title).id(egui::Id::unique("manage_saved_commands")).open(&mut open).collapsible(false).resizable(false).default_width(760.0).show(ctx, |ui| {
+    let shown = crate::windows::new(ctx, title).title_bar(false).open(&mut { open }).id(egui::Id::unique("manage_saved_commands")).collapsible(false).resizable(false).default_width(760.0).show(ctx, |ui| {
+        if crate::theme::dialog_header(ui, Some(&*title)) {
+            open = false;
+        }
         ui.set_min_width(720.0);
         let list = app.macros.list.clone();
         if list.is_empty() {

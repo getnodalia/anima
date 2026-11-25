@@ -758,14 +758,18 @@ fn licenses(app: &mut App, ctx: &egui::Context) {
     let mut open = true;
     let title = tr!("Licenses & Notices");
     let shown = crate::windows::new(ctx, title)
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false).open(&mut { open })
         .id(egui::Id::unique("licenses_window"))
-        .open(&mut open)
         .collapsible(false)
         .pivot(egui::Align2::CENTER_CENTER)
         .default_pos(ctx.content_rect().center())
         .default_width(680.0)
         .default_height(560.0)
         .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&*title)) {
+                open = false;
+            }
             ui.label(text(Type::Body, tr!("Ánima is free software: MIT OR Apache-2.0, at your option.")).strong());
             ui.label(
                 text(Type::Body, tr!("It is an independent project, not affiliated with or endorsed by Adobe. Bundled fonts and Rust crates keep their own permissive licences, listed below."))
@@ -970,14 +974,19 @@ fn shortcut_sheet(app: &mut App, ctx: &egui::Context) {
     let changed = app.prefs.shortcuts.len();
     let title = tr!("Keyboard Shortcuts");
     let shown = crate::windows::new(ctx, title)
+        // NDL: its own header (the title and the round close button) instead of egui's title bar.
+        .title_bar(false)
+        .open(&mut { open })
         .id(egui::Id::unique("shortcuts_window"))
-        .open(&mut open)
         .collapsible(false)
         .pivot(egui::Align2::CENTER_CENTER)
         .default_pos(ctx.content_rect().center())
         .default_width(660.0)
         .default_height(600.0)
         .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&*title)) {
+                open = false;
+            }
             ui.horizontal(|ui| {
                 ui.add(
                     egui::TextEdit::singleline(&mut st.filter).hint_text(tr!("Filter by name or key…")).desired_width(ui.available_width() - 120.0),

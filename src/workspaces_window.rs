@@ -28,9 +28,16 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
     }
     let mut open = true;
     let title = tr!("Manage Workspaces");
-    let shown = crate::windows::new(ctx, title).id(egui::Id::unique("manage_workspaces")).open(&mut open).collapsible(false).resizable(false).show(
-        ctx,
-        |ui| {
+    let shown = crate::windows::new(ctx, title)
+        .title_bar(false)
+        .open(&mut { open })
+        .id(egui::Id::unique("manage_workspaces"))
+        .collapsible(false)
+        .resizable(false)
+        .show(ctx, |ui| {
+            if crate::theme::dialog_header(ui, Some(&*title)) {
+                open = false;
+            }
             ui.set_min_width(380.0);
             let current = app.prefs.workspaces.current.clone();
             for key in app.prefs.workspaces.keys() {
@@ -105,8 +112,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
             }
             ui.separator();
             ui.label(text(Type::Caption, tr!("Built-in workspaces can be reset but not deleted. Save Workspace… adds one of your own.")));
-        },
-    );
+        });
     crate::a11y::name_title_bar(&shown, title);
     if !open {
         app.manage_workspaces = Manage::default();
