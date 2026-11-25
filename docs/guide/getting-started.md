@@ -74,8 +74,11 @@ From here you can:
   post is 1080 × 1080 and Vertical story is 1080 × 1920. Under **Custom size**, type a width
   and height, choose a frame rate and press **Create**.
 * **Templates**: start from a ready-made document: Leaderboard banner (728 × 90), Rectangle
-  banner (300 × 250), Social square (1080 × 1080 at 30 fps), Storyboard 16:9 (six labelled
-  panels), Character turnaround and a Lip-sync mouth chart. Templates come with named layers,
+  banner (300 × 250), Social square (1080 × 1080 at 30 fps), Story 9:16 (1080 × 1920, with the
+  strips an app covers marked), Looping animation (800 × 800, two seconds), Video title card
+  (1920 × 1080 with a lower-third band), Storyboard 16:9 (six labelled panels), Character
+  turnaround, a Lip-sync mouth chart, a Walk cycle (eight labelled poses) and a Bouncing ball
+  (five labelled keyframes) to practise on. Templates come with named layers,
   and with guides on a locked guide layer that show while you draw but never export.
   Templates you save yourself appear under **My templates**.
 * **Open…**: open an Ánima document, or an Animate `.fla` or `.xfl` file.

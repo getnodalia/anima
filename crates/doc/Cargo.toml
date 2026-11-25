@@ -8,12 +8,12 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
-craft-palette.workspace = true
-craft-mime.workspace = true
+nodalia-palette.workspace = true
+nodalia-mime.workspace = true
 anima-geom.workspace = true
 serde = { workspace = true, features = ["rc"] }
-# Bitmaps are decoded and encoded via craft-image-codecs.
-craft-image-codecs.workspace = true
+# Bitmaps are decoded and encoded via nodalia-image-codecs.
+nodalia-image-codecs.workspace = true
 anima-audio.workspace = true
 # The timeline action IR keyframes and button instances carry (ADR 0024).
 anima-actions.workspace = true

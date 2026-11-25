@@ -86,7 +86,7 @@ Paint Bucket's walls; the stage's selection overlay.
 * **Write the union ourselves.** The hard part is not the sweep, it is staying consistent
   when edges nearly coincide: one wrong inside/outside call leaves a loop open, and an open
   loop is a streak across the picture. `i_overlay` does this with integer snapping and is
-  what the `geo` crate uses for its boolean operations. craft-libs has no polygon boolean.
+  what the `geo` crate uses for its boolean operations. nodalia-libs has no polygon boolean.
 
 ### 3. A cache is not part of this
 

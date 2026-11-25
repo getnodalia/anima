@@ -6,6 +6,7 @@
 
 use crate::app::App;
 use egui::{CursorIcon, Id, LayerId, Order, PointerButton, Rect, ResizeDirection, Sense, Ui, ViewportCommand, pos2};
+use nodalia_theme::titlebar::{Placement, Side};
 
 /// The room the round controls take at the top bar's right end, with their gap to the edge.
 pub const WIDTH: f32 = nodalia_theme::window_controls::WIDTH + EDGE_GAP;
@@ -50,17 +51,23 @@ fn handed_to_os(ctx: &egui::Context) {
     ctx.input_mut(|i| i.pointer = Default::default());
 }
 
-/// Nodalia's minimize, maximize/restore and close at the right end of `bar`. Close asks the
+/// The end of the bar Nodalia's controls sit at: the side the desktop keeps its own on (the right
+/// unless the desktop's button layout puts them at the left). `None` without them.
+pub fn side(app: &App) -> Option<Side> {
+    app.custom_titlebar.then(nodalia_theme::titlebar::system_side)
+}
+
+/// Nodalia's minimize, maximize/restore and close at the desktop's side of `bar`. Close asks the
 /// window to close, which the unsaved-work guard sees as the system's close would be.
-pub fn window_controls(ui: &mut Ui, bar: Rect) {
+pub fn window_controls(ui: &mut Ui, bar: Rect, side: Side) {
     let ctx = ui.ctx().clone();
-    let rect = Rect::from_min_max(pos2(bar.right() - WIDTH, bar.top()), pos2(bar.right() - EDGE_GAP, bar.bottom()));
+    let rect = Placement::nodalia(side).controls_rect(bar);
     let focused = ctx.input(|i| i.viewport().focused.unwrap_or(true));
     let labels =
         nodalia_theme::window_controls::Labels { minimize: tr!("Minimize"), maximize: tr!("Maximize"), restore: tr!("Restore"), close: tr!("Close") };
     use nodalia_theme::window_controls::Action;
     let palette = crate::theme::ndl_palette();
-    match nodalia_theme::window_controls::show(ui, rect, &palette, crate::theme::ndl_mode(), focused, maximized(&ctx), labels) {
+    match nodalia_theme::window_controls::show_on(ui, rect, side, &palette, crate::theme::ndl_mode(), focused, maximized(&ctx), labels) {
         Some(Action::Minimize) => ctx.send_viewport_cmd(ViewportCommand::Minimized(true)),
         Some(Action::Maximize | Action::Restore) => toggle_maximize(&ctx),
         Some(Action::Close) => ctx.send_viewport_cmd(ViewportCommand::Close),

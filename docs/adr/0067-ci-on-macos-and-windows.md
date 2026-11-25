@@ -26,7 +26,7 @@ queue time isn't. Every job must start with Harden-Runner (#162) and pin actions
    (macOS, Windows)"). `gate.yml` already takes an `os` input, so we don't copy its setup: we
    call it with `["macos-latest", "windows-latest"]` (arm64 macOS, x64 Windows). That gives
    both legs the suite's Harden-Runner configuration (audit, the shared allow list), the
-   SHA-pinned checkout, craft-fonts at the same pin as `ci.yml`, the toolchain from
+   SHA-pinned checkout, nodalia-fonts at the same pin as `ci.yml`, the toolchain from
    `rust-toolchain.toml`, and `rust-cache` keyed per OS and architecture (written by pushes to
    `main`, read by pull requests). The reusable workflow tracks `@main` like every other call
    into craft-common-actions (suite-wide fixes land without a PR here).

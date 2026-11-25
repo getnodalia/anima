@@ -1,14 +1,14 @@
 //! Interface languages (ADR 0040, docs/localisation.md).
 //!
-//! Strings stay English in the code and are the lookup keys, as in craft-i18n's catalogs:
+//! Strings stay English in the code and are the lookup keys, as in nodalia-i18n's catalogs:
 //! `tr!("Save")` is the text in the interface language, `tr!("Saved {path}", path = p)` fills
 //! placeholders after the lookup, `trn!("{n} frame", "{n} frames", n)` picks a plural form by
 //! CLDR rules, `trc!("menu", "Open")` tells two meanings of the same English apart, and
 //! `tr_noop!("Graphite")` marks a string in a table for the extractor, to be translated where it
 //! is drawn with [`t`]. A missing translation is the English itself: nothing here fails.
 //!
-//! Catalogs come from the Craft family's shared craft-i18n repository, embedded at build time
-//! from `CRAFT_I18N_DIR` (build.rs); without it the interface is English, plus the pseudo-locale
+//! Catalogs come from Nodalia's shared nodalia-i18n repository, embedded at build time
+//! from `NODALIA_I18N_DIR` (build.rs); without it the interface is English, plus the pseudo-locale
 //! that tests layout. Command ids, document text, file names, the CLI, `serve` and MCP never see
 //! translated text; menus translate the registry's labels when they are drawn.
 
@@ -26,9 +26,9 @@ use std::sync::{LazyLock, Mutex};
 
 use catalog::Catalog;
 
-// `CRAFT_I18N: &[(&str, &str, &str)]`: (locale, its shared `common.tsv`, Ánima's
-// `anima.tsv`), `""` for a missing file; empty without `CRAFT_I18N_DIR`.
-include!(concat!(env!("OUT_DIR"), "/craft_i18n.rs"));
+// `NODALIA_I18N: &[(&str, &str, &str)]`: (locale, its shared `common.tsv`, Ánima's
+// `anima.tsv`), `""` for a missing file; empty without `NODALIA_I18N_DIR`.
+include!(concat!(env!("OUT_DIR"), "/nodalia_i18n.rs"));
 
 /// The `language` preference that follows the system's language.
 pub const AUTO: &str = "auto";
@@ -41,13 +41,13 @@ pub const PSEUDO: &str = "pseudo";
 /// other locale is embedded but not offered (docs/localisation.md › Scripts and direction).
 /// A regional variant (`es-mx`) is ready when its language is. Georgian is not listed here: its
 /// face is not bundled, so [`ready_codes`] adds it only when the build embedded Noto Sans
-/// Georgian from craft-fonts.
+/// Georgian from nodalia-fonts.
 pub const READY: &[&str] = &[
     "az", "bg", "bs", "ca", "cs", "da", "de", "el", "es", "et", "fi", "fr", "gl", "hr", "hu", "id", "it", "kk", "lt", "lv", "nb", "nl", "pl", "pt",
     "pt-br", "ro", "ru", "sk", "sl", "sq", "sr", "sr-latn", "sv", "tr", "uk",
 ];
 
-/// [`READY`] plus the languages whose script needs a craft-fonts face this build embedded.
+/// [`READY`] plus the languages whose script needs a nodalia-fonts face this build embedded.
 pub fn ready_codes() -> Vec<&'static str> {
     ready_with(crate::theme::georgian_font().is_some())
 }
@@ -184,7 +184,7 @@ impl Languages {
         let Kind::Catalog(c) = &lang.kind else { return english };
         match c.plural(one, other) {
             Some(forms) if forms.len() == plural::forms(&lang.code).len() => forms.get(plural::index(&lang.code, n)).map_or(english, String::as_str),
-            // A row with the wrong number of forms is skipped (English), as craft-i18n's apps do.
+            // A row with the wrong number of forms is skipped (English), as nodalia-i18n's apps do.
             _ => english,
         }
     }
@@ -194,7 +194,7 @@ impl Languages {
 static ENGLISH_LANGUAGE: Language = Language { code: String::new(), name: String::new(), kind: Kind::English };
 
 static LANGUAGES: LazyLock<Languages> = LazyLock::new(|| {
-    let (languages, problems) = Languages::new(CRAFT_I18N, &ready_codes());
+    let (languages, problems) = Languages::new(NODALIA_I18N, &ready_codes());
     for p in problems {
         eprintln!("interface catalog: {p} (shown in English)");
     }
@@ -409,7 +409,7 @@ macro_rules! tr {
     };
 }
 
-/// `trc!("menu", "Open")`: a literal with a context word (craft-i18n's first column).
+/// `trc!("menu", "Open")`: a literal with a context word (nodalia-i18n's first column).
 macro_rules! trc {
     ($c:literal, $s:literal) => {
         $crate::i18n::tc($c, $s)

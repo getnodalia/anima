@@ -1055,9 +1055,9 @@ fn escape_html(s: &str) -> String {
     // Exported page labels discard controls; this policy is distinct from guide text.
     if s.chars().any(char::is_control) {
         let clean: String = s.chars().filter(|c| !c.is_control()).collect();
-        craft_html::escape(&clean)
+        nodalia_html::escape(&clean)
     } else {
-        craft_html::escape(s)
+        nodalia_html::escape(s)
     }
 }
 

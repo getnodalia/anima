@@ -261,7 +261,7 @@ fps/time readouts. Theme tokens live in `theme.rs`.
 
 Interface text is English in the code and translated as it is drawn (`src/i18n/`,
 [ADR 0040](adr/0040-interface-languages.md), [docs/localisation.md](localisation.md)): `tr!`
-looks the English up in the craft-i18n catalogs build.rs embedded, and menus translate the
+looks the English up in the nodalia-i18n catalogs build.rs embedded, and menus translate the
 registry's labels, so nothing below the shell (commands, the CLI, MCP, the file format) sees
 another language.
 

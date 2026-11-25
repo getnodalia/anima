@@ -17,7 +17,7 @@ use std::path::{Path, PathBuf};
 
 /// The built-in templates' names, categories and descriptions, for the catalogs: the engine's
 /// English is the key, translated where it is drawn.
-pub const TEXTS: [&str; 17] = [
+pub const TEXTS: [&str; 29] = [
     tr_noop!("Leaderboard banner"),
     tr_noop!("Rectangle banner"),
     tr_noop!("Social square"),
@@ -35,6 +35,18 @@ pub const TEXTS: [&str; 17] = [
     tr_noop!("Front, three-quarter, side and back views side by side, on head-height guides eight heads tall"),
     tr_noop!("A Mouth graphic symbol with ten labelled mouth shapes to redraw, placed on a face guide"),
     tr_noop!("My Templates"),
+    tr_noop!("Story 9:16"),
+    tr_noop!("Looping animation"),
+    tr_noop!("Video title card"),
+    tr_noop!("Walk cycle"),
+    tr_noop!("Bouncing ball"),
+    tr_noop!("Video"),
+    tr_noop!("Exercise"),
+    tr_noop!("A 1080 × 1920 story at 30 fps, 15 seconds long, with the areas the app covers marked on a guide layer"),
+    tr_noop!("An 800 × 800 loop at 24 fps, 2 seconds long, with its first, middle and last frames marked and a centre cross"),
+    tr_noop!("A 1920 × 1080 title card at 24 fps, 10 seconds long, with title-safe areas and a lower-third band on a guide layer"),
+    tr_noop!("Eight labelled poses over 24 frames at 24 fps, on ground, hip and head lines"),
+    tr_noop!("A ball bouncing in 24 frames at 24 fps: top, contact, squash, rebound and peak keyframes on ground and height lines"),
 ];
 
 /// The folder the user's templates are in. Screenshot and test runs never touch the real one:

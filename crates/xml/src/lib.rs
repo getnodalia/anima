@@ -1,6 +1,6 @@
 //! Compatibility facade for Ánima's historical XML tree API.
 //!
-//! Parsing is owned by the shared `craft-xml` crate. This layer preserves Ánima's public
+//! Parsing is owned by the shared `nodalia-xml` crate. This layer preserves Ánima's public
 //! element shape and mixed-content representation for its XFL and SVG document adapters.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
@@ -21,7 +21,7 @@ pub struct Element {
     pub text: String,
 }
 
-impl craft_xfl::shape::XflElement for Element {
+impl nodalia_xfl::shape::XflElement for Element {
     type Elements<'a> = std::slice::Iter<'a, Element>;
 
     fn local_name(&self) -> &str {
@@ -79,16 +79,16 @@ pub enum XmlError {
 /// The name of the pseudo-elements that hold character data in mixed content.
 pub const TEXT_NODE: &str = "#text";
 
-fn options() -> craft_xml::Options<'static> {
-    // Use craft-xml's documented attribute budgets. Deriving attribute counts from the input
+fn options() -> nodalia_xml::Options<'static> {
+    // Use nodalia-xml's documented attribute budgets. Deriving attribute counts from the input
     // byte limit allowed tens of millions of repeated attributes to accumulate before the
     // facade collapsed them into its HashMap, exhausting memory on a small element.
-    let default_limits = craft_xml::Limits::DEFAULT;
-    craft_xml::Options {
+    let default_limits = nodalia_xml::Limits::DEFAULT;
+    nodalia_xml::Options {
         strict_end_tags: true,
-        unknown_entity: craft_xml::UnknownEntity::Literal,
-        doctype: craft_xml::Doctype::Ignore,
-        limits: craft_xml::Limits {
+        unknown_entity: nodalia_xml::UnknownEntity::Literal,
+        doctype: nodalia_xml::Doctype::Ignore,
+        limits: nodalia_xml::Limits {
             max_input: MAX_INPUT,
             max_depth: MAX_DEPTH + 1,
             max_nodes: MAX_ELEMENTS * 2 + 1,
@@ -96,28 +96,28 @@ fn options() -> craft_xml::Options<'static> {
             max_attrs: default_limits.max_attrs,
             max_attrs_total: default_limits.max_attrs_total,
         },
-        ..craft_xml::Options::default()
+        ..nodalia_xml::Options::default()
     }
 }
 
 /// Keeps Ánima's historical diagnostics when a shared parser entry point returns a
-/// `craft-xml` error directly.
-pub fn from_craft_error(error: craft_xml::Error) -> XmlError {
+/// `nodalia-xml` error directly.
+pub fn from_nodalia_error(error: nodalia_xml::Error) -> XmlError {
     match error {
-        craft_xml::Error::TooLarge(_) => XmlError::TooLarge,
-        craft_xml::Error::TooDeep(_) => XmlError::TooDeep,
-        craft_xml::Error::TooManyNodes(_)
-        | craft_xml::Error::TooManyElements(_)
-        | craft_xml::Error::TooManyAttrs(_)
-        | craft_xml::Error::TooManyAttrsTotal(_) => XmlError::TooMany,
-        craft_xml::Error::NoRoot => XmlError::Syntax(0, "no root element"),
-        craft_xml::Error::Syntax { at, msg } if msg.contains("does not match") => XmlError::Syntax(at, "mismatched end tag"),
-        craft_xml::Error::Syntax { at, msg } if msg.contains("not closed") => XmlError::Syntax(at, "missing end tag"),
-        craft_xml::Error::Syntax { at, msg } if msg.contains("no start tag") => XmlError::Syntax(at, "unexpected end tag"),
-        craft_xml::Error::Syntax { at, .. } => XmlError::Syntax(at, "invalid XML syntax"),
-        craft_xml::Error::Encoding(at) => XmlError::Syntax(at, "invalid UTF-8"),
-        craft_xml::Error::Doctype => XmlError::Syntax(0, "unexpected DOCTYPE"),
-        craft_xml::Error::UnknownEntity { at, .. } => XmlError::Syntax(at, "unknown entity"),
+        nodalia_xml::Error::TooLarge(_) => XmlError::TooLarge,
+        nodalia_xml::Error::TooDeep(_) => XmlError::TooDeep,
+        nodalia_xml::Error::TooManyNodes(_)
+        | nodalia_xml::Error::TooManyElements(_)
+        | nodalia_xml::Error::TooManyAttrs(_)
+        | nodalia_xml::Error::TooManyAttrsTotal(_) => XmlError::TooMany,
+        nodalia_xml::Error::NoRoot => XmlError::Syntax(0, "no root element"),
+        nodalia_xml::Error::Syntax { at, msg } if msg.contains("does not match") => XmlError::Syntax(at, "mismatched end tag"),
+        nodalia_xml::Error::Syntax { at, msg } if msg.contains("not closed") => XmlError::Syntax(at, "missing end tag"),
+        nodalia_xml::Error::Syntax { at, msg } if msg.contains("no start tag") => XmlError::Syntax(at, "unexpected end tag"),
+        nodalia_xml::Error::Syntax { at, .. } => XmlError::Syntax(at, "invalid XML syntax"),
+        nodalia_xml::Error::Encoding(at) => XmlError::Syntax(at, "invalid UTF-8"),
+        nodalia_xml::Error::Doctype => XmlError::Syntax(0, "unexpected DOCTYPE"),
+        nodalia_xml::Error::UnknownEntity { at, .. } => XmlError::Syntax(at, "unknown entity"),
     }
 }
 
@@ -134,8 +134,8 @@ fn charge_item(used: &mut usize) -> Result<(), XmlError> {
     if *used > MAX_ELEMENTS { Err(XmlError::TooMany) } else { Ok(()) }
 }
 
-fn convert(source: &craft_xml::El, mixed: &[&str], used: &mut usize) -> Result<Element, XmlError> {
-    use craft_xml::Node;
+fn convert(source: &nodalia_xml::El, mixed: &[&str], used: &mut usize) -> Result<Element, XmlError> {
+    use nodalia_xml::Node;
 
     charge_item(used)?;
     let is_mixed = mixed.contains(&local(&source.name));
@@ -163,11 +163,11 @@ fn convert(source: &craft_xml::El, mixed: &[&str], used: &mut usize) -> Result<E
     Ok(element)
 }
 
-fn convert_owned(source: craft_xml::El, mixed: &[&str], used: &mut usize) -> Result<Element, XmlError> {
-    use craft_xml::Node;
+fn convert_owned(source: nodalia_xml::El, mixed: &[&str], used: &mut usize) -> Result<Element, XmlError> {
+    use nodalia_xml::Node;
 
     charge_item(used)?;
-    let craft_xml::El { name, attrs, children } = source;
+    let nodalia_xml::El { name, attrs, children } = source;
     let is_mixed = mixed.contains(&local(&name));
     let has_elements = children.iter().any(|node| matches!(node, Node::El(_)));
     let mut element = Element { name, ..Element::default() };
@@ -194,13 +194,13 @@ fn convert_owned(source: craft_xml::El, mixed: &[&str], used: &mut usize) -> Res
 }
 
 /// Converts the shared XML tree into Ánima's compatibility tree without reparsing bytes.
-pub fn from_craft_xml(source: &craft_xml::El) -> Result<Element, XmlError> {
+pub fn from_nodalia_xml(source: &nodalia_xml::El) -> Result<Element, XmlError> {
     let mut used = 0;
     convert(source, &[], &mut used)
 }
 
 /// Converts and consumes the shared XML tree without retaining a second copy during conversion.
-pub fn from_craft_xml_owned(source: craft_xml::El) -> Result<Element, XmlError> {
+pub fn from_nodalia_xml_owned(source: nodalia_xml::El) -> Result<Element, XmlError> {
     let mut used = 0;
     convert_owned(source, &[], &mut used)
 }
@@ -214,21 +214,21 @@ fn normalize_element_names(element: &mut Element) {
 
 /// Converts an owned shared XML tree and drops element-name prefixes for formats whose
 /// vocabulary is defined by local element names, such as XFL. Attribute names are preserved.
-pub fn from_craft_xml_owned_local_names(source: craft_xml::El) -> Result<Element, XmlError> {
-    let mut element = from_craft_xml_owned(source)?;
+pub fn from_nodalia_xml_owned_local_names(source: nodalia_xml::El) -> Result<Element, XmlError> {
+    let mut element = from_nodalia_xml_owned(source)?;
     normalize_element_names(&mut element);
     Ok(element)
 }
 
 /// Parses a document and returns its root element.
 pub fn parse(src: &[u8]) -> Result<Element, XmlError> {
-    let root = options().parse(src).map_err(from_craft_error)?;
-    from_craft_xml(&root)
+    let root = options().parse(src).map_err(from_nodalia_error)?;
+    from_nodalia_xml(&root)
 }
 
 /// Parses a document whose `mixed` elements keep character stretches among their children.
 pub fn parse_mixed(src: &[u8], mixed: &[&str]) -> Result<Element, XmlError> {
-    let root = options().parse(src).map_err(from_craft_error)?;
+    let root = options().parse(src).map_err(from_nodalia_error)?;
     let mut used = 0;
     convert(&root, mixed, &mut used)
 }
@@ -263,10 +263,10 @@ mod tests {
 
     #[test]
     fn xfl_compatibility_conversion_uses_element_local_names_and_preserves_attributes() {
-        let root = craft_xml::Options::default()
+        let root = nodalia_xml::Options::default()
             .parse(b"<x:DOMDocument xmlns:x='urn:xfl' x:version='1'><x:timelines><x:DOMTimeline/></x:timelines></x:DOMDocument>")
             .unwrap();
-        let root = from_craft_xml_owned_local_names(root).unwrap();
+        let root = from_nodalia_xml_owned_local_names(root).unwrap();
         assert_eq!(root.name, "DOMDocument");
         assert_eq!(root.attr("x:version"), Some("1"));
         assert_eq!(root.list("timelines")[0].name, "DOMTimeline");
@@ -284,7 +284,7 @@ mod tests {
     #[test]
     fn repeated_attributes_cannot_bypass_the_shared_reader_budget() {
         let mut input = String::from("<root");
-        for _ in 0..=craft_xml::Limits::DEFAULT.max_attrs {
+        for _ in 0..=nodalia_xml::Limits::DEFAULT.max_attrs {
             input.push_str(" x=''");
         }
         input.push_str("/>");

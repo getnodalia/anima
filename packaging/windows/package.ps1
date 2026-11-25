@@ -95,14 +95,14 @@ Copy-Item (Join-Path $Bin 'anima.exe'), (Join-Path $Bin 'anima-cli.exe') $Stage
 
 # ---- notices -----------------------------------------------------------------------------------
 # Installed next to the app: our licences, the dependencies' notices and the OFL licences of the
-# craft-fonts typefaces the build embedded (every official release builds with CRAFT_FONTS_DIR).
+# nodalia-fonts typefaces the build embedded (every official release builds with NODALIA_FONTS_DIR).
 $Docs = Join-Path $Stage 'notices'
 New-Item -ItemType Directory -Force -Path $Docs | Out-Null
 foreach ($f in 'README.md', 'LICENSE-MIT', 'LICENSE-APACHE', 'NOTICE', 'ATTRIBUTION.md') {
   Copy-Item -LiteralPath (Join-Path $Root $f) -Destination $Docs
 }
-if ($env:CRAFT_FONTS_DIR) {
-  foreach ($ofl in Get-ChildItem -Path (Join-Path $env:CRAFT_FONTS_DIR 'fonts\*\OFL.txt') -File -ErrorAction SilentlyContinue) {
+if ($env:NODALIA_FONTS_DIR) {
+  foreach ($ofl in Get-ChildItem -Path (Join-Path $env:NODALIA_FONTS_DIR 'fonts\*\OFL.txt') -File -ErrorAction SilentlyContinue) {
     Copy-Item -LiteralPath $ofl.FullName -Destination (Join-Path $Docs "OFL-$($ofl.Directory.Name).txt")
   }
 }

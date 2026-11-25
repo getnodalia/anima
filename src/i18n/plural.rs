@@ -2,7 +2,7 @@
 //! `plurals.xml` rules (Unicode-3.0 data; credited in ATTRIBUTION.md). Only what a count of
 //! things needs: integers, no fractions, so the operands `v`, `f` and `t` are always 0.
 //!
-//! A craft-i18n `@plural` row lists a language's forms in CLDR order (`zero`, `one`, `two`,
+//! A nodalia-i18n `@plural` row lists a language's forms in CLDR order (`zero`, `one`, `two`,
 //! `few`, `many`, `other`), leaving out those whole numbers from 0 to 1000 never reach
 //! (`docs/catalog-format.md` there). [`forms`] gives that list, [`index`] the form a count takes.
 
@@ -211,7 +211,7 @@ mod tests {
 
     #[test]
     fn form_lists_are_exactly_the_categories_whole_numbers_reach() {
-        // The craft-i18n checker counts forms the same way; a mismatch would make every plural
+        // The nodalia-i18n checker counts forms the same way; a mismatch would make every plural
         // row of that language fall back to English.
         for code in [
             "en", "de", "fr", "pt-br", "pt-pt", "es", "ja", "zh-hans", "ru", "uk", "sr", "sr-latn", "hr", "bs", "pl", "cs", "sk", "lt", "lv", "ro",
@@ -219,7 +219,7 @@ mod tests {
         ] {
             assert_eq!(reached(code), forms(code).to_vec(), "{code}");
         }
-        // The counts craft-i18n's docs name: 1 Japanese, 2 French, 3 Russian, 6 Arabic.
+        // The counts nodalia-i18n's docs name: 1 Japanese, 2 French, 3 Russian, 6 Arabic.
         assert_eq!([forms("ja").len(), forms("fr").len(), forms("ru").len(), forms("ar").len()], [1, 2, 3, 6]);
     }
 

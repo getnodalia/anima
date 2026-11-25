@@ -34,7 +34,7 @@ fn out_dir() -> PathBuf {
 }
 
 fn decode(bytes: &[u8]) -> Result<(u32, u32, Vec<u8>), String> {
-    let img = craft_image_codecs::decode_as(craft_image_codecs::Format::Png, bytes).map_err(|e| e.to_string())?;
+    let img = nodalia_image_codecs::decode_as(nodalia_image_codecs::Format::Png, bytes).map_err(|e| e.to_string())?;
     let (w, h) = img.dimensions();
     Ok((w, h, img.to_rgba8()))
 }

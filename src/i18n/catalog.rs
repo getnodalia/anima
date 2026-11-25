@@ -1,5 +1,5 @@
-//! Interface catalogs in the craft-i18n format (`docs/catalog-format.md` in
-//! getnodalia/foundation (vendor/craft-i18n)): one row per string, `context<TAB>English<TAB>translation`, keyed by the
+//! Interface catalogs in the nodalia-i18n format (`docs/catalog-format.md` in
+//! getnodalia/foundation (vendor/nodalia-i18n)): one row per string, `context<TAB>English<TAB>translation`, keyed by the
 //! English source text. Read here by our own small parser, so the app depends on no outside
 //! crate for it, and a row it can't use is skipped (that string shows in English), never an
 //! error.
@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 /// Lines longer than this are skipped: no interface string is anywhere near it.
 const MAX_LINE: usize = 16 * 1024;
-/// Rows read per catalog at most (craft-i18n's largest shared catalog has about 1 300).
+/// Rows read per catalog at most (nodalia-i18n's largest shared catalog has about 1 300).
 const MAX_ROWS: usize = 100_000;
 
 /// One usable row.

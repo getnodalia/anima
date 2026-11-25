@@ -226,7 +226,7 @@ dependencies = [
 
 [[package]]
 name = "anima"
-version = "0.1.3"
+version = "0.1.5"
 dependencies = [
  "anima-audio",
  "anima-cli",
@@ -261,7 +261,7 @@ dependencies = [
 
 [[package]]
 name = "anima-actions"
-version = "0.1.3"
+version = "0.1.5"
 dependencies = [
  "serde",
  "serde_json",
@@ -269,14 +269,14 @@ dependencies = [
 
 [[package]]
 name = "anima-audio"
-version = "0.1.3"
+version = "0.1.5"
 dependencies = [
- "craft-audio",
+ "nodalia-audio",
 ]
 
 [[package]]
 name = "anima-cli"
-version = "0.1.3"
+version = "0.1.5"
 dependencies = [
  "anima-doc",
  "anima-engine",
@@ -290,21 +290,21 @@ dependencies = [
 
 [[package]]
 name = "anima-doc"
-version = "0.1.3"
+version = "0.1.5"
 dependencies = [
  "anima-actions",
  "anima-audio",
  "anima-geom",
- "craft-image-codecs 0.1.0 (git+https://github.com/getnodalia/foundation?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18)",
- "craft-mime",
- "craft-palette",
+ "nodalia-image-codecs 0.1.0 (git+https://github.com/getnodalia/foundation?rev=7d584fd1c6d974f2728edf467a9582f923c1cf13)",
+ "nodalia-mime",
+ "nodalia-palette",
  "serde",
  "serde_json",
 ]
 
 [[package]]
 name = "anima-engine"
-version = "0.1.3"
+version = "0.1.5"
 dependencies = [
  "anima-doc",
  "anima-geom",
@@ -313,12 +313,12 @@ dependencies = [
  "anima-svg",
  "anima-text",
  "anima-xfl",
- "craft-anicraft-format",
- "craft-gif",
- "craft-image-codecs 0.1.0 (git+https://github.com/getnodalia/foundation?rev=55b1d7f3c598b600a130ae63f4a40334a230ae7b)",
- "craft-image-codecs 0.1.0 (git+https://github.com/getnodalia/foundation?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18)",
- "craft-webp",
  "miniz_oxide 0.8.9",
+ "nodalia-anima-format",
+ "nodalia-gif",
+ "nodalia-image-codecs 0.1.0 (git+https://github.com/getnodalia/foundation?rev=4199c47f5dc9f8dac749c4609a8aa132219036b1)",
+ "nodalia-image-codecs 0.1.0 (git+https://github.com/getnodalia/foundation?rev=7d584fd1c6d974f2728edf467a9582f923c1cf13)",
+ "nodalia-webp",
  "rayon",
  "regex",
  "serde",
@@ -331,7 +331,7 @@ dependencies = [
 
 [[package]]
 name = "anima-geom"
-version = "0.1.3"
+version = "0.1.5"
 dependencies = [
  "i_overlay",
  "serde",
@@ -340,7 +340,7 @@ dependencies = [
 
 [[package]]
 name = "anima-gpu"
-version = "0.1.3"
+version = "0.1.5"
 dependencies = [
  "anima-doc",
  "anima-geom",
@@ -356,16 +356,16 @@ dependencies = [
 
 [[package]]
 name = "anima-guide"
-version = "0.1.3"
+version = "0.1.5"
 dependencies = [
- "craft-html",
+ "nodalia-html",
  "pulldown-cmark",
  "serde_json",
 ]
 
 [[package]]
 name = "anima-plugins"
-version = "0.1.3"
+version = "0.1.5"
 dependencies = [
  "serde",
  "serde_json",
@@ -376,14 +376,14 @@ dependencies = [
 
 [[package]]
 name = "anima-render"
-version = "0.1.3"
+version = "0.1.5"
 dependencies = [
  "anima-doc",
  "anima-geom",
  "boa_engine",
- "craft-html",
- "craft-image-codecs 0.1.0 (git+https://github.com/getnodalia/foundation?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18)",
- "craft-lottie",
+ "nodalia-html",
+ "nodalia-image-codecs 0.1.0 (git+https://github.com/getnodalia/foundation?rev=7d584fd1c6d974f2728edf467a9582f923c1cf13)",
+ "nodalia-lottie",
  "rayon",
  "serde_json",
  "thiserror 2.0.21",
@@ -391,7 +391,7 @@ dependencies = [
 
 [[package]]
 name = "anima-svg"
-version = "0.1.3"
+version = "0.1.5"
 dependencies = [
  "anima-doc",
  "anima-geom",
@@ -402,7 +402,7 @@ dependencies = [
 
 [[package]]
 name = "anima-text"
-version = "0.1.3"
+version = "0.1.5"
 dependencies = [
  "anima-geom",
  "fontdb",
@@ -412,26 +412,26 @@ dependencies = [
 
 [[package]]
 name = "anima-xfl"
-version = "0.1.3"
+version = "0.1.5"
 dependencies = [
  "anima-doc",
  "anima-geom",
  "anima-text",
  "anima-xml",
- "craft-image-codecs 0.1.0 (git+https://github.com/getnodalia/foundation?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18)",
- "craft-video",
- "craft-xfl",
  "miniz_oxide 0.8.9",
+ "nodalia-image-codecs 0.1.0 (git+https://github.com/getnodalia/foundation?rev=7d584fd1c6d974f2728edf467a9582f923c1cf13)",
+ "nodalia-video",
+ "nodalia-xfl",
  "serde_json",
  "thiserror 2.0.21",
 ]
 
 [[package]]
 name = "anima-xml"
-version = "0.1.3"
+version = "0.1.5"
 dependencies = [
- "craft-xfl",
- "craft-xml 0.1.0 (git+https://github.com/getnodalia/foundation?rev=b67b9f90c50091a3090f93fa054c34e409edba11)",
+ "nodalia-xfl",
+ "nodalia-xml 0.1.0 (git+https://github.com/getnodalia/foundation?rev=0a1aedecb96656dd966f7bd88fd49ddd3a70e2e4)",
  "thiserror 2.0.21",
 ]
 
@@ -1186,247 +1186,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59ed5838eebb26a2bb2e58f6d5b5316989ae9d08bab10e0e6d103e656d1b0280"
 dependencies = [
  "libc",
-]
-
-[[package]]
-name = "craft-anicraft-format"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
-dependencies = [
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "craft-audio"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=e2bf53f2bdba4828e21097774a568ed9c74b0004#e2bf53f2bdba4828e21097774a568ed9c74b0004"
-dependencies = [
- "craft-media 0.1.0 (git+https://github.com/getnodalia/foundation?rev=e2bf53f2bdba4828e21097774a568ed9c74b0004)",
- "craft-xml 0.1.0 (git+https://github.com/getnodalia/foundation?rev=e2bf53f2bdba4828e21097774a568ed9c74b0004)",
- "log",
- "symphonia",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "craft-codepage"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
-
-[[package]]
-name = "craft-gif"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
-dependencies = [
- "gif",
-]
-
-[[package]]
-name = "craft-html"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
-
-[[package]]
-name = "craft-image-codecs"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=55b1d7f3c598b600a130ae63f4a40334a230ae7b#55b1d7f3c598b600a130ae63f4a40334a230ae7b"
-dependencies = [
- "craft-jpeg 0.1.0 (git+https://github.com/getnodalia/foundation?rev=55b1d7f3c598b600a130ae63f4a40334a230ae7b)",
- "craft-metadata 0.1.0 (git+https://github.com/getnodalia/foundation?rev=55b1d7f3c598b600a130ae63f4a40334a230ae7b)",
- "crc32fast",
- "exr",
- "flate2",
- "half",
- "hayro-jpeg2000",
- "image",
- "image-webp",
- "jpeg-encoder",
- "png",
- "rayon",
- "serde_json",
- "thiserror 2.0.21",
- "tiff",
- "zune-core",
- "zune-jpeg",
- "zune-jpegxl",
-]
-
-[[package]]
-name = "craft-image-codecs"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
-dependencies = [
- "craft-jpeg 0.1.0 (git+https://github.com/getnodalia/foundation?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18)",
- "craft-metadata 0.1.0 (git+https://github.com/getnodalia/foundation?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18)",
- "exr",
- "flate2",
- "half",
- "image",
- "image-webp",
- "jpeg-encoder",
- "png",
- "rayon",
- "serde_json",
- "thiserror 2.0.21",
- "tiff",
- "zune-core",
- "zune-jpeg",
- "zune-jpegxl",
-]
-
-[[package]]
-name = "craft-jpeg"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=55b1d7f3c598b600a130ae63f4a40334a230ae7b#55b1d7f3c598b600a130ae63f4a40334a230ae7b"
-dependencies = [
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "craft-jpeg"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
-dependencies = [
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "craft-lottie"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=83cb1133dd2bdd0d655ba2300f88863f0f53db0b#83cb1133dd2bdd0d655ba2300f88863f0f53db0b"
-dependencies = [
- "craft-zip",
- "serde_json",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "craft-media"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=e2bf53f2bdba4828e21097774a568ed9c74b0004#e2bf53f2bdba4828e21097774a568ed9c74b0004"
-dependencies = [
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "craft-media"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=fd91be74f078d7062945ff6512cf65afea0c73ac#fd91be74f078d7062945ff6512cf65afea0c73ac"
-
-[[package]]
-name = "craft-metadata"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=55b1d7f3c598b600a130ae63f4a40334a230ae7b#55b1d7f3c598b600a130ae63f4a40334a230ae7b"
-dependencies = [
- "brotli-decompressor",
- "chrono",
- "craft-tiff 0.1.0 (git+https://github.com/getnodalia/foundation?rev=55b1d7f3c598b600a130ae63f4a40334a230ae7b)",
- "quick-xml",
- "serde",
-]
-
-[[package]]
-name = "craft-metadata"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
-dependencies = [
- "brotli-decompressor",
- "chrono",
- "craft-tiff 0.1.0 (git+https://github.com/getnodalia/foundation?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18)",
- "quick-xml",
- "serde",
-]
-
-[[package]]
-name = "craft-mime"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
-dependencies = [
- "chrono",
- "craft-codepage",
- "encoding_rs",
-]
-
-[[package]]
-name = "craft-palette"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=de97c35f2b2af01c62371647e57a6affeab456fd#de97c35f2b2af01c62371647e57a6affeab456fd"
-
-[[package]]
-name = "craft-tiff"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=55b1d7f3c598b600a130ae63f4a40334a230ae7b#55b1d7f3c598b600a130ae63f4a40334a230ae7b"
-dependencies = [
- "serde",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "craft-tiff"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=f0f4758c01581d79577b9bf5046c06f4e77b1f18#f0f4758c01581d79577b9bf5046c06f4e77b1f18"
-dependencies = [
- "serde",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "craft-video"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=fd91be74f078d7062945ff6512cf65afea0c73ac#fd91be74f078d7062945ff6512cf65afea0c73ac"
-dependencies = [
- "craft-media 0.1.0 (git+https://github.com/getnodalia/foundation?rev=fd91be74f078d7062945ff6512cf65afea0c73ac)",
- "miniz_oxide 0.8.9",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "craft-webp"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=0c144b7d983899d4b5b281046dd03a8b1ab35fbb#0c144b7d983899d4b5b281046dd03a8b1ab35fbb"
-dependencies = [
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "craft-xfl"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=b67b9f90c50091a3090f93fa054c34e409edba11#b67b9f90c50091a3090f93fa054c34e409edba11"
-dependencies = [
- "craft-xml 0.1.0 (git+https://github.com/getnodalia/foundation?rev=b67b9f90c50091a3090f93fa054c34e409edba11)",
- "miniz_oxide 0.8.9",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "craft-xml"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=b67b9f90c50091a3090f93fa054c34e409edba11#b67b9f90c50091a3090f93fa054c34e409edba11"
-dependencies = [
- "quick-xml",
- "serde",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "craft-xml"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=e2bf53f2bdba4828e21097774a568ed9c74b0004#e2bf53f2bdba4828e21097774a568ed9c74b0004"
-dependencies = [
- "quick-xml",
- "serde",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "craft-zip"
-version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=83cb1133dd2bdd0d655ba2300f88863f0f53db0b#83cb1133dd2bdd0d655ba2300f88863f0f53db0b"
-dependencies = [
- "flate2",
- "thiserror 2.0.21",
- "zip",
 ]
 
 [[package]]
@@ -3024,11 +2783,194 @@ dependencies = [
 ]
 
 [[package]]
+name = "nodalia-anima-format"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=7d584fd1c6d974f2728edf467a9582f923c1cf13#7d584fd1c6d974f2728edf467a9582f923c1cf13"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "nodalia-audio"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=b0128030e39b29167ff747cc2225dfabeb99160f#b0128030e39b29167ff747cc2225dfabeb99160f"
+dependencies = [
+ "log",
+ "nodalia-media 0.1.0 (git+https://github.com/getnodalia/foundation?rev=b0128030e39b29167ff747cc2225dfabeb99160f)",
+ "nodalia-xml 0.1.0 (git+https://github.com/getnodalia/foundation?rev=b0128030e39b29167ff747cc2225dfabeb99160f)",
+ "symphonia",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "nodalia-codepage"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=7d584fd1c6d974f2728edf467a9582f923c1cf13#7d584fd1c6d974f2728edf467a9582f923c1cf13"
+
+[[package]]
+name = "nodalia-gif"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=7d584fd1c6d974f2728edf467a9582f923c1cf13#7d584fd1c6d974f2728edf467a9582f923c1cf13"
+dependencies = [
+ "gif",
+]
+
+[[package]]
+name = "nodalia-html"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=7d584fd1c6d974f2728edf467a9582f923c1cf13#7d584fd1c6d974f2728edf467a9582f923c1cf13"
+
+[[package]]
+name = "nodalia-image-codecs"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=4199c47f5dc9f8dac749c4609a8aa132219036b1#4199c47f5dc9f8dac749c4609a8aa132219036b1"
+dependencies = [
+ "crc32fast",
+ "exr",
+ "flate2",
+ "half",
+ "hayro-jpeg2000",
+ "image",
+ "image-webp",
+ "jpeg-encoder",
+ "nodalia-jpeg 0.1.0 (git+https://github.com/getnodalia/foundation?rev=4199c47f5dc9f8dac749c4609a8aa132219036b1)",
+ "nodalia-metadata 0.1.0 (git+https://github.com/getnodalia/foundation?rev=4199c47f5dc9f8dac749c4609a8aa132219036b1)",
+ "png",
+ "rayon",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tiff",
+ "zune-core",
+ "zune-jpeg",
+ "zune-jpegxl",
+]
+
+[[package]]
+name = "nodalia-image-codecs"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=7d584fd1c6d974f2728edf467a9582f923c1cf13#7d584fd1c6d974f2728edf467a9582f923c1cf13"
+dependencies = [
+ "exr",
+ "flate2",
+ "half",
+ "image",
+ "image-webp",
+ "jpeg-encoder",
+ "nodalia-jpeg 0.1.0 (git+https://github.com/getnodalia/foundation?rev=7d584fd1c6d974f2728edf467a9582f923c1cf13)",
+ "nodalia-metadata 0.1.0 (git+https://github.com/getnodalia/foundation?rev=7d584fd1c6d974f2728edf467a9582f923c1cf13)",
+ "png",
+ "rayon",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tiff",
+ "zune-core",
+ "zune-jpeg",
+ "zune-jpegxl",
+]
+
+[[package]]
+name = "nodalia-jpeg"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=4199c47f5dc9f8dac749c4609a8aa132219036b1#4199c47f5dc9f8dac749c4609a8aa132219036b1"
+dependencies = [
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "nodalia-jpeg"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=7d584fd1c6d974f2728edf467a9582f923c1cf13#7d584fd1c6d974f2728edf467a9582f923c1cf13"
+dependencies = [
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "nodalia-lottie"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=5cbd1543e9c006064904465d2503bbd223e7e3a6#5cbd1543e9c006064904465d2503bbd223e7e3a6"
+dependencies = [
+ "nodalia-zip",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "nodalia-media"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=b0128030e39b29167ff747cc2225dfabeb99160f#b0128030e39b29167ff747cc2225dfabeb99160f"
+dependencies = [
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "nodalia-media"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=c91e7e5d2081e94a5c8ac48e48ab00008a1842e7#c91e7e5d2081e94a5c8ac48e48ab00008a1842e7"
+
+[[package]]
+name = "nodalia-metadata"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=4199c47f5dc9f8dac749c4609a8aa132219036b1#4199c47f5dc9f8dac749c4609a8aa132219036b1"
+dependencies = [
+ "brotli-decompressor",
+ "chrono",
+ "nodalia-tiff 0.1.0 (git+https://github.com/getnodalia/foundation?rev=4199c47f5dc9f8dac749c4609a8aa132219036b1)",
+ "quick-xml",
+ "serde",
+]
+
+[[package]]
+name = "nodalia-metadata"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=7d584fd1c6d974f2728edf467a9582f923c1cf13#7d584fd1c6d974f2728edf467a9582f923c1cf13"
+dependencies = [
+ "brotli-decompressor",
+ "chrono",
+ "nodalia-tiff 0.1.0 (git+https://github.com/getnodalia/foundation?rev=7d584fd1c6d974f2728edf467a9582f923c1cf13)",
+ "quick-xml",
+ "serde",
+]
+
+[[package]]
+name = "nodalia-mime"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=7d584fd1c6d974f2728edf467a9582f923c1cf13#7d584fd1c6d974f2728edf467a9582f923c1cf13"
+dependencies = [
+ "chrono",
+ "encoding_rs",
+ "nodalia-codepage",
+]
+
+[[package]]
+name = "nodalia-palette"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=d6ba152de9691955180f2938502ddbd010ef45ea#d6ba152de9691955180f2938502ddbd010ef45ea"
+
+[[package]]
 name = "nodalia-theme"
 version = "0.1.0-alpha.1"
-source = "git+https://github.com/danielmigueltejedor/nodalia-design?rev=07e63775aca14bc13f98e72e3c67be978f2f7fc3#07e63775aca14bc13f98e72e3c67be978f2f7fc3"
+source = "git+https://github.com/danielmigueltejedor/nodalia-design?rev=44bfd0a37e6bd2837c473b4e5607b70e8d169e61#44bfd0a37e6bd2837c473b4e5607b70e8d169e61"
 dependencies = [
  "egui",
+]
+
+[[package]]
+name = "nodalia-tiff"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=4199c47f5dc9f8dac749c4609a8aa132219036b1#4199c47f5dc9f8dac749c4609a8aa132219036b1"
+dependencies = [
+ "serde",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "nodalia-tiff"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=7d584fd1c6d974f2728edf467a9582f923c1cf13#7d584fd1c6d974f2728edf467a9582f923c1cf13"
+dependencies = [
+ "serde",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -3039,6 +2981,64 @@ dependencies = [
  "serde_json",
  "sha2",
  "ureq",
+]
+
+[[package]]
+name = "nodalia-video"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=c91e7e5d2081e94a5c8ac48e48ab00008a1842e7#c91e7e5d2081e94a5c8ac48e48ab00008a1842e7"
+dependencies = [
+ "miniz_oxide 0.8.9",
+ "nodalia-media 0.1.0 (git+https://github.com/getnodalia/foundation?rev=c91e7e5d2081e94a5c8ac48e48ab00008a1842e7)",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "nodalia-webp"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=5fecd8b44f86c7cf801944d5ea4142f16f1fe747#5fecd8b44f86c7cf801944d5ea4142f16f1fe747"
+dependencies = [
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "nodalia-xfl"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=0a1aedecb96656dd966f7bd88fd49ddd3a70e2e4#0a1aedecb96656dd966f7bd88fd49ddd3a70e2e4"
+dependencies = [
+ "miniz_oxide 0.8.9",
+ "nodalia-xml 0.1.0 (git+https://github.com/getnodalia/foundation?rev=0a1aedecb96656dd966f7bd88fd49ddd3a70e2e4)",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "nodalia-xml"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=0a1aedecb96656dd966f7bd88fd49ddd3a70e2e4#0a1aedecb96656dd966f7bd88fd49ddd3a70e2e4"
+dependencies = [
+ "quick-xml",
+ "serde",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "nodalia-xml"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=b0128030e39b29167ff747cc2225dfabeb99160f#b0128030e39b29167ff747cc2225dfabeb99160f"
+dependencies = [
+ "quick-xml",
+ "serde",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "nodalia-zip"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=5cbd1543e9c006064904465d2503bbd223e7e3a6#5cbd1543e9c006064904465d2503bbd223e7e3a6"
+dependencies = [
+ "flate2",
+ "thiserror 2.0.21",
+ "zip",
 ]
 
 [[package]]

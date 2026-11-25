@@ -26,7 +26,7 @@ English. A change shows at once. For one run, without saving: `anima --lang de`
 (`--lang auto`, `--lang pseudo`).
 
 Which languages a build offers depends on the catalogs it was built with (below). Today
-craft-i18n has an Ánima catalog for **Spanish**, and release builds are made with it, so they
+nodalia-i18n has an Ánima catalog for **Spanish**, and release builds are made with it, so they
 offer English and Spanish. Every build also has the **pseudo-locale** (`--lang pseudo`; listed
 in Preferences in debug builds) for testing.
 
@@ -77,7 +77,7 @@ accessibility audit fails on a name that the pseudo-locale didn't reach.
 ## Translating (translators)
 
 Translations live in the Craft family's shared repository,
-[getnodalia/foundation (vendor/craft-i18n)](https://github.com/getnodalia/foundation/tree/vendor/craft-i18n/main) (MIT OR Apache-2.0), in its
+[getnodalia/foundation (vendor/nodalia-i18n)](https://github.com/getnodalia/foundation/tree/nodalia/i18n) (MIT OR Apache-2.0), in its
 format: `locales/<locale>/anima.tsv`, one row per string, `context<TAB>English<TAB>translation`
 (see its `docs/catalog-format.md`). Strings the apps share are in `locales/<locale>/common.tsv`
 and already apply to Ánima; Ánima's catalog adds the rest and may override a shared row.
@@ -86,28 +86,28 @@ To get the list of strings:
 
 ```sh
 scripts/i18n-extract.sh                                  # target/i18n/anima.tsv: every string
-CRAFT_I18N_DIR=/abs/path/craft-i18n scripts/i18n-extract.sh
+NODALIA_I18N_DIR=/abs/path/nodalia-i18n scripts/i18n-extract.sh
     # also prints how much of Ánima each locale already covers
-CRAFT_I18N_DIR=/abs/path/craft-i18n ANIMA_I18N_LOCALE=de scripts/i18n-extract.sh de.tsv
+NODALIA_I18N_DIR=/abs/path/nodalia-i18n ANIMA_I18N_LOCALE=de scripts/i18n-extract.sh de.tsv
     # only the strings German doesn't have yet
 ```
 
-(`scripts/i18n-extract.ps1` on Windows.) Every row is commented out, as craft-i18n's starter
+(`scripts/i18n-extract.ps1` on Windows.) Every row is commented out, as nodalia-i18n's starter
 files are: delete the `#` and type the translation after the last TAB. Keep `{placeholders}`
-and a trailing `…`. Then open a pull request in craft-i18n. Follow its clean-room rule: write
+and a trailing `…`. Then open a pull request in nodalia-i18n. Follow its clean-room rule: write
 from the plain meaning of the English, never from another product's translated interface.
 
-A language is offered once craft-i18n has its `anima.tsv` and it is in `i18n::READY`
-(left-to-right Latin, Greek and Cyrillic scripts today, and Georgian in builds with its craft-fonts face).
+A language is offered once nodalia-i18n has its `anima.tsv` and it is in `i18n::READY`
+(left-to-right Latin, Greek and Cyrillic scripts today, and Georgian in builds with its nodalia-fonts face).
 
 ## Building with translations
 
 ```sh
-git clone https://github.com/getnodalia/foundation/tree/vendor/craft-i18n/main ../craft-i18n
-CRAFT_I18N_DIR="$PWD/../craft-i18n" cargo build --release      # an absolute path
+git clone https://github.com/getnodalia/foundation/tree/nodalia/i18n ../nodalia-i18n
+NODALIA_I18N_DIR="$PWD/../nodalia-i18n" cargo build --release      # an absolute path
 ```
 
-Without `CRAFT_I18N_DIR` the build is English (and pseudo). `CRAFT_I18N_REQUIRED=1` turns a
+Without `NODALIA_I18N_DIR` the build is English (and pseudo). `NODALIA_I18N_REQUIRED=1` turns a
 missing or empty checkout into a build error, for releases. A row the app can't use (bad
 placeholders, wrong number of plural forms, an unknown `@` context) is skipped with a message
 on the console, and that string shows in English.
@@ -120,8 +120,8 @@ shaping. So:
 | Script | Today |
 |---|---|
 | Latin, Greek, Cyrillic | Offered when a catalog exists. |
-| Georgian | Offered when a catalog exists and the build embedded a valid Noto Sans Georgian from craft-fonts (via `CRAFT_FONTS_DIR` or the nearby checkout `build.rs` discovers); hidden only when it did not (`i18n::ready_codes`). |
-| Chinese, Japanese, Korean | Draw correctly, but need a font the app doesn't bundle (a craft-fonts face), then a `READY` entry. |
+| Georgian | Offered when a catalog exists and the build embedded a valid Noto Sans Georgian from nodalia-fonts (via `NODALIA_FONTS_DIR` or the nearby checkout `build.rs` discovers); hidden only when it did not (`i18n::ready_codes`). |
+| Chinese, Japanese, Korean | Draw correctly, but need a font the app doesn't bundle (a nodalia-fonts face), then a `READY` entry. |
 | Arabic, Hebrew, Persian, Urdu, Kurdish, Dhivehi | Not offered: right to left needs bidi and shaping in egui's text layout, and mirrored widgets. We follow upstream egui rather than fork it. |
 | Devanagari, Bengali, Tamil, Telugu, Thai, Lao | Not offered: they need shaping. |
 | Vietnamese | Not offered yet: needs a check that every fallback face has its letters. |

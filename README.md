@@ -25,7 +25,7 @@
 </div>
 
 <p align="center">
-  <img src="docs/images/ui-dark.png" width="100%" alt="Ánima in its dark theme with the sample animation open: an evening landscape in flat colours, with a ball, a star and the sun over the ridges on the stage, the tools on the left, the timeline with five layers and their tweens below, and the Properties and Library panels on the right">
+  <img src="https://raw.githubusercontent.com/getnodalia/nodalia-web/main/assets/screens/anima/anima-dark.jpg" width="100%" alt="Ánima in its dark theme with the sample animation open: an evening landscape in flat colours, with a ball, a star and the sun over the ridges on the stage, the tools on the left, the timeline with five layers and their tweens below, and the Properties and Library panels on the right">
   <br><sub><b>The sample animation</b> in the dark theme: stage, tools, timeline with classic tweens, Properties and Library.</sub>
 </p>
 
@@ -48,7 +48,7 @@ scripts and agents can run too.
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/ui-light.png" alt="Ánima in its light theme with the same sample animation open"></td>
+    <td width="50%"><img src="https://raw.githubusercontent.com/getnodalia/nodalia-web/main/assets/screens/anima/anima-light.jpg" alt="Ánima in its light theme with the same sample animation open"></td>
     <td width="50%"><img src="docs/images/sample-animation.gif" alt="The sample animation: a ball bounces and squashes across the meadow while the evening star turns and the sun breathes over the ridges"></td>
   </tr>
   <tr>
@@ -110,8 +110,8 @@ cargo run --release -- my-film.anima    # or a document of yours
 
 Linux needs the usual windowing and audio headers (Debian and Ubuntu: `libxkbcommon-dev
 libwayland-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libgtk-3-dev libasound2-dev`).
-The interface font (Inter) comes from the optional `CRAFT_FONTS_DIR` build input, a checkout of
-[getnodalia/foundation's `vendor/craft-fonts/main`](https://github.com/getnodalia/foundation/tree/vendor/craft-fonts/main)
+The interface font (Inter) comes from the optional `NODALIA_FONTS_DIR` build input, a checkout of
+[getnodalia/foundation's `nodalia/fonts`](https://github.com/getnodalia/foundation/tree/nodalia/fonts)
 branch; without it Ánima uses egui's built-in fonts. Setup, tests and build hygiene are in
 [docs/development.md](docs/development.md).
 

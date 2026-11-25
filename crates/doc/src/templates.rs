@@ -21,7 +21,7 @@ pub struct Template {
 }
 
 /// Every built-in template, in the order the start screen shows them.
-pub static TEMPLATES: [Template; 6] = [
+pub static TEMPLATES: [Template; 11] = [
     Template {
         id: "banner-728x90",
         name: "Leaderboard banner",
@@ -63,6 +63,41 @@ pub static TEMPLATES: [Template; 6] = [
         category: "Character",
         description: "A Mouth graphic symbol with ten labelled mouth shapes to redraw, placed on a face guide",
         build: lip_sync,
+    },
+    Template {
+        id: "social-story",
+        name: "Story 9:16",
+        category: "Social",
+        description: "A 1080 × 1920 story at 30 fps, 15 seconds long, with the areas the app covers marked on a guide layer",
+        build: social_story,
+    },
+    Template {
+        id: "loop",
+        name: "Looping animation",
+        category: "Social",
+        description: "An 800 × 800 loop at 24 fps, 2 seconds long, with its first, middle and last frames marked and a centre cross",
+        build: looping,
+    },
+    Template {
+        id: "video-title",
+        name: "Video title card",
+        category: "Video",
+        description: "A 1920 × 1080 title card at 24 fps, 10 seconds long, with title-safe areas and a lower-third band on a guide layer",
+        build: video_title,
+    },
+    Template {
+        id: "walk-cycle",
+        name: "Walk cycle",
+        category: "Character",
+        description: "Eight labelled poses over 24 frames at 24 fps, on ground, hip and head lines",
+        build: walk_cycle,
+    },
+    Template {
+        id: "bouncing-ball",
+        name: "Bouncing ball",
+        category: "Exercise",
+        description: "A ball bouncing in 24 frames at 24 fps: top, contact, squash, rebound and peak keyframes on ground and height lines",
+        build: bouncing_ball,
     },
 ];
 
@@ -338,6 +373,150 @@ fn lip_sync() -> Document {
     d
 }
 
+/// A vertical story: the top and bottom strips an app's own buttons cover, the safe area between
+/// them and the centre, on a guide layer.
+fn social_story() -> Document {
+    const FRAMES: u32 = 30 * 15;
+    let mut d = blank(1080, 1920, 30.0);
+    let (w, h) = (1080.0, 1920.0);
+    let (top, bottom, side) = (250.0, 340.0, 60.0);
+    let guides = vec![
+        outline(&mut d, "Safe area", (side, top, w - 2.0 * side, h - top - bottom), GUIDE, 2.0),
+        line(&mut d, "Top strip", (0.0, top), (w, top), GUIDE_SOFT, 1.0),
+        line(&mut d, "Bottom strip", (0.0, h - bottom), (w, h - bottom), GUIDE_SOFT, 1.0),
+        line(&mut d, "Centre", (w / 2.0 - 20.0, h / 2.0), (w / 2.0 + 20.0, h / 2.0), GUIDE, 2.0),
+        line(&mut d, "Centre", (w / 2.0, h / 2.0 - 20.0), (w / 2.0, h / 2.0 + 20.0), GUIDE, 2.0),
+    ];
+    let mut layers = vec![layer(&mut d, "Safe area", LayerKind::Guide, GUIDE, FRAMES, guides)];
+    layers.extend(drawing_layers(&mut d, &["Text", "Artwork", "Background"], FRAMES));
+    d.timeline_mut(0).layers = layers;
+    d
+}
+
+/// A loop: a centre cross on a guide layer and a Motion layer whose keyframes mark the first
+/// frame, the middle and the last frame, which has to lead back into the first.
+fn looping() -> Document {
+    const FRAMES: u32 = 48;
+    let mut d = blank(800, 800, 24.0);
+    let c = 400.0;
+    let guides = vec![
+        outline(&mut d, "Edge", (0.5, 0.5, 799.0, 799.0), GUIDE_SOFT, 1.0),
+        line(&mut d, "Centre", (c - 20.0, c), (c + 20.0, c), GUIDE, 2.0),
+        line(&mut d, "Centre", (c, c - 20.0), (c, c + 20.0), GUIDE, 2.0),
+    ];
+    let guide = layer(&mut d, "Centre", LayerKind::Guide, GUIDE, FRAMES, guides);
+    let mut motion = Layer::new(LayerId(d.alloc_id()), "Motion");
+    motion.color = Rgba::hex(0xff6b4a);
+    motion.keyframes = [(0, 24, "Start"), (24, 23, "Halfway"), (47, 1, "Back to the start")]
+        .into_iter()
+        .map(|(at, len, label)| {
+            let mut k = Keyframe::new(at, len);
+            k.label = label.to_string();
+            Arc::new(k)
+        })
+        .collect();
+    let mut layers = vec![guide, Arc::new(motion)];
+    layers.extend(drawing_layers(&mut d, &["Artwork", "Background"], FRAMES));
+    d.timeline_mut(0).layers = layers;
+    d
+}
+
+/// A video title card: the action- and title-safe areas, the centre and a band for a lower third
+/// on a guide layer, and layers for the title, the lower third and the background.
+fn video_title() -> Document {
+    const FRAMES: u32 = 24 * 10;
+    let mut d = blank(1920, 1080, 24.0);
+    let (w, h) = (1920.0, 1080.0);
+    let safe = |d: &mut Document, name: &str, keep: f32, color: u32| {
+        let (mx, my) = (w * (1.0 - keep) / 2.0, h * (1.0 - keep) / 2.0);
+        outline(d, name, (mx, my, w - 2.0 * mx, h - 2.0 * my), color, 2.0)
+    };
+    let guides = vec![
+        safe(&mut d, "Action safe", 0.93, GUIDE),
+        safe(&mut d, "Title safe", 0.90, GUIDE_SOFT),
+        outline(&mut d, "Lower third", (192.0, 780.0, 1000.0, 150.0), GUIDE, 2.0),
+        line(&mut d, "Centre", (w / 2.0 - 30.0, h / 2.0), (w / 2.0 + 30.0, h / 2.0), GUIDE, 2.0),
+        line(&mut d, "Centre", (w / 2.0, h / 2.0 - 30.0), (w / 2.0, h / 2.0 + 30.0), GUIDE, 2.0),
+    ];
+    let mut layers = vec![layer(&mut d, "Safe areas", LayerKind::Guide, GUIDE, FRAMES, guides)];
+    layers.extend(drawing_layers(&mut d, &["Title", "Lower third", "Background"], FRAMES));
+    d.timeline_mut(0).layers = layers;
+    d
+}
+
+/// The poses of a walk cycle, two steps of four: contact, down, passing, up.
+pub const WALK_POSES: [&str; 8] =
+    ["Contact right", "Down right", "Passing right", "Up right", "Contact left", "Down left", "Passing left", "Up left"];
+
+/// A walk cycle: ground, hip and head lines on a guide layer, a Poses layer with a labelled
+/// keyframe every three frames, and a layer each for the arms, the body and the legs.
+fn walk_cycle() -> Document {
+    const POSE: u32 = 3;
+    let mut d = blank(1280, 720, 24.0);
+    let (left, right) = (120.0, 1160.0);
+    let guides = vec![
+        line(&mut d, "Head", (left, 110.0), (right, 110.0), GUIDE_SOFT, 1.0),
+        line(&mut d, "Hips", (left, 350.0), (right, 350.0), GUIDE_SOFT, 1.0),
+        line(&mut d, "Ground", (left, 620.0), (right, 620.0), GUIDE, 2.0),
+        line(&mut d, "Centre", (640.0, 80.0), (640.0, 650.0), GUIDE_SOFT, 1.0),
+    ];
+    let total = POSE * WALK_POSES.len() as u32;
+    let guide = layer(&mut d, "Walk guides", LayerKind::Guide, GUIDE, total, guides);
+    let mut poses = Layer::new(LayerId(d.alloc_id()), "Poses");
+    poses.color = Rgba::hex(0xffd54a);
+    poses.keyframes = WALK_POSES
+        .iter()
+        .enumerate()
+        .map(|(i, label)| {
+            let mut k = Keyframe::new(i as u32 * POSE, POSE);
+            k.label = (*label).to_string();
+            Arc::new(k)
+        })
+        .collect();
+    let mut layers = vec![guide, Arc::new(poses)];
+    layers.extend(drawing_layers(&mut d, &["Arms", "Body", "Legs"], total));
+    d.timeline_mut(0).layers = layers;
+    d
+}
+
+/// A bouncing ball: ground and height lines on a guide layer and a Ball layer whose labelled
+/// keyframes hold the ball at the top, on contact, squashed, stretched on the rebound and at the peak.
+fn bouncing_ball() -> Document {
+    let mut d = blank(1280, 720, 24.0);
+    let (ground, left, right) = (620.0, 120.0, 1160.0);
+    let guides = vec![
+        line(&mut d, "Top", (left, 120.0), (right, 120.0), GUIDE_SOFT, 1.0),
+        line(&mut d, "Ground", (left, ground), (right, ground), GUIDE, 2.0),
+        line(&mut d, "Centre", (640.0, 80.0), (640.0, 650.0), GUIDE_SOFT, 1.0),
+    ];
+    let guide = layer(&mut d, "Ball guides", LayerKind::Guide, GUIDE, 24, guides);
+    let mut ball = Layer::new(LayerId(d.alloc_id()), "Ball");
+    ball.color = Rgba::hex(0xff6b4a);
+    let paint = Paint::Solid(Rgba::hex(0xe8795a));
+    // (first frame, length, label, centre height above the ground, half-width, half-height)
+    let poses = [
+        (0, 8, "Top", 220.0, 50.0, 50.0),
+        (8, 2, "Contact", 50.0, 50.0, 50.0),
+        (10, 2, "Squash", 35.0, 70.0, 35.0),
+        (12, 4, "Rebound", 120.0, 45.0, 60.0),
+        (16, 8, "Peak", 190.0, 50.0, 50.0),
+    ];
+    ball.keyframes = poses
+        .into_iter()
+        .map(|(at, len, label, up, rx, ry)| {
+            let shape = Shape::filled(Path::ellipse(640.0, ground - up, rx, ry), paint.clone()).with_stroke(Rgba::hex(0x8a3d27), 3.0);
+            let mut k = Keyframe::new(at, len);
+            k.label = label.to_string();
+            k.elements = vec![element(&mut d, &format!("{label} ball"), Affine::IDENTITY, shape)];
+            Arc::new(k)
+        })
+        .collect();
+    let mut layers = vec![guide, Arc::new(ball)];
+    layers.extend(drawing_layers(&mut d, &["Shadow", "Background"], 24));
+    d.timeline_mut(0).layers = layers;
+    d
+}
+
 /// A copy of `doc` with its guide layers drawn as artwork, their lines `widen` times as wide: a
 /// template's picture shows its guides (which output never does), and a small picture needs
 /// them wider to see them.
@@ -408,6 +587,27 @@ mod tests {
         assert_eq!(size("banner-300x250"), Some((300, 250, 24.0)));
         assert_eq!(size("social-square"), Some((1080, 1080, 30.0)));
         assert_eq!(size("storyboard"), Some((1920, 1080, 24.0)));
+        assert_eq!(size("social-story"), Some((1080, 1920, 30.0)));
+        assert_eq!(size("loop"), Some((800, 800, 24.0)));
+        assert_eq!(size("video-title"), Some((1920, 1080, 24.0)));
+        assert_eq!(size("walk-cycle"), Some((1280, 720, 24.0)));
+        assert_eq!(size("bouncing-ball"), Some((1280, 720, 24.0)));
+    }
+
+    #[test]
+    fn the_motion_exercises_are_labelled_and_fill_their_length() {
+        let labels = |d: &Document, layer: &str| {
+            d.timeline(0).layers.iter().find(|l| l.name == layer).map(|l| l.keyframes.iter().map(|k| k.label.clone()).collect::<Vec<_>>())
+        };
+        let walk = walk_cycle();
+        assert_eq!(labels(&walk, "Poses"), Some(WALK_POSES.map(str::to_string).to_vec()));
+        assert_eq!(walk.timeline(0).frame_count(), 24);
+        let ball = bouncing_ball();
+        assert_eq!(labels(&ball, "Ball").map(|l| l.len()), Some(5));
+        assert_eq!(ball.timeline(0).frame_count(), 24);
+        let spin = looping();
+        assert_eq!(labels(&spin, "Motion"), Some(vec!["Start".to_string(), "Halfway".to_string(), "Back to the start".to_string()]));
+        assert_eq!(spin.timeline(0).frame_count(), 48);
     }
 
     #[test]

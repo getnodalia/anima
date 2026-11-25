@@ -3,8 +3,8 @@
 use crate::EngineError;
 use anima_doc::{Document, path_table};
 use anima_geom::Path;
-use craft_anicraft_format::PayloadDecoder;
-pub use craft_anicraft_format::{FORMAT_NAME, MAX_FILE_BYTES};
+use nodalia_anima_format::PayloadDecoder;
+pub use nodalia_anima_format::{FORMAT_NAME, MAX_FILE_BYTES};
 
 /// The extension Ánima saves its documents with.
 pub const EXTENSION: &str = "anima";
@@ -24,7 +24,7 @@ use std::sync::Arc;
 pub const FORMAT_VERSION: u32 = 4;
 /// The version a document is written as unless it needs a later one: the shared envelope's.
 /// Builds from before ADR 0098 read up to this.
-pub const BASE_VERSION: u32 = craft_anicraft_format::FORMAT_VERSION;
+pub const BASE_VERSION: u32 = nodalia_anima_format::FORMAT_VERSION;
 /// The first version that may hold mixed armatures.
 pub const MIXED_ARMATURES_VERSION: u32 = 4;
 
@@ -48,11 +48,11 @@ struct EnvelopeOut<'a> {
 
 fn write_as(version: u32, generator: &str, paths: &[Arc<Path>], doc: &Document) -> Result<String, serde_json::Error> {
     if version <= BASE_VERSION {
-        return craft_anicraft_format::write(generator, paths, doc);
+        return nodalia_anima_format::write(generator, paths, doc);
     }
     let envelope = EnvelopeOut { format: FORMAT_NAME, version, generator, paths, document: doc };
     let compact = serde_json::to_string(&envelope)?;
-    if compact.len() < craft_anicraft_format::PRETTY_LIMIT { serde_json::to_string_pretty(&envelope) } else { Ok(compact) }
+    if compact.len() < nodalia_anima_format::PRETTY_LIMIT { serde_json::to_string_pretty(&envelope) } else { Ok(compact) }
 }
 
 /// Ánima document deserialization uses its own path-table scope while the shared format crate
@@ -79,7 +79,7 @@ pub fn to_json(doc: &Document) -> Result<String, EngineError> {
 }
 
 pub fn from_json(text: &str) -> Result<Document, EngineError> {
-    let env = craft_anicraft_format::read::<Arc<Path>, _>(text, &mut DocumentDecoder)
+    let env = nodalia_anima_format::read::<Arc<Path>, _>(text, &mut DocumentDecoder)
         .map_err(|e| EngineError::Format(format!("not a valid .anima file: {e}")))?;
     if env.format != FORMAT_NAME {
         return Err(EngineError::Format(format!("unexpected format '{}'", env.format)));

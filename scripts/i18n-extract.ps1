@@ -1,8 +1,8 @@
 # Lists every Ánima interface string for translators (ADR 0040, docs/localisation.md), as a
-# craft-i18n catalog template. Same as scripts/i18n-extract.sh:
+# nodalia-i18n catalog template. Same as scripts/i18n-extract.sh:
 #
 #   scripts/i18n-extract.ps1 [out.tsv]                     # default: target/i18n/anima.tsv
-#   $env:CRAFT_I18N_DIR = 'C:\src\craft-i18n'; scripts/i18n-extract.ps1    # + coverage per locale
+#   $env:NODALIA_I18N_DIR = 'C:\src\nodalia-i18n'; scripts/i18n-extract.ps1    # + coverage per locale
 #   $env:ANIMA_I18N_LOCALE = 'de'; scripts/i18n-extract.ps1 de.tsv     # only what German lacks
 param([string]$Out = '')
 $ErrorActionPreference = 'Stop'

@@ -1,11 +1,11 @@
-# The gate on macOS and Windows (ADR 0067): build, test and clippy the whole workspace on the
-# latest macOS (arm64) and Windows (x64) runners, so `cfg(target_os = "macos")` and
-# `cfg(windows)` code (the platform layer, Apple Events, Increase Contrast, contrast themes,
-# the Windows resource build) is compiled and linted on every pull request that changes code.
-# The Linux gate is ci.yml; this file only calls Foundation's Rust gate with other runners.
-name: CI (macOS, Windows)
+# The gate on Windows (ADR 0067): build, test and clippy the whole workspace on the latest
+# Windows (x64) runner, so `cfg(windows)` code (the platform layer, contrast themes, the Windows
+# resource build) is compiled and linted on every pull request that changes code. macOS is not
+# here: the organization's macOS slots are kept for releases (release-macos.yml).
+# The Linux gate is ci.yml; this file only calls Foundation's Rust gate with another runner.
+name: CI (Windows)
 
-# A change that touches only documentation or other workflows skips both legs. Later patterns
+# A change that touches only documentation or other workflows skips this leg. Later patterns
 # win: everything, then not docs, Markdown or .github, then this file again. Kept in step in
 # both lists (no YAML anchors: not every workflow tool reads them).
 on:
@@ -29,19 +29,19 @@ on:
 permissions:
   contents: read
 
-# Its own group, so these legs never cancel the Linux gate. A newer push to a PR branch cancels
-# its older run (macOS runners are scarce); every push to main runs to the end.
+# Its own group, so this leg never cancels the Linux gate. A newer push to a PR branch cancels
+# its older run; every push to main runs to the end.
 concurrency:
   group: ci-platforms-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   gate:
-    uses: getnodalia/foundation/.github/workflows/rust-gate.yml@976581262c95c0d95c0184149c0e1ba55485ccb3 # foundation main
+    uses: getnodalia/foundation/.github/workflows/rust-gate.yml@c0d77c11d649cd5293834a544ef18031270d4d54 # foundation main
     with:
-      os: '["macos-latest", "windows-latest"]'
+      os: '["windows-latest"]'
       fonts-repository: getnodalia/foundation
-      fonts-ref: 37827adc41fd165f9a9234ac40f94dbad353aa69
+      fonts-ref: b91919f28edcf74c9e10583110460b79b2385cae
       targets: ""
       tools: ""
       timeout-minutes: 90

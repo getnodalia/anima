@@ -69,10 +69,10 @@ nothing may come from a server or a CDN, and a `file://` page may not `fetch` a 
 8. **PDF: proposed, not built.** The pure-Rust, permissively licensed routes (`printpdf`,
    `krilla`, MIT or Apache-2.0) write PDF objects but leave typesetting to us: line breaking,
    tables, code blocks and lists, and they need font files embedded, which we may not commit and
-   craft-fonts does not carry yet. That is a typesetter, not a slice. Proposal: next, a single-
+   nodalia-fonts does not carry yet. That is a typesetter, not a slice. Proposal: next, a single-
    page print edition (`print.html`, every chapter with prefixed ids and in-page links) with the
    existing print stylesheet, so any browser's Save as PDF gives the whole book; a native PDF
-   only if craft-fonts gains the UI typefaces and someone needs it headless. Until then each
+   only if nodalia-fonts gains the UI typefaces and someone needs it headless. Until then each
    chapter prints cleanly (the chapter list, search field and pager are hidden in print).
 
 ## Consequences
@@ -88,7 +88,7 @@ nothing may come from a server or a CDN, and a `file://` page may not `fetch` a 
 
 ## Not yet
 
-* Translated guides (their catalogs belong in craft-i18n) and search across languages.
+* Translated guides (their catalogs belong in nodalia-i18n) and search across languages.
 * The print edition and a PDF (see 8).
 * Help for a single field or menu item; F1 in browsers that also open their own help page on F1
   (eframe doesn't stop that key's default), where Help › Help for This works.

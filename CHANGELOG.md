@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* **Five more templates**: Story 9:16, Looping animation, Video title card, Walk cycle and
+  Bouncing ball join the six that were there, each with named layers and guides on a locked
+  guide layer. The walk cycle and the ball come with labelled keyframes to draw over.
 * **Spanish interface.** Release builds are made with craft-i18n, which now has a Spanish
   catalog for Ánima, so Preferences › Appearance › Language offers Español.
 * **A new sample animation**: an evening landscape in flat colours, with the ball bouncing

@@ -12,9 +12,10 @@ a rounded square with `rx=112`, the artwork clipped to it. macOS adds Apple's tr
 application grid, like the Nodalix icon theme around it: a 224 px tile in a 256 px canvas, a
 51.5 px corner radius and a soft shadow 5 px below.
 
-**Provenance:** the portrait is "Emile Cohl portrait.jpg" from
-[Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Emile_Cohl_portrait.jpg), a photograph
-by an unidentified photographer from circa 1885 (public domain). The figure was separated from its
+**Provenance:** the portrait is "Émile Cohl, 1921 portrait.jpg" from
+[Wikimedia Commons](https://commons.wikimedia.org/wiki/File:%C3%89mile_Cohl,_1921_portrait.jpg), a
+glass-plate photograph by Agence Rol (Gallica / BnF), 1921 (public domain). A doll hanging beside
+his head was cut away with `--sub-mask`. The figure was separated from its
 background, converted to black and white and placed over the app colour with nodalia-design's
 `tools/app-portrait`. Licence: see `LICENSE.txt`.
 
@@ -43,8 +44,8 @@ background, converted to black and white and placed over the app colour with nod
 
 ```sh
 # 1. the artwork, in nodalia-design (needs rembg):
-python3 tools/app-portrait/portrait.py "Emile_Cohl_portrait.jpg" anima.png --box 0,20,1080,1100 \
-  --colors '#6B4CE8' '#5034C6' --gamma 1.1
+python3 tools/app-portrait/portrait.py "Émile_Cohl,_1921_portrait.jpg" anima.png --box 700,380,2500,2180 \
+  --colors '#6B4CE8' '#5034C6' --sub-mask <polygon around the doll left of his head>
 # 2. the master SVG, here:
 python3 scripts/icon-svg.py anima.png assets/app-icon
 # 3. every render (needs resvg or rsvg-convert, and Python with Pillow):
