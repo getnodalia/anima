@@ -505,4 +505,6 @@ mod rulers_tests;
 #[cfg(test)]
 mod tilt_ui_tests;
 #[cfg(test)]
+mod translated_interface_tests;
+#[cfg(test)]
 mod zoom_tests;
