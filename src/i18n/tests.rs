@@ -631,7 +631,7 @@ fn plain_names(what: &str, app: &crate::app::App, nodes: Vec<(egui::accesskit::N
             let translated = pseudo_name_is_translated_or_exempt(name) || name == "Ánima";
             // File paths are data, not prose: since egui 0.37 a tooltip becomes the control's
             // description, so the recent-file and template rows announce their paths.
-            let path = name.ends_with(".anima") || name.ends_with(".anicraft"); // rebrand: keep
+            let path = name.ends_with(".anima") || name.ends_with(".anicraft");
             let ours = !path && scan::is_prose(name) && !doc_text.contains(name) && !doc_text.iter().any(|d| name.contains(d.as_str()));
             if ours && !translated {
                 found.insert(format!("[{what}] {:?} {name:?}", n.role()));

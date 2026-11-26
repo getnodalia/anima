@@ -26,7 +26,7 @@ Store) reject metadata errors at submission time, which is late.
    (contents ignored) is found: next to the program; above `bin/` (the tar.gz layout); next to
    `Anima.app` on macOS (never inside the bundle, which would break its signature); next to the
    `.AppImage` (`$APPIMAGE`), not inside its read-only mount. Data goes to `data/` beside the
-   marker. The Windows zip and the Linux tar.gz ship the marker; the MSI, DMG, deb, rpm, Flatpak
+   marker. The Windows zip and the Linux tar.gz ship the marker; the MSI, DMG, deb, rpm
    and Arch package never have one (the Flatpak and Arch builds copy only `bin/` and `share/` from
    the tarball, checked in the shared workflow's scripts). Guessing from the install location
    (Program Files, `/usr`) was rejected: it misfires on custom install folders and can't be

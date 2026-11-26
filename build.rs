@@ -145,7 +145,7 @@ fn main() {
 /// Ánima's own catalog in a nodalia-i18n locale: `locales/<locale>/anima.tsv`.
 const APP_CATALOG: &str = "anima.tsv";
 /// The name the same catalog had before the rename; read while a checkout has no `anima.tsv`.
-const LEGACY_APP_CATALOG: &str = "anicraft.tsv"; // rebrand: keep
+const LEGACY_APP_CATALOG: &str = "anicraft.tsv";
 
 /// `NODALIA_I18N` (ADR 0040), as nodalia-i18n's `docs/integration.md` describes: one
 /// `(locale, common.tsv, anima.tsv)` entry per locale with Ánima's own catalog, and the

@@ -640,7 +640,7 @@ pub fn plugins_dir() -> Option<PathBuf> {
 }
 
 /// The app id, one value everywhere (ADR 0026): the window's Wayland app_id and X11 class, the
-/// Linux desktop entry, AppStream and MIME package names, the Flatpak id and the macOS bundle id.
+/// Linux desktop entry, AppStream and MIME package names and the macOS bundle id.
 pub const APP_ID: &str = "dev.danielmiguelt.Anima";
 
 /// Main-window chrome. Keep the native title bar on macOS so it cannot cover the egui menu row.
@@ -943,7 +943,7 @@ pub fn filters(cmd: &str) -> (&'static str, &'static [&'static str]) {
         "file.export_sprite_sheet" => (tr_noop!("PNG sprite sheet"), &["png"]),
         "file.export_video" => (tr_noop!("Video (WebM or MP4)"), &["webm", "mp4"]),
         // Opening also imports .fla archives and .xfl packages.
-        "file.open" => (tr_noop!("Documents"), &["anima", "anicraft", "fla", "xfl"]), // rebrand: keep (older documents)
+        "file.open" => (tr_noop!("Documents"), &["anima", "anicraft", "fla", "xfl"]),
         "plugin.install" => (tr_noop!("WebAssembly plug-in"), &["wasm"]),
         "macro.run" | "macro.import" => (tr_noop!("Saved command"), &["json"]),
         "brush.preset_export" | "brush.preset_import" => (tr_noop!("Brush set"), &["json"]),

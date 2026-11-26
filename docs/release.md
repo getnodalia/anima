@@ -37,7 +37,7 @@ the `release` branch (and by hand from the Actions tab):
 |---|---|---|
 | Windows x64, arm64 | `anima-<v>-windows-<arch>.msi`, `-portable.zip`, `-symbols.zip` | `packaging/windows/package.ps1 -Arch x64` |
 | macOS universal | `anima-<v>-macos-universal.dmg`, `anima-cli-<v>-macos-universal.zip` | `packaging/macos/package.sh --arch universal`, then `verify.sh` |
-| Linux x86_64, aarch64 | `.AppImage` (+ `.zsync`), `.deb`, `.rpm`, `.tar.gz`; Flatpak and Arch packages made from the tarball | `packaging/linux/package.sh`, `flatpak-bundle.sh` |
+| Linux x86_64, aarch64 | `.AppImage` (+ `.zsync`), `.deb`, `.rpm`, `.tar.gz`; the Arch package is made from the tarball | `packaging/linux/package.sh` |
 | Linux riscv64 | `.deb`, `.rpm`, `.tar.gz` (cross-compiled) | `package.sh --formats "deb rpm tar"` |
 | FreeBSD x86_64, aarch64 | `.tar.gz` | the shared workflow's built-in packager |
 
@@ -53,18 +53,18 @@ ad-hoc-signed (macOS) artifacts, which is how to try the packaging locally.
 and `WINDOWS_CERTIFICATE_PASSWORD`, or the six `AZURE_*` values for Azure Trusted Signing;
 `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `KEYCHAIN_PASSWORD`, `APPLE_ID`,
 `APPLE_PASSWORD` (app-specific) and `APPLE_TEAM_ID` for Developer ID signing and notarization;
-`LINUX_SIGNING_KEY` (OpenPGP) for the Linux packages, the Flatpak and `SHA256SUMS.txt`. A run on
+`LINUX_SIGNING_KEY` (OpenPGP) for the Linux packages and `SHA256SUMS.txt`. A run on
 `release` with a Windows or macOS secret missing fails before building. A run anywhere else
 builds unsigned artifacts.
 
 **What CI checks.** Packaging lint, on every PR touching `packaging/`, workflows or the app icon:
 actionlint, shellcheck, PowerShell parsing, XML, `desktop-file-validate`, `appstreamcli
-validate`, the Flatpak manifests and icon files, and a WiX build of the installer for x64, x86
+validate`, icon files, and a WiX build of the installer for x64, x86
 and arm64 whose compiled scope, folder and registry rules are checked. Windows ARM64 packages the
 real MSI, installs it on an ARM64 runner, runs `anima-cli --version` and uninstalls it.
 `cargo test` (`src/packaging_tests.rs`) keeps the app id, document types, registry inventory and
 icons consistent across the three systems. Only a real release run builds the macOS bundle and
-DMG, the AppImage, deb, rpm and Flatpak, signs and notarizes.
+DMG, the AppImage, deb, rpm and signs and notarizes.
 
 **Publishing.** The workflow ends in a *draft* GitHub Release with every artifact and
 `SHA256SUMS.txt`. Check the artifacts, then publish the draft: that creates the `v<version>` tag

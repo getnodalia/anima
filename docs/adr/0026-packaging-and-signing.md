@@ -114,7 +114,7 @@ prompt they didn't ask for.
 
 * **Our own layout or tools (cargo-dist, cargo-bundle, cargo-wix).** Rejected: the shared
   workflow and lint are the family's contract and already handle signing, notarization, Linux
-  repository signing, Flatpak OCI and Arch; a second toolchain would diverge from every sibling.
+  repository signing OCI and Arch; a second toolchain would diverge from every sibling.
 * **Per-machine MSI by default** (Program Files, admin prompt). Rejected for the family policy:
   artists on managed or shared machines often can't elevate; "everyone" stays one click away.
 * **Taking over `.fla`/`.xfl` as the default app.** Rejected: users with Animate installed must

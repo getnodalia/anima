@@ -140,15 +140,13 @@ a new crate needs a row here and in its `LAYERS` table.
 
 * **Names.** Every name is Ánima's, internal ones included: `anima` in machine names, **Ánima**
   in prose and the interface, app id `dev.danielmiguelt.Anima`. Documents save as `.anima`;
-  `.anicraft` files keep opening, and the `"format"` signature inside a document and the plug-in <!-- rebrand: keep -->
-  host module keep their old value, because existing files and plug-ins depend on them (each such
-  line says `rebrand: keep`). `python3 scripts/rebrand.py check` fails when an old name comes back.
-* **Upstream sync.** `.github/workflows/upstream-sync.yml` brings upstream's changes in weekly,
-  renamed by `scripts/rebrand.py` with `.github/rebrand.toml` (`docs/upstream.md`). Files this
-  project owns are listed in `.github/upstream-keep`; add any new one there.
+  `.anicraft` files keep opening, and the `"format"` signature inside a document and the plug-in
+  host module keep their old value, because existing files and plug-ins depend on them.
+* **No upstream sync.** Ánima is its own app: nothing is merged in from another project, and there is
+  no rename tooling. Credits for the code base's origin stay in `NOTICE` and About.
 * **Dependencies** come from crates.io or from getnodalia (`getnodalia/foundation`'s `vendor/*`
   branches, `danielmigueltejedor/nodalia-design`), pinned by revision. Nothing depends on
-  storytold or ArtCraft repositories or services. <!-- rebrand: keep -->
+  storytold or ArtCraft repositories or services.
 * **NDL.** Ánima belongs to the Creator suite of the Nodalia Design Language. What is done and
   what is left is in `NODALIA_MIGRATION.md`; colours come from the theme tokens, NDL window
   controls on Linux only, native ones on macOS and Windows. No GTK or libadwaita.

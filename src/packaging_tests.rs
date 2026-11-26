@@ -35,9 +35,6 @@ fn one_app_id_everywhere() {
     assert!(metainfo.contains(&format!("<id>{APP_ID}</id>")));
     assert!(metainfo.contains(&format!("<launchable type=\"desktop-id\">{APP_ID}.desktop</launchable>")));
     assert!(read(&format!("{linux}.mime.xml")).contains(&format!("<icon name=\"{APP_ID}\"/>")));
-    for manifest in [format!("packaging/linux/flatpak/{APP_ID}.yml"), format!("packaging/linux/flatpak/{APP_ID}.bundle.yml")] {
-        assert!(read(&manifest).lines().any(|l| l == format!("id: {APP_ID}")), "{manifest}");
-    }
     assert!(read("packaging/env.sh").contains(&format!("export APP_ID={APP_ID}\n")));
     let plist = read("packaging/macos/Info.plist.in");
     assert_eq!(plist_string(&plist, "CFBundleIdentifier").as_deref(), Some(APP_ID));
@@ -48,7 +45,7 @@ fn one_app_id_everywhere() {
 fn every_openable_document_type_is_registered() {
     let (_, extensions) = filters("file.open");
     assert!(extensions.contains(&"anima"));
-    assert!(extensions.contains(&"anicraft"), "documents saved before the rename keep opening"); // rebrand: keep
+    assert!(extensions.contains(&"anicraft"), "documents saved before the rename keep opening");
     let wxs = read("packaging/windows/anima.wxs");
     let plist = read("packaging/macos/Info.plist.in");
     let mime = read(&format!("packaging/linux/{APP_ID}.mime.xml"));

@@ -64,7 +64,6 @@ pinned by SHA, and every job runs on a standard GitHub-hosted runner.
 | `freebsd.yml` | FreeBSD VM | nightly, packaging changes | build and tests |
 | `codeql.yml`, `scorecard.yml` | Ubuntu | every PR, weekly | static analysis, supply-chain checks |
 | `release-auto.yml` and `release-*.yml` | Ubuntu 22.04, macOS 15, Windows 2025 | a merged version bump with its notes | Linux, macOS (unsigned DMG) and Windows packages, then the release |
-| `upstream-sync.yml` | Ubuntu | weekly | upstream's changes, renamed, as a pull request (`docs/upstream.md`) |
 
 Measured job times (wall clock, from the job's start to its end):
 

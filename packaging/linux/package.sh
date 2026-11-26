@@ -81,8 +81,8 @@ fi
 has() { case " $FORMATS " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 
 # ---- .tar.gz ------------------------------------------------------------------------------------
-# Unpacks to anima-<version>-linux-<arch>/{bin,share}; the Flatpak and Arch packages are made
-# from this tarball by the shared release workflow (they copy bin/ and share/ only). The
+# Unpacks to anima-<version>-linux-<arch>/{bin,share}; the Arch package is made
+# from this tarball by the shared release workflow (it copies bin/ and share/ only). The
 # anima-portable marker at its top makes the unpacked folder a portable copy (ADR 0094):
 # settings go to data/ beside bin/.
 if has tar; then

@@ -76,10 +76,10 @@
           <Extension Id="anima" ContentType="application/x-anima">
             <Verb Id="open" Command="Open" TargetFile="AnimaExe" Argument="&quot;%1&quot;" />
           </Extension>
-          <!-- Documents saved before Ánima had its own name: the same format. rebrand: keep -->
+          <!-- Documents saved before Ánima had its own name: the same format -->
           <!-- The open verb above already registers Anima.Document's command; a second one is a
                duplicate registry row. -->
-          <Extension Id="anicraft" ContentType="application/x-anicraft" /><!-- rebrand: keep -->
+          <Extension Id="anicraft" ContentType="application/x-anicraft" />
         </ProgId>
         <!-- FLA and XFL documents: offered under "Open with", never made the default. They open as
              an untitled import (ADR 0009), so Save never overwrites the original. -->
@@ -92,7 +92,7 @@
         <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe" Name="FriendlyAppName" Value="Ánima" Type="string" />
         <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\shell\open\command" Value="&quot;[#AnimaExe]&quot; &quot;%1&quot;" Type="string" />
         <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\SupportedTypes" Name=".anima" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\SupportedTypes" Name=".anicraft" Value="" Type="string" /><!-- rebrand: keep -->
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\SupportedTypes" Name=".anicraft" Value="" Type="string" />
         <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\SupportedTypes" Name=".fla" Value="" Type="string" />
         <RegistryValue Root="HKMU" Key="Software\Classes\Applications\anima.exe\SupportedTypes" Name=".xfl" Value="" Type="string" />
         <RegistryValue Root="HKMU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\anima.exe" Value="[#AnimaExe]" Type="string" />
