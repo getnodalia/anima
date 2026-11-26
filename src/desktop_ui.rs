@@ -168,7 +168,7 @@ pub fn about(app: &App, ui: &mut egui::Ui, label_w: f32) -> Option<Act> {
     form_row(ui, label_w, tr!("Credits"), |ui| {
         ui.vertical(|ui| {
             ui.add(egui::Label::new(text(Type::Body, tr!("Ánima is a Nodalia app. Free software under the MIT or Apache 2.0 licence."))).wrap());
-            let origin = tr!("Built on AniCraft, by the ArtCraft Team and its contributors."); // rebrand: keep
+            let origin = tr!("Built on AniCraft, by the ArtCraft Team and its contributors.");
             ui.add(egui::Label::new(text(Type::Caption, origin)).wrap());
             ui.hyperlink_to(text(Type::Body, "getnodalia.com"), "https://getnodalia.com");
         });

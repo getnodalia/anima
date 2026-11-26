@@ -8,10 +8,10 @@ How Ánima is built into installers (ADR 0026). The release workflows
 |---|---|
 | `env.sh` | Version, build variables and `APP_ID`, sourced by every script |
 | `check-icons.sh` | The icons every package names exist |
-| `check-store-readiness.sh` | Store metadata checks: Flatpak manifests, AppStream, desktop entry, winget/MSIX (ADR 0094) |
+| `check-store-readiness.sh` | Store metadata checks: AppStream, desktop entry, winget/MSIX (ADR 0094) |
 | `windows/` | MSI (WiX v5), portable zip, symbols zip; install policy checks ([README](windows/README.md)) |
 | `macos/` | Universal `Anima.app` on a DMG, CLI zip, signing and notarization |
-| `linux/` | AppImage, deb, rpm, tar.gz; Flatpak manifests; desktop entry, metainfo, MIME types |
+| `linux/` | AppImage, deb, rpm, tar.gz; desktop entry, metainfo, MIME types |
 | `web/` | The web build's zip |
 
 ## Portable copies (ADR 0094)
@@ -20,7 +20,7 @@ The Windows zip and the Linux tar.gz contain a file named `anima-portable` at th
 copy with that marker keeps preferences, autosave, logs, plug-ins, templates, thumbnails and the
 offline guide in a `data/` folder beside the marker instead of the user's settings folder. The
 app looks for the marker next to the program, above `bin/`, next to `Anima.app` (macOS) and
-next to the `.AppImage`. Installed packages (MSI, DMG, deb, rpm, Flatpak, Arch) never ship it.
+next to the `.AppImage`. Installed packages (MSI, DMG, deb, rpm, Arch) never ship it.
 Preferences › About shows which kind of copy is running and its folders.
 
 ## AppImage desktop integration (ADR 0094)

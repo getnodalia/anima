@@ -193,10 +193,9 @@ No new crate. The installers are built with tools that are not Rust dependencies
 * **AppImage type2-runtime** (prepended to each AppImage), MIT, statically linking libfuse3
   (LGPL-2.1) and squashfuse (BSD-2-Clause). A separate program in the same file, not linked
   with Ánima. Pinned by version and SHA-256 in `packaging/linux/package.sh`.
-* **appimagetool** (MIT), **nfpm** (MIT), **flatpak-builder** (LGPL-2.1), Apple's `hdiutil`,
+* **appimagetool** (MIT), **nfpm** (MIT), Apple's `hdiutil`,
   `codesign`, `notarytool`, `sips` and `iconutil`, Microsoft's `signtool`: build tools only;
   nothing of them ships.
-* The Flatpak runs on the freedesktop runtime from Flathub; the runtime isn't in our bundle.
 * `packaging/macos/dmg/generate.py` uses Pillow (MIT-CMU), `ds_store` and `mac_alias` (MIT) to
   write committed files; none of them ships.
 

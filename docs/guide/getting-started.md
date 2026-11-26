@@ -16,7 +16,7 @@ lists every build, with a `SHA256SUMS.txt` file so you can check what you downlo
 |---|---|---|
 | Windows (x64, ARM64 or 32-bit) | the `.msi` installer | Double-click it. By default it installs for your account only and doesn't need an administrator. You can choose to install it for everyone on the computer instead. A portable `.zip` is there too if you'd rather not install. |
 | macOS (Apple silicon and Intel) | the `.dmg` | Open it and drag Ánima to Applications. The app is signed and notarized. |
-| Linux (x86_64 or ARM64) | `.AppImage`, `.flatpak`, `.deb`, `.rpm` or `.tar.gz` | The AppImage runs anywhere. Install the Flatpak with `flatpak install --user` and the file name. Use the `.deb` on Debian and Ubuntu, and the `.rpm` on Fedora and openSUSE. |
+| Linux (x86_64 or ARM64) | `.AppImage`, `.deb`, `.rpm` or `.tar.gz` | The AppImage runs anywhere. Use the `.deb` on Debian and Ubuntu, and the `.rpm` on Fedora and openSUSE. |
 | FreeBSD | the `.tar.gz` | Unpack it anywhere. |
 
 Every installer sets Ánima up to open `.anima` documents. Animate's `.fla` and `.xfl`

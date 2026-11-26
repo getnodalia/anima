@@ -7,8 +7,7 @@ pull request that moves the interface to NDL (light and dark screenshots there).
 ## Current state
 
 Pure-Rust 2D animation studio (egui/eframe 0.37, wgpu), MIT OR Apache-2.0. Every name is Ánima's
-(`anima`, `dev.danielmiguelt.Anima`); upstream's history is kept and its weekly changes arrive
-renamed (`docs/upstream.md`). Cargo git dependencies come from getnodalia/foundation (craft-libs at
+(`anima`, `dev.danielmiguelt.Anima`). Cargo git dependencies come from getnodalia/foundation (craft-libs at
 `vendor/craft-libs/pin-f0f4758`) and nodalia-design (`nodalia-update`). CI calls Foundation's
 reusable workflows pinned by commit, on standard GitHub-hosted runners only; releases use the
 automatic flow (`release-auto.yml`, unsigned macOS DMG). Ánima has its own icon (Émile Cohl's portrait,
@@ -20,7 +19,7 @@ Nodalia icon family, `assets/app-icon/`), Nodalia's violet accent and a Nodalia 
   `.anima`.
 - The `"format": "anicraft"` signature inside a document (from `craft-anicraft-format`) and the
   WebAssembly import module of plug-ins keep their old value: existing files and plug-ins depend on
-  them. `.github/rebrand.toml` keeps them.
+  them.
 - `build.rs` reads `anicraft.tsv` from a craft-i18n checkout when there is no `anima.tsv`.
 
 ## NDL: done
@@ -58,7 +57,7 @@ NDL colours rather than the Creator dialog frame.
 |---|---|---|
 | JetBrains Mono | `build.rs` (`MONO_FONT`) | not in Foundation's craft-fonts yet; data fields use egui's Hack until it is added there |
 | Translations | `build.rs` (`CRAFT_I18N_DIR`) | upstream has no catalog for this app; Ánima's would go to Foundation's `vendor/craft-i18n` as `locales/<locale>/anima.tsv` |
-| Windows arm64 and x86, Linux aarch64 and riscv64, Flatpak, FreeBSD packages | the inherited release workflow (removed) | `release-*.yml` builds Linux x86_64, macOS universal and Windows x64; the scripts in `packaging/` still build the others |
+| Windows arm64 and x86, Linux aarch64 and riscv64, FreeBSD packages | the inherited release workflow (removed) | `release-*.yml` builds Linux x86_64, macOS universal and Windows x64; the scripts in `packaging/` still build the others |
 | Code signing (Windows, macOS notarization) | `release-*.yml` | optional secrets; without them packages are unsigned, which is Nodalia's default |
 
 ## Reusable Nodalia components

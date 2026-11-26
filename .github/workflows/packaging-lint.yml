@@ -1,5 +1,5 @@
 # Quick static checks for the release pipeline (seconds, no Rust build): workflow syntax,
-# packaging shell/PowerShell scripts, and the Linux desktop/AppStream/Flatpak metadata.
+# packaging shell/PowerShell scripts, and the Linux desktop/AppStream metadata.
 name: Packaging lint
 
 on:
@@ -25,7 +25,7 @@ jobs:
   # Checks only; nothing is submitted (submissions are the team's job, docs/release.md).
   store-readiness:
     timeout-minutes: 10
-    name: Store readiness (Flatpak, AppStream, winget/MSIX)
+    name: Store readiness (AppStream, winget/MSIX)
     runs-on: ubuntu-24.04
     steps:
       - name: Harden runner

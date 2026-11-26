@@ -123,19 +123,19 @@ mod tests {
 
     #[test]
     fn documents_saved_before_the_rename_are_native_documents() {
-        let older = ["anicraft", "AniCraft"]; // rebrand: keep
+        let older = ["anicraft", "AniCraft"];
         for ext in ["anima", "ANIMA"].into_iter().chain(older) {
             assert!(is_native_extension(ext), "{ext}");
         }
         for ext in ["fla", "xfl", "json", "", "anim"] {
             assert!(!is_native_extension(ext), "{ext}");
         }
-        let old = std::path::Path::new("walk cycle.anicraft"); // rebrand: keep
+        let old = std::path::Path::new("walk cycle.anicraft");
         assert_eq!(crate::cmds_drop::kind_of(old), crate::cmds_drop::DropKind::Document);
         // The file carries the same signature under either extension.
         let doc = sample::demo();
         assert!(from_json(&to_json(&doc).expect("save")).is_ok());
-        assert_eq!(FORMAT_NAME, "anicraft", "renaming the signature would make every saved document unreadable"); // rebrand: keep
+        assert_eq!(FORMAT_NAME, "anicraft", "renaming the signature would make every saved document unreadable");
     }
 
     #[test]

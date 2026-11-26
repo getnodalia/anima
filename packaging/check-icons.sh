@@ -26,7 +26,7 @@ png_size() {
 need "$ICONS/anima.ico"
 # macOS: package.sh makes Anima.icns from the tile on Apple's grid.
 need "$ICONS/anima-padded-1024.png"
-# Linux: hicolor theme icons (desktop entry, AppStream, MIME type, AppImage, Flatpak).
+# Linux: hicolor theme icons (desktop entry, AppStream, MIME type, AppImage).
 for s in 16 24 32 48 64 128 256 512; do
   png="$ICONS/hicolor/${s}x${s}/apps/$APP_ID.png"
   need "$png"
