@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   Ánima's Windows installer (WiX v5). Built by package.ps1; the scope, folder and upgrade rules
-  are the Craft family's (install-policy.wxi, checked by check-install-policy.ps1 against
+  are the shared ones (install-policy.wxi, checked by check-install-policy.ps1 against
   install-policy.json). Never change the UpgradeCode or the AnimaApp component GUID: Windows
   uses them to find the installed copy on upgrade.
 -->
@@ -61,7 +61,7 @@
 
   <Fragment>
     <!-- Licences and notices: ours, the dependencies' (NOTICE, ATTRIBUTION.md) and the OFL
-         licences of the embedded craft-fonts typefaces. package.ps1 stages them in DocsDir. -->
+         licences of the embedded nodalia-fonts typefaces. package.ps1 stages them in DocsDir. -->
     <ComponentGroup Id="AnimaNotices" Directory="INSTALLFOLDER">
       <Files Include="$(var.DocsDir)\**" />
     </ComponentGroup>

@@ -6,8 +6,8 @@
 
 ## Context
 
-Ánima had a release workflow that calls the Craft family's shared one
-(`storytold/craft-common-actions/.github/workflows/release.yml`) and a Packaging lint workflow,
+Ánima had a release workflow that calls a shared one
+(an earlier shared-actions repository's `release.yml`) and a Packaging lint workflow,
 but no `packaging/` folder, so neither could do anything and Packaging lint failed on every pull
 request that touched a workflow. The shared release workflow is a contract: it runs
 `packaging/windows/package.ps1`, `packaging/macos/{import-cert,package,verify}.sh` and

@@ -21,7 +21,7 @@
 Allowed: MIT, Apache-2.0 (incl. LLVM exception), BSD-2/3-Clause, ISC, Zlib, 0BSD, BSL-1.0,
 Unicode-3.0, Unlicense. Font licences (OFL-1.1, Ubuntu-font-1.0) are allowed **only** for
 `epaint_default_fonts`. Copyleft (GPL, LGPL, AGPL, MPL, EPL, CDDL, SSPL), "non-commercial",
-"source-available" and unknown licences are **not allowed**. Crates.io and the explicitly allowlisted Storytold shared library repository are allowed;
+"source-available" and unknown licences are **not allowed**. Crates.io and the explicitly allowlisted getnodalia/foundation repository are allowed;
 unknown registries and git sources remain denied. The native update checker uses `nodalia-update`
 (MIT OR Apache-2.0), pinned to a commit of `getnodalia/foundation (vendor/nodalia-libs)`; its HTTP, verification and
 platform installer code are shared with the other Craft apps. A narrowly approved exception
@@ -42,7 +42,7 @@ exceptions in `deny.toml`, and the allowlist itself is unchanged:
 
 `symphonia-codec-aac` is an AAC decoder, and AAC is a patent-pool codec (section 4). Whether the
 shared libraries make it opt-in, and whether they move to their own permissive decoders, is
-tracked with that team in storytold/craft-libs#2100. CI runs `cargo deny check licenses bans
+tracked with that team in #2100. CI runs `cargo deny check licenses bans
 sources` in its own job again (the shared gate doesn't).
 
 ```sh
@@ -271,5 +271,5 @@ No new crate. The installers are built with tools that are not Rust dependencies
 | "Ánima" trademark clearance | Settled by the project lead (2026-11-09): the name is kept |
 | Freedom-to-operate patent search for core animation features | Open (recommended before 1.0) |
 | Full licence-text bundle generation (`cargo about`) in the release pipeline | Open (M8; the installers ship `LICENSE-*`, `NOTICE`, `ATTRIBUTION.md` and the font OFLs today) |
-| MPL-2.0 `symphonia` (incl. an AAC decoder) and IJG `jpeg-encoder` through the shared crates | Accepted as exceptions by the project lead (2026-11-17); opt-in AAC and permissive decoders raised in storytold/craft-libs#2100; counsel to confirm the AAC decoder |
+| MPL-2.0 `symphonia` (incl. an AAC decoder) and IJG `jpeg-encoder` through the shared crates | Accepted as exceptions by the project lead (2026-11-17); opt-in AAC and permissive decoders raised in #2100; counsel to confirm the AAC decoder |
 | WiX's MS-RL parts inside the MSI (WixUI, `Wix4UtilCA`) and the AppImage runtime's LGPL libfuse3 | Open: family-wide practice, counsel to confirm (ADR 0026) |
