@@ -146,7 +146,7 @@ a new crate needs a row here and in its `LAYERS` table.
   no rename tooling. Credits for the code base's origin stay in `NOTICE` and About.
 * **Dependencies** come from crates.io or from getnodalia (`getnodalia/foundation`'s `vendor/*`
   branches, `danielmigueltejedor/nodalia-design`), pinned by revision. Nothing depends on
-  storytold or ArtCraft repositories or services.
+  repositories or services outside getnodalia and crates.io.
 * **NDL.** Ánima belongs to the Creator suite of the Nodalia Design Language. What is done and
   what is left is in `NODALIA_MIGRATION.md`; colours come from the theme tokens, NDL window
   controls on Linux only, native ones on macOS and Windows. No GTK or libadwaita.

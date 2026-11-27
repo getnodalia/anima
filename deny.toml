@@ -39,7 +39,7 @@ allow = ["CDLA-Permissive-2.0"]
 # through symphonia (MPL-2.0, file-level copyleft, used unmodified; its source is linked from
 # ATTRIBUTION.md) and `nodalia-image-codecs` encodes JPEG with jpeg-encoder (IJG, acknowledged in
 # NOTICE). Scoped to these crates; the allowlist above is unchanged. Raised with the shared
-# libraries team: storytold/craft-libs#2100.
+# libraries team: #2100.
 [[licenses.exceptions]]
 crate = "symphonia"
 allow = ["MPL-2.0"]

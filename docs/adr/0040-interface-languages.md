@@ -15,7 +15,7 @@ input (`NODALIA_I18N_DIR`), like nodalia-fonts. It has **no Ánima catalog yet**
 
 The lookup code the other apps use lives in nodalia-libs, which is a git dependency; Ánima
 takes dependencies from crates.io only (`deny.toml`). Outside PR #38 built localisation on that
-crate and on storytold's egui and winit forks (for Arabic), so it could not be taken as it is,
+crate and on forks of egui and winit (for Arabic), so it could not be taken as it is,
 but its design was sound and several of its ideas are used here.
 
 egui 0.36 from crates.io lays text out glyph by glyph: there is no Unicode bidirectional
@@ -97,7 +97,7 @@ Georgian need no shaping, only a font the app doesn't bundle.
   match), default document names (`Layer 2`, `Symbol 1`) and plug-in names. `@msg` templates
   for engine messages are the next step.
 * **Right to left needs upstream work**: text needs bidi and shaping in egui's text layout, and
-  the widgets a mirrored mode. We don't fork egui (PR #38 used storytold's fork); we follow
+  the widgets a mirrored mode. We don't fork egui (PR #38 used a fork); we follow
   upstream and offer RTL languages when egui on crates.io can draw them. CJK and Georgian need
   only a font from nodalia-fonts and a `READY` entry.
 * Per frame, a busy window looks up a few hundred strings: about 13 ns each from a catalog and

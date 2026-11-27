@@ -7,8 +7,7 @@
 
 ## Context
 
-The pull-request gate (`ci.yml`, the suite's shared `gate.yml` in
-`storytold/craft-common-actions`) ran on Ubuntu only. The web build has its own job, and
+The pull-request gate (`ci.yml`, the suite's shared `gate.yml`) ran on Ubuntu only. The web build has its own job, and
 FreeBSD and Windows ARM64 run nightly or on packaging changes. So `cfg(target_os = "macos")`
 code (the platform layer, the Apple Events listener of ADR 0062, Increase Contrast of
 ADR 0064, the Mac app icon) was never compiled by CI, and `cfg(windows)` code (registry
@@ -29,7 +28,7 @@ queue time isn't. Every job must start with Harden-Runner (#162) and pin actions
    SHA-pinned checkout, nodalia-fonts at the same pin as `ci.yml`, the toolchain from
    `rust-toolchain.toml`, and `rust-cache` keyed per OS and architecture (written by pushes to
    `main`, read by pull requests). The reusable workflow tracks `@main` like every other call
-   into craft-common-actions (suite-wide fixes land without a PR here).
+   into the shared workflows (suite-wide fixes land without a PR here).
 2. **What each leg runs:** `cargo build --workspace --locked`, `cargo test --workspace --locked
    --no-fail-fast`, `cargo clippy --workspace --all-targets --locked -- -D warnings`. All three
    run even when one fails, so one run reports everything. No wasm target and no nextest
@@ -67,7 +66,7 @@ columns (dependencies) is restored rather than compiled; record the warm numbers
 cost that matters is queue time on the organisation's few macOS runners, which the
 cancel-superseded group and the docs-only filter keep down. If the macOS queue still
 becomes the bottleneck, the next step is narrowing the macOS leg to platform-sensitive paths
-plus a `full-ci` label (craft-common-actions' `changed-paths.yml`), not dropping it.
+plus a `full-ci` label (the shared `changed-paths.yml`), not dropping it.
 
 The macOS leg found one real failure on its first run: the macOS app menu is titled
 "Ánima", and the pseudo-locale screen-reader tests (ADR 0040) flagged the product name as

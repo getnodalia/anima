@@ -12,7 +12,7 @@
 //! checksums, limits), so nothing is trusted here beyond those four bytes. Written from the
 //! published format (PKWARE APPNOTE 6.3, sections 4.3.12 and 4.3.16).
 //!
-//! This belongs in the shared reader (storytold/craft-libs#1986 proposes it there); it goes
+//! This belongs in the shared reader (#1986 proposes it there); it goes
 //! from here when the pinned `nodalia-xfl` has it.
 
 /// "PK\x05\x06": the end-of-central-directory record.
