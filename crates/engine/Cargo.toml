@@ -29,7 +29,7 @@ regex.workspace = true
 
 [dev-dependencies]
 # Packs the XFL corpus into .fla archives in tests (ADR 0054; already in the tree through xfl).
-miniz_oxide = "0.8"
+miniz_oxide = "0.9"
 # Plug-in test fixtures written in WebAssembly text (Apache-2.0 WITH LLVM-exception).
 wat = "1.228"
 
