@@ -12,8 +12,8 @@ anima-geom.workspace = true
 # Font discovery and style matching (also the shell's font preferences).
 fontdb.workspace = true
 # Shaping (a HarfBuzz port) and outlines/metrics: both already in the tree through egui.
-harfrust = "0.12"
-skrifa = { version = "0.44", default-features = false, features = ["std"] }
+harfrust = "0.16"
+skrifa = { version = "0.50", default-features = false, features = ["std"] }
 
 [lints]
 workspace = true
