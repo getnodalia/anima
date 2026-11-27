@@ -15,9 +15,9 @@ repository = "https://github.com/getnodalia/anima"
 rust-version = "1.95"
 
 [workspace.dependencies]
-nodalia-video = { git = "https://github.com/getnodalia/foundation", rev = "f32e02ba6a828c795d668c8c97c4dd7158a22ad7", default-features = false, features = ["screen-video"] }
-nodalia-palette = { git = "https://github.com/getnodalia/foundation", rev = "f32e02ba6a828c795d668c8c97c4dd7158a22ad7" }
-nodalia-lottie = { git = "https://github.com/getnodalia/foundation", rev = "f32e02ba6a828c795d668c8c97c4dd7158a22ad7" }
+nodalia-video = { git = "https://github.com/getnodalia/foundation", rev = "c91e7e5d2081e94a5c8ac48e48ab00008a1842e7", default-features = false, features = ["screen-video"] }
+nodalia-palette = { git = "https://github.com/getnodalia/foundation", rev = "d6ba152de9691955180f2938502ddbd010ef45ea" }
+nodalia-lottie = { git = "https://github.com/getnodalia/foundation", rev = "5cbd1543e9c006064904465d2503bbd223e7e3a6" }
 anima-geom = { path = "crates/geom" }
 anima-doc = { path = "crates/doc" }
 anima-render = { path = "crates/render" }
@@ -30,17 +30,17 @@ anima-plugins = { path = "crates/plugins" }
 anima-audio = { path = "crates/audio" }
 anima-gpu = { path = "crates/gpu" }
 anima-guide = { path = "crates/guide" }
-nodalia-anima-format = { git = "https://github.com/getnodalia/foundation", rev = "f32e02ba6a828c795d668c8c97c4dd7158a22ad7" }
+nodalia-anima-format = { git = "https://github.com/getnodalia/foundation", rev = "7d584fd1c6d974f2728edf467a9582f923c1cf13" }
 nodalia-mime = { version = "0.1.0", git = "https://github.com/getnodalia/foundation", rev = "7d584fd1c6d974f2728edf467a9582f923c1cf13" }
 nodalia-html = { version = "0.1.0", git = "https://github.com/getnodalia/foundation", rev = "7d584fd1c6d974f2728edf467a9582f923c1cf13", default-features = false }
-nodalia-audio = { git = "https://github.com/getnodalia/foundation", rev = "f32e02ba6a828c795d668c8c97c4dd7158a22ad7", default-features = false, features = ["decode", "pcm-encode"] }
-nodalia-gif = { git = "https://github.com/getnodalia/foundation", rev = "f32e02ba6a828c795d668c8c97c4dd7158a22ad7" }
+nodalia-audio = { git = "https://github.com/getnodalia/foundation", rev = "b0128030e39b29167ff747cc2225dfabeb99160f", default-features = false, features = ["decode", "pcm-encode"] }
+nodalia-gif = { git = "https://github.com/getnodalia/foundation", rev = "7d584fd1c6d974f2728edf467a9582f923c1cf13" }
 # Isolate the already-merged APNG container from the existing raster-codec pin.
 nodalia-apng-container = { package = "nodalia-image-codecs", version = "0.1.0", git = "https://github.com/getnodalia/foundation", rev = "4199c47f5dc9f8dac749c4609a8aa132219036b1", default-features = false }
-nodalia-image-codecs = { git = "https://github.com/getnodalia/foundation", rev = "f32e02ba6a828c795d668c8c97c4dd7158a22ad7" }
-nodalia-webp = { git = "https://github.com/getnodalia/foundation", rev = "f32e02ba6a828c795d668c8c97c4dd7158a22ad7" }
-nodalia-xfl = { git = "https://github.com/getnodalia/foundation", rev = "f32e02ba6a828c795d668c8c97c4dd7158a22ad7" }
-nodalia-xml = { git = "https://github.com/getnodalia/foundation", rev = "f32e02ba6a828c795d668c8c97c4dd7158a22ad7" }
+nodalia-image-codecs = { git = "https://github.com/getnodalia/foundation", rev = "7d584fd1c6d974f2728edf467a9582f923c1cf13" }
+nodalia-webp = { git = "https://github.com/getnodalia/foundation", rev = "5fecd8b44f86c7cf801944d5ea4142f16f1fe747" }
+nodalia-xfl = { git = "https://github.com/getnodalia/foundation", rev = "0a1aedecb96656dd966f7bd88fd49ddd3a70e2e4" }
+nodalia-xml = { git = "https://github.com/getnodalia/foundation", rev = "0a1aedecb96656dd966f7bd88fd49ddd3a70e2e4" }
 # The GPU stage (ADR 0019) uses the wgpu that eframe's egui-wgpu brings, with the same
 # (default) features, so the tree keeps one wgpu build.
 wgpu = "30"
@@ -120,7 +120,7 @@ web-time.workspace = true
 # The system's interface language, for the default language (ADR 0040; MIT OR Apache-2.0).
 sys-locale = "0.3"
 # The Nodalia Design Language (MIT): palette, creator-suite parts, icons and window controls.
-nodalia-theme = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "4bad0b2bb7248691594f012601054cadff2466ad", features = ["creator"] }
+nodalia-theme = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "44bfd0a37e6bd2837c473b4e5607b70e8d169e61", features = ["creator"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # The user guide, bundled for Help › User Guide (ADR 0069). The web build serves it as pages instead.
@@ -130,7 +130,7 @@ anima-guide.workspace = true
 anima-cli = { path = "crates/cli" }
 # Release checks and in-place updates, shared by the Nodalia apps (MIT). Without its egui windows:
 # Ánima draws its own with the egui it already uses.
-nodalia-update = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "4bad0b2bb7248691594f012601054cadff2466ad" }
+nodalia-update = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "114848a2ff1a7c29c9a5432fb12e955fbe0aeef2" }
 
 eframe = { workspace = true, features = ["links"] }
 rfd.workspace = true

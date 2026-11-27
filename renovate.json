@@ -9,8 +9,27 @@
   "prHourlyLimit": 2,
   "packageRules": [
     {
+      "description": "Nodalia's shared crates are pinned by hand to a commit on a vendor/* branch of Foundation or on nodalia-design; a digest update would move the pin to a branch head with no crate in it.",
+      "matchManagers": [
+        "cargo"
+      ],
+      "matchPackageNames": [
+        "/^nodalia-/"
+      ],
+      "matchUpdateTypes": [
+        "digest"
+      ],
+      "enabled": false
+    },
+    {
       "description": "One weekly pull request for every non-major update, so CI runs once instead of once per dependency.",
-      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest",
+        "pin",
+        "pinDigest"
+      ],
       "groupName": "non-major dependencies"
     }
   ]

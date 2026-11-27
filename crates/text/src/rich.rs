@@ -169,6 +169,12 @@ struct Para {
 }
 
 impl Fonts {
+    /// The face's font as harfrust reads it, copied from `data` the first time it is asked for.
+    fn shaper_font(&self, id: fontdb::ID, data: &[u8], index: u32) -> Option<harfrust::Font> {
+        let mut cache = self.shaper_fonts.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        cache.entry(id).or_insert_with(|| harfrust::Font::new(data.to_vec(), index)).clone()
+    }
+
     /// Lays styled text out ([`RichText`]). `glyphs` also hands back each glyph on its own.
     pub fn layout_rich(&self, rich: &RichText, glyphs: bool) -> Result<Layout, TextError> {
         let text = rich.text;
@@ -276,8 +282,8 @@ impl Fonts {
         for (fi, (id, _)) in faces.iter().enumerate() {
             let ok = self.db.with_face_data(*id, |data, index| {
                 let font = skrifa::FontRef::from_index(data, index).ok()?;
-                let shaper_data = harfrust::ShaperData::new(&font);
-                let shaper = shaper_data.shaper(&font).build();
+                let shaper_font = self.shaper_font(*id, data, index)?;
+                let shaper = harfrust::ShaperFont::new(&shaper_font);
                 let outlines = font.outline_glyphs();
                 let charmap = font.charmap();
                 let os2 = font.os2().ok();
@@ -312,10 +318,13 @@ impl Fonts {
                         if let Some(last) = to_char.last_mut() {
                             *last = n;
                         }
-                        let mut buffer = harfrust::UnicodeBuffer::new();
-                        buffer.push_str(piece);
-                        buffer.guess_segment_properties();
-                        let out = shaper.shape(buffer, harfrust::ShapeOptions::new());
+                        let mut out = harfrust::Buffer::new();
+                        out.push_str(piece);
+                        out.guess_segment_properties();
+                        // A segment the shaper refuses leaves no glyphs rather than failing the layout.
+                        if harfrust::shape(&shaper, &mut out, harfrust::ShapeOptions::new()).is_err() {
+                            continue;
+                        }
                         let mut list: Vec<Shaped> = Vec::with_capacity(out.glyph_infos().len());
                         for (info, pos) in out.glyph_infos().iter().zip(out.glyph_positions()) {
                             let local = to_char.get(info.cluster as usize).copied().unwrap_or(n).min(n);
