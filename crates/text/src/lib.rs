@@ -332,6 +332,9 @@ impl std::error::Error for TextError {}
 pub struct Fonts {
     db: fontdb::Database,
     families: Vec<String>,
+    /// Each face read for shaping once: harfrust owns its font data, so a copy per layout would
+    /// repeat a whole font file every time.
+    shaper_fonts: std::sync::Mutex<std::collections::HashMap<fontdb::ID, Option<harfrust::Font>>>,
 }
 
 static FONTS: OnceLock<Fonts> = OnceLock::new();
@@ -369,7 +372,7 @@ impl Fonts {
             db.faces().filter_map(|f| f.families.first().map(|(n, _)| n.clone())).filter(|n| !n.starts_with('.')).collect();
         families.sort_by_key(|f| f.to_lowercase());
         families.dedup();
-        Fonts { db, families }
+        Fonts { db, families, shaper_fonts: Default::default() }
     }
 
     /// A library of just these faces (tests, and documents carrying their own fonts).
